@@ -32,6 +32,7 @@ SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 OPENAI_API_KEY=YOUR_OPENAI_API_KEY
 OPENAI_COACH_MODEL=gpt-5.6-sol
 OPENAI_LABEL_MODEL=gpt-4.1-mini
+FDC_API_KEY=YOUR_DATA_GOV_API_KEY
 ```
 
 The OpenAI key stays server-side. A ChatGPT subscription does not include API usage, so the project needs an API key from the OpenAI Platform account.

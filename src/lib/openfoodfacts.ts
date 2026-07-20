@@ -1,6 +1,7 @@
 import type { Food, Nutrition } from "./types";
 
 type OffProduct = {
+  _source?: never;
   code?: string;
   product_name?: string;
   generic_name?: string;
@@ -13,6 +14,17 @@ type OffProduct = {
   image_front_url?: string;
   nutrition_data_per?: string;
   nutriments?: Record<string, number | string | undefined>;
+};
+
+type FdcProduct = {
+  fdcId?: number;
+  description?: string;
+  brandOwner?: string;
+  gtinUpc?: string;
+  servingSize?: number;
+  servingSizeUnit?: string;
+  foodNutrients?: Array<{ nutrientId?: number; value?: number }>;
+  _source?: "food-data-central";
 };
 
 const searchCache = new Map<string, { expiresAt: number; foods: Food[] }>();
@@ -37,6 +49,18 @@ function mapNutrition(product: OffProduct): Nutrition {
   };
 }
 
+function mapFdcNutrition(product: FdcProduct): Nutrition {
+  const nutrients = new Map((product.foodNutrients || []).map((nutrient) => [nutrient.nutrientId, numberValue(nutrient.value)]));
+  return {
+    calories: Math.round(nutrients.get(1008) || 0),
+    protein: nutrients.get(1003) || 0,
+    carbs: nutrients.get(1005) || 0,
+    fat: nutrients.get(1004) || 0,
+    fiber: nutrients.get(1079) || 0,
+    sugar: nutrients.get(2000) || 0,
+  };
+}
+
 function hasNutritionData(product: OffProduct) {
   const nutrients = product.nutriments || {};
   return [
@@ -44,22 +68,39 @@ function hasNutritionData(product: OffProduct) {
   ].some((key) => Object.hasOwn(nutrients, key) && Number.isFinite(Number(nutrients[key])));
 }
 
-function mapProduct(product: OffProduct): Food | null {
-  const name = product.product_name || product.generic_name;
-  const nutrition = mapNutrition(product);
+function mapFdcProduct(product: FdcProduct): Food | null {
+  if (!product.description || !product.fdcId) return null;
+  const nutrition = mapFdcNutrition(product);
+  if (!nutrition.calories && !nutrition.protein && !nutrition.carbs && !nutrition.fat) return null;
+  return {
+    id: `fdc-${product.fdcId}`,
+    name: product.description,
+    brand: product.brandOwner,
+    barcode: product.gtinUpc,
+    servingGrams: product.servingSizeUnit?.toLowerCase() === "g" ? product.servingSize : undefined,
+    nutrientsPer100: nutrition,
+    source: "food-data-central",
+  };
+}
+
+function mapProduct(product: OffProduct | FdcProduct): Food | null {
+  if (product._source === "food-data-central") return mapFdcProduct(product);
+  const offProduct = product as OffProduct;
+  const name = offProduct.product_name || offProduct.generic_name;
+  const nutrition = mapNutrition(offProduct);
   // A zero value is valid nutrition data: sugar-free drinks and water must not
   // disappear from packaged-food search just because they contain no calories.
-  if (!name || !hasNutritionData(product)) return null;
+  if (!name || !hasNutritionData(offProduct)) return null;
   return {
-    id: `off-${product.code || crypto.randomUUID()}`,
+    id: `off-${offProduct.code || crypto.randomUUID()}`,
     name,
-    brand: product.brands?.split(",")[0]?.trim(),
-    barcode: product.code,
-    quantityLabel: product.quantity,
-    servingLabel: product.serving_size,
-    servingGrams: numberValue(product.serving_quantity) || undefined,
-    packageGrams: numberValue(product.product_quantity) || undefined,
-    imageUrl: product.image_front_small_url || product.image_front_url,
+    brand: offProduct.brands?.split(",")[0]?.trim(),
+    barcode: offProduct.code,
+    quantityLabel: offProduct.quantity,
+    servingLabel: offProduct.serving_size,
+    servingGrams: numberValue(offProduct.serving_quantity) || undefined,
+    packageGrams: numberValue(offProduct.product_quantity) || undefined,
+    imageUrl: offProduct.image_front_small_url || offProduct.image_front_url,
     nutrientsPer100: nutrition,
     source: "open-food-facts",
   };
@@ -68,9 +109,12 @@ function mapProduct(product: OffProduct): Food | null {
 export async function findByBarcode(barcode: string): Promise<Food | null> {
   const response = await fetch(`/api/food-search?barcode=${encodeURIComponent(barcode)}`);
   if (!response.ok) throw new Error("Product lookup failed");
-  const data = await response.json();
-  if (!data.product) return null;
-  return mapProduct({ ...data.product, code: data.product.code || barcode });
+  const data: unknown = await response.json();
+  if (!data || typeof data !== "object") return null;
+  const record = data as { products?: unknown; product?: unknown };
+  const products = Array.isArray(record.products) ? record.products : record.product ? [record.product] : [];
+  return products.filter((product): product is Record<string, unknown> => Boolean(product) && typeof product === "object" && !Array.isArray(product))
+    .map((product) => mapProduct({ ...product, code: product.code || barcode } as OffProduct | FdcProduct)).find(Boolean) || null;
 }
 
 export async function searchOpenFoodFacts(query: string): Promise<Food[]> {

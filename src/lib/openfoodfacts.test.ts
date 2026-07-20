@@ -34,4 +34,31 @@ describe("searchOpenFoodFacts", () => {
     })]);
     expect(fetchMock.mock.calls[0][0]).toBe("/api/food-search?q=zero%20cola");
   });
+
+  it("maps USDA FoodData Central branded results into the shared food model", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ products: [{
+        _source: "food-data-central",
+        fdcId: 123,
+        description: "Protein Bar, Chocolate",
+        brandOwner: "Example Foods",
+        gtinUpc: "3801234567890",
+        foodNutrients: [
+          { nutrientId: 1008, value: 410 },
+          { nutrientId: 1003, value: 20 },
+          { nutrientId: 1005, value: 35 },
+          { nutrientId: 1004, value: 15 },
+        ],
+      }] }),
+    }));
+
+    const foods = await searchOpenFoodFacts("protein bar");
+
+    expect(foods[0]).toEqual(expect.objectContaining({
+      id: "fdc-123",
+      source: "food-data-central",
+      nutrientsPer100: expect.objectContaining({ calories: 410, protein: 20 }),
+    }));
+  });
 });

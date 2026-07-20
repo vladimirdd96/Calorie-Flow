@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { serverEnv } from "@/lib/env";
 
 export const runtime = "nodejs";
 
@@ -27,6 +28,11 @@ function productsFromSearchResponse(value: unknown): Record<string, unknown>[] |
       brands: Array.isArray(record.brands) ? record.brands.filter((brand): brand is string => typeof brand === "string").join(",") : record.brands,
     };
   });
+}
+
+function fdcProductsFromResponse(value: unknown): Record<string, unknown>[] {
+  if (!value || typeof value !== "object" || !Array.isArray((value as { foods?: unknown }).foods)) return [];
+  return (value as { foods: unknown[] }).foods.filter((food): food is Record<string, unknown> => Boolean(food) && typeof food === "object" && !Array.isArray(food)).map((food) => ({ ...food, _source: "food-data-central" }));
 }
 
 async function searchOpenFoodFacts(query: string): Promise<unknown> {
@@ -59,6 +65,18 @@ async function searchOpenFoodFacts(query: string): Promise<unknown> {
   throw new Error("Open Food Facts search is unavailable");
 }
 
+async function searchFoodDataCentral(query: string): Promise<Record<string, unknown>[]> {
+  if (!serverEnv.FDC_API_KEY) return [];
+  const url = new URL("https://api.nal.usda.gov/fdc/v1/foods/search");
+  url.searchParams.set("api_key", serverEnv.FDC_API_KEY);
+  url.searchParams.set("query", query);
+  url.searchParams.set("pageSize", "25");
+  url.searchParams.set("dataType", "Branded");
+  const upstream = await fetch(url, { headers: { "User-Agent": "Calorie Flow/1.0 (food-search)" }, cache: "no-store" });
+  if (!upstream.ok) return [];
+  return fdcProductsFromResponse(await upstream.json());
+}
+
 async function findProductByBarcode(barcode: string): Promise<unknown> {
   const url = new URL(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json`);
   url.searchParams.set("fields", fields);
@@ -75,7 +93,11 @@ export async function GET(request: NextRequest) {
   const barcode = normalizeBarcode(request.nextUrl.searchParams.get("barcode")?.trim() || "");
   if (barcode.length >= 8 && barcode.length <= 18) {
     try {
-      return response({ product: await findProductByBarcode(barcode) });
+      const [openFoodFactsProduct, foodDataCentralProducts] = await Promise.all([
+        findProductByBarcode(barcode).catch(() => null),
+        searchFoodDataCentral(barcode),
+      ]);
+      return response({ product: openFoodFactsProduct, products: [openFoodFactsProduct, ...foodDataCentralProducts].filter(Boolean) });
     } catch {
       return response({ error: "Online product lookup is temporarily unavailable." }, 503);
     }
@@ -87,11 +109,12 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const products = productsFromSearchResponse(await searchOpenFoodFacts(query));
-    if (!products) {
-      return response({ error: "Open Food Facts returned an invalid search response." }, 502);
-    }
-    return response({ products });
+    const [openFoodFactsProducts, foodDataCentralProducts] = await Promise.all([
+      searchOpenFoodFacts(query).then(productsFromSearchResponse).catch(() => []),
+      searchFoodDataCentral(query).catch(() => []),
+    ]);
+    if (!openFoodFactsProducts?.length && !foodDataCentralProducts.length) return response({ products: [] });
+    return response({ products: [...(openFoodFactsProducts || []), ...foodDataCentralProducts] });
   } catch {
     return response({ error: "Online food search is temporarily unavailable." }, 503);
   }

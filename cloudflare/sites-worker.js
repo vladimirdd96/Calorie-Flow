@@ -124,7 +124,27 @@ function json(body, status = 200) {
   return Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 }
 
-async function foodSearch(request) {
+function fdcProducts(value) {
+  if (!value || typeof value !== "object" || !Array.isArray(value.foods)) return [];
+  return value.foods.filter((food) => food && typeof food === "object" && !Array.isArray(food)).map((food) => ({ ...food, _source: "food-data-central" }));
+}
+
+async function searchFoodDataCentral(query, env) {
+  if (!env.FDC_API_KEY) return [];
+  const url = new URL("https://api.nal.usda.gov/fdc/v1/foods/search");
+  url.searchParams.set("api_key", env.FDC_API_KEY);
+  url.searchParams.set("query", query);
+  url.searchParams.set("pageSize", "25");
+  url.searchParams.set("dataType", "Branded");
+  try {
+    const upstream = await fetch(url, { headers: { "User-Agent": "Calorie Flow/1.0 (food-search)" } });
+    return upstream.ok ? fdcProducts(await upstream.json()) : [];
+  } catch {
+    return [];
+  }
+}
+
+async function foodSearch(request, env) {
   const requestUrl = new URL(request.url);
   const barcode = (requestUrl.searchParams.get("barcode")?.trim() || "").replace(/\D/g, "");
 
@@ -141,7 +161,9 @@ async function foodSearch(request) {
       const upstream = await fetch(productUrl, { headers: { "User-Agent": "Calorie Flow/1.0 (food-search)" } });
       if (!upstream.ok) return json({ error: "Online product lookup is temporarily unavailable." }, 503);
       const data = await upstream.json();
-      return json({ product: data?.status === 1 && data?.product ? { ...data.product, code: data.code || barcode } : null });
+      const product = data?.status === 1 && data?.product ? { ...data.product, code: data.code || barcode } : null;
+      const products = [...(product ? [product] : []), ...await searchFoodDataCentral(barcode, env)];
+      return json({ product, products });
     } catch {
       return json({ error: "Online product lookup is temporarily unavailable." }, 503);
     }
@@ -168,7 +190,8 @@ async function foodSearch(request) {
         const data = await upstream.json();
         const products = Array.isArray(data?.hits) ? data.hits : data?.products;
         if (!Array.isArray(products) || products.some((product) => !product || typeof product !== "object" || Array.isArray(product))) return json({ error: "Open Food Facts returned an invalid search response." }, 502);
-        return json({ products: products.map((product) => ({ ...product, brands: Array.isArray(product.brands) ? product.brands.filter((brand) => typeof brand === "string").join(",") : product.brands })) });
+        const normalizedProducts = products.map((product) => ({ ...product, brands: Array.isArray(product.brands) ? product.brands.filter((brand) => typeof brand === "string").join(",") : product.brands }));
+        return json({ products: [...normalizedProducts, ...await searchFoodDataCentral(query, env)] });
       }
     }
   } catch {
@@ -456,7 +479,7 @@ const worker = {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === "/api/health") return json({ status: "ok", app: "calorie-flow", runtime: "static-pwa" });
-    if (url.pathname === "/api/food-search" && request.method === "GET") return foodSearch(request);
+    if (url.pathname === "/api/food-search" && request.method === "GET") return foodSearch(request, env);
     if (url.pathname === "/api/analyze-label" && request.method === "POST") return analyzeLabel(request, env);
     if (url.pathname === "/api/coach" && request.method === "POST") return coach(request, env);
     if (request.method !== "GET" && request.method !== "HEAD") return json({ error: "Method not allowed." }, 405);

@@ -7,7 +7,7 @@ export type Nutrition = {
   sugar: number;
 };
 
-export type FoodSource = "seed" | "open-food-facts" | "ai-label" | "custom";
+export type FoodSource = "seed" | "open-food-facts" | "food-data-central" | "ai-label" | "custom";
 
 export type Food = {
   id: string;

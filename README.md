@@ -36,13 +36,14 @@ ChatGPT subscriptions and OpenAI API billing are separate. AI features need a se
 OPENAI_API_KEY=your_platform_key
 OPENAI_LABEL_MODEL=gpt-4.1-mini
 OPENAI_COACH_MODEL=gpt-5.6-sol
+FDC_API_KEY=your_data_gov_key
 ```
 
 Never prefix the OpenAI key with `NEXT_PUBLIC_`. The Worker verifies a Supabase access token before any paid AI call. Label extraction uses a strict JSON schema; the Coach uses function tools and exposes web search only for food-place requests.
 
 ## Food data and licensing
 
-Packaged-food results come from [Open Food Facts](https://world.openfoodfacts.org/), available under the Open Database License (ODbL). Calorie Flow attributes the source in the product UI and caches only foods the user actually selects. If you publish a derived combined food database, review and follow the ODbL attribution and share-alike requirements.
+Packaged-food results are aggregated from [Open Food Facts](https://world.openfoodfacts.org/) and, when configured, [USDA FoodData Central](https://fdc.nal.usda.gov/). The USDA key is server-side only. Open Food Facts is available under the Open Database License (ODbL); Calorie Flow attributes the source in the product UI and caches only foods the user actually selects. If you publish a derived combined food database, review and follow the ODbL attribution and share-alike requirements.
 
 The small bundled list contains generic reference foods and is not medical advice. Nutrition values are estimates and should be checked against the package when accuracy matters.
 
