@@ -11,11 +11,18 @@ function response(body: object, status = 200) {
   return NextResponse.json(body, { status, headers: { "Cache-Control": "private, max-age=120" } });
 }
 
-function isSearchResponse(value: unknown): value is { products: Record<string, unknown>[] } {
-  return !!value
-    && typeof value === "object"
-    && Array.isArray((value as { products?: unknown }).products)
-    && (value as { products: unknown[] }).products.every((product) => !!product && typeof product === "object" && !Array.isArray(product));
+function productsFromSearchResponse(value: unknown): Record<string, unknown>[] | null {
+  if (!value || typeof value !== "object") return null;
+  const payload = value as { hits?: unknown; products?: unknown };
+  const products = Array.isArray(payload.hits) ? payload.hits : payload.products;
+  if (!Array.isArray(products) || products.some((product) => !product || typeof product !== "object" || Array.isArray(product))) return null;
+  return products.map((product) => {
+    const record = product as Record<string, unknown>;
+    return {
+      ...record,
+      brands: Array.isArray(record.brands) ? record.brands.filter((brand): brand is string => typeof brand === "string").join(",") : record.brands,
+    };
+  });
 }
 
 async function searchOpenFoodFacts(query: string): Promise<unknown> {
@@ -26,17 +33,21 @@ async function searchOpenFoodFacts(query: string): Promise<unknown> {
     page_size: "50",
     fields,
   });
-  const url = `https://world.openfoodfacts.org/cgi/search.pl?${params}`;
+  const searchUrl = new URL("https://search.openfoodfacts.org/search");
+  searchUrl.searchParams.set("q", query);
+  searchUrl.searchParams.set("page_size", "50");
+  searchUrl.searchParams.set("fields", fields);
+  searchUrl.searchParams.set("boost_phrase", "true");
+  const legacyUrl = `https://world.openfoodfacts.org/cgi/search.pl?${params}`;
 
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  for (const url of [searchUrl, legacyUrl]) {
     const upstream = await fetch(url, {
       headers: { "User-Agent": "Calorie Flow/1.0 (food-search)" },
       cache: "no-store",
     });
     if (upstream.ok) return upstream.json();
-    if (upstream.status < 500 || attempt === 1) throw new Error(`Open Food Facts returned ${upstream.status}`);
-    await new Promise((resolve) => setTimeout(resolve, 500));
   }
+  throw new Error("Open Food Facts search is unavailable");
 }
 
 export async function GET(request: NextRequest) {
@@ -46,11 +57,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const data = await searchOpenFoodFacts(query);
-    if (!isSearchResponse(data)) {
+    const products = productsFromSearchResponse(await searchOpenFoodFacts(query));
+    if (!products) {
       return response({ error: "Open Food Facts returned an invalid search response." }, 502);
     }
-    return response(data);
+    return response({ products });
   } catch {
     return response({ error: "Online food search is temporarily unavailable." }, 503);
   }

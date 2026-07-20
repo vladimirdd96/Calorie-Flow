@@ -111,21 +111,25 @@ async function foodSearch(request) {
     "code", "product_name", "generic_name", "brands", "quantity", "serving_size", "serving_quantity",
     "product_quantity", "image_front_small_url", "image_front_url", "nutrition_data_per", "nutriments",
   ].join(",");
-  const params = new URLSearchParams({ action: "process", json: "true", search_terms: query, page_size: "50", fields });
-  const url = `https://world.openfoodfacts.org/cgi/search.pl?${params}`;
+  const searchUrl = new URL("https://search.openfoodfacts.org/search");
+  searchUrl.searchParams.set("q", query);
+  searchUrl.searchParams.set("page_size", "50");
+  searchUrl.searchParams.set("fields", fields);
+  searchUrl.searchParams.set("boost_phrase", "true");
+  const legacyParams = new URLSearchParams({ action: "process", json: "true", search_terms: query, page_size: "50", fields });
+  const legacyUrl = `https://world.openfoodfacts.org/cgi/search.pl?${legacyParams}`;
 
   try {
-    for (let attempt = 0; attempt < 2; attempt += 1) {
+    for (const url of [searchUrl, legacyUrl]) {
       const upstream = await fetch(url, {
         headers: { "User-Agent": "Calorie Flow/1.0 (food-search)" },
       });
       if (upstream.ok) {
         const data = await upstream.json();
-        if (!data || !Array.isArray(data.products) || data.products.some((product) => !product || typeof product !== "object" || Array.isArray(product))) return json({ error: "Open Food Facts returned an invalid search response." }, 502);
-        return json(data);
+        const products = Array.isArray(data?.hits) ? data.hits : data?.products;
+        if (!Array.isArray(products) || products.some((product) => !product || typeof product !== "object" || Array.isArray(product))) return json({ error: "Open Food Facts returned an invalid search response." }, 502);
+        return json({ products: products.map((product) => ({ ...product, brands: Array.isArray(product.brands) ? product.brands.filter((brand) => typeof brand === "string").join(",") : product.brands })) });
       }
-      if (upstream.status < 500 || attempt === 1) break;
-      await new Promise((resolve) => setTimeout(resolve, 500));
     }
   } catch {
     // Preserve local and custom-food search when the optional service is offline.
