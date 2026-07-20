@@ -1,0 +1,20 @@
+{
+  "name": "Calorie Flow",
+  "short_name": "Calorie Flow",
+  "description": "Fast, private calorie tracking without the clutter.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#08110f",
+  "theme_color": "#08110f",
+  "orientation": "portrait-primary",
+  "categories": ["health", "fitness", "lifestyle"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Log food", "short_name": "Log", "url": "/?add=1", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Scan barcode", "short_name": "Scan", "url": "/?scan=1", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
