@@ -183,6 +183,14 @@ p { color: var(--muted); line-height: 1.55; }
 .coach-check-in > svg { color: var(--muted-2); }
 .coach-check-in:hover strong, .coach-check-in:focus-visible strong { color: var(--mint); }
 .profile-form, .onboarding-form { display: grid; gap: 18px; }
+.targets-section, .display-section { margin-bottom: 34px; }
+.target-summary { display: grid; gap: 14px; padding: 18px; border-color: var(--border-strong); }
+.target-summary > div:first-child { display: flex; justify-content: space-between; align-items: baseline; }
+.target-summary > div:first-child span { color: var(--muted); font-size: 11px; }
+.target-summary > div:first-child strong { font-size: 25px; }
+.target-summary strong small { color: var(--muted); font-size: 10px; }
+.target-edit-button { min-height: 40px; padding: 0 13px; font-size: 12px; }
+.target-editor-actions { display: flex; justify-content: flex-end; gap: 10px; }
 .form-grid { display: grid; gap: 12px; }
 .form-grid.two { grid-template-columns: 1fr 1fr; }
 .form-grid.three { grid-template-columns: repeat(3, 1fr); }

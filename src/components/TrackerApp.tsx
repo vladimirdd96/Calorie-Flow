@@ -378,7 +378,7 @@ function InsightsView({ meals, profile }: { meals: Meal[]; profile: Profile }) {
   );
 }
 
-function TargetEditor({ profile, onSave, onboarding = false }: { profile: Profile; onSave: (profile: Profile) => void; onboarding?: boolean }) {
+function TargetEditor({ profile, onSave, onCancel, onboarding = false }: { profile: Profile; onSave: (profile: Profile) => void; onCancel?: () => void; onboarding?: boolean }) {
   const [draft, setDraft] = useState(profile);
   const calculatedCalories = calculateCalories(draft);
   const calculatedMacros = calculateMacroTargets(calculatedCalories, draft.weightKg, draft.dietPreset);
@@ -407,10 +407,30 @@ function TargetEditor({ profile, onSave, onboarding = false }: { profile: Profil
         {!draft.hideCalories && <div><span>Starting target</span><strong>{calculatedCalories.toLocaleString()} <small>kcal</small></strong></div>}
         <div className="target-macros"><span>P <strong>{calculatedMacros.protein} g</strong></span><span>C <strong>{calculatedMacros.carbs} g</strong></span><span>F <strong>{calculatedMacros.fat} g</strong></span></div>
       </div>
-      {!onboarding && <div className="field-block"><span>Display</span><button className={`display-preference ${draft.hideCalories ? "active" : ""}`} type="button" aria-pressed={draft.hideCalories} onClick={() => update("hideCalories", !draft.hideCalories)}><span><strong>{draft.hideCalories ? "Calories hidden" : "Show calorie numbers"}</strong><small>{draft.hideCalories ? "Macros and nutrients only, throughout the app" : "Turn this off for a nutrient-only view"}</small></span><span className="toggle" /></button></div>}
-      <button className="primary-button full" onClick={save}>{onboarding ? "Start tracking" : "Save targets"}<ChevronRight size={18} /></button>
+      {onboarding ? <button className="primary-button full" onClick={save}>Start tracking<ChevronRight size={18} /></button> : <div className="target-editor-actions"><button className="secondary-button" type="button" onClick={onCancel}>Cancel</button><button className="primary-button" type="button" onClick={save}>Save adjustments<ChevronRight size={18} /></button></div>}
       <p className="form-footnote">Calculated with Mifflin–St Jeor. Treat the result as a starting estimate and adjust from your weight trend.</p>
     </div>
+  );
+}
+
+function TargetSummary({ profile, onEdit }: { profile: Profile; onEdit: () => void }) {
+  return (
+    <section className="targets-section">
+      <div className="section-heading"><div><span className="eyebrow">Your daily plan</span><h2>Targets</h2></div><button className="secondary-button target-edit-button" type="button" onClick={onEdit}><Pencil size={16} />Adjust targets</button></div>
+      <div className="target-summary card">
+        {!profile.hideCalories && <div><span>Energy</span><strong>{profile.calorieTarget.toLocaleString()} <small>kcal</small></strong></div>}
+        <div className="target-macros"><span>Protein <strong>{profile.proteinTarget} g</strong></span><span>Carbs <strong>{profile.carbsTarget} g</strong></span><span>Fat <strong>{profile.fatTarget} g</strong></span></div>
+      </div>
+    </section>
+  );
+}
+
+function DisplayPreferences({ hideCalories, onChange }: { hideCalories: boolean; onChange: (hideCalories: boolean) => void }) {
+  return (
+    <section className="display-section">
+      <div className="section-heading"><div><span className="eyebrow">App display</span><h2>Calorie visibility</h2></div></div>
+      <button className={`display-preference ${hideCalories ? "active" : ""}`} type="button" aria-pressed={hideCalories} onClick={() => onChange(!hideCalories)}><span><strong>{hideCalories ? "Calories are hidden" : "Calories are visible"}</strong><small>{hideCalories ? "Your diary and insights focus on macros and nutrients." : "Hide calorie numbers throughout the app whenever you prefer."}</small></span><span className="toggle" /></button>
+    </section>
   );
 }
 
@@ -511,6 +531,7 @@ function ProfileView({
   onSignOut: () => Promise<void>;
 }) {
   const importRef = useRef<HTMLInputElement>(null);
+  const [editingTargets, setEditingTargets] = useState(false);
   const download = async () => {
     const data = await exportData();
     const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
@@ -527,8 +548,10 @@ function ProfileView({
   return (
     <main className="page">
       <header className="page-header"><span className="eyebrow">Your plan</span><h1>Targets</h1><p>Set them once. Everything else stays out of the way.</p></header>
+      <TargetSummary profile={profile} onEdit={() => setEditingTargets(true)} />
+      {editingTargets && <TargetEditor profile={profile} onSave={(next) => { onSave(next); setEditingTargets(false); }} onCancel={() => setEditingTargets(false)} />}
+      <DisplayPreferences hideCalories={profile.hideCalories} onChange={(hideCalories) => onSave({ ...profile, hideCalories })} />
       <AccountCard configured={configured} user={user} syncState={syncState} onSendMagicLink={onSendMagicLink} onSignInWithProvider={onSignInWithProvider} onSignOut={onSignOut} />
-      <TargetEditor profile={profile} onSave={onSave} />
       <section className="data-tools">
         <div className="section-heading"><div><span className="eyebrow">Your data</span><h2>Portable by design</h2></div></div>
         <div className="card tool-list">
