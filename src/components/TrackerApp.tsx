@@ -24,6 +24,7 @@ import {
   ScanLine,
   Search,
   Send,
+  Share2,
   ShieldCheck,
   Sparkles,
   Moon,
@@ -111,6 +112,7 @@ type ThemeMode = typeof themeModes[keyof typeof themeModes];
 
 const GROCERY_ITEMS_SETTING = "coach:grocery-items";
 const THEME_SETTING = "appearance:theme";
+const HOME_SCREEN_PROMPT_SETTING = "homeScreenPromptCompleted";
 const FOCUSABLE_SELECTOR = [
   "button:not([disabled])",
   "input:not([disabled]):not([type='hidden'])",
@@ -126,6 +128,14 @@ function BrandMark({ large = false }: { large?: boolean }) {
 
 function isThemeMode(value: unknown): value is ThemeMode {
   return value === themeModes.light || value === themeModes.dark;
+}
+
+function isStandaloneDisplay() {
+  return window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+}
+
+function isMobileDevice() {
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
 }
 
 function useModalFocus(onClose?: () => void) {
@@ -330,6 +340,18 @@ function EmptyMeals({ onAdd }: { onAdd: () => void }) {
   );
 }
 
+function HomeScreenPrompt() {
+  return (
+    <section className="home-screen-prompt card" aria-labelledby="home-screen-prompt-title">
+      <div className="home-screen-prompt-heading">
+        <span className="action-icon mint"><Share2 size={19} /></span>
+        <div><strong id="home-screen-prompt-title">Keep Calorie Flow close</strong><p>Add it to your Home Screen for one-tap logging, even when you’re offline.</p></div>
+      </div>
+      <div className="home-screen-prompt-steps"><span><b>1</b>Tap Share</span><span><b>2</b>Choose <strong>Add to Home Screen</strong></span></div>
+    </section>
+  );
+}
+
 function TodayView({
   profile,
   meals,
@@ -339,6 +361,7 @@ function TodayView({
   onOpenCoach,
   onDelete,
   syncLabel,
+  showHomeScreenPrompt,
 }: {
   profile: Profile;
   meals: Meal[];
@@ -348,6 +371,7 @@ function TodayView({
   onOpenCoach: () => void;
   onDelete: (id: string) => void;
   syncLabel: string;
+  showHomeScreenPrompt: boolean;
 }) {
   const total = useMemo(() => sumNutrition(meals.map((meal) => meal.nutrition)), [meals]);
   const remaining = Math.max(0, profile.calorieTarget - total.calories);
@@ -364,6 +388,8 @@ function TodayView({
         <button onClick={() => onDateChange(localDateKey())}><strong>{dayLabel(dateKey)}</strong><span>{new Date(`${dateKey}T12:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric" })}</span></button>
         <button className="icon-button ghost" disabled={dateKey >= localDateKey()} onClick={() => onDateChange(changeDate(dateKey, 1))} aria-label="Next day"><ChevronRight /></button>
       </div>
+
+      {showHomeScreenPrompt && <HomeScreenPrompt />}
 
       <section className="hero-grid">
         <div className="hero-card card">
@@ -1523,6 +1549,7 @@ export function TrackerApp() {
   const [syncState, setSyncState] = useState<SyncState>("local");
   const [syncAttempt, setSyncAttempt] = useState(0);
   const [theme, setTheme] = useState<ThemeMode>(themeModes.light);
+  const [showHomeScreenPrompt, setShowHomeScreenPrompt] = useState(false);
   const [undoMeal, setUndoMeal] = useState<{ meal: Meal; timerId: number }>();
   const syncIdentityRef = useRef("");
   const syncMutationRef = useRef(0);
@@ -1552,6 +1579,20 @@ export function TrackerApp() {
     }).catch(() => undefined);
     return () => { active = false; };
   }, []);
+  useEffect(() => {
+    if (!ready || !isMobileDevice()) return;
+    if (isStandaloneDisplay()) {
+      void setSetting(HOME_SCREEN_PROMPT_SETTING, true);
+      return;
+    }
+    let active = true;
+    getSetting<boolean>(HOME_SCREEN_PROMPT_SETTING).then((completed) => {
+      if (active) setShowHomeScreenPrompt(completed !== true);
+    }).catch(() => {
+      if (active) setShowHomeScreenPrompt(true);
+    });
+    return () => { active = false; };
+  }, [ready]);
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
   useEffect(() => {
     const retry = () => { cloudWriteFailedRef.current = false; syncIdentityRef.current = ""; setSyncAttempt((value) => value + 1); };
@@ -1738,7 +1779,7 @@ export function TrackerApp() {
     <div className="app-shell">
       <div className="ambient one" /><div className="ambient two" />
       <div className="content-shell" inert={modalOpen} aria-hidden={modalOpen || undefined}>
-        {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={() => openAdd()} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} />}
+        {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={() => openAdd()} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} />}
         {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={openAdd} />}
         {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} onOpenAccount={() => setTab("profile")} onOpenAdd={openAdd} />}
         {tab === "insights" && <InsightsView meals={meals} profile={profile} />}
