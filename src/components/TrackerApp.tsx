@@ -1005,7 +1005,7 @@ function groceryItemsFromReply(content: string) {
     .slice(0, 24);
 }
 
-function CoachView({ configured, user, onOpenAccount, hideCalories }: { configured: boolean; user: CloudUser | null; onOpenAccount: () => void; hideCalories: boolean }) {
+function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }: { configured: boolean; user: CloudUser | null; onOpenAccount: () => void; onOpenAdd: (view: AddView) => void; hideCalories: boolean }) {
   const [messages, setMessages] = useState<DisplayCoachMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
@@ -1112,7 +1112,7 @@ function CoachView({ configured, user, onOpenAccount, hideCalories }: { configur
       {section === "chat" && <>
         <div className="coach-scope"><ShieldCheck size={15} /><span>{hideCalories ? "Food and nutrition only" : "Food, calories and nutrition"} · recipes and grocery lists are saved only when you choose</span></div>
         <section className="coach-thread" aria-live="polite">
-          {messages.length === 0 && <div className="coach-welcome"><span className="coach-orb"><Sparkles /></span><h2>What should we make?</h2><p>Talk through dinner, use up what you have, plan meals around your targets, and turn a good idea into a grocery list.</p><div className="coach-starters">{starters.map((starter) => <button key={starter} onClick={() => send(starter)}>{starter}</button>)}</div></div>}
+          {messages.length === 0 && <div className="coach-welcome"><span className="coach-orb"><Sparkles /></span><h2>What should we make?</h2><p>Talk through dinner, use up what you have, or log a packaged food by scanning its barcode or photographing its nutrition label.</p><div className="coach-log-actions"><button onClick={() => onOpenAdd("scan")}><ScanLine size={16} />Scan barcode</button><button onClick={() => onOpenAdd("label")}><Camera size={16} />Read nutrition label</button></div><div className="coach-starters">{starters.map((starter) => <button key={starter} onClick={() => send(starter)}>{starter}</button>)}</div></div>}
           {messages.map((message) => { const groceries = message.role === "assistant" ? groceryItemsFromReply(message.content) : []; return <article key={message.id} className={`coach-message ${message.role}`}><span>{message.role === "assistant" ? "Coach" : "You"}</span><p>{message.content}</p>{groceries.length > 0 && <button className="add-groceries" onClick={() => addGroceries(groceries)}><ListChecks size={15} />Add {groceries.length} to groceries</button>}{!!message.sources?.length && <div className="coach-sources"><strong>Sources</strong>{message.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.title}</a>)}</div>}</article>; })}
           {loading && <div className="coach-typing"><i /><i /><i /><span>Coach is thinking through it…</span></div>}
           {error && <div className="inline-alert error"><Info size={17} /><span>{error}</span></div>}
@@ -1393,7 +1393,7 @@ export function TrackerApp() {
       <div className="content-shell">
         {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={() => openAdd()} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} />}
         {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={openAdd} />}
-        {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} onOpenAccount={() => setTab("profile")} />}
+        {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} onOpenAccount={() => setTab("profile")} onOpenAdd={openAdd} />}
         {tab === "insights" && <InsightsView meals={meals} profile={profile} />}
         {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onExport={exportBackup} onImport={restoreBackup} configured={auth.configured} user={auth.user} syncState={auth.user ? syncState : "local"} onSendMagicLink={auth.sendMagicLink} onSignInWithProvider={auth.signInWithProvider} onSignOut={signOut} />}
       </div>

@@ -307,6 +307,9 @@ p { color: var(--muted); line-height: 1.55; }
 .coach-orb { width: 62px; height: 62px; display: grid; place-items: center; margin: 0 auto 18px; border-radius: 22px; color: var(--mint); background: linear-gradient(145deg, rgba(125,255,213,.13), rgba(79,183,255,.08)); border: 1px solid var(--border-strong); box-shadow: 0 0 45px rgba(51,214,195,.08); }
 .coach-welcome h2 { font-size: 24px; }
 .coach-welcome p { max-width: 520px; margin: 10px auto 20px; font-size: 12px; }
+.coach-log-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 14px; }
+.coach-log-actions button { min-height: 38px; display: inline-flex; align-items: center; gap: 7px; padding: 0 13px; border: 1px solid var(--border-strong); border-radius: 999px; color: var(--mint); background: rgba(125,255,213,.08); font-size: 10px; font-weight: 800; }
+.coach-log-actions button:hover, .coach-log-actions button:focus-visible { background: rgba(125,255,213,.15); }
 .coach-starters { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .coach-starters button { min-height: 38px; padding: 0 13px; border: 1px solid var(--border); border-radius: 999px; color: var(--muted); background: rgba(18,32,29,.72); font-size: 10px; }
 .coach-starters button:hover { color: var(--mint); border-color: var(--border-strong); }
