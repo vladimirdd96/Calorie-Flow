@@ -245,7 +245,7 @@ p { color: var(--muted); line-height: 1.55; }
 .data-tools > summary::marker { content: ""; }
 .data-tools[open] > summary { margin-bottom: 10px; color: var(--text); }
 .tool-list { overflow: hidden; }
-.tool-list > button { width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; text-align: left; padding: 15px; border: 0; background: transparent; }
+.tool-list > button, .restore-tools > button { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; text-align: left; padding: 15px; border: 0; background: transparent; }
 .tool-list > button + button { border-top: 1px solid var(--border); }
 .tool-list > button > svg:first-child { color: var(--mint); }
 .tool-list span { display: grid; gap: 3px; }
@@ -254,7 +254,7 @@ p { color: var(--muted); line-height: 1.55; }
 .restore-tools { border-top: 1px solid var(--border); }
 .restore-mode { display: flex; flex-wrap: wrap; gap: 8px 14px; padding: 11px 15px 4px 46px; color: var(--muted); font-size: 10px; }
 .restore-mode label { display: inline-flex; align-items: center; gap: 5px; }
-.restore-mode input { accent-color: var(--mint); }
+.restore-mode input { all: revert; width: 18px; height: 18px; margin: 0; accent-color: var(--mint); }
 .restore-tools > button { border-top: 0; }
 .backup-notice { margin: 9px 4px 0; color: var(--muted); font-size: 10px; }
 .account-section { margin-bottom: 34px; }
