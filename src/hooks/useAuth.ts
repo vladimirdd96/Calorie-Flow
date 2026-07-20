@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { cloudSyncConfigured, getSupabase, type CloudUser } from "@/lib/supabase";
+import { cloudSyncConfigured, getSupabase, type CloudUser, type SocialAuthProvider } from "@/lib/supabase";
 
 export function useAuth() {
   const [user, setUser] = useState<CloudUser | null>(null);
@@ -43,6 +43,16 @@ export function useAuth() {
     if (error) throw error;
   }, []);
 
+  const signInWithProvider = useCallback(async (provider: SocialAuthProvider) => {
+    const supabase = getSupabase();
+    if (!supabase) throw new Error("Cloud sync is not configured yet.");
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: window.location.origin },
+    });
+    if (error) throw error;
+  }, []);
+
   const signOut = useCallback(async () => {
     const supabase = getSupabase();
     if (!supabase) return;
@@ -50,5 +60,5 @@ export function useAuth() {
     if (error) throw error;
   }, []);
 
-  return { configured: cloudSyncConfigured, ready, user, sendMagicLink, signOut };
+  return { configured: cloudSyncConfigured, ready, user, sendMagicLink, signInWithProvider, signOut };
 }

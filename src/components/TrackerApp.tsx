@@ -70,7 +70,7 @@ import {
   sumNutrition,
 } from "@/lib/nutrition";
 import { findByBarcode, searchOpenFoodFacts } from "@/lib/openfoodfacts";
-import { getSupabase, type CloudUser } from "@/lib/supabase";
+import { getSupabase, type CloudUser, type SocialAuthProvider } from "@/lib/supabase";
 import type {
   ActivityLevel,
   CoachMessage,
@@ -397,17 +397,28 @@ function AccountCard({
   user,
   syncState,
   onSendMagicLink,
+  onSignInWithProvider,
   onSignOut,
 }: {
   configured: boolean;
   user: CloudUser | null;
   syncState: SyncState;
   onSendMagicLink: (email: string) => Promise<void>;
+  onSignInWithProvider: (provider: SocialAuthProvider) => Promise<void>;
   onSignOut: () => Promise<void>;
 }) {
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
+  const signInWithProvider = async (provider: SocialAuthProvider) => {
+    setBusy(true); setNotice("");
+    try {
+      await onSignInWithProvider(provider);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : `Could not start ${provider} sign-in.`);
+      setBusy(false);
+    }
+  };
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!email.trim()) return;
@@ -444,6 +455,11 @@ function AccountCard({
               <label><span>Email</span><input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" /></label>
               <button className="primary-button" type="submit" disabled={busy}><Mail size={17} />{busy ? "Sending…" : "Email sign-in link"}</button>
             </form>
+            <div className="account-divider"><span>or</span></div>
+            <div className="social-auth-buttons">
+              <button className="secondary-button" type="button" disabled={busy} onClick={() => signInWithProvider("google")}><span className="provider-mark google" aria-hidden="true">G</span>Continue with Google</button>
+              <button className="secondary-button" type="button" disabled={busy} onClick={() => signInWithProvider("apple")}><span className="provider-mark apple" aria-hidden="true"></span>Continue with Apple</button>
+            </div>
             {notice && <p className="account-notice">{notice}</p>}
           </>
         )}
@@ -460,6 +476,7 @@ function ProfileView({
   user,
   syncState,
   onSendMagicLink,
+  onSignInWithProvider,
   onSignOut,
 }: {
   profile: Profile;
@@ -469,6 +486,7 @@ function ProfileView({
   user: CloudUser | null;
   syncState: SyncState;
   onSendMagicLink: (email: string) => Promise<void>;
+  onSignInWithProvider: (provider: SocialAuthProvider) => Promise<void>;
   onSignOut: () => Promise<void>;
 }) {
   const importRef = useRef<HTMLInputElement>(null);
@@ -488,7 +506,7 @@ function ProfileView({
   return (
     <main className="page">
       <header className="page-header"><span className="eyebrow">Your plan</span><h1>Targets</h1><p>Set them once. Everything else stays out of the way.</p></header>
-      <AccountCard configured={configured} user={user} syncState={syncState} onSendMagicLink={onSendMagicLink} onSignOut={onSignOut} />
+      <AccountCard configured={configured} user={user} syncState={syncState} onSendMagicLink={onSendMagicLink} onSignInWithProvider={onSignInWithProvider} onSignOut={onSignOut} />
       <TargetEditor profile={profile} onSave={onSave} />
       <section className="data-tools">
         <div className="section-heading"><div><span className="eyebrow">Your data</span><h2>Portable by design</h2></div></div>
@@ -1081,7 +1099,7 @@ export function TrackerApp() {
         {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={() => openAdd("search")} />}
         {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} onOpenAccount={() => setTab("profile")} />}
         {tab === "insights" && <InsightsView meals={meals} profile={profile} />}
-        {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onImport={restoreBackup} configured={auth.configured} user={auth.user} syncState={auth.user ? syncState : "local"} onSendMagicLink={auth.sendMagicLink} onSignOut={signOut} />}
+        {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onImport={restoreBackup} configured={auth.configured} user={auth.user} syncState={auth.user ? syncState : "local"} onSendMagicLink={auth.sendMagicLink} onSignInWithProvider={auth.signInWithProvider} onSignOut={signOut} />}
       </div>
       <BottomNav tab={tab} onChange={setTab} onAdd={() => openAdd()} />
       {adding && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); }} wide>{directFood ? <PortionSheet food={directFood} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} onClose={() => setAdding(false)} onLog={logMeal} />}</Sheet>}

@@ -36,7 +36,23 @@ OPENAI_LABEL_MODEL=gpt-4.1-mini
 
 The OpenAI key stays server-side. A ChatGPT subscription does not include API usage, so the project needs an API key from the OpenAI Platform account.
 
-## 4. Verify
+## 4. Configure account providers
+
+Email magic links, Google, and Apple sign-in all create the same Supabase user account. The app keeps each account's profile, meals, foods, and Coach history isolated through Row Level Security.
+
+In **Authentication → URL Configuration**, add each deployed app origin to the redirect allow list, including `http://localhost:3000/**` for development and `https://calorie-flow.vladimirdd96.chatgpt.site/**` for the current production site.
+
+To enable Google, create a Web OAuth client in Google Cloud and add this authorized redirect URI:
+
+```text
+https://ujuccgqmzrxeqmaucnbm.supabase.co/auth/v1/callback
+```
+
+Copy its client ID and secret to **Authentication → Sign In / Up → Google** in Supabase.
+
+To enable Apple, configure a Services ID and signing key in Apple Developer, then use the same Supabase callback URL above. Add the Services ID, Team ID, Key ID, and generated secret to **Authentication → Sign In / Up → Apple**. Apple web OAuth secrets expire every six months, so schedule their rotation.
+
+## 5. Verify
 
 1. Request a sign-in link from **Targets → Account & sync**.
 2. Log a meal, then sign in on another device and confirm it appears.
@@ -44,7 +60,7 @@ The OpenAI key stays server-side. A ChatGPT subscription does not include API us
 4. Ask “Find a high-protein lunch near Sofia” to verify food-place web search.
 5. Ask the Coach to write code; it should decline and redirect to nutrition.
 
-## 5. Enable GitHub deployments
+## 6. Enable GitHub deployments
 
 The `Deploy to Cloudflare` workflow deploys the Worker after every push to `main`.
 Create a GitHub Actions environment named `production`, then add these environment secrets:

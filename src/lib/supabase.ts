@@ -1,4 +1,4 @@
-import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
+import { createClient, type Provider, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { publicEnv } from "@/lib/env";
 
 const supabaseUrl = publicEnv.NEXT_PUBLIC_SUPABASE_URL;
@@ -24,3 +24,4 @@ export function getSupabase() {
 }
 
 export type CloudUser = User;
+export type SocialAuthProvider = Extract<Provider, "apple" | "google">;
