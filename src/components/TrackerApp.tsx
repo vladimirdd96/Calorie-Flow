@@ -92,7 +92,6 @@ type AddView = "start" | "search" | "scan" | "label" | "manual";
 type SyncState = "local" | "syncing" | "synced" | "offline" | "error";
 type AuthMode = "sign-in" | "register" | "forgot-password" | "update-password";
 
-const AUTH_GATE_COMPLETE_KEY = "authGateComplete";
 
 const DEFAULT_PROFILE: Profile = {
   name: "",
@@ -956,7 +955,6 @@ function AuthGateway({
   onRequestPasswordReset,
   onUpdatePassword,
   passwordRecovery,
-  onContinueAsGuest,
 }: {
   configured: boolean;
   onSignIn: (email: string, password: string) => Promise<void>;
@@ -965,7 +963,6 @@ function AuthGateway({
   onRequestPasswordReset: (email: string) => Promise<void>;
   onUpdatePassword: (password: string) => Promise<void>;
   passwordRecovery: boolean;
-  onContinueAsGuest: () => void;
 }) {
   const [mode, setMode] = useState<AuthMode>(passwordRecovery ? "update-password" : "sign-in");
   const [email, setEmail] = useState("");
@@ -1032,7 +1029,7 @@ function AuthGateway({
           {!isPasswordReset && <><div className="account-divider"><span>or</span></div><button className="secondary-button auth-google" type="button" disabled={busy} onClick={signInWithGoogle}><span className="provider-mark google" aria-hidden="true">G</span>Continue with Google</button></>}
           {notice && <p className="account-notice" role="status">{notice}</p>}
         </>}
-        {!isPasswordReset && <><p className="auth-switch">{isRegistering ? "Already have an account?" : "New to Calorie Flow?"} <button type="button" onClick={() => { setMode(isRegistering ? "sign-in" : "register"); setNotice(""); }}>{isRegistering ? "Sign in" : "Create an account"}</button></p>{mode === "sign-in" && <button className="auth-guest auth-recovery" type="button" onClick={() => { setMode("forgot-password"); setNotice(""); }}>Forgot your password?</button>}<button className="text-button auth-guest" type="button" onClick={onContinueAsGuest}>Continue without an account</button><p className="form-footnote">Guest data stays on this device. You can create an account later in Targets.</p></>}
+        {!isPasswordReset && <><p className="auth-switch">{isRegistering ? "Already have an account?" : "New to Calorie Flow?"} <button type="button" onClick={() => { setMode(isRegistering ? "sign-in" : "register"); setNotice(""); }}>{isRegistering ? "Sign in" : "Create an account"}</button></p>{mode === "sign-in" && <button className="auth-guest auth-recovery" type="button" onClick={() => { setMode("forgot-password"); setNotice(""); }}>Forgot your password?</button>}</>}
         {isPasswordReset && <button className="text-button auth-guest" type="button" onClick={() => { setMode("sign-in"); setNotice(""); }}>Back to sign in</button>}
       </section>
     </main>
@@ -1053,8 +1050,6 @@ export function TrackerApp() {
   const [toast, setToast] = useState("");
   const [syncState, setSyncState] = useState<SyncState>("local");
   const [syncAttempt, setSyncAttempt] = useState(0);
-  const [authGateReady, setAuthGateReady] = useState(false);
-  const [showAuthGateway, setShowAuthGateway] = useState(false);
   const syncIdentityRef = useRef("");
 
   const refresh = useCallback(async () => {
@@ -1071,13 +1066,6 @@ export function TrackerApp() {
     if (params.has("scan")) { setInitialAddView("scan"); setAdding(true); }
     else if (params.has("add")) setAdding(true);
   }, [refresh]);
-  useEffect(() => {
-    const completed = window.localStorage.getItem(AUTH_GATE_COMPLETE_KEY) === "true";
-    // A signed-in session always takes precedence over a previous guest choice.
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- Hydrate a browser-only preference after mount.
-    setShowAuthGateway(!completed && !auth.user);
-    setAuthGateReady(true);
-  }, [auth.user]);
   useEffect(() => { if (!toast) return; const timer = window.setTimeout(() => setToast(""), 2800); return () => window.clearTimeout(timer); }, [toast]);
   useEffect(() => {
     const retry = () => { syncIdentityRef.current = ""; setSyncAttempt((value) => value + 1); };
@@ -1193,8 +1181,8 @@ export function TrackerApp() {
     error: "Sync needs attention",
   };
 
-  if (!ready || !auth.ready || !authGateReady) return <div className="app-loading"><span className="brand-mark large">C</span><i /></div>;
-  if (showAuthGateway || auth.passwordRecovery) return <AuthGateway key={auth.passwordRecovery ? "recovery" : "standard"} configured={auth.configured} passwordRecovery={auth.passwordRecovery} onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} onContinueAsGuest={() => { window.localStorage.setItem(AUTH_GATE_COMPLETE_KEY, "true"); setShowAuthGateway(false); }} />;
+  if (!ready || !auth.ready) return <div className="app-loading"><span className="brand-mark large">C</span><i /></div>;
+  if (!auth.user || auth.passwordRecovery) return <AuthGateway key={auth.passwordRecovery ? "recovery" : "standard"} configured={auth.configured} passwordRecovery={auth.passwordRecovery} onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} />;
   return (
     <div className="app-shell">
       <div className="ambient one" /><div className="ambient two" />
