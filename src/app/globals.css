@@ -133,7 +133,6 @@ p { color: var(--muted); line-height: 1.55; }
 .page-header { padding: 34px 2px 20px; max-width: 610px; }
 .page-header .eyebrow { margin-bottom: 9px; }
 .page-header p { margin-bottom: 0; font-size: 14px; }
-.targets-page { width: min(100%, 720px); margin-inline: auto; }
 .search-launch { width: 100%; min-height: 58px; padding: 0 16px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; text-align: left; color: var(--muted); }
 .search-launch svg { color: var(--mint); }
 .search-launch kbd { width: 27px; height: 27px; display: grid; place-items: center; border-radius: 9px; background: rgba(125,255,213,.1); color: var(--mint); border: 0; }
@@ -434,8 +433,6 @@ p { color: var(--muted); line-height: 1.55; }
   .feature-actions button { min-height: 135px; }
   .summary-strip { max-width: 600px; }
   .chart-card { padding: 24px; }
-  .profile-form { max-width: 720px; }
-  .account-section { max-width: 720px; }
   .magic-link-form { grid-template-columns: 1fr auto; align-items: end; }
   .bottom-nav { bottom: 16px; }
   .sheet { border-radius: 29px; margin-bottom: 10px; max-height: calc(100vh - 40px); }

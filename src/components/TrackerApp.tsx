@@ -525,7 +525,7 @@ function ProfileView({
     await onImport(JSON.parse(await file.text()));
   };
   return (
-    <main className="page targets-page">
+    <main className="page">
       <header className="page-header"><span className="eyebrow">Your plan</span><h1>Targets</h1><p>Set them once. Everything else stays out of the way.</p></header>
       <AccountCard configured={configured} user={user} syncState={syncState} onSendMagicLink={onSendMagicLink} onSignInWithProvider={onSignInWithProvider} onSignOut={onSignOut} />
       <TargetEditor profile={profile} onSave={onSave} />
