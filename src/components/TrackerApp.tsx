@@ -96,7 +96,7 @@ import type {
 import type { BackupData } from "@/lib/db";
 
 type Tab = "today" | "search" | "coach" | "insights" | "profile";
-type AddView = "start" | "search" | "scan" | "label" | "manual";
+type AddView = "start" | "search" | "scan" | "label" | "camera" | "photo" | "manual";
 type SyncState = "local" | "syncing" | "synced" | "offline" | "error";
 type AuthMode = "sign-in" | "register" | "forgot-password" | "update-password";
 type CoachSection = "chat" | "groceries";
@@ -730,9 +730,10 @@ async function imageToDataUrl(file: File) {
   return canvas.toDataURL("image/jpeg", 0.86);
 }
 
-function LabelReader({ onFood, onClose, initialFiles = [] }: { onFood: (food: Food, questions: string[]) => void; onClose: () => void; initialFiles?: File[] }) {
+function LabelReader({ onFood, onClose, initialFiles = [], initialAction }: { onFood: (food: Food, questions: string[]) => void; onClose: () => void; initialFiles?: File[]; initialAction?: "camera" | "photo" }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const initialFilesRef = useRef(initialFiles);
+  const initialActionRef = useRef(initialAction);
   const analyzeRef = useRef<(files?: FileList | File[]) => Promise<void>>(undefined);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | undefined>(undefined);
@@ -797,7 +798,7 @@ function LabelReader({ onFood, onClose, initialFiles = [] }: { onFood: (food: Fo
     return () => { if (timer) window.clearTimeout(timer); };
   }, []);
 
-  const startCamera = async () => {
+  const startCamera = useCallback(async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
       setError("This browser does not support the camera. Choose a photo instead.");
       return;
@@ -818,7 +819,12 @@ function LabelReader({ onFood, onClose, initialFiles = [] }: { onFood: (food: Fo
       const name = caught instanceof DOMException ? caught.name : "";
       setError(name === "NotAllowedError" || name === "SecurityError" ? "Camera access is off for this site. Allow Camera in your iPhone’s Safari or Home Screen app settings, then try again." : "The camera could not start. Choose a photo instead.");
     } finally { setStarting(false); }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (initialActionRef.current === "camera") void startCamera();
+    else if (initialActionRef.current === "photo") inputRef.current?.click();
+  }, [startCamera]);
 
   const capture = async () => {
     const video = videoRef.current;
@@ -843,7 +849,7 @@ function LabelReader({ onFood, onClose, initialFiles = [] }: { onFood: (food: Fo
         {loading && <span className="analyzing"><i /><strong>Reading the package…</strong></span>}
       </div>}
       {!cameraLive && <div className="label-camera-actions"><button className="primary-button" onClick={startCamera} disabled={starting}><Camera size={18} />{starting ? "Opening camera…" : "Open rear camera"}</button><button className="secondary-button" onClick={() => inputRef.current?.click()}><Upload size={18} />Choose photo</button></div>}
-      <input ref={inputRef} className="visually-hidden-file" type="file" accept="image/*" capture="environment" multiple onChange={(event) => analyze(event.target.files || undefined)} />
+      <input ref={inputRef} className="visually-hidden-file" type="file" accept="image/*" multiple onChange={(event) => analyze(event.target.files || undefined)} />
       {error && <div className="inline-alert error"><Info size={17} /><span>{error}</span></div>}
       <div className="label-tips"><strong>For the best result</strong><ul><li>Add up to three details: nutrition table, barcode, and package size.</li><li>One photo is fine when it has everything.</li><li>You’ll confirm the amount and meal before anything is logged.</li></ul></div>
     </div>
@@ -991,7 +997,7 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, hideCalori
   };
   if (selected) return <PortionSheet food={selected} questions={questions} hideCalories={hideCalories} onLog={onLog} onClose={() => setSelected(undefined)} />;
   if (view === "scan") return <>{loading && <div className="global-loader"><i />Looking up product…</div>}<BarcodeScanner onResult={barcode} onClose={() => setView("start")} /></>;
-  if (view === "label") return <LabelReader initialFiles={pendingImages} onFood={(food, followUps) => { if (food.barcode) void barcode(food.barcode, food, followUps); else pick(food, followUps); }} onClose={() => { setPendingImages([]); setView("start"); }} />;
+  if (view === "label" || view === "camera" || view === "photo") return <LabelReader initialFiles={pendingImages} initialAction={view === "label" ? undefined : view} onFood={(food, followUps) => { if (food.barcode) void barcode(food.barcode, food, followUps); else pick(food, followUps); }} onClose={() => { setPendingImages([]); setView("start"); }} />;
   if (view === "manual") return <><ManualFood initialBarcode={unknownBarcode} hideCalories={hideCalories} onSave={pick} onClose={() => setView("start")} />{error && <div className="inline-alert error"><Info size={17} />{error}</div>}</>;
   if (view === "search") return (
     <div>
@@ -1041,6 +1047,7 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
   const [section, setSection] = useState<CoachSection>("chat");
   const [groceryItems, setGroceryItems] = useState<GroceryItem[]>([]);
   const [groceryDraft, setGroceryDraft] = useState("");
+  const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -1139,13 +1146,13 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
       {section === "chat" && <>
         <div className="coach-scope"><ShieldCheck size={15} /><span>{hideCalories ? "Food and nutrition only" : "Food, calories and nutrition"} · recipes and grocery lists are saved only when you choose</span></div>
         <section className="coach-thread" aria-live="polite">
-          {messages.length === 0 && <div className="coach-welcome"><span className="coach-orb"><Sparkles /></span><h2>What should we make?</h2><p>Talk through dinner, use up what you have, or log a packaged food by scanning its barcode or photographing its nutrition label.</p><div className="coach-log-actions"><button onClick={() => onOpenAdd("scan")}><ScanLine size={16} />Scan barcode</button><button onClick={() => onOpenAdd("label")}><Camera size={16} />Read nutrition label</button></div><div className="coach-starters">{starters.map((starter) => <button key={starter} onClick={() => send(starter)}>{starter}</button>)}</div></div>}
+          {messages.length === 0 && <div className="coach-welcome"><span className="coach-orb"><Sparkles /></span><h2>What should we make?</h2><p>Talk through dinner, use up what you have, or log a packaged food by scanning its barcode or photographing its nutrition label.</p><div className="coach-starters">{starters.map((starter) => <button key={starter} onClick={() => send(starter)}>{starter}</button>)}</div></div>}
           {messages.map((message) => { const groceries = message.role === "assistant" ? groceryItemsFromReply(message.content) : []; return <article key={message.id} className={`coach-message ${message.role}`}><span>{message.role === "assistant" ? "Coach" : "You"}</span><p>{message.content}</p>{groceries.length > 0 && <button className="add-groceries" onClick={() => addGroceries(groceries)}><ListChecks size={15} />Add {groceries.length} to groceries</button>}{!!message.sources?.length && <div className="coach-sources"><strong>Sources</strong>{message.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.title}</a>)}</div>}</article>; })}
           {loading && <div className="coach-typing"><i /><i /><i /><span>Coach is thinking through it…</span></div>}
           {error && <div className="inline-alert error"><Info size={17} /><span>{error}</span></div>}
           <div ref={endRef} />
         </section>
-        <form className="coach-composer" onSubmit={(event) => { event.preventDefault(); send(); }}><input aria-label="Message the nutrition Coach" value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={6000} placeholder="Ask about dinner, recipes, or your food log…" /><button type="submit" disabled={!draft.trim() || loading} aria-label="Send"><Send /></button></form>
+        <div className="coach-composer-wrap"><div className="coach-log-actions"><button type="button" onClick={() => onOpenAdd("scan")}><ScanLine size={16} />Scan barcode</button><button type="button" onClick={() => onOpenAdd("label")}><Camera size={16} />Read nutrition label</button></div><form className="coach-composer" onSubmit={(event) => { event.preventDefault(); send(); }}><button className="coach-attach" type="button" aria-label="Add a food package" aria-expanded={attachmentMenuOpen} onClick={() => setAttachmentMenuOpen((open) => !open)}><Plus /></button>{attachmentMenuOpen && <div className="coach-attachment-menu" role="menu" aria-label="Add a food package"><button type="button" role="menuitem" onClick={() => { setAttachmentMenuOpen(false); onOpenAdd("scan"); }}><ScanLine size={17} />Scan barcode</button><button type="button" role="menuitem" onClick={() => { setAttachmentMenuOpen(false); onOpenAdd("camera"); }}><Camera size={17} />Open camera</button><button type="button" role="menuitem" onClick={() => { setAttachmentMenuOpen(false); onOpenAdd("photo"); }}><Upload size={17} />Choose photo</button></div>}<input aria-label="Message the nutrition Coach" value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={6000} placeholder="Ask about dinner, recipes, or your food log…" /><button className="coach-send" type="submit" disabled={!draft.trim() || loading} aria-label="Send"><Send /></button></form></div>
       </>}
       {section === "groceries" && <section className="grocery-workspace"><div className="grocery-intro"><span className="coach-orb"><ListChecks /></span><div><h2>Your grocery list</h2><p>Items from Coach land here when you add them. This list stays on this device.</p></div></div><form className="grocery-composer" onSubmit={addGrocery}><input value={groceryDraft} onChange={(event) => setGroceryDraft(event.target.value)} placeholder="Add an item yourself" maxLength={120} /><button type="submit" disabled={!groceryDraft.trim()}>Add</button></form>{groceryItems.length > 0 ? <div className="grocery-list">{groceryItems.map((item) => <div key={item.id} className={item.checked ? "checked" : ""}><button className="grocery-toggle" onClick={() => updateGroceries((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, checked: !candidate.checked } : candidate))} aria-label={`Mark ${item.name} as ${item.checked ? "needed" : "picked up"}`}>{item.checked && <Check size={14} />}</button><span>{item.name}</span><button className="grocery-remove" onClick={() => updateGroceries((current) => current.filter((candidate) => candidate.id !== item.id))} aria-label={`Remove ${item.name}`}><X size={16} /></button></div>)}</div> : <div className="grocery-empty"><Package size={28} /><strong>Start with a dinner idea</strong><p>Ask Coach for a recipe or meal plan, then add the suggested ingredients here.</p><button className="secondary-button" onClick={() => setSection("chat")}><MessageCircle size={16} />Open Coach</button></div>}{groceryItems.some((item) => item.checked) && <button className="text-button muted clear-picked" onClick={() => updateGroceries((current) => current.filter((item) => !item.checked))}>Clear picked-up items</button>}</section>}
     </main>

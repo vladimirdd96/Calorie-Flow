@@ -335,7 +335,7 @@ p { color: var(--muted); line-height: 1.55; }
 .coach-orb { width: 62px; height: 62px; display: grid; place-items: center; margin: 0 auto 18px; border-radius: 22px; color: var(--mint); background: linear-gradient(145deg, rgba(125,255,213,.13), rgba(79,183,255,.08)); border: 1px solid var(--border-strong); box-shadow: 0 0 45px rgba(51,214,195,.08); }
 .coach-welcome h2 { font-size: 24px; }
 .coach-welcome p { max-width: 520px; margin: 10px auto 20px; font-size: 12px; }
-.coach-log-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 14px; }
+.coach-log-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
 .coach-log-actions button { min-height: 38px; display: inline-flex; align-items: center; gap: 7px; padding: 0 13px; border: 1px solid var(--border-strong); border-radius: 999px; color: var(--mint); background: rgba(125,255,213,.08); font-size: 10px; font-weight: 800; }
 .coach-log-actions button:hover, .coach-log-actions button:focus-visible { background: rgba(125,255,213,.15); }
 .coach-starters { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
@@ -356,11 +356,17 @@ p { color: var(--muted); line-height: 1.55; }
 .coach-typing i:nth-child(2) { animation-delay: .15s; }
 .coach-typing i:nth-child(3) { animation-delay: .3s; }
 .coach-typing span { margin-left: 6px; }
-.coach-composer { position: sticky; bottom: calc(88px + env(safe-area-inset-bottom)); z-index: 10; display: grid; grid-template-columns: 1fr 46px; gap: 8px; padding: 8px; border-radius: 19px; background: rgba(11,22,19,.94); border: 1px solid var(--border); box-shadow: 0 16px 55px rgba(0,0,0,.38); backdrop-filter: blur(22px); }
+.coach-composer-wrap { position: sticky; bottom: calc(88px + env(safe-area-inset-bottom)); z-index: 10; }
+.coach-composer { position: relative; display: grid; grid-template-columns: 46px minmax(0, 1fr) 46px; gap: 8px; padding: 8px; border-radius: 19px; background: rgba(11,22,19,.94); border: 1px solid var(--border); box-shadow: 0 16px 55px rgba(0,0,0,.38); backdrop-filter: blur(22px); }
 .coach-composer input { min-height: 46px; border: 0; background: transparent; }
 .coach-composer input:focus { outline: 0; }
-.coach-composer button { width: 46px; height: 46px; display: grid; place-items: center; border: 0; border-radius: 14px; color: #06110e; background: linear-gradient(145deg, var(--mint), var(--mint-strong)); }
+.coach-composer button { width: 46px; height: 46px; display: grid; place-items: center; border: 0; border-radius: 14px; }
+.coach-composer .coach-attach { color: var(--mint); background: rgba(125,255,213,.08); border: 1px solid var(--border-strong); }
+.coach-composer .coach-send { color: #06110e; background: linear-gradient(145deg, var(--mint), var(--mint-strong)); }
 .coach-composer button svg { width: 19px; }
+.coach-attachment-menu { position: absolute; bottom: calc(100% + 8px); left: 0; display: grid; min-width: 178px; padding: 6px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); box-shadow: var(--shadow); }
+.coach-attachment-menu button { width: auto; min-height: 38px; display: flex; align-items: center; gap: 9px; padding: 0 10px; border-radius: 9px; color: var(--text); background: transparent; font-size: 11px; font-weight: 800; text-align: left; }
+.coach-attachment-menu button:hover, .coach-attachment-menu button:focus-visible { color: var(--mint); background: rgba(125,255,213,.08); }
 .coach-gate { min-height: 340px; display: grid; place-items: center; align-content: center; gap: 13px; padding: 30px; text-align: center; }
 .coach-gate > svg { width: 42px; height: 42px; color: var(--mint); }
 .coach-gate p { max-width: 470px; font-size: 12px; }
@@ -596,7 +602,7 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
   .content-shell { width: min(100%, 1030px); }
   .page { padding-bottom: 70px; }
   .bottom-nav { left: 14px; top: 50%; bottom: auto; transform: translateY(-50%); width: 76px; height: 450px; grid-template-columns: 1fr; grid-template-rows: repeat(5,1fr); border-radius: 26px; }
-  .coach-composer { bottom: 18px; }
+  .coach-composer-wrap { bottom: 18px; }
   .hero-grid { grid-template-columns: .82fr 1.18fr; }
   .progress-ring { width: 235px; }
   .today-page .log-section { max-width: 100%; }
