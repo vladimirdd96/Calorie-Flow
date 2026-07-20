@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { CoachChat, CoachMessage, Food, LabelAnalysis, Meal, Nutrition, Profile } from "./types";
+import type { CoachChat, CoachMessage, Food, LabelAnalysis, Meal, MealPhotoAnalysis, Nutrition, Profile } from "./types";
 
 const finiteNonNegative = z.number().finite().min(0);
 const positiveFinite = z.number().finite().positive();
@@ -102,6 +102,17 @@ export const labelAnalysisSchema = z.object({
   needsFollowUp: z.boolean(),
   followUpQuestions: z.array(z.string().trim().min(1).max(240)).max(3),
 }).strict() satisfies z.ZodType<LabelAnalysis>;
+
+export const mealPhotoAnalysisSchema = z.object({
+  name: z.string().trim().min(1).max(240),
+  mealType: z.enum(["breakfast", "lunch", "dinner", "snack"]),
+  amount: positiveFinite,
+  unit: z.enum(["serving", "g", "100g", "package", "piece", "tbsp", "tsp", "ml"]),
+  grams: positiveFinite,
+  nutrition: nutritionSchema,
+  components: z.array(z.string().trim().min(1).max(120)).max(20),
+  confidence: z.enum(["low", "medium", "high"]),
+}).strict() satisfies z.ZodType<MealPhotoAnalysis>;
 
 export const backupSchema = z.object({
   version: z.literal(1),

@@ -82,6 +82,17 @@ export type LabelAnalysis = {
   followUpQuestions: string[];
 };
 
+export type MealPhotoAnalysis = {
+  name: string;
+  mealType: MealType;
+  amount: number;
+  unit: ServingUnit;
+  grams: number;
+  nutrition: Nutrition;
+  components: string[];
+  confidence: "low" | "medium" | "high";
+};
+
 export type CoachMessage = {
   id: string;
   chatId: string;

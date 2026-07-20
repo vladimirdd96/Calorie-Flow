@@ -83,7 +83,7 @@ import {
   suggestedMealType,
 } from "@/lib/nutrition";
 import { findByBarcode, searchOpenFoodFacts } from "@/lib/openfoodfacts";
-import { labelAnalysisSchema } from "@/lib/schemas";
+import { labelAnalysisSchema, mealPhotoAnalysisSchema } from "@/lib/schemas";
 import { getSupabase, type CloudUser, type SocialAuthProvider } from "@/lib/supabase";
 import type {
   ActivityLevel,
@@ -93,6 +93,7 @@ import type {
   Food,
   GoalMode,
   Meal,
+  MealPhotoAnalysis,
   MealType,
   Nutrition,
   Profile,
@@ -316,7 +317,7 @@ function FoodAvatar({ food, name }: { food?: Food; name?: string }) {
   return <div className="food-avatar fallback">{(name || food?.name || "F").slice(0, 1).toUpperCase()}</div>;
 }
 
-function MealRow({ meal, onDelete, hideCalories }: { meal: Meal; onDelete: () => void; hideCalories: boolean }) {
+function MealRow({ meal, onDelete, onEdit, hideCalories }: { meal: Meal; onDelete: () => void; onEdit: () => void; hideCalories: boolean }) {
   return (
     <div className="meal-row">
       <div className="meal-icon"><Utensils size={17} /></div>
@@ -325,9 +326,35 @@ function MealRow({ meal, onDelete, hideCalories }: { meal: Meal; onDelete: () =>
         <span>{meal.amount} {formatUnit(meal.unit, meal.amount)} · P {meal.nutrition.protein} · C {meal.nutrition.carbs} · F {meal.nutrition.fat}</span>
       </div>
       {!hideCalories && <strong className="meal-kcal">{Math.round(meal.nutrition.calories)}</strong>}
+      <button className="icon-button ghost" onClick={onEdit} aria-label={`Edit ${meal.name}`}><Pencil size={16} /></button>
       <button className="icon-button ghost danger-hover" onClick={onDelete} aria-label={`Delete ${meal.name}`}><Trash2 size={17} /></button>
     </div>
   );
+}
+
+function MealEditor({ meal, onSave, onClose, hideCalories }: { meal: Meal; onSave: (meal: Meal) => void; onClose: () => void; hideCalories: boolean }) {
+  const [name, setName] = useState(meal.name);
+  const [amount, setAmount] = useState(String(meal.amount));
+  const [mealType, setMealType] = useState<MealType>(meal.mealType);
+  const [error, setError] = useState("");
+  const surfaceRef = useModalFocus(onClose);
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    const nextAmount = Number(amount);
+    if (!name.trim() || !Number.isFinite(nextAmount) || nextAmount <= 0) { setError("Add a meal name and a positive amount."); return; }
+    const ratio = nextAmount / meal.amount;
+    onSave({ ...meal, name: name.trim(), amount: nextAmount, mealType, grams: round(meal.grams * ratio), nutrition: scaleNutrition(meal.nutrition, ratio * 100) });
+  };
+  return <div ref={surfaceRef as unknown as React.RefObject<HTMLDivElement>} className="meal-editor" tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="meal-editor-title">
+    <div className="sheet-header"><div><span className="eyebrow">Your diary</span><h2 id="meal-editor-title">Edit meal</h2></div><button className="icon-button ghost" onClick={onClose} aria-label="Close editor"><X /></button></div>
+    <form className="meal-editor-form" onSubmit={submit}>
+      <label><span>Meal and additions</span><input autoFocus value={name} onChange={(event) => setName(event.target.value)} maxLength={240} /></label>
+      <div className="form-grid two"><label><span>Amount</span><input type="number" min="0.1" step="0.1" value={amount} onChange={(event) => setAmount(event.target.value)} /></label><label><span>Meal</span><select value={mealType} onChange={(event) => setMealType(event.target.value as MealType)}>{(Object.keys(mealLabels) as MealType[]).map((type) => <option key={type} value={type}>{mealLabels[type]}</option>)}</select></label></div>
+      <div className="editor-nutrition"><span className="eyebrow">Current estimate{hideCalories ? " · energy hidden" : ""}</span><div><span>Protein <strong>{round(meal.nutrition.protein * Number(amount || 0) / meal.amount, 1)} g</strong></span><span>Carbs <strong>{round(meal.nutrition.carbs * Number(amount || 0) / meal.amount, 1)} g</strong></span><span>Fat <strong>{round(meal.nutrition.fat * Number(amount || 0) / meal.amount, 1)} g</strong></span>{!hideCalories && <span>Calories <strong>{Math.round(meal.nutrition.calories * Number(amount || 0) / meal.amount)}</strong></span>}</div></div>
+      {error && <div className="inline-alert error" role="alert"><Info size={16} />{error}</div>}
+      <div className="sheet-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="submit" className="primary-button"><Check size={17} />Save changes</button></div>
+    </form>
+  </div>;
 }
 
 function EmptyMeals({ onAdd }: { onAdd: () => void }) {
@@ -360,6 +387,7 @@ function TodayView({
   onAdd,
   onOpenCoach,
   onDelete,
+  onEdit,
   syncLabel,
   showHomeScreenPrompt,
 }: {
@@ -370,6 +398,7 @@ function TodayView({
   onAdd: () => void;
   onOpenCoach: () => void;
   onDelete: (id: string) => void;
+  onEdit: (meal: Meal) => void;
   syncLabel: string;
   showHomeScreenPrompt: boolean;
 }) {
@@ -419,7 +448,7 @@ function TodayView({
         {meals.length === 0 ? <EmptyMeals onAdd={onAdd} /> : grouped.map(({ type, meals: groupMeals }) => groupMeals.length > 0 && (
           <div className="meal-group" key={type}>
             <div className="meal-group-title"><span>{mealLabels[type]}</span>{!profile.hideCalories && <span>{Math.round(sumNutrition(groupMeals.map((meal) => meal.nutrition)).calories)} kcal</span>}</div>
-            <div className="meal-list card">{groupMeals.map((meal) => <MealRow key={meal.id} meal={meal} hideCalories={profile.hideCalories} onDelete={() => onDelete(meal.id)} />)}</div>
+            <div className="meal-list card">{groupMeals.map((meal) => <MealRow key={meal.id} meal={meal} hideCalories={profile.hideCalories} onDelete={() => onDelete(meal.id)} onEdit={() => onEdit(meal)} />)}</div>
           </div>
         ))}
       </section>
@@ -1036,6 +1065,35 @@ function LabelReader({ onFood, onClose, initialFiles = [], initialAction }: { on
   );
 }
 
+function MealPhotoReader({ onMeal, onClose }: { onMeal: (analysis: MealPhotoAnalysis) => void; onClose: () => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const analyze = async (file?: File) => {
+    if (!file) return;
+    setError(""); setLoading(true);
+    try {
+      const image = await imageToDataUrl(file); setPreview(image);
+      const token = (await getSupabase()?.auth.getSession())?.data.session?.access_token;
+      const response = await fetch("/api/analyze-meal-photo", { method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ image }) });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error || "The meal photo could not be understood.");
+      onMeal(mealPhotoAnalysisSchema.parse(body));
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "The meal photo could not be understood."); }
+    finally { setLoading(false); }
+  };
+  useEffect(() => { inputRef.current?.click(); }, []);
+  return <div className="meal-photo-reader">
+    <div className="sheet-header"><button className="icon-button ghost" onClick={onClose} aria-label="Back to Coach"><ArrowLeft /></button><div><span className="eyebrow">AI assist</span><h2>Understand a meal photo</h2></div><span /></div>
+    <div className={`label-dropzone ${preview ? "has-preview" : ""}`}>{preview ? <img className="meal-photo-preview" src={preview} alt="Photo selected for meal analysis" /> : <><span className="action-icon mint"><Camera /></span><strong>Choose any food photo</strong><small>Meal screenshots, plated food, menus, or recipes all work</small></>}{loading && <span className="analyzing"><i /><strong>Understanding the meal…</strong></span>}</div>
+    <input ref={inputRef} className="visually-hidden-file" type="file" accept="image/*" onChange={(event) => void analyze(event.target.files?.[0])} />
+    <button className="secondary-button full" type="button" onClick={() => inputRef.current?.click()} disabled={loading}><Upload size={18} />Choose a different photo</button>
+    {error && <div className="inline-alert error" role="alert"><Info size={17} /><span>{error}</span></div>}
+    <p className="photo-disclaimer">The result is an estimate. You’ll review the meal, amount, and meal type before it is saved.</p>
+  </div>;
+}
+
 function ManualFood({ initialBarcode, onSave, onClose, hideCalories }: { initialBarcode?: string; onSave: (food: Food) => void; onClose: () => void; hideCalories: boolean }) {
   const [name, setName] = useState("");
   const [brand, setBrand] = useState("");
@@ -1110,7 +1168,7 @@ function PortionSheet({ food, questions, onLog, onClose, hideCalories }: { food:
   );
 }
 
-function AddFoodSheet({ foods, initialView = "start", onClose, onLog, hideCalories }: { foods: Food[]; initialView?: AddView; onClose: () => void; onLog: (meal: Meal, food: Food) => void; hideCalories: boolean }) {
+function AddFoodSheet({ foods, initialView = "start", onClose, onLog, onMealPhoto, hideCalories }: { foods: Food[]; initialView?: AddView; onClose: () => void; onLog: (meal: Meal, food: Food) => void; onMealPhoto: (analysis: MealPhotoAnalysis) => void; hideCalories: boolean }) {
   const [view, setView] = useState<AddView>(initialView);
   const [selected, setSelected] = useState<Food>();
   const [questions, setQuestions] = useState<string[]>([]);
@@ -1217,7 +1275,9 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, hideCalori
   };
   if (selected) return <PortionSheet food={selected} questions={questions} hideCalories={hideCalories} onLog={onLog} onClose={() => setSelected(undefined)} />;
   if (view === "scan") return <>{loading && <div className="global-loader"><i />Looking up product…</div>}<BarcodeScanner onResult={barcode} onClose={() => changeView("start")} /></>;
-  if (view === "label" || view === "camera" || view === "photo") return <LabelReader initialFiles={pendingImages} initialAction={view === "label" ? undefined : view} onFood={(food, followUps) => { if (food.barcode) void barcode(food.barcode, food, followUps); else pick(food, followUps); }} onClose={() => { setPendingImages([]); changeView("start"); }} />;
+  if (view === "camera") return <LabelReader initialFiles={pendingImages} initialAction="camera" onFood={(food, followUps) => { if (food.barcode) void barcode(food.barcode, food, followUps); else pick(food, followUps); }} onClose={() => { setPendingImages([]); changeView("start"); }} />;
+  if (view === "photo") return <MealPhotoReader onMeal={onMealPhoto} onClose={() => changeView("start")} />;
+  if (view === "label") return <LabelReader initialFiles={pendingImages} onFood={(food, followUps) => { if (food.barcode) void barcode(food.barcode, food, followUps); else pick(food, followUps); }} onClose={() => { setPendingImages([]); changeView("start"); }} />;
   if (view === "manual") return <><ManualFood initialBarcode={unknownBarcode} hideCalories={hideCalories} onSave={pick} onClose={() => changeView("start")} />{manualNotice && <div className="inline-alert error" role="alert"><Info size={17} />{manualNotice}</div>}</>;
   if (view === "search") return (
     <div>
@@ -1264,6 +1324,7 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [loadedUserId, setLoadedUserId] = useState("");
+  const [historyAttempt, setHistoryAttempt] = useState(0);
   const [chats, setChats] = useState<CoachChat[]>([]);
   const [activeChatId, setActiveChatId] = useState("");
   const [section, setSection] = useState<CoachSection>("chat");
@@ -1298,10 +1359,15 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
       const stored = await getCloudCoachMessages(user.id, chat.id);
       if (active) { setChats(available); setActiveChatId(chat.id); setMessages(stored); setLoadedUserId(user.id); }
     }).catch(() => {
-      if (active) { setMessages([]); setLoadedUserId(user.id); setError("Coach history could not be loaded."); }
+      if (active) {
+        const now = new Date().toISOString();
+        const fallback: CoachChat = { id: `local-${user.id}`, title: "New conversation", createdAt: now, updatedAt: now };
+        setChats([fallback]); setActiveChatId(fallback.id); setMessages([]); setLoadedUserId(user.id);
+        setError("Coach history could not be loaded. You can still start a new conversation, or retry loading it.");
+      }
     });
     return () => { active = false; };
-  }, [user]);
+  }, [historyAttempt, user]);
   useEffect(() => {
     if (!user) return;
     const supabase = getSupabase();
@@ -1350,7 +1416,7 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
     const history = messages.slice(-12).map(({ role, content: previous }) => ({ role, content: previous }));
     setMessages((current) => [...current, userMessage]); setDraft(""); setError(""); setLoading(true);
     try {
-      await saveCloudCoachMessage(user.id, userMessage);
+      try { await saveCloudCoachMessage(user.id, userMessage); } catch { setError("This reply will continue, but cloud history is temporarily unavailable."); }
       const session = await getSupabase()?.auth.getSession();
       const token = session?.data.session?.access_token;
       if (!token) throw new Error("Your session expired. Please sign in again.");
@@ -1382,7 +1448,7 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
         sources,
       };
       setMessages((current) => [...current, assistantMessage]);
-      await saveCloudCoachMessage(user.id, assistantMessage);
+      try { await saveCloudCoachMessage(user.id, assistantMessage); } catch { setError("Reply received. Cloud history is temporarily unavailable."); }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The Coach is unavailable right now.");
     } finally { setLoading(false); }
@@ -1457,7 +1523,7 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
           {messages.length === 0 && <div className="coach-welcome"><span className="coach-orb"><Sparkles /></span><h2>What should we make?</h2><p>Talk through dinner, use up what you have, or log a packaged food by scanning its barcode or photographing its nutrition label.</p><div className="coach-starters">{starters.map((starter) => <button key={starter} onClick={() => send(starter)}>{starter}</button>)}</div></div>}
           {messages.map((message) => { const visibleContent = hideCalories ? hideCalorieValues(message.content) : message.content; const groceries = message.role === "assistant" ? groceryItemsFromReply(visibleContent) : []; return <article key={message.id} className={`coach-message ${message.role}`}><span>{message.role === "assistant" ? "Coach" : "You"}</span><p>{visibleContent}</p>{groceries.length > 0 && <div className="recipe-grocery-action"><strong>Want to cook this?</strong><button className="add-groceries" onClick={() => addGroceries(groceries)}><ListChecks size={15} />Add {groceries.length} ingredients to groceries</button></div>}{!!message.sources?.length && <div className="coach-sources"><strong>Sources</strong>{message.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.title}</a>)}</div>}</article>; })}
           {loading && <div className="coach-typing"><i /><i /><i /><span>Coach is thinking through it…</span></div>}
-          {error && <div className="inline-alert error" role="alert"><Info size={17} /><span>{error}</span></div>}
+          {error && <div className="inline-alert error" role="alert"><Info size={17} /><span>{error}</span><button className="text-button" type="button" onClick={() => { setError(""); setLoadedUserId(""); setHistoryAttempt((value) => value + 1); }}>Retry</button></div>}
           <div ref={endRef} />
         </section>
         <div className="coach-composer-wrap"><div className="coach-log-actions"><button type="button" onClick={() => onOpenAdd("scan")}><ScanLine size={16} />Scan barcode</button><button type="button" onClick={() => onOpenAdd("label")}><Camera size={16} />Read nutrition label</button></div><form className="coach-composer" onSubmit={(event) => { event.preventDefault(); send(); }}><button className="coach-attach" type="button" aria-label="Add a food package" aria-expanded={attachmentMenuOpen} onClick={() => setAttachmentMenuOpen((open) => !open)}><Plus /></button>{attachmentMenuOpen && <div className="coach-attachment-menu" role="menu" aria-label="Add a food package"><button type="button" role="menuitem" onClick={() => { setAttachmentMenuOpen(false); onOpenAdd("scan"); }}><ScanLine size={17} />Scan barcode</button><button type="button" role="menuitem" onClick={() => { setAttachmentMenuOpen(false); onOpenAdd("camera"); }}><Camera size={17} />Open camera</button><button type="button" role="menuitem" onClick={() => { setAttachmentMenuOpen(false); onOpenAdd("photo"); }}><Upload size={17} />Choose photo</button></div>}<input aria-label="Message the nutrition Coach" value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={6000} placeholder="Ask about dinner, recipes, or your food log…" /><button className="coach-send" type="submit" disabled={!draft.trim() || loading} aria-label="Send"><Send /></button></form></div>
@@ -1583,6 +1649,7 @@ export function TrackerApp() {
   const [adding, setAdding] = useState(false);
   const [initialAddView, setInitialAddView] = useState<AddView>("start");
   const [directFood, setDirectFood] = useState<Food>();
+  const [editingMeal, setEditingMeal] = useState<Meal>();
   const [toast, setToast] = useState("");
   const [syncState, setSyncState] = useState<SyncState>("local");
   const [syncAttempt, setSyncAttempt] = useState(0);
@@ -1732,6 +1799,23 @@ export function TrackerApp() {
     setAdding(false); setDirectFood(undefined); setToast(`${food.name} logged`); setTab("today");
     syncWrite(async (userId) => { await Promise.all([upsertCloudMeal(userId, savedMeal), upsertCloudFood(userId, food)]); });
   };
+  const saveEditedMeal = async (meal: Meal) => {
+    const savedMeal = { ...meal, loggedDate: meal.loggedDate || dateKey };
+    await put("meals", savedMeal);
+    setMeals((current) => current.map((candidate) => candidate.id === savedMeal.id ? savedMeal : candidate));
+    setEditingMeal(undefined); setToast("Meal updated");
+    syncWrite((userId) => upsertCloudMeal(userId, savedMeal));
+  };
+  const saveNewMeal = async (meal: Meal) => {
+    await put("meals", meal);
+    setMeals((current) => [...current, meal]); setEditingMeal(undefined); setToast(`${meal.name} logged`); setTab("today");
+    syncWrite((userId) => upsertCloudMeal(userId, meal));
+  };
+  const addPhotoMeal = (analysis: MealPhotoAnalysis) => {
+    const details = analysis.components.length ? ` · ${analysis.components.join(", ")}` : "";
+    const meal: Meal = { id: `photo-${crypto.randomUUID()}`, name: `${analysis.name}${details}`.slice(0, 240), mealType: analysis.mealType, amount: analysis.amount, unit: analysis.unit, grams: analysis.grams, nutrition: analysis.nutrition, createdAt: new Date().toISOString(), loggedDate: dateKey, source: "custom", estimated: analysis.confidence !== "high" };
+    setAdding(false); setEditingMeal(meal);
+  };
   const deleteMeal = async (id: string) => {
     const deletedMeal = meals.find((meal) => meal.id === id);
     if (!deletedMeal) return;
@@ -1817,14 +1901,15 @@ export function TrackerApp() {
     <div className="app-shell">
       <div className="ambient one" /><div className="ambient two" />
       <div className="content-shell" inert={modalOpen} aria-hidden={modalOpen || undefined}>
-        {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={() => openAdd()} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} />}
+        {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={() => openAdd()} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} onEdit={setEditingMeal} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} />}
         {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={openAdd} />}
         {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} onOpenAccount={() => setTab("profile")} onOpenAdd={openAdd} />}
         {tab === "insights" && <InsightsView meals={meals} profile={profile} />}
         {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onExport={exportBackup} onImport={restoreBackup} configured={auth.configured} user={auth.user} syncState={auth.user ? syncState : "local"} onSendMagicLink={auth.sendMagicLink} onSignInWithProvider={auth.signInWithProvider} onSignOut={signOut} theme={theme} onThemeChange={changeTheme} />}
       </div>
       <div inert={modalOpen} aria-hidden={modalOpen || undefined}><BottomNav tab={tab} onChange={(nextTab) => { window.scrollTo(0, 0); setTab(nextTab); }} /></div>
-      {adding && profile.onboardingDone && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); }} wide>{directFood ? <PortionSheet food={directFood} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} onClose={() => setAdding(false)} onLog={logMeal} />}</Sheet>}
+      {adding && profile.onboardingDone && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); }} wide>{directFood ? <PortionSheet food={directFood} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} onClose={() => setAdding(false)} onLog={logMeal} onMealPhoto={addPhotoMeal} />}</Sheet>}
+      {editingMeal && <Sheet onClose={() => setEditingMeal(undefined)}><MealEditor meal={editingMeal} hideCalories={profile.hideCalories} onSave={(meal) => editingMeal.id.startsWith("photo-") ? saveNewMeal(meal) : saveEditedMeal(meal)} onClose={() => setEditingMeal(undefined)} /></Sheet>}
       {!profile.onboardingDone && <OnboardingDialog profile={profile} onSave={saveProfile} />}
       {undoMeal && <div className="toast undo-toast" role="status"><span>Meal removed</span><button type="button" onClick={undoDeleteMeal}>Undo</button></div>}
       {toast && <div className="toast"><Check size={17} />{toast}</div>}
