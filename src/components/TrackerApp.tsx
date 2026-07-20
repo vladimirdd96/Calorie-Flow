@@ -1302,6 +1302,44 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
     });
     return () => { active = false; };
   }, [user]);
+  useEffect(() => {
+    if (!user) return;
+    const supabase = getSupabase();
+    if (!supabase) return;
+    let active = true;
+    const refreshActiveChat = async () => {
+      if (!active || !activeChatId) return;
+      try {
+        const stored = await getCloudCoachMessages(user.id, activeChatId);
+        if (active) setMessages(stored);
+      } catch {
+        // Realtime is an enhancement; offline/local behavior remains available.
+      }
+    };
+    const refreshChats = async () => {
+      try {
+        const storedChats = await getCloudCoachChats(user.id);
+        if (!active) return;
+        setChats(storedChats);
+        if (activeChatId && !storedChats.some((chat) => chat.id === activeChatId)) {
+          const nextChat = storedChats[0];
+          setActiveChatId(nextChat?.id || "");
+          setMessages(nextChat ? await getCloudCoachMessages(user.id, nextChat.id) : []);
+        }
+      } catch {
+        // Realtime is an enhancement; offline/local behavior remains available.
+      }
+    };
+    const channel = supabase
+      .channel(`coach-sync:${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "coach_chats", filter: `user_id=eq.${user.id}` }, () => { void refreshChats(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "coach_messages", filter: `user_id=eq.${user.id}` }, () => { void refreshActiveChat(); })
+      .subscribe();
+    return () => {
+      active = false;
+      void supabase.removeChannel(channel);
+    };
+  }, [activeChatId, user]);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [messages, loading]);
 
   const send = async (suggestion?: string) => {

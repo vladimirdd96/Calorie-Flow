@@ -137,7 +137,8 @@ export async function getAllCloudCoachMessages(userId: string): Promise<CoachMes
 }
 
 export async function saveCloudCoachMessage(userId: string, message: CoachMessage) {
-  const { error } = await client().from("coach_messages").upsert({
+  const supabase = client();
+  const { error } = await supabase.from("coach_messages").upsert({
     user_id: userId,
     id: message.id,
     chat_id: message.chatId,
@@ -146,6 +147,12 @@ export async function saveCloudCoachMessage(userId: string, message: CoachMessag
     created_at: message.createdAt,
   }, { onConflict: "user_id,chat_id,id" });
   if (error) throw error;
+  const { error: chatError } = await supabase
+    .from("coach_chats")
+    .update({ updated_at: message.createdAt })
+    .eq("user_id", userId)
+    .eq("id", message.chatId);
+  if (chatError) throw chatError;
 }
 
 export async function clearCloudCoachMessages(userId: string, chatId?: string) {

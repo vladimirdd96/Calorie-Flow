@@ -6,11 +6,13 @@ Calorie Flow works without an account. These steps enable passwordless accounts,
 
 1. Create a Supabase project.
 2. Open **SQL Editor** and run `supabase/migrations/202607180001_user_sync.sql`.
-   For existing projects, also run the newer `coach_chat_threads` migration to enable separate saved Coach conversations.
+   For existing projects, also run the newer `coach_chat_threads` and `coach_chat_realtime` migrations to enable separate saved Coach conversations and live cross-device updates.
 3. In **Authentication → URL Configuration**, set:
    - Site URL: `https://calorie-flow.vladimirdd96.workers.dev`
    - Redirect URL: `https://calorie-flow.vladimirdd96.workers.dev/**`
 4. Keep email authentication enabled. The app uses passwordless magic links.
+
+The `coach_chat_realtime` migration adds Coach tables to the `supabase_realtime` publication. This is what lets an open Coach session refresh when the same account sends or creates a conversation on another device.
 
 The migration enables Row Level Security on every user table. The browser receives only the Supabase publishable key; never expose the service-role key.
 
