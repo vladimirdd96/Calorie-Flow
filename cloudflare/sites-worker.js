@@ -201,23 +201,8 @@ async function foodSearch(request, env) {
 }
 
 function extractOutputText(response) {
-  return response.output
-    ?.flatMap((item) => item.content || [])
-    .find((item) => item.type === "output_text")?.text;
-}
-
-function extractSources(response) {
-  const sources = new Map();
-  for (const item of response.output || []) {
-    for (const content of item.content || []) {
-      for (const annotation of content.annotations || []) {
-        if (annotation.type === "url_citation" && annotation.url) {
-          sources.set(annotation.url, { title: annotation.title || annotation.url, url: annotation.url });
-        }
-      }
-    }
-  }
-  return [...sources.values()].slice(0, 6);
+  const message = response?.choices?.[0]?.message;
+  return typeof message?.content === "string" ? message.content : undefined;
 }
 
 function bearerToken(request) {
@@ -331,27 +316,16 @@ function isUnrelatedRequest(message) {
   return /(build|create|write|debug|deploy|program|code).{0,32}\b(app|website|software|script|program|code)\b|\b(stock|crypto|legal contract|politics|homework|essay)\b/i.test(message);
 }
 
-function needsFoodPlaceSearch(message) {
-  return /\b(restaurant|cafe|café|takeaway|takeout|delivery|food place|where (?:can|should) i eat|eat nearby|lunch nearby|dinner nearby)\b|\bplaces?\b.{0,24}\b(food|eat)\b|\b(food|eat)\b.{0,24}\b(nearby|near me)\b/i.test(message);
-}
-
-async function openAIResponse(env, payload) {
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  const body = await response.json();
-  if (!response.ok) throw new Error(body?.error?.message || "The Coach is unavailable right now.");
-  if (!isRecord(body) || !Array.isArray(body.output)) throw new Error("The Coach returned an invalid response.");
-  return body;
+async function workersAiResponse(env, model, payload) {
+  if (!env.AI?.run) throw new Error("Workers AI is not configured for this deployment.");
+  const response = await env.AI.run(model, payload);
+  if (!isRecord(response) || !Array.isArray(response.choices)) throw new Error("The Coach returned an invalid response.");
+  return response;
 }
 
 async function coach(request, env) {
   const auth = await authenticate(request, env);
   if (auth.error) return auth.error;
-  if (!env.OPENAI_API_KEY) return json({ error: "The AI Coach needs an OpenAI API key in the site settings." }, 503);
-
   try {
     const body = await request.json();
     const message = typeof body.message === "string" ? body.message.trim().slice(0, 6000) : "";
@@ -369,9 +343,8 @@ async function coach(request, env) {
       const content = typeof item?.content === "string" ? item.content.slice(0, 6000) : "";
       return role && content ? [{ role, content }] : [];
     }) : [];
-    const input = [...history, { role: "user", content: message }];
-    const tools = [...coachTools];
-    if (needsFoodPlaceSearch(message)) tools.push({ type: "web_search", search_context_size: "low" });
+    const messages = [...history, { role: "user", content: message }];
+    const tools = coachTools.map(({ name, description, parameters }) => ({ type: "function", function: { name, description, parameters } }));
     const localDate = typeof body.localDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.localDate) ? body.localDate : new Date().toISOString().slice(0, 10);
     const timezone = typeof body.timezone === "string" && /^[A-Za-z_+\/-]{1,80}$/.test(body.timezone) ? body.timezone : "unknown";
     const profile = await readCoachProfile(auth, env);
@@ -382,32 +355,31 @@ async function coach(request, env) {
 
     let response;
     for (let turn = 0; turn < 4; turn += 1) {
-      response = await openAIResponse(env, {
-        model: env.OPENAI_COACH_MODEL || "gpt-5.6-sol",
-        instructions: `${coachInstructions}${visibilityInstruction}\n\nTIME CONTEXT:\n- The user's current local date is ${localDate}.\n- Their browser time zone is ${timezone}. Use this context when they say today, yesterday, or this week.`,
-        reasoning: { effort: "low" },
+      response = await workersAiResponse(env, "@cf/zai-org/glm-4.7-flash", {
+        messages: [{ role: "system", content: `${coachInstructions}${visibilityInstruction}\n\nTIME CONTEXT:\n- The user's current local date is ${localDate}.\n- Their browser time zone is ${timezone}. Use this context when they say today, yesterday, or this week.` }, ...messages],
         tools,
         tool_choice: "auto",
-        input,
-        max_output_tokens: 1400,
+        max_completion_tokens: 700,
+        temperature: 0.2,
       });
-      const calls = (response.output || []).filter((item) => item.type === "function_call");
+      const assistantMessage = response.choices?.[0]?.message;
+      const calls = Array.isArray(assistantMessage?.tool_calls) ? assistantMessage.tool_calls : [];
       if (!calls.length) break;
-      input.push(...response.output);
+      messages.push({ role: "assistant", content: assistantMessage.content || null, tool_calls: calls });
       for (const call of calls) {
         let result;
         try {
-          result = await runCoachTool(call.name, JSON.parse(call.arguments || "{}"), toolAuth, env);
+          result = await runCoachTool(call.function?.name, JSON.parse(call.function?.arguments || "{}"), toolAuth, env);
         } catch (error) {
           result = { error: error instanceof Error ? error.message : "Tool failed." };
         }
-        input.push({ type: "function_call_output", call_id: call.call_id, output: JSON.stringify(result) });
+        messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(result) });
       }
     }
 
     const reply = extractOutputText(response);
     if (!reply) return json({ error: "The Coach did not return an answer." }, 502);
-    return json({ reply: toolAuth.hideCalories ? hideCalorieValues(reply) : reply, sources: extractSources(response) });
+    return json({ reply: toolAuth.hideCalories ? hideCalorieValues(reply) : reply, sources: [] });
   } catch (error) {
     return json({ error: error instanceof Error ? error.message : "The Coach is unavailable right now." }, 500);
   }
@@ -416,10 +388,6 @@ async function coach(request, env) {
 async function analyzeLabel(request, env) {
   const auth = await authenticate(request, env);
   if (auth.error) return auth.error;
-  if (!env.OPENAI_API_KEY) {
-    return json({ error: "AI label reading needs an OpenAI API key in the site settings." }, 503);
-  }
-
   try {
     const requestBody = await request.json();
     const images = Array.isArray(requestBody.images) ? requestBody.images : [requestBody.image];
@@ -427,32 +395,15 @@ async function analyzeLabel(request, env) {
       return json({ error: "Add one to three package photos, each under 10 MB." }, 400);
     }
 
-    const apiResponse = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: env.OPENAI_LABEL_MODEL || "gpt-4.1-mini",
-        input: [
-          {
-            role: "developer",
-            content: [{
-              type: "input_text",
-              text: "Read one or more photos of the same food package. They may show a nutrition label, barcode, front of pack, ingredients, serving information, or package size. Extract package nutrition accurately and combine facts across images. Normalize all nutrients to 100 g or 100 ml. If the label only gives a serving, calculate per 100 from the visible serving weight. Use 0 only when the label explicitly indicates zero; otherwise return 0 and ask a short follow-up question naming the missing value. Never guess product weight, serving weight, or package weight. Calories are kcal.",
-            }],
-          },
-          {
-            role: "user",
-            content: [
-              { type: "input_text", text: "Identify this food package and return the structured result. A barcode alone is useful: return it even if other nutrition details are unavailable." },
-              ...images.map((image) => ({ type: "input_image", image_url: image, detail: "high" })),
-            ],
-          },
-        ],
-        text: { format: { type: "json_schema", name: "nutrition_label", strict: true, schema: nutritionSchema } },
-      }),
+    const responseBody = await workersAiResponse(env, "@cf/moonshotai/kimi-k2.6", {
+      messages: [
+        { role: "system", content: "Read one or more photos of the same food package. They may show a nutrition label, barcode, front of pack, ingredients, serving information, or package size. Extract package nutrition accurately and combine facts across images. Normalize all nutrients to 100 g or 100 ml. If the label only gives a serving, calculate per 100 from the visible serving weight. Use 0 only when the label explicitly indicates zero; otherwise return 0 and ask a short follow-up question naming the missing value. Never guess product weight, serving weight, or package weight. Calories are kcal." },
+        { role: "user", content: [{ type: "text", text: "Identify this food package and return the structured result. A barcode alone is useful: return it even if other nutrition details are unavailable." }, ...images.map((image) => ({ type: "image_url", image_url: { url: image } }))] },
+      ],
+      response_format: { type: "json_schema", json_schema: { name: "nutrition_label", strict: true, schema: nutritionSchema } },
+      max_completion_tokens: 700,
+      temperature: 0,
     });
-    const responseBody = await apiResponse.json();
-    if (!apiResponse.ok) return json({ error: responseBody?.error?.message || "The label could not be read right now." }, apiResponse.status);
     const outputText = extractOutputText(responseBody);
     if (!outputText) return json({ error: "No label data was returned." }, 502);
     const parsed = parseLabelAnalysis(JSON.parse(outputText));

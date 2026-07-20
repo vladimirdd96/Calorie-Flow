@@ -4,6 +4,7 @@ import { serverEnv } from "@/lib/env";
 import { authenticatePaidFeature, type PaidFeatureAuthResult } from "@/lib/server-auth";
 import { foodSchema, mealSchema, profileSchema } from "@/lib/schemas";
 import type { Food, Meal, Nutrition, Profile } from "@/lib/types";
+import { getWorkersAi, workersAiModels } from "@/lib/workers-ai";
 
 export const runtime = "nodejs";
 
@@ -98,10 +99,6 @@ function clamp(value: unknown, min: number, max: number, fallback: number) {
 
 function isUnrelatedRequest(message: string) {
   return /(build|create|write|debug|deploy|program|code).{0,32}\b(app|website|software|script|program|code)\b|\b(stock|crypto|legal contract|politics|homework|essay)\b/i.test(message);
-}
-
-function needsFoodPlaceSearch(message: string) {
-  return /\b(restaurant|cafe|café|takeaway|takeout|delivery|food place|where (?:can|should) i eat|eat nearby|lunch nearby|dinner nearby)\b|\bplaces?\b.{0,24}\b(food|eat)\b|\b(food|eat)\b.{0,24}\b(nearby|near me)\b/i.test(message);
 }
 
 function withoutCalories(nutrition: Nutrition): Omit<Nutrition, "calories"> {
@@ -202,52 +199,20 @@ async function runCoachTool(name: string, args: JsonRecord, context: ToolContext
   return { error: "Unknown tool." };
 }
 
-async function openAIResponse(payload: object) {
-  if (!serverEnv.OPENAI_API_KEY) throw new Error("The AI Coach needs an OpenAI API key in the site settings.");
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${serverEnv.OPENAI_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  const body: unknown = await response.json();
-  if (!response.ok) {
-    const error = isRecord(body) && isRecord(body.error) && typeof body.error.message === "string" ? body.error.message : "The Coach is unavailable right now.";
-    throw new Error(error);
-  }
-  if (!isRecord(body) || !Array.isArray(body.output)) throw new Error("The Coach returned an invalid response.");
-  return body;
+async function workersAiResponse(payload: Record<string, unknown>) {
+  const response = await (await getWorkersAi()).run(workersAiModels.coach, payload);
+  if (!isRecord(response) || !Array.isArray(response.choices)) throw new Error("The Coach returned an invalid response.");
+  return response;
 }
 
 function extractOutputText(response: JsonRecord) {
-  const output = Array.isArray(response.output) ? response.output : [];
-  for (const item of output) {
-    if (!isRecord(item) || !Array.isArray(item.content)) continue;
-    for (const content of item.content) {
-      if (isRecord(content) && content.type === "output_text" && typeof content.text === "string") return content.text;
-    }
-  }
-}
-
-function extractSources(response: JsonRecord) {
-  const sources = new Map<string, { title: string; url: string }>();
-  const output = Array.isArray(response.output) ? response.output : [];
-  for (const item of output) {
-    if (!isRecord(item) || !Array.isArray(item.content)) continue;
-    for (const content of item.content) {
-      if (!isRecord(content) || !Array.isArray(content.annotations)) continue;
-      for (const annotation of content.annotations) {
-        if (!isRecord(annotation) || annotation.type !== "url_citation" || typeof annotation.url !== "string") continue;
-        sources.set(annotation.url, { title: typeof annotation.title === "string" ? annotation.title : annotation.url, url: annotation.url });
-      }
-    }
-  }
-  return [...sources.values()].slice(0, 6);
+  const choice = Array.isArray(response.choices) ? response.choices[0] : undefined;
+  return isRecord(choice) && isRecord(choice.message) && typeof choice.message.content === "string" ? choice.message.content : undefined;
 }
 
 export async function POST(request: NextRequest) {
   const auth = await authenticatePaidFeature(request);
   if (!auth.ok) return json({ error: auth.error }, auth.status);
-  if (!serverEnv.OPENAI_API_KEY) return json({ error: "The AI Coach needs an OpenAI API key in the site settings." }, 503);
 
   try {
     const parsed = coachRequestSchema.safeParse(await request.json());
@@ -264,34 +229,38 @@ export async function POST(request: NextRequest) {
     const profile = await readProfile(auth);
     const hideCalories = Boolean(profile?.hideCalories);
     const context: ToolContext = { ...auth, profile, hideCalories };
-    const input: unknown[] = [...history, { role: "user", content: message }];
-    const tools: unknown[] = [...coachTools];
-    if (needsFoodPlaceSearch(message)) tools.push({ type: "web_search", search_context_size: "low" });
+    const messages: unknown[] = [...history, { role: "user", content: message }];
+    const tools = coachTools.map(({ name, description, parameters }) => ({
+      type: "function",
+      function: { name, description, parameters },
+    }));
     const visibilityInstruction = hideCalories
       ? "\n\nDISPLAY PREFERENCE:\n- The user hides calorie numbers. Never state, repeat, estimate, or infer numeric calorie or energy values, including values from conversation history. Discuss macros, fibre, portions, foods, and meal patterns instead."
       : "";
 
     let response: JsonRecord | undefined;
     for (let turn = 0; turn < 4; turn += 1) {
-      response = await openAIResponse({
-        model: serverEnv.OPENAI_COACH_MODEL || "gpt-5.6-sol",
-        instructions: `${coachInstructions}${visibilityInstruction}\n\nTIME CONTEXT:\n- The user's current local date is ${localDate}.\n- Their browser time zone is ${timezone}. Use this context when they say today, yesterday, or this week.`,
-        reasoning: { effort: "low" },
+      response = await workersAiResponse({
+        messages: [{ role: "system", content: `${coachInstructions}${visibilityInstruction}\n\nTIME CONTEXT:\n- The user's current local date is ${localDate}.\n- Their browser time zone is ${timezone}. Use this context when they say today, yesterday, or this week.` }, ...messages],
         tools,
         tool_choice: "auto",
-        input,
-        max_output_tokens: 1_400,
+        max_completion_tokens: 700,
+        temperature: 0.2,
       });
-      const output = Array.isArray(response.output) ? response.output : [];
-      const calls = output.filter((item): item is JsonRecord => isRecord(item) && item.type === "function_call");
+      const choice = Array.isArray(response.choices) ? response.choices[0] : undefined;
+      const assistantMessage = isRecord(choice) && isRecord(choice.message) ? choice.message : undefined;
+      const calls = assistantMessage && Array.isArray(assistantMessage.tool_calls)
+        ? assistantMessage.tool_calls.filter(isRecord)
+        : [];
       if (!calls.length) break;
-      input.push(...output);
+      messages.push({ role: "assistant", content: typeof assistantMessage?.content === "string" ? assistantMessage.content : null, tool_calls: calls });
       for (const call of calls) {
-        const name = typeof call.name === "string" ? call.name : "";
-        const callId = typeof call.call_id === "string" ? call.call_id : "";
+        const functionCall = isRecord(call.function) ? call.function : {};
+        const name = typeof functionCall.name === "string" ? functionCall.name : "";
+        const callId = typeof call.id === "string" ? call.id : "";
         let args: JsonRecord = {};
         try {
-          const value: unknown = JSON.parse(typeof call.arguments === "string" ? call.arguments : "{}");
+          const value: unknown = JSON.parse(typeof functionCall.arguments === "string" ? functionCall.arguments : "{}");
           if (isRecord(value)) args = value;
         } catch {
           args = {};
@@ -302,14 +271,14 @@ export async function POST(request: NextRequest) {
         } catch (error) {
           result = { error: error instanceof Error ? error.message : "Tool failed." };
         }
-        input.push({ type: "function_call_output", call_id: callId, output: JSON.stringify(result) });
+        messages.push({ role: "tool", tool_call_id: callId, content: JSON.stringify(result) });
       }
     }
 
     if (!response) return json({ error: "The Coach did not return an answer." }, 502);
     const reply = extractOutputText(response);
     if (!reply) return json({ error: "The Coach did not return an answer." }, 502);
-    return json({ reply: hideCalories ? hideCalorieValues(reply) : reply, sources: extractSources(response) });
+    return json({ reply: hideCalories ? hideCalorieValues(reply) : reply, sources: [] });
   } catch (error) {
     return json({ error: error instanceof Error ? error.message : "The Coach is unavailable right now." }, 500);
   }

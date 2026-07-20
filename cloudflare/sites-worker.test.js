@@ -42,10 +42,10 @@ describe("Sites Worker", () => {
     await expect(response.json()).resolves.toHaveProperty("error");
   });
 
-  it("requires a verified user before paid AI endpoints", async () => {
+  it("requires a verified user before optional AI endpoints", async () => {
     const response = await worker.fetch(
       new Request("https://example.com/api/coach", { method: "POST", body: JSON.stringify({ message: "How am I doing today?" }) }),
-      environment({ SUPABASE_URL: "https://project.supabase.co", SUPABASE_PUBLISHABLE_KEY: "public-key", OPENAI_API_KEY: "secret" }),
+      environment({ SUPABASE_URL: "https://project.supabase.co", SUPABASE_PUBLISHABLE_KEY: "public-key" }),
     );
     expect(response.status).toBe(401);
   });
@@ -53,7 +53,7 @@ describe("Sites Worker", () => {
   it("also protects paid label analysis behind a verified session", async () => {
     const response = await worker.fetch(
       new Request("https://example.com/api/analyze-label", { method: "POST", body: JSON.stringify({ image: "data:image/png;base64,AA==" }) }),
-      environment({ SUPABASE_URL: "https://project.supabase.co", SUPABASE_PUBLISHABLE_KEY: "public-key", OPENAI_API_KEY: "secret" }),
+      environment({ SUPABASE_URL: "https://project.supabase.co", SUPABASE_PUBLISHABLE_KEY: "public-key" }),
     );
     expect(response.status).toBe(401);
   });
@@ -69,23 +69,18 @@ describe("Sites Worker", () => {
         headers: { Authorization: "Bearer valid-session" },
         body: JSON.stringify({ message: "Build me a JavaScript app" }),
       }),
-      environment({ SUPABASE_URL: "https://project.supabase.co", SUPABASE_PUBLISHABLE_KEY: "public-key", OPENAI_API_KEY: "secret" }),
+      environment({ SUPABASE_URL: "https://project.supabase.co", SUPABASE_PUBLISHABLE_KEY: "public-key" }),
     );
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ restricted: true });
   });
 
   it("lets the Coach call the private profile tool before answering", async () => {
-    let openAICalls = 0;
+    let aiCalls = 0;
     vi.stubGlobal("fetch", vi.fn(async (url) => {
       const value = String(url);
       if (value.includes("/auth/v1/user")) return Response.json({ id: "00000000-0000-0000-0000-000000000001" });
       if (value.includes("/rest/v1/user_profiles")) return Response.json([{ data: { calorieTarget: 2500, proteinTarget: 160 } }]);
-      if (value.includes("api.openai.com/v1/responses")) {
-        openAICalls += 1;
-        if (openAICalls === 1) return Response.json({ output: [{ type: "function_call", name: "get_profile", call_id: "call_1", arguments: "{}" }] });
-        return Response.json({ output: [{ type: "message", content: [{ type: "output_text", text: "Your target is 2,500 kcal." }] }] });
-      }
       throw new Error(`Unexpected fetch: ${url}`);
     }));
     const response = await worker.fetch(
@@ -94,11 +89,21 @@ describe("Sites Worker", () => {
         headers: { Authorization: "Bearer valid-session" },
         body: JSON.stringify({ message: "What is my calorie target?" }),
       }),
-      environment({ SUPABASE_URL: "https://project.supabase.co", SUPABASE_PUBLISHABLE_KEY: "public-key", OPENAI_API_KEY: "secret" }),
+      environment({
+        SUPABASE_URL: "https://project.supabase.co",
+        SUPABASE_PUBLISHABLE_KEY: "public-key",
+        AI: {
+          run: async () => {
+            aiCalls += 1;
+            if (aiCalls === 1) return { choices: [{ message: { content: null, tool_calls: [{ id: "call_1", function: { name: "get_profile", arguments: "{}" } }] } }] };
+            return { choices: [{ message: { content: "Your target is 2,500 kcal." } }] };
+          },
+        },
+      }),
     );
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ reply: "Your target is 2,500 kcal." });
-    expect(openAICalls).toBe(2);
+    expect(aiCalls).toBe(2);
   });
 
   it("redacts calorie values when the profile hides them", async () => {
@@ -106,9 +111,6 @@ describe("Sites Worker", () => {
       const value = String(url);
       if (value.includes("/auth/v1/user")) return Response.json({ id: "00000000-0000-0000-0000-000000000001" });
       if (value.includes("/rest/v1/user_profiles")) return Response.json([{ data: { hideCalories: true, calorieTarget: 2500 } }]);
-      if (value.includes("api.openai.com/v1/responses")) {
-        return Response.json({ output: [{ type: "message", content: [{ type: "output_text", text: "You have 650 kcal left." }] }] });
-      }
       throw new Error(`Unexpected fetch: ${url}`);
     }));
     const response = await worker.fetch(
@@ -117,7 +119,11 @@ describe("Sites Worker", () => {
         headers: { Authorization: "Bearer valid-session" },
         body: JSON.stringify({ message: "How am I doing today?" }),
       }),
-      environment({ SUPABASE_URL: "https://project.supabase.co", SUPABASE_PUBLISHABLE_KEY: "public-key", OPENAI_API_KEY: "secret" }),
+      environment({
+        SUPABASE_URL: "https://project.supabase.co",
+        SUPABASE_PUBLISHABLE_KEY: "public-key",
+        AI: { run: async () => ({ choices: [{ message: { content: "You have 650 kcal left." } }] }) },
+      }),
     );
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ reply: "You have energy hidden left." });

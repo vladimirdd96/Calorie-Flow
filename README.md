@@ -30,16 +30,13 @@ Open `http://localhost:3000`.
 
 Follow [docs/CLOUD_SYNC_SETUP.md](docs/CLOUD_SYNC_SETUP.md) to create the database, apply Row Level Security policies, configure magic-link redirects, and set deployment variables.
 
-ChatGPT subscriptions and OpenAI API billing are separate. AI features need a server-side OpenAI Platform key:
+AI features use Cloudflare Workers AI's managed binding. No model download, provider API key, or browser credential is required. Cloudflare includes a daily free allocation; AI requests stop safely if that allocation is exhausted.
 
 ```bash
-OPENAI_API_KEY=your_platform_key
-OPENAI_LABEL_MODEL=gpt-4.1-mini
-OPENAI_COACH_MODEL=gpt-5.6-sol
 FDC_API_KEY=your_data_gov_key
 ```
 
-Never prefix the OpenAI key with `NEXT_PUBLIC_`. The Worker verifies a Supabase access token before any paid AI call. Label extraction uses a strict JSON schema; the Coach uses function tools and exposes web search only for food-place requests.
+The Worker verifies a Supabase access token before any AI call. Label extraction uses Kimi K2.6 with a strict JSON schema; the Coach uses GLM-4.7-Flash with read-only function tools. Neither model credential is exposed to the browser.
 
 ## Food data and licensing
 
@@ -49,7 +46,7 @@ The small bundled list contains generic reference foods and is not medical advic
 
 ## Privacy
 
-Guest meal history and profile data stay in IndexedDB. Signed-in users opt into a Supabase-backed copy protected by per-user Row Level Security. Open Food Facts receives search terms/barcodes when used. A label photo is sent to OpenAI only when the user explicitly chooses AI label reading. Coach questions and the minimum relevant diary context are sent to OpenAI when the Coach is used. The app includes export/import so data is portable.
+Guest meal history and profile data stay in IndexedDB. Signed-in users opt into a Supabase-backed copy protected by per-user Row Level Security. Open Food Facts receives search terms/barcodes when used. A label photo is sent to Cloudflare Workers AI only when the user explicitly chooses AI label reading. Coach questions and the minimum relevant diary context are sent to Workers AI when the Coach is used. The app includes export/import so data is portable.
 
 ## Validation
 

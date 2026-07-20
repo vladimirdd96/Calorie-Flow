@@ -2,7 +2,7 @@
 
 ## Core principle
 
-Make the smallest correct change with explicit contracts and a single source of truth. Calorie Flow is local-first: a user must be able to track meals without an account, while Supabase sync and OpenAI features remain opt-in enhancements.
+Make the smallest correct change with explicit contracts and a single source of truth. Calorie Flow is local-first: a user must be able to track meals without an account, while Supabase sync and Workers AI features remain opt-in enhancements.
 
 ## Docs system
 
@@ -10,7 +10,7 @@ Before writing code, run `npm run docs:list`. Read only the documents whose `rea
 
 - `docs/auth.md` — auth, login, session, token, account, sync
 - `docs/database.md` — database, migration, schema, SQL, Supabase
-- `docs/api.md` — API, endpoint, route, request, response, OpenAI
+- `docs/api.md` — API, endpoint, route, request, response, Workers AI
 - `docs/ui-patterns.md` — component, screen, UI, styling, accessibility
 - `docs/i18n.md` — text, copy, translation, locale
 
