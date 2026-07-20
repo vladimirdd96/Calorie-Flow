@@ -37,6 +37,22 @@ const nutritionSchema = {
   ],
 };
 
+const mealPhotoSchema = {
+  type: "object", additionalProperties: false,
+  properties: {
+    name: { type: "string" },
+    mealType: { type: "string", enum: ["breakfast", "lunch", "dinner", "snack"] },
+    amount: { type: "number" },
+    unit: { type: "string", enum: ["serving", "g", "100g", "package", "piece", "tbsp", "tsp", "ml"] },
+    grams: { type: "number" },
+    nutrition: { type: "object", additionalProperties: false, properties: {
+      calories: { type: "number" }, protein: { type: "number" }, carbs: { type: "number" }, fat: { type: "number" }, fiber: { type: "number" }, sugar: { type: "number" },
+    }, required: ["calories", "protein", "carbs", "fat", "fiber", "sugar"] },
+    components: { type: "array", items: { type: "string" }, maxItems: 20 },
+    confidence: { type: "string", enum: ["low", "medium", "high"] },
+  }, required: ["name", "mealType", "amount", "unit", "grams", "nutrition", "components", "confidence"],
+};
+
 const coachTools = [
   {
     type: "function",
@@ -118,6 +134,46 @@ function parseLabelAnalysis(value) {
   if (!["low", "medium", "high"].includes(value.confidence) || typeof value.needsFollowUp !== "boolean") return null;
   if (!Array.isArray(value.followUpQuestions) || value.followUpQuestions.length > 3 || value.followUpQuestions.some((question) => typeof question !== "string" || !question.trim() || question.length > 240)) return null;
   return value;
+}
+
+function parseMealPhoto(value) {
+  if (!isRecord(value) || typeof value.name !== "string" || !value.name.trim() || !["breakfast", "lunch", "dinner", "snack"].includes(value.mealType)) return null;
+  if (!(typeof value.amount === "number" && Number.isFinite(value.amount) && value.amount > 0) || !(typeof value.grams === "number" && Number.isFinite(value.grams) && value.grams > 0)) return null;
+  if (!["serving", "g", "100g", "package", "piece", "tbsp", "tsp", "ml"].includes(value.unit) || !isRecord(value.nutrition)) return null;
+  if (!["calories", "protein", "carbs", "fat", "fiber", "sugar"].every((key) => isFiniteNonNegative(value.nutrition[key]))) return null;
+  if (!Array.isArray(value.components) || value.components.length > 20 || value.components.some((item) => typeof item !== "string" || !item.trim())) return null;
+  if (!["low", "medium", "high"].includes(value.confidence)) return null;
+  return value;
+}
+
+function visionText(value) {
+  if (typeof value === "string") return value;
+  if (!Array.isArray(value)) return "";
+  return value.map((part) => typeof part === "string" ? part : isRecord(part) && typeof part.text === "string" ? part.text : isRecord(part) && typeof part.content === "string" ? part.content : "").join("").trim();
+}
+
+function extractVisionText(response) {
+  if (!isRecord(response)) return "";
+  const choice = Array.isArray(response.choices) ? response.choices[0] : undefined;
+  if (isRecord(choice)) {
+    if (isRecord(choice.message)) {
+      const content = visionText(choice.message.content);
+      if (content) return content;
+    }
+    const content = visionText(choice.text);
+    if (content) return content;
+  }
+  return visionText(response.response) || visionText(response.output_text) || visionText(response.result);
+}
+
+function parseEmbeddedJson(text) {
+  const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+  try { return JSON.parse(cleaned); } catch {
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+    if (start < 0 || end <= start) return null;
+    try { return JSON.parse(cleaned.slice(start, end + 1)); } catch { return null; }
+  }
 }
 
 function json(body, status = 200) {
@@ -414,6 +470,37 @@ async function analyzeLabel(request, env) {
   }
 }
 
+async function analyzeMealPhoto(request, env) {
+  const auth = await authenticate(request, env);
+  if (auth.error) return auth.error;
+  try {
+    const body = await request.json();
+    const image = body?.image;
+    if (typeof image !== "string" || !image.startsWith("data:image/") || image.length > 10_000_000) return json({ error: "Add one photo under 10 MB." }, 400);
+    if (!env.AI?.run) return json({ error: "Workers AI is not configured for this deployment." }, 503);
+    const system = "Analyze any food-related image, not only packaging. It may be a screenshot of another calorie app, a plated meal, a recipe, a menu, or a mixed meal. First read all visible text, especially meal names, dates, calories, protein, carbs, fat, fibre/fiber, sugar, and descriptions. Treat explicit nutrition numbers in the image as authoritative for the combined meal; do not replace them with a fresh estimate. If the image describes components, include them in components. If a meal type is not visible, choose breakfast, lunch, dinner, or snack from the visible time/context or use the most likely type and keep confidence low. If numbers are missing, estimate each component conservatively and mark confidence low or medium. Return one combined meal with a positive amount and grams. Never invent certainty.";
+    const ask = (strict) => env.AI.run("@cf/moonshotai/kimi-k2.6", {
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: [{ type: "text", text: "Read this food photo or screenshot and return only the meal JSON needed for my diary. Use exact visible totals when the image contains a nutrition summary." }, { type: "image_url", image_url: { url: image } }] },
+      ],
+      ...(strict ? { response_format: { type: "json_schema", json_schema: { name: "meal_photo", strict: true, schema: mealPhotoSchema } } } : { response_format: { type: "json_object" } }),
+      max_completion_tokens: 900, temperature: 0,
+    });
+    let text = "";
+    try { text = extractVisionText(await ask(true)); } catch { /* Retry below without strict schema support. */ }
+    let parsed = text ? parseMealPhoto(parseEmbeddedJson(text)) : null;
+    if (!parsed) {
+      try { text = extractVisionText(await ask(false)); } catch { text = ""; }
+      parsed = text ? parseMealPhoto(parseEmbeddedJson(text)) : null;
+    }
+    if (!parsed) return json({ error: text ? "The photo service returned invalid meal data." : "The photo service did not return readable meal data. Try again or choose a clearer photo." }, 502);
+    return json(parsed);
+  } catch (error) {
+    return json({ error: error instanceof Error ? error.message : "The meal photo could not be understood." }, 500);
+  }
+}
+
 async function serveApp(request, env) {
   const url = new URL(request.url);
   const acceptsHtml = request.headers.get("Accept")?.includes("text/html");
@@ -432,6 +519,7 @@ const worker = {
     if (url.pathname === "/api/health") return json({ status: "ok", app: "calorie-flow", runtime: "static-pwa" });
     if (url.pathname === "/api/food-search" && request.method === "GET") return foodSearch(request, env);
     if (url.pathname === "/api/analyze-label" && request.method === "POST") return analyzeLabel(request, env);
+    if (url.pathname === "/api/analyze-meal-photo" && request.method === "POST") return analyzeMealPhoto(request, env);
     if (url.pathname === "/api/coach" && request.method === "POST") return coach(request, env);
     if (request.method !== "GET" && request.method !== "HEAD") return json({ error: "Method not allowed." }, 405);
     return serveApp(request, env);

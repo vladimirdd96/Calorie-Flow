@@ -58,6 +58,27 @@ describe("Sites Worker", () => {
     expect(response.status).toBe(401);
   });
 
+  it("analyzes a meal photo through the deployed Sites API", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url) => {
+      if (String(url).includes("/auth/v1/user")) return Response.json({ id: "00000000-0000-0000-0000-000000000001" });
+      throw new Error(`Unexpected fetch: ${url}`);
+    }));
+    const response = await worker.fetch(
+      new Request("https://example.com/api/analyze-meal-photo", {
+        method: "POST",
+        headers: { Authorization: "Bearer valid-session" },
+        body: JSON.stringify({ image: "data:image/jpeg;base64,AA==" }),
+      }),
+      environment({
+        SUPABASE_URL: "https://project.supabase.co",
+        SUPABASE_PUBLISHABLE_KEY: "public-key",
+        AI: { run: async () => ({ response: JSON.stringify({ name: "Eggs and bread", mealType: "breakfast", amount: 1, unit: "serving", grams: 300, nutrition: { calories: 490, protein: 43, carbs: 17, fat: 27, fiber: 7, sugar: 4 }, components: ["3 eggs", "protein bread"], confidence: "high" }) }) },
+      }),
+    );
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ name: "Eggs and bread", nutrition: { calories: 490 } });
+  });
+
   it("blocks unrelated app-building requests inside the Coach", async () => {
     vi.stubGlobal("fetch", vi.fn(async (url) => {
       if (String(url).includes("/auth/v1/user")) return Response.json({ id: "00000000-0000-0000-0000-000000000001" });
