@@ -103,6 +103,36 @@ function json(body, status = 200) {
   return Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 }
 
+async function foodSearch(request) {
+  const query = new URL(request.url).searchParams.get("q")?.trim() || "";
+  if (query.length < 2 || query.length > 100) return json({ error: "Search for between 2 and 100 characters." }, 400);
+
+  const fields = [
+    "code", "product_name", "generic_name", "brands", "quantity", "serving_size", "serving_quantity",
+    "product_quantity", "image_front_small_url", "image_front_url", "nutrition_data_per", "nutriments",
+  ].join(",");
+  const params = new URLSearchParams({ action: "process", json: "true", search_terms: query, page_size: "50", fields });
+  const url = `https://world.openfoodfacts.org/cgi/search.pl?${params}`;
+
+  try {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const upstream = await fetch(url, {
+        headers: { "User-Agent": "Calorie Flow/1.0 (food-search)" },
+      });
+      if (upstream.ok) {
+        const data = await upstream.json();
+        if (!data || !Array.isArray(data.products) || data.products.some((product) => !product || typeof product !== "object" || Array.isArray(product))) return json({ error: "Open Food Facts returned an invalid search response." }, 502);
+        return json(data);
+      }
+      if (upstream.status < 500 || attempt === 1) break;
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  } catch {
+    // Preserve local and custom-food search when the optional service is offline.
+  }
+  return json({ error: "Online food search is temporarily unavailable." }, 503);
+}
+
 function extractOutputText(response) {
   return response.output
     ?.flatMap((item) => item.content || [])
@@ -345,6 +375,7 @@ const worker = {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === "/api/health") return json({ status: "ok", app: "calorie-flow", runtime: "static-pwa" });
+    if (url.pathname === "/api/food-search" && request.method === "GET") return foodSearch(request);
     if (url.pathname === "/api/analyze-label" && request.method === "POST") return analyzeLabel(request, env);
     if (url.pathname === "/api/coach" && request.method === "POST") return coach(request, env);
     if (request.method !== "GET" && request.method !== "HEAD") return json({ error: "Method not allowed." }, 405);

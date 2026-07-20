@@ -2,7 +2,7 @@
 
 # API surfaces
 
-The Next.js route `src/app/api/analyze-label/route.ts` handles AI package interpretation during local Next development and deployment. It accepts one to three explicitly selected package images, so a nutrition table, barcode, and package size can be read together. `cloudflare/sites-worker.js` provides the deployed Cloudflare Sites API surface, including AI Coach and package interpretation.
+The Next.js routes handle AI package interpretation (`src/app/api/analyze-label/route.ts`) and optional Open Food Facts lookups (`src/app/api/food-search/route.ts`) during local Next development and deployment. Label analysis accepts one to three explicitly selected package images, so a nutrition table, barcode, and package size can be read together. Food search accepts a 2–100 character `q` query, validates the upstream response, and returns a temporary-unavailable response without affecting local or custom food search. `cloudflare/sites-worker.js` provides the matching deployed Cloudflare Sites API surface, including AI Coach and package interpretation.
 
 AI calls require a server-side `OPENAI_API_KEY`. Model names are optional configuration with safe defaults. Do not send data to OpenAI until the user explicitly invokes an AI feature.
 

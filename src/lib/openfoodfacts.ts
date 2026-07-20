@@ -20,6 +20,9 @@ const fields = [
   "product_quantity", "image_front_small_url", "image_front_url", "nutrition_data_per", "nutriments",
 ].join(",");
 
+const searchCache = new Map<string, { expiresAt: number; foods: Food[] }>();
+const SEARCH_CACHE_TTL_MS = 2 * 60_000;
+
 function numberValue(value: unknown) {
   const parsed = typeof value === "number" ? value : Number.parseFloat(String(value || "0"));
   return Number.isFinite(parsed) ? parsed : 0;
@@ -76,15 +79,15 @@ export async function findByBarcode(barcode: string): Promise<Food | null> {
 }
 
 export async function searchOpenFoodFacts(query: string): Promise<Food[]> {
-  const params = new URLSearchParams({
-    action: "process",
-    json: "true",
-    search_terms: query,
-    page_size: "50",
-    fields,
-  });
-  const response = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?${params}`);
+  const normalizedQuery = query.trim();
+  const cacheKey = normalizedQuery.toLocaleLowerCase();
+  const cached = searchCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.foods;
+
+  const response = await fetch(`/api/food-search?q=${encodeURIComponent(normalizedQuery)}`);
   if (!response.ok) throw new Error("Food search failed");
   const data = await response.json();
-  return (data.products || []).map(mapProduct).filter(Boolean) as Food[];
+  const foods = (data.products || []).map(mapProduct).filter(Boolean) as Food[];
+  searchCache.set(cacheKey, { foods, expiresAt: Date.now() + SEARCH_CACHE_TTL_MS });
+  return foods;
 }

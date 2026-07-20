@@ -933,21 +933,33 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, hideCalori
   const [askingCoach, setAskingCoach] = useState(false);
   const [pendingImages, setPendingImages] = useState<File[]>([]);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const searchRequestRef = useRef(0);
   const recent = [...foods].filter((food) => food.lastUsedAt).sort((a, b) => (b.lastUsedAt || "").localeCompare(a.lastUsedAt || "")).slice(0, 6);
   const pick = (food: Food, followUps: string[] = []) => { setSelected(food); setQuestions(followUps); };
-  const runSearch = async (value: string) => {
+  const runSearch = useCallback(async (value: string) => {
+    const requestId = ++searchRequestRef.current;
     const normalized = value.trim().toLowerCase();
-    if (!normalized) { setResults([]); return; }
+    if (!normalized) { setResults([]); setError(""); setLoading(false); return; }
     const local = foods.filter((food) => `${food.name} ${food.brand || ""} ${food.barcode || ""}`.toLowerCase().includes(normalized)).slice(0, 10);
     setResults(local); setLoading(true); setError("");
+    if (normalized.length < 2) { setLoading(false); return; }
     try {
       const remote = await searchOpenFoodFacts(value.trim());
+      if (requestId !== searchRequestRef.current) return;
       const localIds = new Set(local.map((food) => food.id));
       setResults([...local, ...remote.filter((food) => !localIds.has(food.id))].slice(0, 25));
-    } catch { if (!local.length) setError("Online food search is unavailable. You can still add a custom food."); }
-    finally { setLoading(false); }
-  };
+    } catch {
+      if (requestId === searchRequestRef.current && !local.length) setError("Online food search is unavailable. You can still add a custom food.");
+    } finally {
+      if (requestId === searchRequestRef.current) setLoading(false);
+    }
+  }, [foods]);
   const search = async (event?: FormEvent) => { event?.preventDefault(); await runSearch(query); };
+  useEffect(() => {
+    if (view !== "search") return;
+    const timer = window.setTimeout(() => { void runSearch(query); }, 700);
+    return () => window.clearTimeout(timer);
+  }, [query, runSearch, view]);
   const sendIntake = async (event: FormEvent) => {
     event.preventDefault();
     const message = intakeDraft.trim();
@@ -1002,7 +1014,7 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, hideCalori
   if (view === "search") return (
     <div>
       <div className="sheet-header"><button className="icon-button ghost" onClick={() => setView("start")}><ArrowLeft /></button><div><span className="eyebrow">Food database</span><h2>Search</h2></div><button className="icon-button ghost" onClick={onClose}><X /></button></div>
-      <form className="sheet-search" onSubmit={search}><Search size={19} /><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Food, brand or barcode" /><button type="submit">Search</button></form>
+      <form className="sheet-search" onSubmit={search}><Search size={19} /><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Food, brand or barcode" /><button type="submit">Search now</button></form>
       {loading && <div className="search-status"><i />Searching local and packaged foods…</div>}
       {error && <div className="inline-alert"><WifiOff size={17} />{error}</div>}
       <div className="food-list sheet-food-list">{results.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div>

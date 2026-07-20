@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { searchOpenFoodFacts } from "./openfoodfacts";
 
 describe("searchOpenFoodFacts", () => {
-  it("keeps zero-calorie packaged drinks and requests a useful result set", async () => {
+  it("keeps zero-calorie packaged drinks and uses the resilient app search endpoint", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -32,6 +32,6 @@ describe("searchOpenFoodFacts", () => {
       packageGrams: 500,
       nutrientsPer100: expect.objectContaining({ calories: 0 }),
     })]);
-    expect(fetchMock.mock.calls[0][0]).toContain("page_size=50");
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/food-search?q=zero%20cola");
   });
 });
