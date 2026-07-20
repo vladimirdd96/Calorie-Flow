@@ -485,6 +485,7 @@ async function analyzeMealPhoto(request, env) {
         { role: "user", content: [{ type: "text", text: "Read this food photo or screenshot and return only the meal JSON needed for my diary. Use exact visible totals when the image contains a nutrition summary." }, { type: "image_url", image_url: { url: image } }] },
       ],
       ...(strict ? { response_format: { type: "json_schema", json_schema: { name: "meal_photo", strict: true, schema: mealPhotoSchema } } } : { response_format: { type: "json_object" } }),
+      chat_template_kwargs: { thinking: false },
       max_completion_tokens: 900, temperature: 0,
     });
     let text = "";
