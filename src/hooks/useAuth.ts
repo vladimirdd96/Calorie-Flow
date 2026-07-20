@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { cloudSyncConfigured, getAuthCallbackUrl, getSupabase, type CloudUser, type SocialAuthProvider } from "@/lib/supabase";
+import { cloudSyncConfigured, getAppOrigin, getAuthCallbackUrl, getSupabase, type CloudUser, type SocialAuthProvider } from "@/lib/supabase";
 
 export function useAuth() {
   const [user, setUser] = useState<CloudUser | null>(null);
@@ -9,6 +9,12 @@ export function useAuth() {
   const [passwordRecovery, setPasswordRecovery] = useState(false);
 
   useEffect(() => {
+    if (window.location.hostname.endsWith(".chatgpt.site")) {
+      const canonicalUrl = new URL(window.location.href);
+      canonicalUrl.host = new URL(getAppOrigin()).host;
+      window.location.replace(canonicalUrl.toString());
+      return;
+    }
     const supabase = getSupabase();
     if (!supabase) return;
     let active = true;
