@@ -83,7 +83,15 @@ export type LabelAnalysis = {
 
 export type CoachMessage = {
   id: string;
+  chatId: string;
   role: "user" | "assistant";
   content: string;
   createdAt: string;
+};
+
+export type CoachChat = {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
 };

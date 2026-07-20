@@ -6,6 +6,7 @@ Calorie Flow works without an account. These steps enable passwordless accounts,
 
 1. Create a Supabase project.
 2. Open **SQL Editor** and run `supabase/migrations/202607180001_user_sync.sql`.
+   For existing projects, also run the newer `coach_chat_threads` migration to enable separate saved Coach conversations.
 3. In **Authentication → URL Configuration**, set:
    - Site URL: `https://calorie-flow.vladimirdd96.chatgpt.site`
    - Redirect URL: `https://calorie-flow.vladimirdd96.chatgpt.site/**`

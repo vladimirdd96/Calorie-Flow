@@ -1,7 +1,7 @@
-import type { CoachMessage, Food, Meal, Profile } from "./types";
+import type { CoachChat, CoachMessage, Food, Meal, Profile } from "./types";
 import { getSupabase } from "./supabase";
 import { z } from "zod";
-import { coachMessageSchema, foodSchema, mealSchema, profileSchema } from "./schemas";
+import { coachChatSchema, coachMessageSchema, foodSchema, mealSchema, profileSchema } from "./schemas";
 
 export type CloudSnapshot = {
   profile?: Profile;
@@ -85,16 +85,28 @@ export async function upsertCloudFood(userId: string, food: Food) {
   if (error) throw error;
 }
 
-export async function getCloudCoachMessages(userId: string, limit = 60): Promise<CoachMessage[]> {
+export async function getCloudCoachChats(userId: string): Promise<CoachChat[]> {
+  const { data, error } = await client().from("coach_chats").select("id,title,created_at,updated_at").eq("user_id", userId).order("updated_at", { ascending: false });
+  if (error) throw error;
+  return (data || []).map((row) => coachChatSchema.parse({ id: row.id, title: row.title, createdAt: row.created_at, updatedAt: row.updated_at }));
+}
+
+export async function saveCloudCoachChat(userId: string, chat: CoachChat) {
+  const { error } = await client().from("coach_chats").upsert({ user_id: userId, id: chat.id, title: chat.title, created_at: chat.createdAt, updated_at: chat.updatedAt }, { onConflict: "user_id,id" });
+  if (error) throw error;
+}
+
+export async function getCloudCoachMessages(userId: string, chatId: string, limit = 120): Promise<CoachMessage[]> {
   const { data, error } = await client()
     .from("coach_messages")
-    .select("id,role,content,created_at")
-    .eq("user_id", userId)
+    .select("id,chat_id,role,content,created_at")
+    .eq("user_id", userId).eq("chat_id", chatId)
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
   return (data || []).reverse().map((row) => coachMessageSchema.parse({
     id: row.id,
+    chatId: row.chat_id,
     role: row.role,
     content: row.content,
     createdAt: row.created_at,
@@ -107,13 +119,14 @@ export async function getAllCloudCoachMessages(userId: string): Promise<CoachMes
   for (let from = 0; ; from += pageSize) {
     const { data, error } = await client()
       .from("coach_messages")
-      .select("id,role,content,created_at")
+      .select("id,chat_id,role,content,created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: true })
       .range(from, from + pageSize - 1);
     if (error) throw error;
     const page = (data || []).map((row) => coachMessageSchema.parse({
       id: row.id,
+      chatId: row.chat_id,
       role: row.role,
       content: row.content,
       createdAt: row.created_at,
@@ -127,15 +140,23 @@ export async function saveCloudCoachMessage(userId: string, message: CoachMessag
   const { error } = await client().from("coach_messages").upsert({
     user_id: userId,
     id: message.id,
+    chat_id: message.chatId,
     role: message.role,
     content: message.content,
     created_at: message.createdAt,
-  }, { onConflict: "user_id,id" });
+  }, { onConflict: "user_id,chat_id,id" });
   if (error) throw error;
 }
 
-export async function clearCloudCoachMessages(userId: string) {
-  const { error } = await client().from("coach_messages").delete().eq("user_id", userId);
+export async function clearCloudCoachMessages(userId: string, chatId?: string) {
+  let query = client().from("coach_messages").delete().eq("user_id", userId);
+  if (chatId) query = query.eq("chat_id", chatId);
+  const { error } = await query;
+  if (error) throw error;
+}
+
+export async function deleteCloudCoachChat(userId: string, chatId: string) {
+  const { error } = await client().from("coach_chats").delete().eq("user_id", userId).eq("id", chatId);
   if (error) throw error;
 }
 

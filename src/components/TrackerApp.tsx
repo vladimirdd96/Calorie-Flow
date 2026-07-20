@@ -53,14 +53,17 @@ import {
 } from "@/lib/db";
 import {
   clearCloudCoachMessages,
+  deleteCloudCoachChat,
   deleteCloudMeal,
   getAllCloudCoachMessages,
+  getCloudCoachChats,
   getCloudCoachMessages,
   getCloudSnapshot,
   mergeSnapshots,
   pushCloudSnapshot,
   replaceCloudSnapshot,
   saveCloudCoachMessage,
+  saveCloudCoachChat,
   upsertCloudFood,
   upsertCloudMeal,
   upsertCloudProfile,
@@ -83,6 +86,7 @@ import { labelAnalysisSchema } from "@/lib/schemas";
 import { getSupabase, type CloudUser, type SocialAuthProvider } from "@/lib/supabase";
 import type {
   ActivityLevel,
+  CoachChat,
   CoachMessage,
   DietPreset,
   Food,
@@ -1149,6 +1153,8 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [loadedUserId, setLoadedUserId] = useState("");
+  const [chats, setChats] = useState<CoachChat[]>([]);
+  const [activeChatId, setActiveChatId] = useState("");
   const [section, setSection] = useState<CoachSection>("chat");
   const [groceryItems, setGroceryItems] = useState<GroceryItem[]>([]);
   const [loadedGroceryKey, setLoadedGroceryKey] = useState("");
@@ -1169,7 +1175,18 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
   useEffect(() => {
     let active = true;
     if (!user) return;
-    getCloudCoachMessages(user.id).then((stored) => { if (active) { setMessages(stored); setLoadedUserId(user.id); } }).catch(() => {
+    getCloudCoachChats(user.id).then(async (storedChats) => {
+      if (!active) return;
+      let available = storedChats;
+      if (!available.length) {
+        const now = new Date().toISOString();
+        const chat: CoachChat = { id: crypto.randomUUID(), title: "New conversation", createdAt: now, updatedAt: now };
+        await saveCloudCoachChat(user.id, chat); available = [chat];
+      }
+      const chat = available[0];
+      const stored = await getCloudCoachMessages(user.id, chat.id);
+      if (active) { setChats(available); setActiveChatId(chat.id); setMessages(stored); setLoadedUserId(user.id); }
+    }).catch(() => {
       if (active) { setMessages([]); setLoadedUserId(user.id); setError("Coach history could not be loaded."); }
     });
     return () => { active = false; };
@@ -1179,7 +1196,8 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
   const send = async (suggestion?: string) => {
     const content = (suggestion ?? draft).trim();
     if (!content || !user || loading || loadedUserId !== user.id) return;
-    const userMessage: DisplayCoachMessage = { id: crypto.randomUUID(), role: "user", content, createdAt: new Date().toISOString() };
+    if (!activeChatId) return;
+    const userMessage: DisplayCoachMessage = { id: crypto.randomUUID(), chatId: activeChatId, role: "user", content, createdAt: new Date().toISOString() };
     const history = messages.slice(-12).map(({ role, content: previous }) => ({ role, content: previous }));
     setMessages((current) => [...current, userMessage]); setDraft(""); setError(""); setLoading(true);
     try {
@@ -1208,6 +1226,7 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
       }).slice(0, 6) : undefined;
       const assistantMessage: DisplayCoachMessage = {
         id: crypto.randomUUID(),
+        chatId: activeChatId,
         role: "assistant",
         content: hideCalories ? hideCalorieValues(bodyRecord.reply) : bodyRecord.reply,
         createdAt: new Date().toISOString(),
@@ -1222,8 +1241,25 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
   const clear = async () => {
     if (!user || !messages.length) return;
     if (!window.confirm("Clear your private Coach conversation? This cannot be undone.")) return;
-    await clearCloudCoachMessages(user.id);
+    await clearCloudCoachMessages(user.id, activeChatId);
     setMessages([]);
+  };
+  const switchChat = async (chatId: string) => {
+    if (!user || chatId === activeChatId) return;
+    setActiveChatId(chatId); setMessages([]);
+    try { setMessages(await getCloudCoachMessages(user.id, chatId)); } catch { setError("This conversation could not be loaded."); }
+  };
+  const newChat = async () => {
+    if (!user) return;
+    const now = new Date().toISOString();
+    const chat: CoachChat = { id: crypto.randomUUID(), title: "New conversation", createdAt: now, updatedAt: now };
+    await saveCloudCoachChat(user.id, chat); setChats((current) => [chat, ...current]); setActiveChatId(chat.id); setMessages([]);
+  };
+  const removeChat = async () => {
+    if (!user || chats.length < 2 || !window.confirm("Delete this conversation? This cannot be undone.")) return;
+    await deleteCloudCoachChat(user.id, activeChatId);
+    const remaining = chats.filter((chat) => chat.id !== activeChatId);
+    setChats(remaining); setActiveChatId(remaining[0].id); setMessages(await getCloudCoachMessages(user.id, remaining[0].id));
   };
   const updateGroceries = (updater: (current: GroceryItem[]) => GroceryItem[]) => {
     setGroceryItems((current) => {
@@ -1263,13 +1299,14 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
   const remainingGroceries = accountGroceryItems.filter((item) => !item.checked).length;
   return (
     <main className="page coach-page">
-      <header className="coach-header"><div><span className="eyebrow">Your food companion</span><h1>Coach</h1></div>{section === "chat" && messages.length > 0 && <button className="text-button muted" onClick={clear}>Clear chat</button>}</header>
+      <header className="coach-header"><div><span className="eyebrow">Your food companion</span><h1>Coach</h1></div>{section === "chat" && <div className="coach-header-actions"><button className="text-button" onClick={() => void newChat()}><Plus size={15} />New chat</button>{messages.length > 0 && <button className="text-button muted" onClick={() => void clear()}>Clear</button>}</div>}</header>
+      {section === "chat" && <div className="coach-chat-picker"><label htmlFor="coach-chat-select">Conversation</label><select id="coach-chat-select" value={activeChatId} onChange={(event) => void switchChat(event.target.value)}>{chats.map((chat) => <option key={chat.id} value={chat.id}>{chat.title}</option>)}</select>{chats.length > 1 && <button className="icon-button ghost" onClick={() => void removeChat()} aria-label="Delete current conversation"><Trash2 size={15} /></button>}</div>}
       <div className="coach-tabs" role="tablist" aria-label="Coach workspace"><button id="coach-chat-tab" role="tab" aria-selected={section === "chat"} aria-controls="coach-chat-panel" className={section === "chat" ? "active" : ""} onClick={() => setSection("chat")}><MessageCircle size={16} />Chat</button><button id="coach-groceries-tab" role="tab" aria-selected={section === "groceries"} aria-controls="coach-groceries-panel" className={section === "groceries" ? "active" : ""} onClick={() => setSection("groceries")}><ListChecks size={16} />Groceries{remainingGroceries > 0 && <span>{remainingGroceries}</span>}</button></div>
       {section === "chat" && <>
         <div className="coach-scope"><ShieldCheck size={15} /><span>{hideCalories ? "Food and nutrition only" : "Food, calories and nutrition"} · recipes and grocery lists are saved only when you choose</span></div>
         <section className="coach-thread" aria-live="polite">
           {messages.length === 0 && <div className="coach-welcome"><span className="coach-orb"><Sparkles /></span><h2>What should we make?</h2><p>Talk through dinner, use up what you have, or log a packaged food by scanning its barcode or photographing its nutrition label.</p><div className="coach-starters">{starters.map((starter) => <button key={starter} onClick={() => send(starter)}>{starter}</button>)}</div></div>}
-          {messages.map((message) => { const visibleContent = hideCalories ? hideCalorieValues(message.content) : message.content; const groceries = message.role === "assistant" ? groceryItemsFromReply(visibleContent) : []; return <article key={message.id} className={`coach-message ${message.role}`}><span>{message.role === "assistant" ? "Coach" : "You"}</span><p>{visibleContent}</p>{groceries.length > 0 && <button className="add-groceries" onClick={() => addGroceries(groceries)}><ListChecks size={15} />Add {groceries.length} to groceries</button>}{!!message.sources?.length && <div className="coach-sources"><strong>Sources</strong>{message.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.title}</a>)}</div>}</article>; })}
+          {messages.map((message) => { const visibleContent = hideCalories ? hideCalorieValues(message.content) : message.content; const groceries = message.role === "assistant" ? groceryItemsFromReply(visibleContent) : []; return <article key={message.id} className={`coach-message ${message.role}`}><span>{message.role === "assistant" ? "Coach" : "You"}</span><p>{visibleContent}</p>{groceries.length > 0 && <div className="recipe-grocery-action"><strong>Want to cook this?</strong><button className="add-groceries" onClick={() => addGroceries(groceries)}><ListChecks size={15} />Add {groceries.length} ingredients to groceries</button></div>}{!!message.sources?.length && <div className="coach-sources"><strong>Sources</strong>{message.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.title}</a>)}</div>}</article>; })}
           {loading && <div className="coach-typing"><i /><i /><i /><span>Coach is thinking through it…</span></div>}
           {error && <div className="inline-alert error" role="alert"><Info size={17} /><span>{error}</span></div>}
           <div ref={endRef} />
@@ -1579,8 +1616,14 @@ export function TrackerApp() {
     await refresh(); setToast(mode === "replace" ? "Backup replaced current data" : "Backup restored");
     if (auth.user) syncWrite(async (userId) => {
       if (mode === "replace") await clearCloudCoachMessages(userId);
+      const importedChats = [...new Set((data.coachMessages || []).map((message) => message.chatId))].map((chatId) => {
+        const firstMessage = data.coachMessages?.find((message) => message.chatId === chatId);
+        const createdAt = firstMessage?.createdAt || new Date().toISOString();
+        return { id: chatId, title: "Restored conversation", createdAt, updatedAt: createdAt };
+      });
       await Promise.all([
         mode === "replace" ? replaceCloudSnapshot(userId, await getLocalSnapshot()) : pushCloudSnapshot(userId, await getLocalSnapshot()),
+        ...importedChats.map((chat) => saveCloudCoachChat(userId, chat)),
         ...((data.coachMessages || []).map((message) => saveCloudCoachMessage(userId, message))),
       ]);
     });

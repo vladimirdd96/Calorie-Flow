@@ -336,6 +336,12 @@ p { color: var(--muted); line-height: 1.55; }
 .coach-page { width: min(100%, 820px); margin: 0 auto; }
 .coach-header { min-height: 105px; display: flex; align-items: end; justify-content: space-between; gap: 16px; padding: 24px 2px 13px; }
 .coach-header h1 { margin: 6px 0 0; }
+.coach-header-actions { display: flex; align-items: center; gap: 10px; }
+.coach-chat-picker { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; }
+.coach-chat-picker label { color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.coach-chat-picker select { min-width: 0; flex: 1; min-height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 10px; color: var(--text); background: var(--panel); font: inherit; font-size: 11px; }
+.recipe-grocery-action { display: grid; gap: 4px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+.recipe-grocery-action strong { color: var(--muted); font-size: 10px; }
 .text-button.muted { color: var(--muted); }
 .coach-tabs { display: inline-flex; gap: 4px; margin-bottom: 14px; padding: 4px; border-radius: 14px; background: var(--panel); border: 1px solid var(--border); }
 .coach-tabs button { min-height: 36px; display: inline-flex; align-items: center; gap: 7px; padding: 0 11px; border: 0; border-radius: 10px; color: var(--muted); background: transparent; font-size: 11px; font-weight: 800; }
