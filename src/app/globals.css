@@ -177,6 +177,12 @@ p { color: var(--muted); line-height: 1.55; }
 .insight-card { display: grid; grid-template-columns: auto 1fr; gap: 14px; padding: 18px; margin-top: 14px; }
 .insight-card strong { font-size: 14px; }
 .insight-card p { font-size: 12px; margin: 6px 0 0; }
+.coach-check-in { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; margin-top: 14px; padding: 12px 4px; text-align: left; color: var(--text); background: transparent; border: 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.coach-check-in > span:nth-child(2) { min-width: 0; display: grid; gap: 3px; }
+.coach-check-in strong { font-size: 12px; }
+.coach-check-in small { color: var(--muted); font-size: 10px; }
+.coach-check-in > svg { color: var(--muted-2); }
+.coach-check-in:hover strong, .coach-check-in:focus-visible strong { color: var(--mint); }
 .profile-form, .onboarding-form { display: grid; gap: 18px; }
 .form-grid { display: grid; gap: 12px; }
 .form-grid.two { grid-template-columns: 1fr 1fr; }
@@ -301,7 +307,6 @@ p { color: var(--muted); line-height: 1.55; }
 .coach-gate p { max-width: 470px; font-size: 12px; }
 .coach-loader { width: 26px; height: 26px; border-radius: 50%; border: 2px solid rgba(125,255,213,.2); border-top-color: var(--mint); animation: spin .8s linear infinite; }
 .bottom-nav { position: fixed; left: 50%; bottom: max(10px, env(safe-area-inset-bottom)); transform: translateX(-50%); width: min(calc(100% - 20px), 570px); height: 70px; display: grid; grid-template-columns: repeat(5,1fr); align-items: center; padding: 0 7px; z-index: 20; border-radius: 24px; background: rgba(11,22,19,.88); border: 1px solid rgba(173,255,226,.14); box-shadow: 0 18px 60px rgba(0,0,0,.5), inset 0 1px rgba(255,255,255,.04); backdrop-filter: blur(24px); }
-.bottom-nav { grid-template-columns: repeat(6, 1fr); width: min(calc(100% - 14px), 620px); padding: 0 4px; }
 .bottom-nav > button { height: 58px; display: grid; place-items: center; align-content: center; gap: 3px; background: transparent; border: 0; color: var(--muted-2); }
 .bottom-nav > button svg { width: 20px; }
 .bottom-nav > button span { font-size: 9px; font-weight: 800; }
@@ -441,11 +446,10 @@ p { color: var(--muted); line-height: 1.55; }
   .app-shell { padding-bottom: 0; padding-left: 100px; }
   .content-shell { width: min(100%, 1030px); }
   .page { padding-bottom: 70px; }
-  .bottom-nav { left: 14px; top: 50%; bottom: auto; transform: translateY(-50%); width: 76px; height: 530px; grid-template-columns: 1fr; grid-template-rows: repeat(6,1fr); border-radius: 26px; }
+  .bottom-nav { left: 14px; top: 50%; bottom: auto; transform: translateY(-50%); width: 76px; height: 450px; grid-template-columns: 1fr; grid-template-rows: repeat(5,1fr); border-radius: 26px; }
   .bottom-nav .add-button { transform: none; order: 3; }
   .bottom-nav > button:nth-child(4) { order: 4; }
   .bottom-nav > button:nth-child(5) { order: 5; }
-  .bottom-nav > button:nth-child(6) { order: 6; }
   .coach-composer { bottom: 18px; }
   .hero-grid { grid-template-columns: .82fr 1.18fr; }
   .progress-ring { width: 235px; }

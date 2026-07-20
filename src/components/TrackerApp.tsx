@@ -249,6 +249,7 @@ function TodayView({
   dateKey,
   onDateChange,
   onAdd,
+  onOpenCoach,
   onDelete,
   syncLabel,
 }: {
@@ -257,6 +258,7 @@ function TodayView({
   dateKey: string;
   onDateChange: (date: string) => void;
   onAdd: () => void;
+  onOpenCoach: () => void;
   onDelete: (id: string) => void;
   syncLabel: string;
 }) {
@@ -292,6 +294,12 @@ function TodayView({
           <div className="target-note"><Info size={15} /> Targets are guides, not exact medical limits.</div>
         </div>
       </section>
+
+      <button className="coach-check-in" onClick={onOpenCoach}>
+        <span className="action-icon mint"><MessageCircle size={19} /></span>
+        <span><strong>Ask Coach about today</strong><small>Get guidance with your diary in context</small></span>
+        <ChevronRight size={18} />
+      </button>
 
       <section className="log-section">
         <div className="section-heading"><div><span className="eyebrow">Daily log</span><h2>Your meals</h2></div><button className="text-button" onClick={onAdd}><Plus size={17} /> Add food</button></div>
@@ -951,7 +959,6 @@ function BottomNav({ tab, onChange, onAdd }: { tab: Tab; onChange: (tab: Tab) =>
   const items: Array<{ tab: Tab; label: string; icon: React.ReactNode }> = [
     { tab: "today", label: "Today", icon: <Home /> },
     { tab: "search", label: "Foods", icon: <Search /> },
-    { tab: "coach", label: "Coach", icon: <MessageCircle /> },
     { tab: "insights", label: "Insights", icon: <BarChart3 /> },
     { tab: "profile", label: "Targets", icon: <UserRound /> },
   ];
@@ -1198,7 +1205,7 @@ export function TrackerApp() {
     <div className="app-shell">
       <div className="ambient one" /><div className="ambient two" />
       <div className="content-shell">
-        {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={() => openAdd()} onDelete={deleteMeal} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} />}
+        {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={() => openAdd()} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} />}
         {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={() => openAdd("search")} />}
         {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} onOpenAccount={() => setTab("profile")} />}
         {tab === "insights" && <InsightsView meals={meals} profile={profile} />}
