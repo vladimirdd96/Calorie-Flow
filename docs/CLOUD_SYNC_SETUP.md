@@ -52,11 +52,12 @@ Copy its client ID and secret to **Authentication → Sign In / Up → Google** 
 
 ## 5. Verify
 
-1. Request a sign-in link from **Targets → Account & sync**.
-2. Log a meal, then sign in on another device and confirm it appears.
-3. Open **Coach** and ask “How am I doing today?”
-4. Ask “Find a high-protein lunch near Sofia” to verify food-place web search.
-5. Ask the Coach to write code; it should decline and redirect to nutrition.
+1. On a fresh visit, create an email/password account from the account gateway and confirm the email when prompted.
+2. Request a password reset, open the emailed link, and set a new password.
+3. Log a meal, then sign in on another device and confirm it appears.
+4. Open **Coach** and ask “How am I doing today?”
+5. Ask “Find a high-protein lunch near Sofia” to verify food-place web search.
+6. Ask the Coach to write code; it should decline and redirect to nutrition.
 
 ## 6. Enable GitHub deployments
 

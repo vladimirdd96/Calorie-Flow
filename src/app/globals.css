@@ -5,6 +5,7 @@
   --panel-strong: #14231f;
   --panel-soft: rgba(25, 42, 38, 0.7);
   --border: rgba(173, 255, 226, 0.1);
+  --line: rgba(173, 255, 226, 0.1);
   --border-strong: rgba(125, 255, 213, 0.24);
   --text: #f1f7f5;
   --muted: #8fa49e;
@@ -260,6 +261,7 @@ p { color: var(--muted); line-height: 1.55; }
 .auth-switch { text-align: center; color: var(--muted); }
 .auth-switch button, .auth-guest { padding: 0; border: 0; color: var(--mint); background: transparent; font: inherit; font-weight: 700; cursor: pointer; }
 .auth-guest { justify-self: center; font-size: 12px; }
+.auth-recovery { margin-top: -8px; }
 .auth-unavailable { display: flex; align-items: flex-start; gap: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; color: var(--muted); background: rgba(125,255,213,.05); }
 
 .coach-page { width: min(100%, 820px); margin: 0 auto; }

@@ -90,7 +90,7 @@ import type {
 type Tab = "today" | "search" | "coach" | "insights" | "profile";
 type AddView = "start" | "search" | "scan" | "label" | "manual";
 type SyncState = "local" | "syncing" | "synced" | "offline" | "error";
-type AuthMode = "sign-in" | "register";
+type AuthMode = "sign-in" | "register" | "forgot-password" | "update-password";
 
 const AUTH_GATE_COMPLETE_KEY = "authGateComplete";
 
@@ -953,33 +953,47 @@ function AuthGateway({
   onSignIn,
   onSignUp,
   onSignInWithProvider,
+  onRequestPasswordReset,
+  onUpdatePassword,
+  passwordRecovery,
   onContinueAsGuest,
 }: {
   configured: boolean;
   onSignIn: (email: string, password: string) => Promise<void>;
   onSignUp: (email: string, password: string) => Promise<{ needsEmailConfirmation: boolean }>;
   onSignInWithProvider: (provider: SocialAuthProvider) => Promise<void>;
+  onRequestPasswordReset: (email: string) => Promise<void>;
+  onUpdatePassword: (password: string) => Promise<void>;
+  passwordRecovery: boolean;
   onContinueAsGuest: () => void;
 }) {
-  const [mode, setMode] = useState<AuthMode>("sign-in");
+  const [mode, setMode] = useState<AuthMode>(passwordRecovery ? "update-password" : "sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const isRegistering = mode === "register";
+  const isPasswordReset = mode === "forgot-password" || mode === "update-password";
+  const isUpdatingPassword = mode === "update-password";
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!configured) return;
-    if (isRegistering && password !== confirmPassword) {
+    if ((isRegistering || isUpdatingPassword) && password !== confirmPassword) {
       setNotice("Passwords do not match.");
       return;
     }
     setBusy(true);
     setNotice("");
     try {
-      if (isRegistering) {
+      if (mode === "forgot-password") {
+        await onRequestPasswordReset(email.trim());
+        setNotice("If an account exists for that email, a reset link is on its way.");
+      } else if (isUpdatingPassword) {
+        await onUpdatePassword(password);
+        setNotice("Your password is updated. You can continue to your diary.");
+      } else if (isRegistering) {
         const { needsEmailConfirmation } = await onSignUp(email.trim(), password);
         setNotice(needsEmailConfirmation ? "Check your inbox to confirm your account, then sign in." : "Your account is ready.");
       } else {
@@ -1007,21 +1021,19 @@ function AuthGateway({
     <main className="auth-page">
       <section className="auth-card card" aria-labelledby="auth-title">
         <div className="auth-brand"><span className="brand-mark large">C</span><span>Calorie Flow</span></div>
-        <div><span className="eyebrow">{isRegistering ? "Create your account" : "Welcome back"}</span><h1 id="auth-title">{isRegistering ? "Start your flow" : "Sign in to Calorie Flow"}</h1><p>{isRegistering ? "Save your diary privately and keep it in sync across your devices." : "Pick up right where you left off."}</p></div>
+        <div><span className="eyebrow">{isRegistering ? "Create your account" : isUpdatingPassword ? "Choose a new password" : mode === "forgot-password" ? "Reset your password" : "Welcome back"}</span><h1 id="auth-title">{isRegistering ? "Start your flow" : isUpdatingPassword ? "Secure your diary" : mode === "forgot-password" ? "Get back in" : "Sign in to Calorie Flow"}</h1><p>{isRegistering ? "Save your diary privately and keep it in sync across your devices." : isUpdatingPassword ? "Use a new password you have not used elsewhere." : mode === "forgot-password" ? "We’ll email a secure reset link if this address has an account." : "Pick up right where you left off."}</p></div>
         {!configured ? <p className="auth-unavailable"><LockKeyhole size={16} />Account sign-in needs Supabase configuration. You can still use Calorie Flow locally.</p> : <>
           <form className="auth-form" onSubmit={submit}>
-            <label><span>Email</span><input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" /></label>
-            <label><span>Password</span><input type="password" autoComplete={isRegistering ? "new-password" : "current-password"} minLength={6} required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 6 characters" /></label>
-            {isRegistering && <label><span>Confirm password</span><input type="password" autoComplete="new-password" minLength={6} required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Repeat your password" /></label>}
-            <button className="primary-button" type="submit" disabled={busy}>{busy ? "Please wait…" : isRegistering ? "Create account" : "Sign in"}</button>
+            {!isUpdatingPassword && <label><span>Email</span><input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" /></label>}
+            {mode !== "forgot-password" && <label><span>{isRegistering || isUpdatingPassword ? "New password" : "Password"}</span><input type="password" autoComplete={isRegistering || isUpdatingPassword ? "new-password" : "current-password"} minLength={6} required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 6 characters" /></label>}
+            {(isRegistering || isUpdatingPassword) && <label><span>Confirm password</span><input type="password" autoComplete="new-password" minLength={6} required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Repeat your password" /></label>}
+            <button className="primary-button" type="submit" disabled={busy}>{busy ? "Please wait…" : isRegistering ? "Create account" : isUpdatingPassword ? "Save new password" : mode === "forgot-password" ? "Email reset link" : "Sign in"}</button>
           </form>
-          <div className="account-divider"><span>or</span></div>
-          <button className="secondary-button auth-google" type="button" disabled={busy} onClick={signInWithGoogle}><span className="provider-mark google" aria-hidden="true">G</span>Continue with Google</button>
+          {!isPasswordReset && <><div className="account-divider"><span>or</span></div><button className="secondary-button auth-google" type="button" disabled={busy} onClick={signInWithGoogle}><span className="provider-mark google" aria-hidden="true">G</span>Continue with Google</button></>}
           {notice && <p className="account-notice" role="status">{notice}</p>}
         </>}
-        <p className="auth-switch">{isRegistering ? "Already have an account?" : "New to Calorie Flow?"} <button type="button" onClick={() => { setMode(isRegistering ? "sign-in" : "register"); setNotice(""); }}>{isRegistering ? "Sign in" : "Create an account"}</button></p>
-        <button className="text-button auth-guest" type="button" onClick={onContinueAsGuest}>Continue without an account</button>
-        <p className="form-footnote">Guest data stays on this device. You can create an account later in Targets.</p>
+        {!isPasswordReset && <><p className="auth-switch">{isRegistering ? "Already have an account?" : "New to Calorie Flow?"} <button type="button" onClick={() => { setMode(isRegistering ? "sign-in" : "register"); setNotice(""); }}>{isRegistering ? "Sign in" : "Create an account"}</button></p>{mode === "sign-in" && <button className="auth-guest auth-recovery" type="button" onClick={() => { setMode("forgot-password"); setNotice(""); }}>Forgot your password?</button>}<button className="text-button auth-guest" type="button" onClick={onContinueAsGuest}>Continue without an account</button><p className="form-footnote">Guest data stays on this device. You can create an account later in Targets.</p></>}
+        {isPasswordReset && <button className="text-button auth-guest" type="button" onClick={() => { setMode("sign-in"); setNotice(""); }}>Back to sign in</button>}
       </section>
     </main>
   );
@@ -1182,7 +1194,7 @@ export function TrackerApp() {
   };
 
   if (!ready || !auth.ready || !authGateReady) return <div className="app-loading"><span className="brand-mark large">C</span><i /></div>;
-  if (showAuthGateway) return <AuthGateway configured={auth.configured} onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onContinueAsGuest={() => { window.localStorage.setItem(AUTH_GATE_COMPLETE_KEY, "true"); setShowAuthGateway(false); }} />;
+  if (showAuthGateway || auth.passwordRecovery) return <AuthGateway key={auth.passwordRecovery ? "recovery" : "standard"} configured={auth.configured} passwordRecovery={auth.passwordRecovery} onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} onContinueAsGuest={() => { window.localStorage.setItem(AUTH_GATE_COMPLETE_KEY, "true"); setShowAuthGateway(false); }} />;
   return (
     <div className="app-shell">
       <div className="ambient one" /><div className="ambient two" />

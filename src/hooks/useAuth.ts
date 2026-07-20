@@ -6,6 +6,7 @@ import { cloudSyncConfigured, getSupabase, type CloudUser, type SocialAuthProvid
 export function useAuth() {
   const [user, setUser] = useState<CloudUser | null>(null);
   const [ready, setReady] = useState(!cloudSyncConfigured);
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
 
   useEffect(() => {
     const supabase = getSupabase();
@@ -18,9 +19,10 @@ export function useAuth() {
         setReady(true);
       }
     });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (active) {
         setUser(session?.user || null);
+        setPasswordRecovery(event === "PASSWORD_RECOVERY");
         setReady(true);
       }
     });
@@ -72,6 +74,21 @@ export function useAuth() {
     if (error) throw error;
   }, []);
 
+  const requestPasswordReset = useCallback(async (email: string) => {
+    const supabase = getSupabase();
+    if (!supabase) throw new Error("Cloud sync is not configured yet.");
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+    if (error) throw error;
+  }, []);
+
+  const updatePassword = useCallback(async (password: string) => {
+    const supabase = getSupabase();
+    if (!supabase) throw new Error("Cloud sync is not configured yet.");
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+    setPasswordRecovery(false);
+  }, []);
+
   const signOut = useCallback(async () => {
     const supabase = getSupabase();
     if (!supabase) return;
@@ -79,5 +96,5 @@ export function useAuth() {
     if (error) throw error;
   }, []);
 
-  return { configured: cloudSyncConfigured, ready, user, sendMagicLink, signInWithPassword, signUp, signInWithProvider, signOut };
+  return { configured: cloudSyncConfigured, ready, user, passwordRecovery, sendMagicLink, signInWithPassword, signUp, signInWithProvider, requestPasswordReset, updatePassword, signOut };
 }
