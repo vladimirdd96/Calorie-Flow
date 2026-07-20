@@ -1,0 +1,12 @@
+node_modules
+.next
+.open-next
+.sites-build
+.sites-output
+out
+coverage
+.env*
+!.env.example
+*.log
+.DS_Store
+upload/
