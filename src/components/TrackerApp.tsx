@@ -26,6 +26,8 @@ import {
   Send,
   ShieldCheck,
   Sparkles,
+  Moon,
+  Sun,
   Trash2,
   Upload,
   UserRound,
@@ -99,8 +101,15 @@ type SyncState = "local" | "syncing" | "synced" | "offline" | "error";
 type AuthMode = "sign-in" | "register" | "forgot-password" | "update-password";
 type CoachSection = "chat" | "groceries";
 type GroceryItem = { id: string; name: string; checked: boolean; addedAt: string };
+const themeModes = { light: "light", dark: "dark" } as const;
+type ThemeMode = typeof themeModes[keyof typeof themeModes];
 
 const GROCERY_ITEMS_SETTING = "coach:grocery-items";
+const THEME_SETTING = "appearance:theme";
+
+function isThemeMode(value: unknown): value is ThemeMode {
+  return value === themeModes.light || value === themeModes.dark;
+}
 
 
 const DEFAULT_PROFILE: Profile = {
@@ -298,9 +307,9 @@ function TodayView({
         </div>
         <div className="macro-card card">
           <div className="section-heading compact"><div><span className="eyebrow">Today</span><h2>Macros</h2></div><span className="subtle">live totals</span></div>
-          <MacroBar label="Protein" value={total.protein} target={profile.proteinTarget} color="#7dffd5" />
-          <MacroBar label="Carbs" value={total.carbs} target={profile.carbsTarget} color="#4fb7ff" />
-          <MacroBar label="Fat" value={total.fat} target={profile.fatTarget} color="#ffb86b" />
+          <MacroBar label="Protein" value={total.protein} target={profile.proteinTarget} color="var(--protein)" />
+          <MacroBar label="Carbs" value={total.carbs} target={profile.carbsTarget} color="var(--carbs)" />
+          <MacroBar label="Fat" value={total.fat} target={profile.fatTarget} color="var(--fat)" />
           <div className="target-note"><Info size={15} /> Targets are guides, not exact medical limits.</div>
         </div>
       </section>
@@ -438,11 +447,12 @@ function TargetEditor({ profile, onSave, onCancel, onboarding = false }: { profi
 }
 
 function TargetSummary({ profile, onEdit }: { profile: Profile; onEdit: () => void }) {
+  const goalLabel = profile.goalMode === "lose" ? "Fat loss" : profile.goalMode === "gain" ? "Muscle gain" : "Maintenance";
   return (
-    <section className="targets-section">
-      <div className="section-heading"><div><span className="eyebrow">Your daily plan</span><h2>Targets</h2></div><button className="secondary-button target-edit-button" type="button" onClick={onEdit}><Pencil size={16} />Adjust targets</button></div>
-      <div className="target-summary card">
-        {!profile.hideCalories && <div><span>Energy</span><strong>{profile.calorieTarget.toLocaleString()} <small>kcal</small></strong></div>}
+    <section className="targets-section" aria-label="Daily nutrition targets">
+      <div className="section-heading target-summary-heading"><div><span className="eyebrow">Your baseline</span><h2>Daily targets</h2></div><button className="text-button" type="button" onClick={onEdit}><Pencil size={16} />Adjust</button></div>
+      <div className="target-summary">
+        {!profile.hideCalories && <div className="target-energy"><span>Daily energy</span><strong>{profile.calorieTarget.toLocaleString()} <small>kcal</small></strong><small>{goalLabel} · a starting point, not a rule</small></div>}
         <div className="target-macros"><span>Protein <strong>{profile.proteinTarget} g</strong></span><span>Carbs <strong>{profile.carbsTarget} g</strong></span><span>Fat <strong>{profile.fatTarget} g</strong></span></div>
       </div>
     </section>
@@ -454,6 +464,18 @@ function DisplayPreferences({ hideCalories, onChange }: { hideCalories: boolean;
     <section className="display-section">
       <div className="section-heading"><div><span className="eyebrow">App display</span><h2>Calorie visibility</h2></div></div>
       <button className={`display-preference ${hideCalories ? "active" : ""}`} type="button" aria-pressed={hideCalories} onClick={() => onChange(!hideCalories)}><span><strong>{hideCalories ? "Calories are hidden" : "Calories are visible"}</strong><small>{hideCalories ? "Your diary and insights focus on macros and nutrients." : "Hide calorie numbers throughout the app whenever you prefer."}</small></span><span className="toggle" /></button>
+    </section>
+  );
+}
+
+function AppearancePreferences({ theme, onChange }: { theme: ThemeMode; onChange: (theme: ThemeMode) => void }) {
+  return (
+    <section className="display-section appearance-section">
+      <div className="section-heading"><div><span className="eyebrow">Appearance</span><h2>Use the light</h2></div></div>
+      <div className="theme-choice" role="group" aria-label="Colour theme">
+        <button className={theme === themeModes.light ? "active" : ""} type="button" aria-pressed={theme === themeModes.light} onClick={() => onChange(themeModes.light)}><Sun size={17} /><span><strong>Light</strong><small>Warm and clear for everyday meals</small></span></button>
+        <button className={theme === themeModes.dark ? "active" : ""} type="button" aria-pressed={theme === themeModes.dark} onClick={() => onChange(themeModes.dark)}><Moon size={17} /><span><strong>Dark</strong><small>Quieter for late-night logging</small></span></button>
+      </div>
     </section>
   );
 }
@@ -544,6 +566,8 @@ function ProfileView({
   onSendMagicLink,
   onSignInWithProvider,
   onSignOut,
+  theme,
+  onThemeChange,
 }: {
   profile: Profile;
   onSave: (profile: Profile) => void;
@@ -555,6 +579,8 @@ function ProfileView({
   onSendMagicLink: (email: string) => Promise<void>;
   onSignInWithProvider: (provider: SocialAuthProvider) => Promise<void>;
   onSignOut: () => Promise<void>;
+  theme: ThemeMode;
+  onThemeChange: (theme: ThemeMode) => void;
 }) {
   const importRef = useRef<HTMLInputElement>(null);
   const [editingTargets, setEditingTargets] = useState(false);
@@ -593,10 +619,11 @@ function ProfileView({
   };
   return (
     <main className="page">
-      <header className="page-header"><span className="eyebrow">Your plan</span><h1>Targets</h1><p>Set them once. Everything else stays out of the way.</p></header>
+      <header className="page-header"><span className="eyebrow">Your plan</span><h1>Your daily baseline</h1><p>A calm place to set direction, then get on with living.</p></header>
       <TargetSummary profile={profile} onEdit={() => setEditingTargets(true)} />
       {editingTargets && <TargetEditor profile={profile} onSave={(next) => { onSave(next); setEditingTargets(false); }} onCancel={() => setEditingTargets(false)} />}
       <DisplayPreferences hideCalories={profile.hideCalories} onChange={(hideCalories) => onSave({ ...profile, hideCalories })} />
+      <AppearancePreferences theme={theme} onChange={onThemeChange} />
       <AccountCard configured={configured} user={user} syncState={syncState} onSendMagicLink={onSendMagicLink} onSignInWithProvider={onSignInWithProvider} onSignOut={onSignOut} />
       <details className="data-tools">
         <summary><ShieldCheck size={17} /><span>Data & privacy</span></summary>
@@ -1239,6 +1266,7 @@ export function TrackerApp() {
   const [toast, setToast] = useState("");
   const [syncState, setSyncState] = useState<SyncState>("local");
   const [syncAttempt, setSyncAttempt] = useState(0);
+  const [theme, setTheme] = useState<ThemeMode>(themeModes.light);
   const syncIdentityRef = useRef("");
 
   const refresh = useCallback(async () => {
@@ -1256,6 +1284,14 @@ export function TrackerApp() {
     else if (params.has("add")) setAdding(true);
   }, [refresh]);
   useEffect(() => { if (!toast) return; const timer = window.setTimeout(() => setToast(""), 2800); return () => window.clearTimeout(timer); }, [toast]);
+  useEffect(() => {
+    let active = true;
+    getSetting<unknown>(THEME_SETTING).then((storedTheme) => {
+      if (active && isThemeMode(storedTheme)) setTheme(storedTheme);
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, []);
+  useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
   useEffect(() => {
     const retry = () => { syncIdentityRef.current = ""; setSyncAttempt((value) => value + 1); };
     window.addEventListener("online", retry);
@@ -1376,6 +1412,10 @@ export function TrackerApp() {
   const openAdd = (view: AddView = "start") => { setInitialAddView(view); setAdding(true); };
   const selectFood = (food: Food) => { setDirectFood(food); setAdding(true); };
   const signOut = async () => { await auth.signOut(); setToast("Signed out · guest mode active"); };
+  const changeTheme = (nextTheme: ThemeMode) => {
+    setTheme(nextTheme);
+    void setSetting(THEME_SETTING, nextTheme);
+  };
 
   const syncLabel: Record<SyncState, string> = {
     local: "Private on this device",
@@ -1395,7 +1435,7 @@ export function TrackerApp() {
         {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={openAdd} />}
         {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} onOpenAccount={() => setTab("profile")} onOpenAdd={openAdd} />}
         {tab === "insights" && <InsightsView meals={meals} profile={profile} />}
-        {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onExport={exportBackup} onImport={restoreBackup} configured={auth.configured} user={auth.user} syncState={auth.user ? syncState : "local"} onSendMagicLink={auth.sendMagicLink} onSignInWithProvider={auth.signInWithProvider} onSignOut={signOut} />}
+        {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onExport={exportBackup} onImport={restoreBackup} configured={auth.configured} user={auth.user} syncState={auth.user ? syncState : "local"} onSendMagicLink={auth.sendMagicLink} onSignInWithProvider={auth.signInWithProvider} onSignOut={signOut} theme={theme} onThemeChange={changeTheme} />}
       </div>
       <BottomNav tab={tab} onChange={(nextTab) => { window.scrollTo(0, 0); setTab(nextTab); }} />
       {adding && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); }} wide>{directFood ? <PortionSheet food={directFood} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} onClose={() => setAdding(false)} onLog={logMeal} />}</Sheet>}
