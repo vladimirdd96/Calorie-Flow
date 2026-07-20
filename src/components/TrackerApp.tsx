@@ -894,20 +894,24 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, hideCalori
     setPendingImages(Array.from(files).slice(0, 3));
     setView("label");
   };
-  const barcode = async (code: string) => {
+  const barcode = async (code: string, fallback?: Food, followUps: string[] = []) => {
     setLoading(true); setError("");
     const cached = foods.find((food) => food.barcode === code);
-    if (cached) { setLoading(false); pick(cached); return; }
+    if (cached) { setLoading(false); pick(cached, followUps); return; }
     try {
       const food = await findByBarcode(code);
-      if (food) pick(food);
+      if (food) pick(food, followUps);
+      else if (fallback) pick(fallback, followUps);
       else { setUnknownBarcode(code); setView("manual"); }
-    } catch { setUnknownBarcode(code); setView("manual"); setError("This barcode wasn’t found. Add the label once and it will be saved on this device."); }
+    } catch {
+      if (fallback) pick(fallback, followUps);
+      else { setUnknownBarcode(code); setView("manual"); setError("This barcode wasn’t found. Add the label once and it will be saved on this device."); }
+    }
     finally { setLoading(false); }
   };
   if (selected) return <PortionSheet food={selected} questions={questions} hideCalories={hideCalories} onLog={onLog} onClose={() => setSelected(undefined)} />;
   if (view === "scan") return <>{loading && <div className="global-loader"><i />Looking up product…</div>}<BarcodeScanner onResult={barcode} onClose={() => setView("start")} /></>;
-  if (view === "label") return <LabelReader initialFiles={pendingImages} onFood={pick} onClose={() => { setPendingImages([]); setView("start"); }} />;
+  if (view === "label") return <LabelReader initialFiles={pendingImages} onFood={(food, followUps) => { if (food.barcode) void barcode(food.barcode, food, followUps); else pick(food, followUps); }} onClose={() => { setPendingImages([]); setView("start"); }} />;
   if (view === "manual") return <><ManualFood initialBarcode={unknownBarcode} hideCalories={hideCalories} onSave={pick} onClose={() => setView("start")} />{error && <div className="inline-alert error"><Info size={17} />{error}</div>}</>;
   if (view === "search") return (
     <div>
