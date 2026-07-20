@@ -109,8 +109,8 @@ p { color: var(--muted); line-height: 1.55; }
 .brand > div { display: grid; gap: 2px; }
 .brand strong { font-size: 16px; }
 .brand small { color: var(--muted); font-size: 10px; }
-.brand-mark { width: 37px; height: 37px; display: grid; place-items: center; border-radius: 12px; background: linear-gradient(145deg, rgba(125,255,213,.22), rgba(26,141,255,.12)); border: 1px solid var(--border-strong); color: var(--mint); font-weight: 900; box-shadow: 0 0 30px rgba(51,214,195,.12); }
-.brand-mark.large { width: 60px; height: 60px; font-size: 24px; border-radius: 19px; }
+.brand-mark { width: 37px; height: 37px; display: block; flex: 0 0 auto; border-radius: 11px; border: 1px solid color-mix(in oklch, var(--border) 70%, #326d36); object-fit: cover; }
+.brand-mark.large { width: 60px; height: 60px; border-radius: 18px; }
 .status-pill { display: flex; align-items: center; gap: 6px; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 8px 10px; font-size: 10px; font-weight: 700; }
 .status-pill svg { color: var(--mint); }
 .date-switcher { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; max-width: 360px; margin: 0 auto 18px; }
@@ -319,7 +319,7 @@ p { color: var(--muted); line-height: 1.55; }
 .auth-page { min-height: 100dvh; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at 20% 10%, rgba(125,255,213,.12), transparent 33%), var(--bg); }
 .auth-card { width: min(100%, 420px); padding: 26px; display: grid; gap: 18px; border-radius: var(--radius-lg); }
 .auth-brand { display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 800; letter-spacing: -.03em; }
-.auth-brand .brand-mark { width: 34px; height: 34px; font-size: 17px; }
+.auth-brand .brand-mark { width: 34px; height: 34px; border-radius: 10px; }
 .auth-card h1 { margin: 6px 0 8px; font-size: 28px; line-height: 1.08; }
 .auth-card p { margin: 0; font-size: 12px; }
 .auth-form { display: grid; gap: 12px; }

@@ -116,6 +116,10 @@ const FOCUSABLE_SELECTOR = [
   "[tabindex]:not([tabindex='-1'])",
 ].join(",");
 
+function BrandMark({ large = false }: { large?: boolean }) {
+  return <img className={`brand-mark${large ? " large" : ""}`} src="/icon.svg" alt="" aria-hidden="true" />;
+}
+
 function isThemeMode(value: unknown): value is ThemeMode {
   return value === themeModes.light || value === themeModes.dark;
 }
@@ -318,7 +322,7 @@ function TodayView({
   return (
     <main className="page today-page">
       <header className="topbar">
-        <div className="brand"><span className="brand-mark">C</span><div><strong>Calorie Flow</strong><small>Simple by default</small></div></div>
+        <div className="brand"><BrandMark /><div><strong>Calorie Flow</strong><small>Simple by default</small></div></div>
         <div className="status-pill"><ShieldCheck size={14} /> {syncLabel}</div>
       </header>
 
@@ -460,7 +464,7 @@ function TargetEditor({ profile, onSave, onCancel, onboarding = false }: { profi
   };
   return (
     <form className={onboarding ? "onboarding-form" : "profile-form"} onSubmit={save}>
-      {onboarding && <div className="onboarding-intro"><span className="brand-mark large">C</span><span className="eyebrow">60-second setup</span><h1>Your targets, without the quiz marathon.</h1><p>These are a sensible starting point. You can edit them any time.</p></div>}
+      {onboarding && <div className="onboarding-intro"><BrandMark large /><span className="eyebrow">60-second setup</span><h1>Your targets, without the quiz marathon.</h1><p>These are a sensible starting point. You can edit them any time.</p></div>}
       <div className="form-grid two">
         <label><span>Sex</span><select value={draft.sex} onChange={(event) => update("sex", event.target.value as Sex)}><option value="male">Male</option><option value="female">Female</option></select></label>
         <label><span>Age</span><input required type="number" inputMode="numeric" min="16" max="100" value={draft.age} onChange={(event) => update("age", Number(event.target.value))} /></label>
@@ -1360,7 +1364,7 @@ function AuthGateway({
   return (
     <main className="auth-page">
       <section className="auth-card card" aria-labelledby="auth-title">
-        <div className="auth-brand"><span className="brand-mark large">C</span><span>Calorie Flow</span></div>
+        <div className="auth-brand"><BrandMark large /><span>Calorie Flow</span></div>
         <div><span className="eyebrow">{isRegistering ? "Create your account" : isUpdatingPassword ? "Choose a new password" : mode === "forgot-password" ? "Reset your password" : "Welcome back"}</span><h1 id="auth-title">{isRegistering ? "Start your flow" : isUpdatingPassword ? "Secure your diary" : mode === "forgot-password" ? "Get back in" : "Sign in to Calorie Flow"}</h1><p>{isRegistering ? "Save your diary privately and keep it in sync across your devices." : isUpdatingPassword ? "Use a new password you have not used elsewhere." : mode === "forgot-password" ? "We’ll email a secure reset link if this address has an account." : "Pick up right where you left off."}</p></div>
         {!configured ? <p className="auth-unavailable"><LockKeyhole size={16} />Account sign-in needs Supabase configuration. You can still use Calorie Flow locally.</p> : <>
           <form className="auth-form" onSubmit={submit}>
@@ -1598,7 +1602,7 @@ export function TrackerApp() {
   };
 
   if (startupError) return <main className="app-loading load-error" role="alert"><Database size={30} /><h1>Diary unavailable</h1><p>{startupError}</p><button className="primary-button" onClick={() => { setStartupError(""); void refresh().catch(() => setStartupError("Your private diary could not be opened. Your data has not been reset.")); }}>Try again</button></main>;
-  if (!ready || !auth.ready) return <div className="app-loading" role="status" aria-label="Opening your private diary"><span className="brand-mark large">C</span><i /></div>;
+  if (!ready || !auth.ready) return <div className="app-loading" role="status" aria-label="Opening your private diary"><BrandMark large /><i /></div>;
   if (auth.passwordRecovery) return <AuthGateway key="recovery" configured={auth.configured} passwordRecovery onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} onContinueAsGuest={() => undefined} />;
   if (auth.configured && !auth.user && !authPromptCompleted && !profile.onboardingDone) return <AuthGateway configured passwordRecovery={false} onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} onContinueAsGuest={() => { setAuthPromptCompleted(true); void setSetting("authPromptCompleted", true); }} />;
   const modalOpen = adding || !profile.onboardingDone;

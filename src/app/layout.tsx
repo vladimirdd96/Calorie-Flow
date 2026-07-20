@@ -7,7 +7,14 @@ export const metadata: Metadata = {
   applicationName: "Calorie Flow",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, title: "Calorie Flow", statusBarStyle: "black-translucent" },
-  icons: { icon: "/icon.svg", apple: "/icon-192.png" },
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon-32.png", sizes: "32x32", type: "image/png" },
+    ],
+    shortcut: [{ url: "/icon-32.png", sizes: "32x32", type: "image/png" }],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export const viewport: Viewport = {

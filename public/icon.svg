@@ -1,13 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Calorie Flow</title>
+  <desc id="description">A green, gold, and terracotta lightning bolt with a small blue data spark.</desc>
   <defs>
-    <linearGradient id="g" x1="70" y1="60" x2="440" y2="455" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#7DFFD5"/>
-      <stop offset=".52" stop-color="#33D6C3"/>
-      <stop offset="1" stop-color="#1A8DFF"/>
+    <linearGradient id="macro-flow" x1="256" y1="68" x2="256" y2="438" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#326D36"/>
+      <stop offset="0.52" stop-color="#B07A20"/>
+      <stop offset="1" stop-color="#AC543F"/>
     </linearGradient>
+    <radialGradient id="data-glow" cx="0" cy="0" r="1" gradientTransform="translate(227 348) scale(34)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3371A2" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#3371A2" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <rect width="512" height="512" rx="116" fill="#08110F"/>
-  <path d="M128 332c35-117 94-188 178-188 46 0 77 21 77 58 0 66-80 77-135 77h-46" fill="none" stroke="url(#g)" stroke-width="48" stroke-linecap="round"/>
-  <path d="M190 382c-38-8-61-33-61-70" fill="none" stroke="url(#g)" stroke-width="48" stroke-linecap="round"/>
-  <circle cx="367" cy="343" r="25" fill="#FFB86B"/>
+  <rect width="512" height="512" fill="#F8F3E9"/>
+  <path d="M305 68 126 289h107l-59 149 212-225H273l32-145Z" fill="url(#macro-flow)"/>
+  <circle cx="227" cy="348" r="34" fill="url(#data-glow)"/>
+  <path d="m227 329 18 18-18 21-18-20 18-19Z" fill="#3371A2"/>
+  <path d="m227 329 18 18-18 2-18-1 18-19Z" fill="#4F8DBA"/>
+  <path d="m209 348 18 1v19l-18-20Z" fill="#2A618E"/>
+  <path d="m245 347-18 21v-19l18-2Z" fill="#397CAC"/>
 </svg>
