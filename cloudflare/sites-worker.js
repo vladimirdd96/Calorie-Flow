@@ -288,11 +288,11 @@ async function analyzeLabel(request, env) {
   }
 
   try {
-    const { image } = await request.json();
-    if (typeof image !== "string" || !image.startsWith("data:image/")) {
-      return json({ error: "Please provide a nutrition-label image." }, 400);
+    const requestBody = await request.json();
+    const images = Array.isArray(requestBody.images) ? requestBody.images : [requestBody.image];
+    if (!images.length || images.length > 3 || images.some((image) => typeof image !== "string" || !image.startsWith("data:image/") || image.length > 10_000_000)) {
+      return json({ error: "Add one to three package photos, each under 10 MB." }, 400);
     }
-    if (image.length > 10_000_000) return json({ error: "That image is too large. Try a closer crop." }, 413);
 
     const apiResponse = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
@@ -304,23 +304,23 @@ async function analyzeLabel(request, env) {
             role: "developer",
             content: [{
               type: "input_text",
-              text: "Extract package nutrition accurately. Normalize nutrients to 100 g or 100 ml. If the label only gives a serving, calculate per 100 from the visible serving weight. Use 0 only when the label explicitly indicates zero; otherwise return 0 and ask a short follow-up question naming the missing value. Never guess product weight, serving weight, or package weight. Calories are kcal.",
+              text: "Read one or more photos of the same food package. They may show a nutrition label, barcode, front of pack, ingredients, serving information, or package size. Extract package nutrition accurately and combine facts across images. Normalize all nutrients to 100 g or 100 ml. If the label only gives a serving, calculate per 100 from the visible serving weight. Use 0 only when the label explicitly indicates zero; otherwise return 0 and ask a short follow-up question naming the missing value. Never guess product weight, serving weight, or package weight. Calories are kcal.",
             }],
           },
           {
             role: "user",
             content: [
-              { type: "input_text", text: "Read this nutrition label and return the structured result." },
-              { type: "input_image", image_url: image, detail: "high" },
+              { type: "input_text", text: "Identify this food package and return the structured result. A barcode alone is useful: return it even if other nutrition details are unavailable." },
+              ...images.map((image) => ({ type: "input_image", image_url: image, detail: "high" })),
             ],
           },
         ],
         text: { format: { type: "json_schema", name: "nutrition_label", strict: true, schema: nutritionSchema } },
       }),
     });
-    const body = await apiResponse.json();
-    if (!apiResponse.ok) return json({ error: body?.error?.message || "The label could not be read right now." }, apiResponse.status);
-    const outputText = extractOutputText(body);
+    const responseBody = await apiResponse.json();
+    if (!apiResponse.ok) return json({ error: responseBody?.error?.message || "The label could not be read right now." }, apiResponse.status);
+    const outputText = extractOutputText(responseBody);
     if (!outputText) return json({ error: "No label data was returned." }, 502);
     return json(JSON.parse(outputText));
   } catch {

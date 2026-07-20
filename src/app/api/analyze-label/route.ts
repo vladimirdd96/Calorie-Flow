@@ -41,6 +41,10 @@ function extractOutputText(response: { output?: Array<{ content?: Array<{ type?:
     .find((item) => item.type === "output_text")?.text;
 }
 
+function isImageData(value: unknown): value is string {
+  return typeof value === "string" && value.startsWith("data:image/") && value.length <= 10_000_000;
+}
+
 export async function POST(request: NextRequest) {
   const apiKey = serverEnv.OPENAI_API_KEY;
   if (!apiKey) {
@@ -51,12 +55,12 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { image } = await request.json();
-    if (typeof image !== "string" || !image.startsWith("data:image/")) {
-      return NextResponse.json({ error: "Please provide a nutrition-label image." }, { status: 400 });
-    }
-    if (image.length > 10_000_000) {
-      return NextResponse.json({ error: "That image is too large. Try a closer crop." }, { status: 413 });
+    const requestBody: unknown = await request.json();
+    const imagePayload = requestBody && typeof requestBody === "object" ? requestBody as { image?: unknown; images?: unknown } : {};
+    const images = Array.isArray(imagePayload.images) ? imagePayload.images : [imagePayload.image];
+    const validImages = images.filter(isImageData);
+    if (!images.length || images.length > 3 || validImages.length !== images.length) {
+      return NextResponse.json({ error: "Add one to three package photos, each under 10 MB." }, { status: 400 });
     }
 
     const apiResponse = await fetch("https://api.openai.com/v1/responses", {
@@ -73,14 +77,14 @@ export async function POST(request: NextRequest) {
             role: "developer",
             content: [{
               type: "input_text",
-              text: "Extract package nutrition accurately. Normalize all nutrients to 100 g or 100 ml. If the label only gives a serving, calculate per 100 from the visible serving weight. Use 0 only when the label explicitly indicates zero; otherwise return 0 and add a short follow-up question naming the missing value. Never guess product weight, serving weight, or package weight. Calories are kcal. Keep questions concise and ask only facts needed to log the consumed amount.",
+              text: "Read one or more photos of the same food package. They may show a nutrition label, barcode, front of pack, ingredients, serving information, or package size. Extract package nutrition accurately and combine facts across images. Normalize all nutrients to 100 g or 100 ml. If the label only gives a serving, calculate per 100 from the visible serving weight. Use 0 only when the label explicitly indicates zero; otherwise return 0 and add a short follow-up question naming the missing value. Never guess product weight, serving weight, or package weight. Calories are kcal. Keep questions concise and ask only facts needed to log the consumed amount.",
             }],
           },
           {
             role: "user",
             content: [
-              { type: "input_text", text: "Read this nutrition label and return the structured result." },
-              { type: "input_image", image_url: image, detail: "high" },
+              { type: "input_text", text: "Identify this food package and return the structured result. A barcode alone is useful: return it even if other nutrition details are unavailable." },
+              ...validImages.map((image) => ({ type: "input_image" as const, image_url: image, detail: "high" as const })),
             ],
           },
         ],
@@ -95,12 +99,12 @@ export async function POST(request: NextRequest) {
       }),
     });
 
-    const body = await apiResponse.json();
+    const responseBody = await apiResponse.json();
     if (!apiResponse.ok) {
-      const message = body?.error?.message || "The label could not be read right now.";
+      const message = responseBody?.error?.message || "The label could not be read right now.";
       return NextResponse.json({ error: message }, { status: apiResponse.status });
     }
-    const outputText = extractOutputText(body);
+    const outputText = extractOutputText(responseBody);
     if (!outputText) return NextResponse.json({ error: "No label data was returned." }, { status: 502 });
     return NextResponse.json(JSON.parse(outputText));
   } catch {

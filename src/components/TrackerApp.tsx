@@ -651,11 +651,13 @@ async function imageToDataUrl(file: File) {
   return canvas.toDataURL("image/jpeg", 0.86);
 }
 
-function LabelReader({ onFood, onClose }: { onFood: (food: Food, questions: string[]) => void; onClose: () => void }) {
+function LabelReader({ onFood, onClose, initialFiles = [] }: { onFood: (food: Food, questions: string[]) => void; onClose: () => void; initialFiles?: File[] }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const initialFilesRef = useRef(initialFiles);
+  const analyzeRef = useRef<(files?: FileList | File[]) => Promise<void>>(undefined);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | undefined>(undefined);
-  const [preview, setPreview] = useState("");
+  const [previews, setPreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [cameraLive, setCameraLive] = useState(false);
@@ -671,16 +673,16 @@ function LabelReader({ onFood, onClose }: { onFood: (food: Food, questions: stri
     streamRef.current?.getTracks().forEach((track) => track.stop());
   }, []);
 
-  const analyzeImage = async (image: string) => {
+  const analyzeImages = async (images: string[]) => {
     setError(""); setLoading(true);
     try {
-      setPreview(image);
+      setPreviews(images);
       const session = await getSupabase()?.auth.getSession();
       const token = session?.data.session?.access_token;
       const response = await fetch("/api/analyze-label", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ image }),
+        body: JSON.stringify({ images }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || "The label could not be read.");
@@ -700,14 +702,21 @@ function LabelReader({ onFood, onClose }: { onFood: (food: Food, questions: stri
     } finally { setLoading(false); }
   };
 
-  const analyze = async (file?: File) => {
-    if (!file) return;
+  const analyze = async (files?: FileList | File[]) => {
+    if (!files?.length) return;
     try {
-      await analyzeImage(await imageToDataUrl(file));
+      await analyzeImages(await Promise.all(Array.from(files).slice(0, 3).map(imageToDataUrl)));
     } catch {
       setError("That photo could not be opened. Try taking a fresh picture of the nutrition table.");
     }
   };
+  useEffect(() => { analyzeRef.current = analyze; });
+
+  useEffect(() => {
+    const timer = initialFilesRef.current.length ? window.setTimeout(() => { void analyzeRef.current?.(initialFilesRef.current); }, 0) : undefined;
+    // The initial files are intentionally consumed once when this reader opens.
+    return () => { if (timer) window.clearTimeout(timer); };
+  }, []);
 
   const startCamera = async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -744,20 +753,20 @@ function LabelReader({ onFood, onClose }: { onFood: (food: Food, questions: stri
     canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
     const image = canvas.toDataURL("image/jpeg", 0.9);
     stopCamera();
-    await analyzeImage(image);
+    await analyzeImages([image]);
   };
 
   return (
     <div>
       <div className="sheet-header"><button className="icon-button ghost" onClick={onClose}><ArrowLeft /></button><div><span className="eyebrow">AI assist</span><h2>Read nutrition label</h2></div><span /></div>
-      {cameraLive ? <div className="label-camera-live"><div className="camera-frame live"><video ref={videoRef} muted playsInline autoPlay /><div className="scan-corners" /></div><button className="primary-button full" onClick={capture} disabled={loading}><Camera size={18} />Capture label</button><button className="text-button camera-cancel" onClick={stopCamera}>Cancel camera</button></div> : <div className={`label-dropzone ${preview ? "has-preview" : ""}`}>
-        {preview ? <img src={preview} alt="Selected nutrition label" /> : <><span className="action-icon blue"><Camera /></span><strong>Use the rear camera or choose a photo</strong><small>Fill the frame with the nutrition table</small></>}
-        {loading && <span className="analyzing"><i /><strong>Reading the label…</strong></span>}
+      {cameraLive ? <div className="label-camera-live"><div className="camera-frame live"><video ref={videoRef} muted playsInline autoPlay /><div className="scan-corners" /></div><button className="primary-button full" onClick={capture} disabled={loading}><Camera size={18} />Capture label</button><button className="text-button camera-cancel" onClick={stopCamera}>Cancel camera</button></div> : <div className={`label-dropzone ${previews.length ? "has-preview" : ""}`}>
+        {previews.length ? <div className="package-previews">{previews.map((preview) => <img key={preview} src={preview} alt="Selected package detail" />)}</div> : <><span className="action-icon blue"><Camera /></span><strong>Add the package details</strong><small>Label, barcode, and package size work best together</small></>}
+        {loading && <span className="analyzing"><i /><strong>Reading the package…</strong></span>}
       </div>}
       {!cameraLive && <div className="label-camera-actions"><button className="primary-button" onClick={startCamera} disabled={starting}><Camera size={18} />{starting ? "Opening camera…" : "Open rear camera"}</button><button className="secondary-button" onClick={() => inputRef.current?.click()}><Upload size={18} />Choose photo</button></div>}
-      <input ref={inputRef} className="visually-hidden-file" type="file" accept="image/*" capture="environment" onChange={(event) => analyze(event.target.files?.[0])} />
+      <input ref={inputRef} className="visually-hidden-file" type="file" accept="image/*" capture="environment" multiple onChange={(event) => analyze(event.target.files || undefined)} />
       {error && <div className="inline-alert error"><Info size={17} /><span>{error}</span></div>}
-      <div className="label-tips"><strong>For the best result</strong><ul><li>Use the nutrition table, not the front of the package.</li><li>Include the serving size and package weight when possible.</li><li>You’ll confirm the amount before anything is logged.</li></ul></div>
+      <div className="label-tips"><strong>For the best result</strong><ul><li>Add up to three details: nutrition table, barcode, and package size.</li><li>One photo is fine when it has everything.</li><li>You’ll confirm the amount and meal before anything is logged.</li></ul></div>
     </div>
   );
 }
@@ -833,20 +842,57 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, hideCalori
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [unknownBarcode, setUnknownBarcode] = useState("");
+  const [intakeDraft, setIntakeDraft] = useState("");
+  const [coachReply, setCoachReply] = useState("");
+  const [askingCoach, setAskingCoach] = useState(false);
+  const [pendingImages, setPendingImages] = useState<File[]>([]);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const recent = [...foods].filter((food) => food.lastUsedAt).sort((a, b) => (b.lastUsedAt || "").localeCompare(a.lastUsedAt || "")).slice(0, 6);
   const pick = (food: Food, followUps: string[] = []) => { setSelected(food); setQuestions(followUps); };
-  const search = async (event?: FormEvent) => {
-    event?.preventDefault();
-    const normalized = query.trim().toLowerCase();
+  const runSearch = async (value: string) => {
+    const normalized = value.trim().toLowerCase();
     if (!normalized) { setResults([]); return; }
     const local = foods.filter((food) => `${food.name} ${food.brand || ""} ${food.barcode || ""}`.toLowerCase().includes(normalized)).slice(0, 10);
     setResults(local); setLoading(true); setError("");
     try {
-      const remote = await searchOpenFoodFacts(query.trim());
+      const remote = await searchOpenFoodFacts(value.trim());
       const localIds = new Set(local.map((food) => food.id));
       setResults([...local, ...remote.filter((food) => !localIds.has(food.id))].slice(0, 25));
     } catch { if (!local.length) setError("Online food search is unavailable. You can still add a custom food."); }
     finally { setLoading(false); }
+  };
+  const search = async (event?: FormEvent) => { event?.preventDefault(); await runSearch(query); };
+  const sendIntake = async (event: FormEvent) => {
+    event.preventDefault();
+    const message = intakeDraft.trim();
+    if (!message || askingCoach) return;
+    const soundsConversational = /\b(i|my|me|how|what|can|should|help|ate|eaten|bite|bites|slice|slices|calorie|protein|macro|portion)\b|[?]/i.test(message);
+    setCoachReply(""); setError("");
+    if (!soundsConversational) {
+      setQuery(message); setView("search"); await runSearch(message);
+      return;
+    }
+    setAskingCoach(true);
+    try {
+      const session = await getSupabase()?.auth.getSession();
+      const token = session?.data.session?.access_token;
+      if (!token) throw new Error("Sign in to ask the Coach about your log.");
+      const response = await fetch("/api/coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ message, history: [], localDate: localDateKey(), timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error || "The Coach is unavailable right now.");
+      setCoachReply(body.reply);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "The Coach is unavailable right now.");
+    } finally { setAskingCoach(false); }
+  };
+  const addImages = (files?: FileList | File[]) => {
+    if (!files?.length) return;
+    setPendingImages(Array.from(files).slice(0, 3));
+    setView("label");
   };
   const barcode = async (code: string) => {
     setLoading(true); setError("");
@@ -861,7 +907,7 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, hideCalori
   };
   if (selected) return <PortionSheet food={selected} questions={questions} hideCalories={hideCalories} onLog={onLog} onClose={() => setSelected(undefined)} />;
   if (view === "scan") return <>{loading && <div className="global-loader"><i />Looking up product…</div>}<BarcodeScanner onResult={barcode} onClose={() => setView("start")} /></>;
-  if (view === "label") return <LabelReader onFood={pick} onClose={() => setView("start")} />;
+  if (view === "label") return <LabelReader initialFiles={pendingImages} onFood={pick} onClose={() => { setPendingImages([]); setView("start"); }} />;
   if (view === "manual") return <><ManualFood initialBarcode={unknownBarcode} hideCalories={hideCalories} onSave={pick} onClose={() => setView("start")} />{error && <div className="inline-alert error"><Info size={17} />{error}</div>}</>;
   if (view === "search") return (
     <div>
@@ -876,12 +922,17 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, hideCalori
     </div>
   );
   return (
-    <div>
-      <div className="sheet-header"><button className="icon-button ghost" onClick={onClose}><X /></button><div><span className="eyebrow">Add food</span><h2>How do you want to log?</h2></div><span /></div>
-      <button className="primary-search" onClick={() => setView("search")}><Search /><span><strong>Search food</strong><small>Recent, custom and packaged foods</small></span><ChevronRight /></button>
-      <div className="add-grid"><button onClick={() => setView("scan")}><span className="action-icon mint"><ScanLine /></span><strong>Barcode</strong><small>Point and scan</small></button><button onClick={() => setView("label")}><span className="action-icon blue"><Camera /></span><strong>Nutrition label</strong><small>AI reads the table</small></button><button onClick={() => setView("manual")}><span className="action-icon amber"><Pencil /></span><strong>Custom</strong><small>Enter it yourself</small></button></div>
+    <div className="coach-intake" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); addImages(event.dataTransfer.files); }}>
+      <div className="sheet-header"><button className="icon-button ghost" onClick={onClose}><X /></button><div><span className="eyebrow">Log with Coach</span><h2>What did you have?</h2></div><span /></div>
+      <div className="intake-intro"><span className="coach-orb"><Sparkles /></span><div><strong>Tell me, search, or show me the package.</strong><small>I’ll use your saved foods first and only ask when a detail affects the log.</small></div></div>
+      <div className="intake-actions"><button onClick={() => setView("scan")}><ScanLine size={17} />Barcode</button><button onClick={() => { setPendingImages([]); setView("label"); }}><Camera size={17} />Take photo</button><button onClick={() => imageInputRef.current?.click()}><Upload size={17} />Add photos</button></div>
+      <input ref={imageInputRef} className="visually-hidden-file" type="file" accept="image/*" capture="environment" multiple onChange={(event) => addImages(event.target.files || undefined)} />
+      <form className="intake-composer" onSubmit={sendIntake}><input autoFocus value={intakeDraft} onChange={(event) => setIntakeDraft(event.target.value)} placeholder='Search “Greek yogurt” or ask “I had two bites of pizza”' /><button type="submit" disabled={!intakeDraft.trim() || askingCoach} aria-label="Send to Coach">{askingCoach ? <span className="coach-loader" /> : <Send />}</button></form>
+      {coachReply && <div className="intake-reply"><span>Coach</span><p>{coachReply}</p><button className="text-button" onClick={() => { setQuery(intakeDraft); setView("search"); void runSearch(intakeDraft); }}><Search size={16} />Find a food to log</button></div>}
+      {error && <div className="inline-alert error"><Info size={17} />{error}</div>}
       {!!recent.length && <div className="quick-list"><span className="eyebrow">Recent · one tap</span>{recent.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div>}
-      <div className="simple-note"><Sparkles size={17} /><span>AI only appears when it saves effort. You always confirm the amount and nutrition before logging.</span></div>
+      <button className="text-button intake-manual" onClick={() => setView("manual")}><Pencil size={16} />Enter food manually</button>
+      <div className="simple-note"><ShieldCheck size={17} /><span>Barcode and saved-food search work directly. Package photos are sent to AI only after you add them.</span></div>
     </div>
   );
 }
