@@ -162,8 +162,9 @@ p { color: var(--muted); line-height: 1.55; }
 .search-launch { width: 100%; min-height: 58px; padding: 0 16px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; text-align: left; color: var(--muted); }
 .search-launch svg { color: var(--mint); }
 .search-launch kbd { width: 27px; height: 27px; display: grid; place-items: center; border-radius: 9px; background: rgba(125,255,213,.1); color: var(--mint); border: 0; }
-.feature-actions, .add-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-top: 14px; }
+.feature-actions, .add-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin-top: 14px; }
 .feature-actions button, .add-grid button { min-height: 124px; display: grid; justify-items: start; align-content: center; gap: 8px; padding: 14px; text-align: left; background: rgba(18,32,29,.72); border: 1px solid var(--border); border-radius: var(--radius-md); }
+.feature-actions button:first-child { background: color-mix(in oklch, var(--panel-strong) 58%, var(--panel)); border-color: var(--border-strong); }
 .feature-actions strong, .add-grid strong { font-size: 12px; }
 .feature-actions small, .add-grid small { color: var(--muted); font-size: 10px; }
 .action-icon { width: 39px; height: 39px; border-radius: 13px; display: grid; place-items: center; }
@@ -583,8 +584,9 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
   .hero-card { grid-template-columns: 1fr; }
   .macro-card { padding: 26px; }
   .page-header { padding-top: 70px; }
-  .feature-actions { grid-template-columns: repeat(3, minmax(0, 180px)); }
-  .feature-actions button { min-height: 135px; }
+  .feature-actions { grid-template-columns: minmax(0, 1.18fr) repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .feature-actions button { min-height: 144px; padding: 20px; }
+  .feature-actions button:first-child { padding-left: 24px; }
   .summary-strip { max-width: 600px; }
   .chart-card { padding: 24px; }
   .magic-link-form { grid-template-columns: 1fr auto; align-items: end; }
