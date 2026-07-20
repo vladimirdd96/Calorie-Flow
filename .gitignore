@@ -8,6 +8,7 @@ coverage
 *.tsbuildinfo
 .env*
 !.env.example
+supabase/.temp/
 *.log
 .DS_Store
 upload/
