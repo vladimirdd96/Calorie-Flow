@@ -315,32 +315,46 @@ function TodayView({
 }
 
 function FoodRow({ food, onSelect, hideCalories = false }: { food: Food; onSelect: () => void; hideCalories?: boolean }) {
+  const detail = food.brand || (food.source === "custom" ? "Your custom food" : food.source === "seed" ? food.servingLabel || "Reference food" : "Saved food");
   return (
     <button className="food-row" onClick={onSelect}>
       <FoodAvatar food={food} />
-      <span className="food-copy"><strong>{food.name}</strong><small>{food.brand || food.servingLabel || "Generic food"}</small></span>
+      <span className="food-copy"><strong>{food.name}</strong><small>{detail}</small></span>
       {!hideCalories && <span className="food-calories"><strong>{Math.round(food.nutrientsPer100.calories)}</strong><small>kcal / 100 g</small></span>}
       <ChevronRight size={18} />
     </button>
   );
 }
 
-function DiscoverView({ foods, onSelect, onAdd, hideCalories }: { foods: Food[]; onSelect: (food: Food) => void; onAdd: () => void; hideCalories: boolean }) {
+function DiscoverView({ foods, onSelect, onAdd, hideCalories }: { foods: Food[]; onSelect: (food: Food) => void; onAdd: (view: AddView) => void; hideCalories: boolean }) {
   const recent = [...foods].filter((food) => food.lastUsedAt).sort((a, b) => (b.lastUsedAt || "").localeCompare(a.lastUsedAt || "")).slice(0, 8);
-  const favourites = recent.length ? recent : foods.slice(0, 8);
+  const personalFoods = [...foods]
+    .filter((food) => food.source !== "seed")
+    .sort((a, b) => (b.lastUsedAt || "").localeCompare(a.lastUsedAt || ""))
+    .slice(0, 8);
+  const starterFoods = foods.filter((food) => food.source === "seed").slice(0, 6);
   return (
     <main className="page">
-      <header className="page-header"><span className="eyebrow">Fast lane</span><h1>Find food</h1><p>Recent foods first. Search, scan, or use AI only when you need it.</p></header>
-      <button className="search-launch card" onClick={onAdd}><Search size={20} /><span>Search foods or scan a barcode</span><kbd>+</kbd></button>
+      <header className="page-header"><span className="eyebrow">Your food shelf</span><h1>Log what you remember.</h1><p>Your own foods and recent meals stay at hand, even when the packaging is long gone.</p></header>
+      <button className="search-launch card" onClick={() => onAdd("search")}><Search size={20} /><span>Search foods, brands or barcodes</span><kbd>+</kbd></button>
       <section className="feature-actions">
-        <button onClick={onAdd}><span className="action-icon mint"><ScanLine /></span><strong>Scan barcode</strong><small>Package lookup</small></button>
-        <button onClick={onAdd}><span className="action-icon blue"><Camera /></span><strong>Read label</strong><small>AI assisted</small></button>
-        <button onClick={onAdd}><span className="action-icon amber"><Pencil /></span><strong>Custom food</strong><small>Manual control</small></button>
+        <button onClick={() => onAdd("scan")}><span className="action-icon mint"><ScanLine /></span><strong>Scan barcode</strong><small>Package lookup</small></button>
+        <button onClick={() => onAdd("label")}><span className="action-icon blue"><Camera /></span><strong>Read label</strong><small>AI assisted</small></button>
+        <button onClick={() => onAdd("manual")}><span className="action-icon amber"><Pencil /></span><strong>Custom food</strong><small>Save your usual</small></button>
       </section>
-      <section className="discover-list">
-        <div className="section-heading"><div><span className="eyebrow">One tap away</span><h2>{recent.length ? "Recently logged" : "Useful basics"}</h2></div></div>
-        <div className="card food-list">{favourites.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => onSelect(food)} />)}</div>
-      </section>
+      {personalFoods.length > 0 && <section className="discover-list">
+        <div className="section-heading"><div><span className="eyebrow">Made yours</span><h2>Your saved foods</h2></div><span className="subtle">{personalFoods.length} saved</span></div>
+        <div className="card food-list">{personalFoods.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => onSelect(food)} />)}</div>
+      </section>}
+      {recent.length > 0 && <section className="discover-list">
+        <div className="section-heading"><div><span className="eyebrow">Repeat without searching</span><h2>Recently logged</h2></div></div>
+        <div className="card food-list">{recent.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => onSelect(food)} />)}</div>
+      </section>}
+      {!personalFoods.length && !recent.length && <section className="discover-list starter-section">
+        <div className="starter-message"><div><span className="eyebrow">Start your shelf</span><h2>Save the foods you return to.</h2><p>Search, scan or add one from memory once. It will be ready for a one-tap log next time.</p></div><button className="text-button" onClick={() => onAdd("manual")}><Pencil size={16} />Add from memory</button></div>
+        <div className="section-heading"><div><span className="eyebrow">Common starting points</span><h2>Reference foods</h2></div></div>
+        <div className="card food-list">{starterFoods.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => onSelect(food)} />)}</div>
+      </section>}
       <div className="data-credit"><Database size={16} /><span>Packaged-food search by Open Food Facts · ODbL</span></div>
     </main>
   );
@@ -1284,7 +1298,7 @@ export function TrackerApp() {
       <div className="ambient one" /><div className="ambient two" />
       <div className="content-shell">
         {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={() => openAdd()} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} />}
-        {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={() => openAdd("search")} />}
+        {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={openAdd} />}
         {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} onOpenAccount={() => setTab("profile")} />}
         {tab === "insights" && <InsightsView meals={meals} profile={profile} />}
         {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onImport={restoreBackup} configured={auth.configured} user={auth.user} syncState={auth.user ? syncState : "local"} onSendMagicLink={auth.sendMagicLink} onSignInWithProvider={auth.signInWithProvider} onSignOut={signOut} />}
