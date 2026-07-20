@@ -52,8 +52,8 @@ Copy its client ID and secret to **Authentication → Sign In / Up → Google** 
 
 ## 5. Verify
 
-1. On a fresh visit, create an email/password account from the account gateway and confirm the email when prompted.
-2. Request a password reset, open the emailed link, and set a new password.
+1. On a fresh visit, finish local onboarding and confirm the diary works without signing in.
+2. In **Targets → Account & sync**, send a magic link or continue with Google.
 3. Log a meal, then sign in on another device and confirm it appears.
 4. Open **Coach** and ask “How am I doing today?”
 5. Ask “Find a high-protein lunch near Sofia” to verify food-place web search.

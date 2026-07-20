@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { serverEnv } from "@/lib/env";
+import { authenticatePaidFeature } from "@/lib/server-auth";
+import { labelAnalysisSchema } from "@/lib/schemas";
 
 export const runtime = "nodejs";
 
@@ -35,17 +37,38 @@ const schema = {
   ],
 };
 
-function extractOutputText(response: { output?: Array<{ content?: Array<{ type?: string; text?: string }> }> }) {
-  return response.output
-    ?.flatMap((item) => item.content || [])
-    .find((item) => item.type === "output_text")?.text;
+function extractOutputText(response: unknown) {
+  if (!response || typeof response !== "object") return undefined;
+  const output = Reflect.get(response, "output");
+  if (!Array.isArray(output)) return undefined;
+  for (const item of output) {
+    if (!item || typeof item !== "object") continue;
+    const content = Reflect.get(item, "content");
+    if (!Array.isArray(content)) continue;
+    for (const entry of content) {
+      if (!entry || typeof entry !== "object" || Reflect.get(entry, "type") !== "output_text") continue;
+      const text = Reflect.get(entry, "text");
+      if (typeof text === "string") return text;
+    }
+  }
 }
 
 function isImageData(value: unknown): value is string {
   return typeof value === "string" && value.startsWith("data:image/") && value.length <= 10_000_000;
 }
 
+function upstreamErrorMessage(value: unknown) {
+  if (!value || typeof value !== "object") return undefined;
+  const error = Reflect.get(value, "error");
+  if (!error || typeof error !== "object") return undefined;
+  const message = Reflect.get(error, "message");
+  return typeof message === "string" ? message : undefined;
+}
+
 export async function POST(request: NextRequest) {
+  const auth = await authenticatePaidFeature(request);
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
   const apiKey = serverEnv.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
@@ -99,14 +122,16 @@ export async function POST(request: NextRequest) {
       }),
     });
 
-    const responseBody = await apiResponse.json();
+    const responseBody: unknown = await apiResponse.json();
     if (!apiResponse.ok) {
-      const message = responseBody?.error?.message || "The label could not be read right now.";
+      const message = upstreamErrorMessage(responseBody) || "The label could not be read right now.";
       return NextResponse.json({ error: message }, { status: apiResponse.status });
     }
     const outputText = extractOutputText(responseBody);
     if (!outputText) return NextResponse.json({ error: "No label data was returned." }, { status: 502 });
-    return NextResponse.json(JSON.parse(outputText));
+    const parsed = labelAnalysisSchema.safeParse(JSON.parse(outputText));
+    if (!parsed.success) return NextResponse.json({ error: "The label service returned invalid nutrition data." }, { status: 502 });
+    return NextResponse.json(parsed.data);
   } catch {
     return NextResponse.json({ error: "The label could not be read. Try a sharper, closer photo." }, { status: 500 });
   }

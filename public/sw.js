@@ -16,11 +16,18 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin || url.pathname.startsWith("/api/")) return;
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        if (response.ok) caches.open(CACHE).then((cache) => cache.put(request, response.clone()));
+    (async () => {
+      try {
+        const response = await fetch(request);
+        // Never persist auth callback codes or other query parameters in Cache Storage.
+        if (response.ok && !url.search) {
+          const cache = await caches.open(CACHE);
+          await cache.put(request, response.clone());
+        }
         return response;
-      })
-      .catch(() => caches.match(request).then((cached) => cached || caches.match("/"))),
+      } catch {
+        return (await caches.match(request)) || caches.match("/");
+      }
+    })(),
   );
 });

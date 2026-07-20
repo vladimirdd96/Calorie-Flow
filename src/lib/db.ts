@@ -1,44 +1,14 @@
 import { seedFoods } from "./seed";
-import type { CoachMessage, Food, Meal, Profile } from "./types";
+import type { Food, Meal, Profile } from "./types";
 import type { CloudSnapshot } from "./cloud";
-import { z } from "zod";
+import { backupSchema, type BackupSchemaData } from "./schemas";
 
 const DB_NAME = "calorie-flow";
 const DB_VERSION = 1;
 
 type StoreName = "meals" | "foods" | "settings";
 
-export type BackupData = {
-  version: 1;
-  exportedAt: string;
-  meals: Meal[];
-  foods: Food[];
-  profile?: Profile;
-  coachMessages?: CoachMessage[];
-};
-
-const nutritionSchema = z.object({
-  calories: z.number(), protein: z.number(), carbs: z.number(), fat: z.number(), fiber: z.number(), sugar: z.number(),
-});
-const foodSchema = z.object({
-  id: z.string().min(1), name: z.string().min(1), brand: z.string().optional(), barcode: z.string().optional(), imageUrl: z.string().optional(),
-  quantityLabel: z.string().optional(), servingGrams: z.number().optional(), servingLabel: z.string().optional(), packageGrams: z.number().optional(), pieceGrams: z.number().optional(),
-  nutrientsPer100: nutritionSchema, source: z.enum(["seed", "open-food-facts", "ai-label", "custom"]), verified: z.boolean().optional(), lastUsedAt: z.string().optional(),
-});
-const mealSchema = z.object({
-  id: z.string().min(1), foodId: z.string().optional(), name: z.string().min(1), brand: z.string().optional(), mealType: z.enum(["breakfast", "lunch", "dinner", "snack"]),
-  amount: z.number(), unit: z.enum(["serving", "g", "100g", "package", "piece", "tbsp", "tsp", "ml"]), grams: z.number(), nutrition: nutritionSchema,
-  createdAt: z.string().min(1), source: z.enum(["seed", "open-food-facts", "ai-label", "custom"]), estimated: z.boolean().optional(),
-});
-const profileSchema = z.object({
-  name: z.string(), sex: z.enum(["male", "female"]), age: z.number(), heightCm: z.number(), weightKg: z.number(), activity: z.enum(["sedentary", "light", "moderate", "active", "very-active"]),
-  goalMode: z.enum(["lose", "maintain", "gain"]), dietPreset: z.enum(["balanced", "high-protein", "keto", "high-protein-keto", "low-fat"]),
-  calorieTarget: z.number(), proteinTarget: z.number(), carbsTarget: z.number(), fatTarget: z.number(), fiberTarget: z.number(), hideCalories: z.boolean(), onboardingDone: z.boolean(),
-});
-const backupSchema = z.object({
-  version: z.literal(1), exportedAt: z.string().min(1), meals: z.array(mealSchema), foods: z.array(foodSchema), profile: profileSchema.optional(),
-  coachMessages: z.array(z.object({ id: z.string().min(1), role: z.enum(["user", "assistant"]), content: z.string(), createdAt: z.string().min(1) })).optional(),
-});
+export type BackupData = BackupSchemaData;
 
 export function validateBackup(data: unknown): BackupData {
   return backupSchema.parse(data);
@@ -69,10 +39,75 @@ async function transact<T>(storeName: StoreName, mode: IDBTransactionMode, opera
   const db = await openDb();
   return new Promise<T>((resolve, reject) => {
     const transaction = db.transaction(storeName, mode);
-    const request = operation(transaction.objectStore(storeName));
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-    transaction.oncomplete = () => db.close();
+    let request: IDBRequest<T>;
+    let result: T;
+    let settled = false;
+    const fail = (error: DOMException | null) => {
+      if (settled) return;
+      settled = true;
+      db.close();
+      reject(error || new DOMException("The local database transaction failed.", "UnknownError"));
+    };
+    try {
+      request = operation(transaction.objectStore(storeName));
+      request.onsuccess = () => { result = request.result; };
+      request.onerror = () => fail(request.error);
+    } catch (error) {
+      transaction.abort();
+      db.close();
+      reject(error);
+      return;
+    }
+    transaction.oncomplete = () => {
+      if (settled) return;
+      settled = true;
+      db.close();
+      resolve(result);
+    };
+    transaction.onabort = () => fail(transaction.error);
+  });
+}
+
+async function writeSnapshot(
+  snapshot: Pick<CloudSnapshot, "meals" | "foods" | "profile">,
+  mode: "merge" | "replace",
+) {
+  const db = await openDb();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(["meals", "foods", "settings"], "readwrite");
+    let settled = false;
+    const fail = () => {
+      if (settled) return;
+      settled = true;
+      db.close();
+      reject(transaction.error || new DOMException("The local database transaction failed.", "UnknownError"));
+    };
+    try {
+      const mealsStore = transaction.objectStore("meals");
+      const foodsStore = transaction.objectStore("foods");
+      const settingsStore = transaction.objectStore("settings");
+      if (mode === "replace") {
+        mealsStore.clear();
+        foodsStore.clear();
+      }
+      snapshot.meals.forEach((meal) => mealsStore.put(meal));
+      snapshot.foods.forEach((food) => foodsStore.put(food));
+      if (snapshot.profile) settingsStore.put({ key: "profile", value: snapshot.profile });
+      else if (mode === "replace") settingsStore.delete("profile");
+    } catch (error) {
+      transaction.abort();
+      db.close();
+      reject(error);
+      return;
+    }
+    transaction.oncomplete = () => {
+      if (settled) return;
+      settled = true;
+      db.close();
+      resolve();
+    };
+    transaction.onerror = () => undefined;
+    transaction.onabort = fail;
   });
 }
 
@@ -122,11 +157,7 @@ export async function exportData() {
 }
 
 export async function importData(data: Pick<BackupData, "meals" | "foods" | "profile">) {
-  await Promise.all([
-    ...(data.meals || []).map((meal) => put("meals", meal)),
-    ...(data.foods || []).map((food) => put("foods", food)),
-  ]);
-  if (data.profile) await setSetting("profile", data.profile);
+  await writeSnapshot(data, "merge");
 }
 
 export async function replaceData(data: Pick<BackupData, "meals" | "foods" | "profile">) {
@@ -145,13 +176,7 @@ export async function getLocalSnapshot(): Promise<CloudSnapshot> {
 export async function replaceLocalSnapshot(snapshot: CloudSnapshot) {
   const foods = new Map(seedFoods.map((food) => [food.id, food]));
   snapshot.foods.forEach((food) => foods.set(food.id, food));
-  await Promise.all([clearStore("meals"), clearStore("foods")]);
-  await Promise.all([
-    ...snapshot.meals.map((meal) => put("meals", meal)),
-    ...[...foods.values()].map((food) => put("foods", food)),
-  ]);
-  if (snapshot.profile) await setSetting("profile", snapshot.profile);
-  else await remove("settings", "profile");
+  await writeSnapshot({ ...snapshot, foods: [...foods.values()] }, "replace");
 }
 
 export async function resetToGuestData() {

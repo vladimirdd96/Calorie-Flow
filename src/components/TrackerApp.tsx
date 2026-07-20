@@ -78,6 +78,7 @@ import {
   sumNutrition,
 } from "@/lib/nutrition";
 import { findByBarcode, searchOpenFoodFacts } from "@/lib/openfoodfacts";
+import { labelAnalysisSchema } from "@/lib/schemas";
 import { getSupabase, type CloudUser, type SocialAuthProvider } from "@/lib/supabase";
 import type {
   ActivityLevel,
@@ -85,7 +86,6 @@ import type {
   DietPreset,
   Food,
   GoalMode,
-  LabelAnalysis,
   Meal,
   MealType,
   Nutrition,
@@ -106,9 +106,54 @@ type ThemeMode = typeof themeModes[keyof typeof themeModes];
 
 const GROCERY_ITEMS_SETTING = "coach:grocery-items";
 const THEME_SETTING = "appearance:theme";
+const FOCUSABLE_SELECTOR = [
+  "button:not([disabled])",
+  "input:not([disabled]):not([type='hidden'])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "a[href]",
+  "[tabindex]:not([tabindex='-1'])",
+].join(",");
 
 function isThemeMode(value: unknown): value is ThemeMode {
   return value === themeModes.light || value === themeModes.dark;
+}
+
+function useModalFocus(onClose?: () => void) {
+  const surfaceRef = useRef<HTMLElement>(null);
+  const closeRef = useRef(onClose);
+  useEffect(() => { closeRef.current = onClose; }, [onClose]);
+  useEffect(() => {
+    const surface = surfaceRef.current;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
+    if (!surface) return;
+    const focusable = () => [...surface.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)].filter((element) => !element.hidden);
+    window.requestAnimationFrame(() => (surface.querySelector<HTMLElement>("[autofocus]") || focusable()[0] || surface).focus());
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && closeRef.current) {
+        event.preventDefault();
+        closeRef.current();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const items = focusable();
+      if (!items.length) { event.preventDefault(); surface.focus(); return; }
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, []);
+  return surfaceRef;
+}
+
+export function hideCalorieValues(content: string) {
+  return content.replace(/\b\d[\d,.]*\s*(?:-|–|—)?\s*(?:kcal|calories?)\b/gi, "energy hidden");
 }
 
 
@@ -195,15 +240,8 @@ function ProgressRing({ value, target }: { value: number; target: number }) {
   const progress = Math.min(1, value / Math.max(1, target));
   const circumference = 2 * Math.PI * 82;
   return (
-    <div className="progress-ring" aria-label={`${Math.round(progress * 100)} percent of daily calories`}>
-      <svg viewBox="0 0 200 200" role="img">
-        <defs>
-          <linearGradient id="progress-gradient" x1="20" y1="20" x2="180" y2="180">
-            <stop offset="0" stopColor="#7dffd5" />
-            <stop offset="0.58" stopColor="#33d6c3" />
-            <stop offset="1" stopColor="#1a8dff" />
-          </linearGradient>
-        </defs>
+    <div className="progress-ring" role="progressbar" aria-label="Daily calorie progress" aria-valuemin={0} aria-valuemax={target} aria-valuenow={Math.round(value)} aria-valuetext={`${Math.round(progress * 100)} percent of daily calories`}>
+      <svg viewBox="0 0 200 200" aria-hidden="true">
         <circle className="ring-track" cx="100" cy="100" r="82" />
         <circle
           className="ring-value"
@@ -228,7 +266,7 @@ function MacroBar({ label, value, target, color }: { label: string; value: numbe
   return (
     <div className="macro-row">
       <div className="macro-label"><span>{label}</span><strong>{round(value, 0)} <small>/ {target} g</small></strong></div>
-      <div className="bar-track"><div className="bar-fill" style={{ width: `${progress}%`, background: color }} /></div>
+      <div className="bar-track" role="progressbar" aria-label={`${label}: ${round(value, 0)} of ${target} grams`} aria-valuemin={0} aria-valuemax={target} aria-valuenow={round(value, 0)}><div className="bar-fill" style={{ width: `${progress}%`, background: color }} /></div>
     </div>
   );
 }
@@ -384,7 +422,7 @@ function InsightsView({ meals, profile }: { meals: Meal[]; profile: Profile }) {
     const date = new Date();
     date.setDate(date.getDate() - (6 - index));
     const key = localDateKey(date);
-    const total = sumNutrition(meals.filter((meal) => localDateKey(new Date(meal.createdAt)) === key).map((meal) => meal.nutrition));
+    const total = sumNutrition(meals.filter((meal) => (meal.loggedDate || localDateKey(new Date(meal.createdAt))) === key).map((meal) => meal.nutrition));
     return { key, label: date.toLocaleDateString(undefined, { weekday: "short" }).slice(0, 1), total };
   });
   const max = Math.max(profile.calorieTarget, ...days.map((day) => day.total.calories));
@@ -416,33 +454,36 @@ function TargetEditor({ profile, onSave, onCancel, onboarding = false }: { profi
   const calculatedCalories = calculateCalories(draft);
   const calculatedMacros = calculateMacroTargets(calculatedCalories, draft.weightKg, draft.dietPreset);
   const update = <K extends keyof Profile>(key: K, value: Profile[K]) => setDraft((current) => ({ ...current, [key]: value }));
-  const save = () => onSave({
+  const save = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    onSave({
     ...draft,
     calorieTarget: calculatedCalories,
     proteinTarget: calculatedMacros.protein,
     carbsTarget: calculatedMacros.carbs,
     fatTarget: calculatedMacros.fat,
     onboardingDone: true,
-  });
+    });
+  };
   return (
-    <div className={onboarding ? "onboarding-form" : "profile-form"}>
+    <form className={onboarding ? "onboarding-form" : "profile-form"} onSubmit={save}>
       {onboarding && <div className="onboarding-intro"><span className="brand-mark large">C</span><span className="eyebrow">60-second setup</span><h1>Your targets, without the quiz marathon.</h1><p>These are a sensible starting point. You can edit them any time.</p></div>}
       <div className="form-grid two">
         <label><span>Sex</span><select value={draft.sex} onChange={(event) => update("sex", event.target.value as Sex)}><option value="male">Male</option><option value="female">Female</option></select></label>
-        <label><span>Age</span><input type="number" inputMode="numeric" min="16" max="100" value={draft.age} onChange={(event) => update("age", Number(event.target.value))} /></label>
-        <label><span>Height</span><div className="input-suffix"><input type="number" inputMode="decimal" min="120" max="230" value={draft.heightCm} onChange={(event) => update("heightCm", Number(event.target.value))} /><span>cm</span></div></label>
-        <label><span>Weight</span><div className="input-suffix"><input type="number" inputMode="decimal" min="35" max="300" step="0.1" value={draft.weightKg} onChange={(event) => update("weightKg", Number(event.target.value))} /><span>kg</span></div></label>
+        <label><span>Age</span><input required type="number" inputMode="numeric" min="16" max="100" value={draft.age} onChange={(event) => update("age", Number(event.target.value))} /></label>
+        <label><span>Height</span><div className="input-suffix"><input required type="number" inputMode="decimal" min="120" max="230" value={draft.heightCm} onChange={(event) => update("heightCm", Number(event.target.value))} /><span>cm</span></div></label>
+        <label><span>Weight</span><div className="input-suffix"><input required type="number" inputMode="decimal" min="35" max="300" step="0.1" value={draft.weightKg} onChange={(event) => update("weightKg", Number(event.target.value))} /><span>kg</span></div></label>
       </div>
       <label><span>Daily movement</span><select value={draft.activity} onChange={(event) => update("activity", event.target.value as ActivityLevel)}><option value="sedentary">Mostly seated</option><option value="light">Light · 1–2 workouts/week</option><option value="moderate">Moderate · 2–4 workouts/week</option><option value="active">Active · 5–6 workouts/week</option><option value="very-active">Very active · physical work/training</option></select></label>
-      <div className="field-block"><span>Goal</span><div className="segmented three"><button className={draft.goalMode === "lose" ? "active" : ""} onClick={() => update("goalMode", "lose" as GoalMode)}>Lose</button><button className={draft.goalMode === "maintain" ? "active" : ""} onClick={() => update("goalMode", "maintain" as GoalMode)}>Maintain</button><button className={draft.goalMode === "gain" ? "active" : ""} onClick={() => update("goalMode", "gain" as GoalMode)}>Gain</button></div></div>
-      <div className="field-block"><span>Nutrition style <small>optional</small></span><div className="preset-grid">{(Object.keys(dietMeta) as DietPreset[]).map((preset) => <button key={preset} className={draft.dietPreset === preset ? "active" : ""} onClick={() => update("dietPreset", preset)}><strong>{dietMeta[preset].label}</strong><small>{dietMeta[preset].description}</small>{draft.dietPreset === preset && <Check size={17} />}</button>)}</div></div>
+      <div className="field-block"><span id="goal-label">Goal</span><div className="segmented three" role="group" aria-labelledby="goal-label"><button type="button" aria-pressed={draft.goalMode === "lose"} className={draft.goalMode === "lose" ? "active" : ""} onClick={() => update("goalMode", "lose" as GoalMode)}>Lose</button><button type="button" aria-pressed={draft.goalMode === "maintain"} className={draft.goalMode === "maintain" ? "active" : ""} onClick={() => update("goalMode", "maintain" as GoalMode)}>Maintain</button><button type="button" aria-pressed={draft.goalMode === "gain"} className={draft.goalMode === "gain" ? "active" : ""} onClick={() => update("goalMode", "gain" as GoalMode)}>Gain</button></div></div>
+      <div className="field-block"><span id="nutrition-style-label">Nutrition style <small>optional</small></span><div className="preset-grid" role="group" aria-labelledby="nutrition-style-label">{(Object.keys(dietMeta) as DietPreset[]).map((preset) => <button type="button" aria-pressed={draft.dietPreset === preset} key={preset} className={draft.dietPreset === preset ? "active" : ""} onClick={() => update("dietPreset", preset)}><strong>{dietMeta[preset].label}</strong><small>{dietMeta[preset].description}</small>{draft.dietPreset === preset && <Check size={17} />}</button>)}</div></div>
       <div className="calculated-target card">
         {!draft.hideCalories && <div><span>Starting target</span><strong>{calculatedCalories.toLocaleString()} <small>kcal</small></strong></div>}
         <div className="target-macros"><span>P <strong>{calculatedMacros.protein} g</strong></span><span>C <strong>{calculatedMacros.carbs} g</strong></span><span>F <strong>{calculatedMacros.fat} g</strong></span></div>
       </div>
-      {onboarding ? <button className="primary-button full" onClick={save}>Start tracking<ChevronRight size={18} /></button> : <div className="target-editor-actions"><button className="secondary-button" type="button" onClick={onCancel}>Cancel</button><button className="primary-button" type="button" onClick={save}>Save adjustments<ChevronRight size={18} /></button></div>}
+      {onboarding ? <button className="primary-button full" type="submit">Start tracking<ChevronRight size={18} /></button> : <div className="target-editor-actions"><button className="secondary-button" type="button" onClick={onCancel}>Cancel</button><button className="primary-button" type="submit">Save adjustments<ChevronRight size={18} /></button></div>}
       <p className="form-footnote">Calculated with Mifflin–St Jeor. Treat the result as a starting estimate and adjust from your weight trend.</p>
-    </div>
+    </form>
   );
 }
 
@@ -547,7 +588,7 @@ function AccountCard({
             <div className="social-auth-buttons">
               <button className="secondary-button" type="button" disabled={busy} onClick={() => signInWithProvider("google")}><GoogleIcon />Continue with Google</button>
             </div>
-            {notice && <p className="account-notice">{notice}</p>}
+            {notice && <p className="account-notice" role="status">{notice}</p>}
           </>
         )}
       </div>
@@ -645,13 +686,23 @@ function ProfileView({
 }
 
 function Sheet({ children, onClose, wide = false }: { children: React.ReactNode; onClose: () => void; wide?: boolean }) {
+  const surfaceRef = useModalFocus(onClose);
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
-    document.addEventListener("keydown", onKeyDown);
     document.body.classList.add("sheet-open");
-    return () => { document.removeEventListener("keydown", onKeyDown); document.body.classList.remove("sheet-open"); };
-  }, [onClose]);
-  return <div className="sheet-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section className={`sheet ${wide ? "wide" : ""}`}><div className="sheet-handle" />{children}</section></div>;
+    return () => { document.body.classList.remove("sheet-open"); };
+  }, []);
+  return <div className="sheet-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section ref={surfaceRef} className={`sheet ${wide ? "wide" : ""}`} role="dialog" aria-modal="true" aria-label="Add food" tabIndex={-1}><div className="sheet-handle" aria-hidden="true" />{children}</section></div>;
+}
+
+function OnboardingDialog({ profile, onSave }: { profile: Profile; onSave: (profile: Profile) => void }) {
+  const surfaceRef = useModalFocus();
+  return (
+    <div className="onboarding-overlay">
+      <section ref={surfaceRef} className="onboarding-card" role="dialog" aria-modal="true" aria-label="Set up nutrition targets" tabIndex={-1}>
+        <TargetEditor profile={profile} onSave={onSave} onboarding />
+      </section>
+    </div>
+  );
 }
 
 function BarcodeScanner({ onResult, onClose }: { onResult: (code: string) => void; onClose: () => void }) {
@@ -705,13 +756,13 @@ function BarcodeScanner({ onResult, onClose }: { onResult: (code: string) => voi
 
   return (
     <div className="scanner-view">
-      <div className="sheet-header"><button className="icon-button ghost" onClick={onClose}><ArrowLeft /></button><div><span className="eyebrow">Package lookup</span><h2>Scan barcode</h2></div><span /></div>
+      <div className="sheet-header"><button className="icon-button ghost" onClick={onClose} aria-label="Back to add food options"><ArrowLeft /></button><div><span className="eyebrow">Package lookup</span><h2>Scan barcode</h2></div><span /></div>
       <div className={`camera-frame ${cameraLive ? "live" : ""}`}>
         <video ref={videoRef} muted playsInline autoPlay />
         {cameraLive ? <><div className="scan-line" /><div className="scan-corners" /></> : <button className="camera-start" onClick={startCamera} disabled={starting}><Camera size={22} /><strong>{starting ? "Opening camera…" : "Open rear camera"}</strong><small>Point it at the barcode</small></button>}
       </div>
       <p className="camera-hint">{cameraLive ? "Hold the barcode inside the frame" : "You’ll be asked to allow camera access."}</p>
-      {error && <div className="inline-alert"><WifiOff size={17} />{error}</div>}
+      {error && <div className="inline-alert" role="alert"><WifiOff size={17} />{error}</div>}
       <form className="manual-barcode" onSubmit={(event) => { event.preventDefault(); if (manual.trim()) onResult(manual.trim()); }}><label><span>Or enter the number</span><input value={manual} inputMode="numeric" onChange={(event) => setManual(event.target.value)} placeholder="e.g. 3800123456789" /></label><button className="secondary-button" type="submit">Look up</button></form>
     </div>
   );
@@ -766,7 +817,7 @@ function LabelReader({ onFood, onClose, initialFiles = [], initialAction }: { on
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || "The label could not be read.");
-      const result = body as LabelAnalysis;
+      const result = labelAnalysisSchema.parse(body);
       onFood({
         id: `ai-${crypto.randomUUID()}`,
         name: result.productName || "Scanned label",
@@ -843,14 +894,14 @@ function LabelReader({ onFood, onClose, initialFiles = [], initialAction }: { on
 
   return (
     <div className="label-reader">
-      <div className="sheet-header"><button className="icon-button ghost" onClick={onClose}><ArrowLeft /></button><div><span className="eyebrow">AI assist</span><h2>Read nutrition label</h2></div><span /></div>
+      <div className="sheet-header"><button className="icon-button ghost" onClick={onClose} aria-label="Back to add food options"><ArrowLeft /></button><div><span className="eyebrow">AI assist</span><h2>Read nutrition label</h2></div><span /></div>
       {cameraLive ? <div className="label-camera-live"><div className="camera-frame live"><video ref={videoRef} muted playsInline autoPlay /><div className="scan-corners" /></div><button className="primary-button full" onClick={capture} disabled={loading}><Camera size={18} />Capture label</button><button className="text-button camera-cancel" onClick={stopCamera}>Cancel camera</button></div> : <div className={`label-dropzone ${previews.length ? "has-preview" : ""}`}>
         {previews.length ? <div className="package-previews">{previews.map((preview) => <img key={preview} src={preview} alt="Selected package detail" />)}</div> : <><span className="action-icon blue"><Camera /></span><strong>Add the package details</strong><small>Label, barcode, and package size work best together</small></>}
         {loading && <span className="analyzing"><i /><strong>Reading the package…</strong></span>}
       </div>}
       {!cameraLive && <div className="label-camera-actions"><button className="primary-button" onClick={startCamera} disabled={starting}><Camera size={18} />{starting ? "Opening camera…" : "Open rear camera"}</button><button className="secondary-button" onClick={() => inputRef.current?.click()}><Upload size={18} />Choose photo</button></div>}
       <input ref={inputRef} className="visually-hidden-file" type="file" accept="image/*" multiple onChange={(event) => analyze(event.target.files || undefined)} />
-      {error && <div className="inline-alert error"><Info size={17} /><span>{error}</span></div>}
+      {error && <div className="inline-alert error" role="alert"><Info size={17} /><span>{error}</span></div>}
       <div className="label-tips"><strong>For the best result</strong><ul><li>Add up to three details: nutrition table, barcode, and package size.</li><li>One photo is fine when it has everything.</li><li>You’ll confirm the amount and meal before anything is logged.</li></ul></div>
     </div>
   );
@@ -862,19 +913,26 @@ function ManualFood({ initialBarcode, onSave, onClose, hideCalories }: { initial
   const [barcode, setBarcode] = useState(initialBarcode || "");
   const [servingGrams, setServingGrams] = useState(100);
   const [nutrition, setNutrition] = useState<Nutrition>({ calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0 });
-  const updateNutrition = (key: keyof Nutrition, value: string) => setNutrition((current) => ({ ...current, [key]: Number(value) || 0 }));
+  const [error, setError] = useState("");
+  const updateNutrition = (key: keyof Nutrition, value: string) => setNutrition((current) => ({ ...current, [key]: Number(value) }));
   const submit = (event: FormEvent) => {
     event.preventDefault();
     const calories = hideCalories ? round(nutrition.protein * 4 + nutrition.carbs * 4 + nutrition.fat * 9, 0) : nutrition.calories;
-    if (!name.trim() || !calories) return;
-    onSave({ id: `custom-${crypto.randomUUID()}`, name: name.trim(), brand: brand.trim() || undefined, barcode: barcode || undefined, servingGrams: servingGrams || 100, nutrientsPer100: { ...nutrition, calories }, source: "custom" });
+    const values = [...Object.values(nutrition), calories, servingGrams];
+    if (!name.trim() || values.some((value) => !Number.isFinite(value) || value < 0) || servingGrams <= 0) {
+      setError("Add a food name and use zero or positive nutrition values with a serving above zero.");
+      return;
+    }
+    setError("");
+    onSave({ id: `custom-${crypto.randomUUID()}`, name: name.trim(), brand: brand.trim() || undefined, barcode: barcode.trim() || undefined, servingGrams, nutrientsPer100: { ...nutrition, calories }, source: "custom" });
   };
   return (
     <form className="sheet-form manual-food-form" onSubmit={submit}>
-      <div className="sheet-header"><button type="button" className="icon-button ghost" onClick={onClose}><ArrowLeft /></button><div><span className="eyebrow">Full control</span><h2>Custom food</h2></div><span /></div>
-      <div className="form-grid two"><label className="span-two"><span>Food name</span><input autoFocus required value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Homemade meatballs" /></label><label><span>Brand <small>optional</small></span><input value={brand} onChange={(event) => setBrand(event.target.value)} /></label><label><span>Barcode <small>optional</small></span><input inputMode="numeric" value={barcode} onChange={(event) => setBarcode(event.target.value)} /></label></div>
-      <div className="nutrition-entry"><div className="entry-heading"><div><strong>Nutrition per 100 g</strong><small>{hideCalories ? "Energy is calculated quietly from macros" : "Copy the package values"}</small></div><Package size={20} /></div><div className="form-grid three">{!hideCalories && <label><span>Calories</span><input required type="number" inputMode="decimal" value={nutrition.calories || ""} onChange={(event) => updateNutrition("calories", event.target.value)} /></label>}<label><span>Protein</span><input type="number" inputMode="decimal" step="0.1" value={nutrition.protein || ""} onChange={(event) => updateNutrition("protein", event.target.value)} /></label><label><span>Carbs</span><input type="number" inputMode="decimal" step="0.1" value={nutrition.carbs || ""} onChange={(event) => updateNutrition("carbs", event.target.value)} /></label><label><span>Fat</span><input type="number" inputMode="decimal" step="0.1" value={nutrition.fat || ""} onChange={(event) => updateNutrition("fat", event.target.value)} /></label><label><span>Fibre</span><input type="number" inputMode="decimal" step="0.1" value={nutrition.fiber || ""} onChange={(event) => updateNutrition("fiber", event.target.value)} /></label><label><span>Sugar</span><input type="number" inputMode="decimal" step="0.1" value={nutrition.sugar || ""} onChange={(event) => updateNutrition("sugar", event.target.value)} /></label></div></div>
-      <label><span>Default serving weight</span><div className="input-suffix"><input type="number" inputMode="decimal" min="0.1" step="0.1" value={servingGrams} onChange={(event) => setServingGrams(Number(event.target.value))} /><span>g</span></div></label>
+      <div className="sheet-header"><button type="button" className="icon-button ghost" onClick={onClose} aria-label="Back to add food options"><ArrowLeft /></button><div><span className="eyebrow">Full control</span><h2>Custom food</h2></div><span /></div>
+      <div className="form-grid two"><label className="span-two"><span>Food name</span><input autoFocus required maxLength={120} value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Homemade meatballs" /></label><label><span>Brand <small>optional</small></span><input maxLength={120} value={brand} onChange={(event) => setBrand(event.target.value)} /></label><label><span>Barcode <small>optional</small></span><input inputMode="numeric" maxLength={80} value={barcode} onChange={(event) => setBarcode(event.target.value)} /></label></div>
+      <div className="nutrition-entry"><div className="entry-heading"><div><strong>Nutrition per 100 g</strong><small>{hideCalories ? "Energy is calculated quietly from macros" : "Copy the package values"}</small></div><Package size={20} /></div><div className="form-grid three">{!hideCalories && <label><span>Calories</span><input required min="0" type="number" inputMode="decimal" value={nutrition.calories} onChange={(event) => updateNutrition("calories", event.target.value)} /></label>}<label><span>Protein</span><input min="0" type="number" inputMode="decimal" step="0.1" value={nutrition.protein} onChange={(event) => updateNutrition("protein", event.target.value)} /></label><label><span>Carbs</span><input min="0" type="number" inputMode="decimal" step="0.1" value={nutrition.carbs} onChange={(event) => updateNutrition("carbs", event.target.value)} /></label><label><span>Fat</span><input min="0" type="number" inputMode="decimal" step="0.1" value={nutrition.fat} onChange={(event) => updateNutrition("fat", event.target.value)} /></label><label><span>Fibre</span><input min="0" type="number" inputMode="decimal" step="0.1" value={nutrition.fiber} onChange={(event) => updateNutrition("fiber", event.target.value)} /></label><label><span>Sugar</span><input min="0" type="number" inputMode="decimal" step="0.1" value={nutrition.sugar} onChange={(event) => updateNutrition("sugar", event.target.value)} /></label></div></div>
+      <label><span>Default serving weight</span><div className="input-suffix"><input required type="number" inputMode="decimal" min="0.1" step="0.1" value={servingGrams} onChange={(event) => setServingGrams(Number(event.target.value))} /><span>g</span></div></label>
+      {error && <div className="inline-alert error" role="alert"><Info size={17} /><span>{error}</span></div>}
       <button className="primary-button full" type="submit">Continue to amount<ChevronRight size={18} /></button>
     </form>
   );
@@ -888,7 +946,10 @@ function PortionSheet({ food, questions, onLog, onClose, hideCalories }: { food:
   const [mealType, setMealType] = useState<MealType>(getMealType());
   const grams = gramsFor(food, amount, unit);
   const nutrition = scaleNutrition(food.nutrientsPer100, grams);
-  const log = () => onLog({
+  const log = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(grams) || grams <= 0) return;
+    onLog({
     id: crypto.randomUUID(),
     foodId: food.id,
     name: food.name,
@@ -901,21 +962,22 @@ function PortionSheet({ food, questions, onLog, onClose, hideCalories }: { food:
     createdAt: new Date().toISOString(),
     source: food.source,
     estimated: food.source === "ai-label" || !food.verified,
-  }, { ...food, lastUsedAt: new Date().toISOString() });
+    }, { ...food, lastUsedAt: new Date().toISOString() });
+  };
   return (
-    <div className="portion-sheet">
-      <div className="sheet-header"><button className="icon-button ghost" onClick={onClose}><ArrowLeft /></button><div><span className="eyebrow">Confirm amount</span><h2>Log food</h2></div><span /></div>
+    <form className="portion-sheet" onSubmit={log}>
+      <div className="sheet-header"><button type="button" className="icon-button ghost" onClick={onClose} aria-label="Back to food selection"><ArrowLeft /></button><div><span className="eyebrow">Confirm amount</span><h2>Log food</h2></div><span /></div>
       <div className="selected-food"><FoodAvatar food={food} /><div><strong>{food.name}</strong><span>{food.brand || food.quantityLabel || "Nutrition per 100 g"}</span></div>{!hideCalories && <div className="selected-calories"><strong>{nutrition.calories}</strong><small>kcal</small></div>}</div>
       {!!questions?.length && <div className="follow-up"><Sparkles size={18} /><div><strong>One detail still matters</strong>{questions.map((question) => <p key={question}>{question}</p>)}<small>Use grams below if the package or serving amount is unknown.</small></div></div>}
-      <div className="amount-control"><button onClick={() => setAmount(Math.max(unit === "g" ? 1 : 0.25, round(amount - (unit === "g" || unit === "ml" ? 10 : 0.5), 2)))}>−</button><label><input aria-label="Amount" type="number" inputMode="decimal" min="0.01" step="any" value={amount} onChange={(event) => setAmount(Number(event.target.value))} /><span>{formatUnit(unit, amount)}</span></label><button onClick={() => setAmount(round(amount + (unit === "g" || unit === "ml" ? 10 : 0.5), 2))}>+</button></div>
-      <div className="unit-scroll">{units.map((option) => <button key={option} className={unit === option ? "active" : ""} onClick={() => { setUnit(option); setAmount(option === "g" || option === "ml" ? 100 : 1); }}>{unitLabels[option]}</button>)}</div>
+      <div className="amount-control"><button type="button" aria-label="Decrease amount" onClick={() => setAmount(Math.max(unit === "g" ? 1 : 0.25, round(amount - (unit === "g" || unit === "ml" ? 10 : 0.5), 2)))}>−</button><label><input required aria-label="Amount" type="number" inputMode="decimal" min="0.01" step="any" value={amount} onChange={(event) => setAmount(Number(event.target.value))} /><span>{formatUnit(unit, amount)}</span></label><button type="button" aria-label="Increase amount" onClick={() => setAmount(round(amount + (unit === "g" || unit === "ml" ? 10 : 0.5), 2))}>+</button></div>
+      <div className="unit-scroll" role="group" aria-label="Serving unit">{units.map((option) => <button type="button" key={option} aria-pressed={unit === option} className={unit === option ? "active" : ""} onClick={() => { setUnit(option); setAmount(option === "g" || option === "ml" ? 100 : 1); }}>{unitLabels[option]}</button>)}</div>
       {(unit === "tbsp" || unit === "tsp" || unit === "ml") && <p className="estimate-note"><Info size={14} /> Volume-to-weight conversion is approximate unless the food provides it.</p>}
       <div className="nutrition-preview"><div><span>Protein</span><strong>{nutrition.protein} g</strong></div><div><span>Carbs</span><strong>{nutrition.carbs} g</strong></div><div><span>Fat</span><strong>{nutrition.fat} g</strong></div><div><span>Fibre</span><strong>{nutrition.fiber} g</strong></div></div>
       <div className="portion-action-area">
-        <div className="field-block"><span>Add to</span><div className="segmented four">{(Object.keys(mealLabels) as MealType[]).map((type) => <button key={type} className={mealType === type ? "active" : ""} onClick={() => setMealType(type)}>{mealLabels[type]}</button>)}</div></div>
-        <div className="portion-submit"><button className="primary-button full" onClick={log}><Plus size={18} />{hideCalories ? "Log food" : `Log ${nutrition.calories} kcal`}</button><p className="form-footnote">{grams} g total · {food.source === "open-food-facts" ? "Open Food Facts" : food.source === "ai-label" ? "AI-extracted—check the package" : food.source === "custom" ? "Your custom food" : "Generic reference value"}</p></div>
+        <div className="field-block"><span id="meal-type-label">Add to</span><div className="segmented four" role="group" aria-labelledby="meal-type-label">{(Object.keys(mealLabels) as MealType[]).map((type) => <button type="button" key={type} aria-pressed={mealType === type} className={mealType === type ? "active" : ""} onClick={() => setMealType(type)}>{mealLabels[type]}</button>)}</div></div>
+        <div className="portion-submit"><button className="primary-button full" type="submit"><Plus size={18} />{hideCalories ? "Log food" : `Log ${nutrition.calories} kcal`}</button><p className="form-footnote">{grams} g total · {food.source === "open-food-facts" ? "Open Food Facts" : food.source === "ai-label" ? "AI-extracted—check the package" : food.source === "custom" ? "Your custom food" : "Generic reference value"}</p></div>
       </div>
-    </div>
+    </form>
   );
 }
 
@@ -995,9 +1057,11 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, hideCalori
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ message, history: [], localDate: localDateKey(), timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
       });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error || "The Coach is unavailable right now.");
-      setCoachReply(body.reply);
+      const body: unknown = await response.json();
+      const bodyRecord = body && typeof body === "object" ? body as Record<string, unknown> : {};
+      if (!response.ok) throw new Error(typeof bodyRecord.error === "string" ? bodyRecord.error : "The Coach is unavailable right now.");
+      if (typeof bodyRecord.reply !== "string") throw new Error("The Coach returned an invalid response.");
+      setCoachReply(hideCalories ? hideCalorieValues(bodyRecord.reply) : bodyRecord.reply);
     } catch (caught) {
       setIntakeError(caught instanceof Error ? caught.message : "The Coach is unavailable right now.");
     } finally { setAskingCoach(false); }
@@ -1025,13 +1089,13 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, hideCalori
   if (selected) return <PortionSheet food={selected} questions={questions} hideCalories={hideCalories} onLog={onLog} onClose={() => setSelected(undefined)} />;
   if (view === "scan") return <>{loading && <div className="global-loader"><i />Looking up product…</div>}<BarcodeScanner onResult={barcode} onClose={() => changeView("start")} /></>;
   if (view === "label" || view === "camera" || view === "photo") return <LabelReader initialFiles={pendingImages} initialAction={view === "label" ? undefined : view} onFood={(food, followUps) => { if (food.barcode) void barcode(food.barcode, food, followUps); else pick(food, followUps); }} onClose={() => { setPendingImages([]); changeView("start"); }} />;
-  if (view === "manual") return <><ManualFood initialBarcode={unknownBarcode} hideCalories={hideCalories} onSave={pick} onClose={() => changeView("start")} />{manualNotice && <div className="inline-alert error"><Info size={17} />{manualNotice}</div>}</>;
+  if (view === "manual") return <><ManualFood initialBarcode={unknownBarcode} hideCalories={hideCalories} onSave={pick} onClose={() => changeView("start")} />{manualNotice && <div className="inline-alert error" role="alert"><Info size={17} />{manualNotice}</div>}</>;
   if (view === "search") return (
     <div>
-      <div className="sheet-header"><button className="icon-button ghost" onClick={() => changeView("start")}><ArrowLeft /></button><div><span className="eyebrow">Food database</span><h2>Search</h2></div><button className="icon-button ghost" onClick={onClose}><X /></button></div>
+      <div className="sheet-header"><button className="icon-button ghost" onClick={() => changeView("start")} aria-label="Back to add food options"><ArrowLeft /></button><div><span className="eyebrow">Food database</span><h2>Search</h2></div><button className="icon-button ghost" onClick={onClose} aria-label="Close add food"><X /></button></div>
       <form className="sheet-search" onSubmit={search}><Search size={19} /><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Food, brand or barcode" /><button type="submit">Search now</button></form>
-      {loading && <div className="search-status"><i />Searching local and packaged foods…</div>}
-      {searchError && <div className="inline-alert"><WifiOff size={17} />{searchError}</div>}
+      {loading && <div className="search-status" role="status"><i />Searching local and packaged foods…</div>}
+      {searchError && <div className="inline-alert" role="alert"><WifiOff size={17} />{searchError}</div>}
       <div className="food-list sheet-food-list">{results.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div>
       {!loading && query && results.length === 0 && <div className="search-empty"><Database /><strong>No match yet</strong><p>Add it as a custom food and it will be ready next time.</p><button className="secondary-button" onClick={() => changeView("manual")}>Add custom food</button></div>}
       {!query && <div className="quick-list"><span className="eyebrow">Try something simple</span>{foods.slice(0, 6).map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div>}
@@ -1040,13 +1104,13 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, hideCalori
   );
   return (
     <div className="coach-intake" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); addImages(event.dataTransfer.files); }}>
-      <div className="sheet-header"><button className="icon-button ghost" onClick={onClose}><X /></button><div><span className="eyebrow">Log with Coach</span><h2>Add food or get help</h2></div><span /></div>
+      <div className="sheet-header"><button className="icon-button ghost" onClick={onClose} aria-label="Close add food"><X /></button><div><span className="eyebrow">Log with Coach</span><h2>Add food or get help</h2></div><span /></div>
       <div className="intake-actions"><button onClick={() => changeView("scan")}><ScanLine size={17} />Barcode</button><button onClick={() => { setPendingImages([]); changeView("label"); }}><Camera size={17} />Take photo</button><button onClick={() => imageInputRef.current?.click()}><Upload size={17} />Add photos</button></div>
       <input ref={imageInputRef} className="visually-hidden-file" type="file" accept="image/*" capture="environment" multiple onChange={(event) => addImages(event.target.files || undefined)} />
       <label className="intake-input-label" htmlFor="coach-intake">Search a food or ask Coach</label>
       <form className="intake-composer" onSubmit={sendIntake}><input id="coach-intake" autoFocus value={intakeDraft} onChange={(event) => setIntakeDraft(event.target.value)} placeholder="Food or question" /><button type="submit" disabled={!intakeDraft.trim() || askingCoach} aria-label="Send to Coach">{askingCoach ? <span className="coach-loader" /> : <Send />}</button></form>
       {coachReply && <div className="intake-reply"><span>Coach</span><p>{coachReply}</p><button className="text-button" onClick={() => { setQuery(intakeDraft); changeView("search"); void runSearch(intakeDraft); }}><Search size={16} />Find a food to log</button></div>}
-      {intakeError && <div className="inline-alert error"><Info size={17} />{intakeError}</div>}
+      {intakeError && <div className="inline-alert error" role="alert"><Info size={17} />{intakeError}</div>}
       {!!recent.length && <div className="quick-list"><span className="eyebrow">Recent · one tap</span>{recent.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div>}
       <button className="text-button intake-manual" onClick={() => changeView("manual")}><Pencil size={16} />Add custom food</button>
       <div className="simple-note"><ShieldCheck size={17} /><span>Barcode and saved-food search work directly. Package photos are sent to AI only after you add them.</span></div>
@@ -1073,13 +1137,20 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
   const [loadedUserId, setLoadedUserId] = useState("");
   const [section, setSection] = useState<CoachSection>("chat");
   const [groceryItems, setGroceryItems] = useState<GroceryItem[]>([]);
+  const [loadedGroceryKey, setLoadedGroceryKey] = useState("");
   const [groceryDraft, setGroceryDraft] = useState("");
   const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
+  const grocerySettingKey = user ? `${GROCERY_ITEMS_SETTING}:${user.id}` : undefined;
   useEffect(() => {
-    getSetting<GroceryItem[]>(GROCERY_ITEMS_SETTING).then((stored) => setGroceryItems(Array.isArray(stored) ? stored : [])).catch(() => setGroceryItems([]));
-  }, []);
+    let active = true;
+    if (!grocerySettingKey) return () => { active = false; };
+    getSetting<GroceryItem[]>(grocerySettingKey)
+      .then((stored) => { if (active) { setGroceryItems(Array.isArray(stored) ? stored : []); setLoadedGroceryKey(grocerySettingKey); } })
+      .catch(() => { if (active) { setGroceryItems([]); setLoadedGroceryKey(grocerySettingKey); } });
+    return () => { active = false; };
+  }, [grocerySettingKey]);
 
   useEffect(() => {
     let active = true;
@@ -1112,14 +1183,21 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }),
       });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error || "The Coach is unavailable right now.");
+      const body: unknown = await response.json();
+      const bodyRecord = body && typeof body === "object" ? body as Record<string, unknown> : {};
+      if (!response.ok) throw new Error(typeof bodyRecord.error === "string" ? bodyRecord.error : "The Coach is unavailable right now.");
+      if (typeof bodyRecord.reply !== "string") throw new Error("The Coach returned an invalid response.");
+      const sources = Array.isArray(bodyRecord.sources) ? bodyRecord.sources.flatMap((source) => {
+        if (!source || typeof source !== "object") return [];
+        const record = source as Record<string, unknown>;
+        return typeof record.title === "string" && typeof record.url === "string" ? [{ title: record.title, url: record.url }] : [];
+      }).slice(0, 6) : undefined;
       const assistantMessage: DisplayCoachMessage = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: body.reply,
+        content: hideCalories ? hideCalorieValues(bodyRecord.reply) : bodyRecord.reply,
         createdAt: new Date().toISOString(),
-        sources: Array.isArray(body.sources) ? body.sources : undefined,
+        sources,
       };
       setMessages((current) => [...current, assistantMessage]);
       await saveCloudCoachMessage(user.id, assistantMessage);
@@ -1129,15 +1207,17 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
   };
   const clear = async () => {
     if (!user || !messages.length) return;
+    if (!window.confirm("Clear your private Coach conversation? This cannot be undone.")) return;
     await clearCloudCoachMessages(user.id);
     setMessages([]);
   };
   const updateGroceries = (updater: (current: GroceryItem[]) => GroceryItem[]) => {
     setGroceryItems((current) => {
-      const next = updater(current);
-      void setSetting(GROCERY_ITEMS_SETTING, next);
+      const next = updater(loadedGroceryKey === grocerySettingKey ? current : []);
+      if (grocerySettingKey) void setSetting(grocerySettingKey, next);
       return next;
     });
+    if (grocerySettingKey) setLoadedGroceryKey(grocerySettingKey);
   };
   const addGroceries = (names: string[]) => {
     const uniqueNames = [...new Set(names.map((name) => name.trim()).filter(Boolean))];
@@ -1165,23 +1245,24 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
   );
 
   const starters = [hideCalories ? "How are my nutrients today?" : "How am I doing today?", "Plan a quick dinner and make a grocery list", "What can I make with chicken and broccoli?"];
-  const remainingGroceries = groceryItems.filter((item) => !item.checked).length;
+  const accountGroceryItems = loadedGroceryKey === grocerySettingKey ? groceryItems : [];
+  const remainingGroceries = accountGroceryItems.filter((item) => !item.checked).length;
   return (
     <main className="page coach-page">
       <header className="coach-header"><div><span className="eyebrow">Your food companion</span><h1>Coach</h1></div>{section === "chat" && messages.length > 0 && <button className="text-button muted" onClick={clear}>Clear chat</button>}</header>
-      <div className="coach-tabs" role="tablist" aria-label="Coach workspace"><button role="tab" aria-selected={section === "chat"} className={section === "chat" ? "active" : ""} onClick={() => setSection("chat")}><MessageCircle size={16} />Chat</button><button role="tab" aria-selected={section === "groceries"} className={section === "groceries" ? "active" : ""} onClick={() => setSection("groceries")}><ListChecks size={16} />Groceries{remainingGroceries > 0 && <span>{remainingGroceries}</span>}</button></div>
+      <div className="coach-tabs" role="tablist" aria-label="Coach workspace"><button id="coach-chat-tab" role="tab" aria-selected={section === "chat"} aria-controls="coach-chat-panel" className={section === "chat" ? "active" : ""} onClick={() => setSection("chat")}><MessageCircle size={16} />Chat</button><button id="coach-groceries-tab" role="tab" aria-selected={section === "groceries"} aria-controls="coach-groceries-panel" className={section === "groceries" ? "active" : ""} onClick={() => setSection("groceries")}><ListChecks size={16} />Groceries{remainingGroceries > 0 && <span>{remainingGroceries}</span>}</button></div>
       {section === "chat" && <>
         <div className="coach-scope"><ShieldCheck size={15} /><span>{hideCalories ? "Food and nutrition only" : "Food, calories and nutrition"} · recipes and grocery lists are saved only when you choose</span></div>
         <section className="coach-thread" aria-live="polite">
           {messages.length === 0 && <div className="coach-welcome"><span className="coach-orb"><Sparkles /></span><h2>What should we make?</h2><p>Talk through dinner, use up what you have, or log a packaged food by scanning its barcode or photographing its nutrition label.</p><div className="coach-starters">{starters.map((starter) => <button key={starter} onClick={() => send(starter)}>{starter}</button>)}</div></div>}
-          {messages.map((message) => { const groceries = message.role === "assistant" ? groceryItemsFromReply(message.content) : []; return <article key={message.id} className={`coach-message ${message.role}`}><span>{message.role === "assistant" ? "Coach" : "You"}</span><p>{message.content}</p>{groceries.length > 0 && <button className="add-groceries" onClick={() => addGroceries(groceries)}><ListChecks size={15} />Add {groceries.length} to groceries</button>}{!!message.sources?.length && <div className="coach-sources"><strong>Sources</strong>{message.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.title}</a>)}</div>}</article>; })}
+          {messages.map((message) => { const visibleContent = hideCalories ? hideCalorieValues(message.content) : message.content; const groceries = message.role === "assistant" ? groceryItemsFromReply(visibleContent) : []; return <article key={message.id} className={`coach-message ${message.role}`}><span>{message.role === "assistant" ? "Coach" : "You"}</span><p>{visibleContent}</p>{groceries.length > 0 && <button className="add-groceries" onClick={() => addGroceries(groceries)}><ListChecks size={15} />Add {groceries.length} to groceries</button>}{!!message.sources?.length && <div className="coach-sources"><strong>Sources</strong>{message.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.title}</a>)}</div>}</article>; })}
           {loading && <div className="coach-typing"><i /><i /><i /><span>Coach is thinking through it…</span></div>}
-          {error && <div className="inline-alert error"><Info size={17} /><span>{error}</span></div>}
+          {error && <div className="inline-alert error" role="alert"><Info size={17} /><span>{error}</span></div>}
           <div ref={endRef} />
         </section>
         <div className="coach-composer-wrap"><div className="coach-log-actions"><button type="button" onClick={() => onOpenAdd("scan")}><ScanLine size={16} />Scan barcode</button><button type="button" onClick={() => onOpenAdd("label")}><Camera size={16} />Read nutrition label</button></div><form className="coach-composer" onSubmit={(event) => { event.preventDefault(); send(); }}><button className="coach-attach" type="button" aria-label="Add a food package" aria-expanded={attachmentMenuOpen} onClick={() => setAttachmentMenuOpen((open) => !open)}><Plus /></button>{attachmentMenuOpen && <div className="coach-attachment-menu" role="menu" aria-label="Add a food package"><button type="button" role="menuitem" onClick={() => { setAttachmentMenuOpen(false); onOpenAdd("scan"); }}><ScanLine size={17} />Scan barcode</button><button type="button" role="menuitem" onClick={() => { setAttachmentMenuOpen(false); onOpenAdd("camera"); }}><Camera size={17} />Open camera</button><button type="button" role="menuitem" onClick={() => { setAttachmentMenuOpen(false); onOpenAdd("photo"); }}><Upload size={17} />Choose photo</button></div>}<input aria-label="Message the nutrition Coach" value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={6000} placeholder="Ask about dinner, recipes, or your food log…" /><button className="coach-send" type="submit" disabled={!draft.trim() || loading} aria-label="Send"><Send /></button></form></div>
       </>}
-      {section === "groceries" && <section className="grocery-workspace"><div className="grocery-intro"><span className="coach-orb"><ListChecks /></span><div><h2>Your grocery list</h2><p>Items from Coach land here when you add them. This list stays on this device.</p></div></div><form className="grocery-composer" onSubmit={addGrocery}><input value={groceryDraft} onChange={(event) => setGroceryDraft(event.target.value)} placeholder="Add an item yourself" maxLength={120} /><button type="submit" disabled={!groceryDraft.trim()}>Add</button></form>{groceryItems.length > 0 ? <div className="grocery-list">{groceryItems.map((item) => <div key={item.id} className={item.checked ? "checked" : ""}><button className="grocery-toggle" onClick={() => updateGroceries((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, checked: !candidate.checked } : candidate))} aria-label={`Mark ${item.name} as ${item.checked ? "needed" : "picked up"}`}>{item.checked && <Check size={14} />}</button><span>{item.name}</span><button className="grocery-remove" onClick={() => updateGroceries((current) => current.filter((candidate) => candidate.id !== item.id))} aria-label={`Remove ${item.name}`}><X size={16} /></button></div>)}</div> : <div className="grocery-empty"><Package size={28} /><strong>Start with a dinner idea</strong><p>Ask Coach for a recipe or meal plan, then add the suggested ingredients here.</p><button className="secondary-button" onClick={() => setSection("chat")}><MessageCircle size={16} />Open Coach</button></div>}{groceryItems.some((item) => item.checked) && <button className="text-button muted clear-picked" onClick={() => updateGroceries((current) => current.filter((item) => !item.checked))}>Clear picked-up items</button>}</section>}
+      {section === "groceries" && <section className="grocery-workspace"><div className="grocery-intro"><span className="coach-orb"><ListChecks /></span><div><h2>Your grocery list</h2><p>Items from Coach land here when you add them. This account’s list stays on this device.</p></div></div><form className="grocery-composer" onSubmit={addGrocery}><input value={groceryDraft} onChange={(event) => setGroceryDraft(event.target.value)} placeholder="Add an item yourself" maxLength={120} /><button type="submit" disabled={!groceryDraft.trim()}>Add</button></form>{accountGroceryItems.length > 0 ? <div className="grocery-list">{accountGroceryItems.map((item) => <div key={item.id} className={item.checked ? "checked" : ""}><button className="grocery-toggle" onClick={() => updateGroceries((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, checked: !candidate.checked } : candidate))} aria-label={`Mark ${item.name} as ${item.checked ? "needed" : "picked up"}`}>{item.checked && <Check size={14} />}</button><span>{item.name}</span><button className="grocery-remove" onClick={() => updateGroceries((current) => current.filter((candidate) => candidate.id !== item.id))} aria-label={`Remove ${item.name}`}><X size={16} /></button></div>)}</div> : <div className="grocery-empty"><Package size={28} /><strong>Start with a dinner idea</strong><p>Ask Coach for a recipe or meal plan, then add the suggested ingredients here.</p><button className="secondary-button" onClick={() => setSection("chat")}><MessageCircle size={16} />Open Coach</button></div>}{accountGroceryItems.some((item) => item.checked) && <button className="text-button muted clear-picked" onClick={() => updateGroceries((current) => current.filter((item) => !item.checked))}>Clear picked-up items</button>}</section>}
     </main>
   );
 }
@@ -1194,7 +1275,7 @@ function BottomNav({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => void }
     { tab: "insights", label: "Insights", icon: <BarChart3 /> },
     { tab: "profile", label: "Targets", icon: <UserRound /> },
   ];
-  return <nav className="bottom-nav">{items.map((item) => <button key={item.tab} className={`${tab === item.tab ? "active" : ""} ${item.tab === "coach" ? "coach-nav-item" : ""}`} onClick={() => onChange(item.tab)}>{item.icon}<span>{item.label}</span></button>)}</nav>;
+  return <nav className="bottom-nav" aria-label="Primary navigation">{items.map((item) => <button key={item.tab} aria-current={tab === item.tab ? "page" : undefined} className={`${tab === item.tab ? "active" : ""} ${item.tab === "coach" ? "coach-nav-item" : ""}`} onClick={() => onChange(item.tab)}>{item.icon}<span>{item.label}</span></button>)}</nav>;
 }
 
 function AuthGateway({
@@ -1289,6 +1370,7 @@ function AuthGateway({
 export function TrackerApp() {
   const auth = useAuth();
   const [ready, setReady] = useState(false);
+  const [startupError, setStartupError] = useState("");
   const [profile, setProfile] = useState(DEFAULT_PROFILE);
   const [foods, setFoods] = useState<Food[]>([]);
   const [meals, setMeals] = useState<Meal[]>([]);
@@ -1301,17 +1383,21 @@ export function TrackerApp() {
   const [syncState, setSyncState] = useState<SyncState>("local");
   const [syncAttempt, setSyncAttempt] = useState(0);
   const [theme, setTheme] = useState<ThemeMode>(themeModes.light);
+  const [undoMeal, setUndoMeal] = useState<{ meal: Meal; timerId: number }>();
   const syncIdentityRef = useRef("");
+  const syncMutationRef = useRef(0);
+  const cloudWriteQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const cloudWriteFailedRef = useRef(false);
 
   const refresh = useCallback(async () => {
     await initializeFoods();
     const [storedProfile, storedFoods, storedMeals] = await Promise.all([getSetting<Profile>("profile"), getAll<Food>("foods"), getAll<Meal>("meals")]);
-    setProfile(storedProfile || DEFAULT_PROFILE); setFoods(storedFoods); setMeals(storedMeals); setReady(true);
+    setProfile(storedProfile || DEFAULT_PROFILE); setFoods(storedFoods); setMeals(storedMeals); setStartupError(""); setReady(true);
   }, []);
   useEffect(() => {
     // IndexedDB is our external store; hydrate it once when the client mounts.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    refresh();
+    void refresh().catch(() => setStartupError("Your private diary could not be opened. Your data has not been reset."));
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => undefined);
     const params = new URLSearchParams(window.location.search);
     if (params.has("scan")) { setInitialAddView("scan"); setAdding(true); }
@@ -1327,7 +1413,7 @@ export function TrackerApp() {
   }, []);
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
   useEffect(() => {
-    const retry = () => { syncIdentityRef.current = ""; setSyncAttempt((value) => value + 1); };
+    const retry = () => { cloudWriteFailedRef.current = false; syncIdentityRef.current = ""; setSyncAttempt((value) => value + 1); };
     window.addEventListener("online", retry);
     return () => window.removeEventListener("online", retry);
   }, []);
@@ -1378,12 +1464,13 @@ export function TrackerApp() {
         shouldPush = true;
       }
       if (shouldPush) {
+        const mutationAtPush = syncMutationRef.current;
         await pushCloudSnapshot(userId, next);
-        await setSetting(`cloudDirty:${userId}`, false);
+        if (mutationAtPush === syncMutationRef.current) await setSetting(`cloudDirty:${userId}`, false);
       }
       await replaceLocalSnapshot(next);
       await setSetting("dataOwner", identity);
-      if (active) { await refresh(); setSyncState("synced"); }
+      if (active) { cloudWriteFailedRef.current = false; await refresh(); setSyncState("synced"); }
     };
     synchronize().catch(() => {
       if (active) setSyncState(navigator.onLine ? "error" : "offline");
@@ -1391,12 +1478,26 @@ export function TrackerApp() {
     return () => { active = false; };
   }, [auth.configured, auth.ready, auth.user, ready, refresh, syncAttempt]);
 
-  const dayMeals = useMemo(() => meals.filter((meal) => localDateKey(new Date(meal.createdAt)) === dateKey).sort((a, b) => a.createdAt.localeCompare(b.createdAt)), [meals, dateKey]);
+  const dayMeals = useMemo(() => meals.filter((meal) => (meal.loggedDate || localDateKey(new Date(meal.createdAt))) === dateKey).sort((a, b) => a.createdAt.localeCompare(b.createdAt)), [meals, dateKey]);
   const syncWrite = (work: (userId: string) => Promise<void>) => {
     if (!auth.user) return;
     const userId = auth.user.id;
+    const mutation = ++syncMutationRef.current;
     setSyncState("syncing");
-    void setSetting(`cloudDirty:${userId}`, true).then(() => work(userId)).then(() => setSyncState("synced")).catch(() => setSyncState(navigator.onLine ? "error" : "offline"));
+    void setSetting(`cloudDirty:${userId}`, true)
+      .then(() => {
+        cloudWriteQueueRef.current = cloudWriteQueueRef.current.catch(() => undefined).then(() => work(userId));
+        return cloudWriteQueueRef.current;
+      })
+      .then(async () => {
+        if (mutation !== syncMutationRef.current || cloudWriteFailedRef.current) return;
+        await setSetting(`cloudDirty:${userId}`, false);
+        setSyncState("synced");
+      })
+      .catch(() => {
+        cloudWriteFailedRef.current = true;
+        setSyncState(navigator.onLine ? "error" : "offline");
+      });
   };
   const saveProfile = async (next: Profile) => {
     setProfile(next); await setSetting("profile", next); setToast("Targets saved");
@@ -1404,7 +1505,7 @@ export function TrackerApp() {
   };
   const logMeal = async (meal: Meal, food: Food) => {
     const adjustedDate = dateKey === localDateKey() ? new Date() : new Date(`${dateKey}T12:00:00`);
-    const savedMeal = { ...meal, createdAt: adjustedDate.toISOString() };
+    const savedMeal = { ...meal, loggedDate: dateKey, createdAt: adjustedDate.toISOString() };
     await Promise.all([put("meals", savedMeal), put("foods", food)]);
     setMeals((current) => [...current, savedMeal]);
     setFoods((current) => [food, ...current.filter((item) => item.id !== food.id)]);
@@ -1412,17 +1513,39 @@ export function TrackerApp() {
     syncWrite(async (userId) => { await Promise.all([upsertCloudMeal(userId, savedMeal), upsertCloudFood(userId, food)]); });
   };
   const deleteMeal = async (id: string) => {
-    await remove("meals", id); setMeals((current) => current.filter((meal) => meal.id !== id)); setToast("Meal removed");
+    const deletedMeal = meals.find((meal) => meal.id === id);
+    if (!deletedMeal) return;
+    await remove("meals", id); setMeals((current) => current.filter((meal) => meal.id !== id)); setToast("");
+    let deletionKey: string | undefined;
+    if (auth.user) {
+      deletionKey = `deletedMealIds:${auth.user.id}`;
+      const current = await getSetting<string[]>(deletionKey) || [];
+      await setSetting(deletionKey, [...new Set([...current, id])]);
+    }
+    const timerId = window.setTimeout(() => {
+      setUndoMeal((pending) => pending?.meal.id === id ? undefined : pending);
+      setToast("Meal removed");
+      if (deletionKey) syncWrite(async (userId) => {
+        await deleteCloudMeal(userId, id);
+        const remaining = (await getSetting<string[]>(deletionKey) || []).filter((mealId) => mealId !== id);
+        await setSetting(deletionKey, remaining);
+      });
+    }, 6000);
+    setUndoMeal({ meal: deletedMeal, timerId });
+  };
+  const undoDeleteMeal = async () => {
+    if (!undoMeal) return;
+    const { meal, timerId } = undoMeal;
+    window.clearTimeout(timerId);
+    setUndoMeal(undefined);
+    await put("meals", meal);
+    setMeals((current) => [...current.filter((candidate) => candidate.id !== meal.id), meal]);
     if (auth.user) {
       const key = `deletedMealIds:${auth.user.id}`;
-      const current = await getSetting<string[]>(key) || [];
-      await setSetting(key, [...new Set([...current, id])]);
-      syncWrite(async (userId) => {
-        await deleteCloudMeal(userId, id);
-        const remaining = (await getSetting<string[]>(key) || []).filter((mealId) => mealId !== id);
-        await setSetting(key, remaining);
-      });
+      await setSetting(key, (await getSetting<string[]>(key) || []).filter((mealId) => mealId !== meal.id));
+      syncWrite((userId) => upsertCloudMeal(userId, meal));
     }
+    setToast("Meal restored");
   };
   const exportBackup = async (): Promise<BackupData> => {
     const local = await exportData();
@@ -1459,21 +1582,24 @@ export function TrackerApp() {
     error: "Sync needs attention",
   };
 
-  if (!ready || !auth.ready) return <div className="app-loading"><span className="brand-mark large">C</span><i /></div>;
+  if (startupError) return <main className="app-loading load-error" role="alert"><Database size={30} /><h1>Diary unavailable</h1><p>{startupError}</p><button className="primary-button" onClick={() => { setStartupError(""); void refresh().catch(() => setStartupError("Your private diary could not be opened. Your data has not been reset.")); }}>Try again</button></main>;
+  if (!ready || !auth.ready) return <div className="app-loading" role="status" aria-label="Opening your private diary"><span className="brand-mark large">C</span><i /></div>;
   if (auth.passwordRecovery) return <AuthGateway key="recovery" configured={auth.configured} passwordRecovery onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} />;
+  const modalOpen = adding || !profile.onboardingDone;
   return (
     <div className="app-shell">
       <div className="ambient one" /><div className="ambient two" />
-      <div className="content-shell">
+      <div className="content-shell" inert={modalOpen} aria-hidden={modalOpen || undefined}>
         {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={() => openAdd()} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} />}
         {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={openAdd} />}
         {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} onOpenAccount={() => setTab("profile")} onOpenAdd={openAdd} />}
         {tab === "insights" && <InsightsView meals={meals} profile={profile} />}
         {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onExport={exportBackup} onImport={restoreBackup} configured={auth.configured} user={auth.user} syncState={auth.user ? syncState : "local"} onSendMagicLink={auth.sendMagicLink} onSignInWithProvider={auth.signInWithProvider} onSignOut={signOut} theme={theme} onThemeChange={changeTheme} />}
       </div>
-      <BottomNav tab={tab} onChange={(nextTab) => { window.scrollTo(0, 0); setTab(nextTab); }} />
-      {adding && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); }} wide>{directFood ? <PortionSheet food={directFood} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} onClose={() => setAdding(false)} onLog={logMeal} />}</Sheet>}
-      {!profile.onboardingDone && <div className="onboarding-overlay"><section className="onboarding-card"><TargetEditor profile={profile} onSave={saveProfile} onboarding /></section></div>}
+      <div inert={modalOpen} aria-hidden={modalOpen || undefined}><BottomNav tab={tab} onChange={(nextTab) => { window.scrollTo(0, 0); setTab(nextTab); }} /></div>
+      {adding && profile.onboardingDone && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); }} wide>{directFood ? <PortionSheet food={directFood} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} onClose={() => setAdding(false)} onLog={logMeal} />}</Sheet>}
+      {!profile.onboardingDone && <OnboardingDialog profile={profile} onSave={saveProfile} />}
+      {undoMeal && <div className="toast undo-toast" role="status"><span>Meal removed</span><button type="button" onClick={undoDeleteMeal}>Undo</button></div>}
       {toast && <div className="toast"><Check size={17} />{toast}</div>}
     </div>
   );

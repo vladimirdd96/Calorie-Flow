@@ -1,5 +1,7 @@
 import type { CoachMessage, Food, Meal, Profile } from "./types";
 import { getSupabase } from "./supabase";
+import { z } from "zod";
+import { coachMessageSchema, foodSchema, mealSchema, profileSchema } from "./schemas";
 
 export type CloudSnapshot = {
   profile?: Profile;
@@ -7,7 +9,6 @@ export type CloudSnapshot = {
   foods: Food[];
 };
 
-type DataRow<T> = { data: T };
 type CloudTable = "user_meals" | "user_foods";
 
 function client() {
@@ -16,7 +17,7 @@ function client() {
   return supabase;
 }
 
-async function readAll<T>(table: CloudTable, userId: string) {
+async function readAll<T>(table: CloudTable, userId: string, schema: z.ZodType<T>) {
   const rows: T[] = [];
   const pageSize = 500;
   for (let from = 0; ; from += pageSize) {
@@ -26,7 +27,7 @@ async function readAll<T>(table: CloudTable, userId: string) {
       .eq("user_id", userId)
       .range(from, from + pageSize - 1);
     if (error) throw error;
-    const page = (data || []) as DataRow<T>[];
+    const page = z.array(z.object({ data: schema })).parse(data || []);
     rows.push(...page.map((row) => row.data));
     if (page.length < pageSize) return rows;
   }
@@ -42,11 +43,11 @@ async function upsertInChunks(table: CloudTable, rows: Array<Record<string, unkn
 export async function getCloudSnapshot(userId: string): Promise<CloudSnapshot> {
   const [{ data: profileRow, error: profileError }, meals, foods] = await Promise.all([
     client().from("user_profiles").select("data").eq("user_id", userId).maybeSingle(),
-    readAll<Meal>("user_meals", userId),
-    readAll<Food>("user_foods", userId),
+    readAll("user_meals", userId, mealSchema),
+    readAll("user_foods", userId, foodSchema),
   ]);
   if (profileError) throw profileError;
-  return { profile: (profileRow?.data as Profile | undefined), meals, foods };
+  return { profile: profileSchema.optional().parse(profileRow?.data), meals, foods };
 }
 
 export async function upsertCloudProfile(userId: string, profile: Profile) {
@@ -92,9 +93,9 @@ export async function getCloudCoachMessages(userId: string, limit = 60): Promise
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
-  return (data || []).reverse().map((row) => ({
+  return (data || []).reverse().map((row) => coachMessageSchema.parse({
     id: row.id,
-    role: row.role as CoachMessage["role"],
+    role: row.role,
     content: row.content,
     createdAt: row.created_at,
   }));
@@ -111,9 +112,9 @@ export async function getAllCloudCoachMessages(userId: string): Promise<CoachMes
       .order("created_at", { ascending: true })
       .range(from, from + pageSize - 1);
     if (error) throw error;
-    const page = (data || []).map((row) => ({
+    const page = (data || []).map((row) => coachMessageSchema.parse({
       id: row.id,
-      role: row.role as CoachMessage["role"],
+      role: row.role,
       content: row.content,
       createdAt: row.created_at,
     }));
