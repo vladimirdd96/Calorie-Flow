@@ -392,6 +392,7 @@ p { color: var(--muted); line-height: 1.55; }
 .coach-message { max-width: min(88%, 620px); padding: 13px 15px; border-radius: 18px; }
 .coach-message > span { display: block; margin-bottom: 5px; color: var(--muted-2); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
 .coach-message p { margin: 0; color: var(--text); font-size: 13px; line-height: 1.55; white-space: pre-wrap; }
+.coach-message-image { display: block; width: min(100%, 260px); max-height: 260px; margin: 0 0 10px; object-fit: cover; border-radius: 12px; border: 1px solid var(--border-strong); }
 .coach-message.user { align-self: flex-end; border-bottom-right-radius: 6px; background: linear-gradient(145deg, rgba(125,255,213,.16), rgba(51,214,195,.09)); border: 1px solid var(--border-strong); }
 .coach-message.assistant { align-self: flex-start; border-bottom-left-radius: 6px; background: var(--panel); border: 1px solid var(--border); }
 .add-groceries { display: inline-flex; align-items: center; gap: 6px; min-height: 31px; margin-top: 11px; padding: 0 9px; border: 1px solid var(--border-strong); border-radius: 10px; color: var(--mint); background: rgba(125,255,213,.07); font-size: 10px; font-weight: 800; }
@@ -406,15 +407,15 @@ p { color: var(--muted); line-height: 1.55; }
 .coach-typing span { margin-left: 6px; }
 .coach-composer-wrap { position: sticky; bottom: calc(88px + env(safe-area-inset-bottom)); z-index: 10; }
 .coach-composer { position: relative; display: grid; grid-template-columns: 46px minmax(0, 1fr) 46px; gap: 8px; padding: 8px; border-radius: 19px; background: rgba(11,22,19,.94); border: 1px solid var(--border); box-shadow: 0 16px 55px rgba(0,0,0,.38); backdrop-filter: blur(22px); }
+.coach-attachment { grid-column: 1 / -1; position: relative; width: fit-content; padding: 2px; }
+.coach-attachment img { display: block; width: 68px; height: 68px; object-fit: cover; border-radius: 11px; border: 1px solid var(--border-strong); }
+.coach-attachment button { position: absolute; top: -5px; right: -5px; width: 23px; height: 23px; color: var(--text); background: var(--panel-strong); border: 1px solid var(--border-strong); border-radius: 999px; }
 .coach-composer input { min-height: 46px; border: 0; background: transparent; }
 .coach-composer input:focus { outline: 0; }
 .coach-composer button { width: 46px; height: 46px; display: grid; place-items: center; border: 0; border-radius: 14px; }
 .coach-composer .coach-attach { color: var(--mint); background: rgba(125,255,213,.08); border: 1px solid var(--border-strong); }
 .coach-composer .coach-send { color: #06110e; background: linear-gradient(145deg, var(--mint), var(--mint-strong)); }
 .coach-composer button svg { width: 19px; }
-.coach-attachment-menu { position: absolute; bottom: calc(100% + 8px); left: 0; display: grid; min-width: 178px; padding: 6px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); box-shadow: var(--shadow); }
-.coach-attachment-menu button { width: auto; min-height: 38px; display: flex; align-items: center; gap: 9px; padding: 0 10px; border-radius: 9px; color: var(--text); background: transparent; font-size: 11px; font-weight: 800; text-align: left; }
-.coach-attachment-menu button:hover, .coach-attachment-menu button:focus-visible { color: var(--mint); background: rgba(125,255,213,.08); }
 .coach-gate { min-height: 340px; display: grid; place-items: center; align-content: center; gap: 13px; padding: 30px; text-align: center; }
 .coach-gate > svg { width: 42px; height: 42px; color: var(--mint); }
 .coach-gate p { max-width: 470px; font-size: 12px; }

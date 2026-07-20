@@ -10,6 +10,7 @@ export const runtime = "nodejs";
 
 const coachRequestSchema = z.object({
   message: z.string().trim().min(1).max(6_000),
+  image: z.string().startsWith("data:image/").max(10_000_000).optional(),
   history: z.array(z.object({
     role: z.enum(["user", "assistant"]),
     content: z.string().min(1).max(6_000),
@@ -217,7 +218,7 @@ export async function POST(request: NextRequest) {
   try {
     const parsed = coachRequestSchema.safeParse(await request.json());
     if (!parsed.success) return json({ error: "Ask a food or nutrition question up to 6,000 characters." }, 400);
-    const { message, history = [], localDate = new Date().toISOString().slice(0, 10), timezone = "unknown" } = parsed.data;
+    const { message, image, history = [], localDate = new Date().toISOString().slice(0, 10), timezone = "unknown" } = parsed.data;
     if (isUnrelatedRequest(message)) {
       return json({
         reply: "I’m only available for calories, nutrition, meals, food choices, and places to eat. What would you like help with in your food log?",
@@ -229,7 +230,10 @@ export async function POST(request: NextRequest) {
     const profile = await readProfile(auth);
     const hideCalories = Boolean(profile?.hideCalories);
     const context: ToolContext = { ...auth, profile, hideCalories };
-    const messages: unknown[] = [...history, { role: "user", content: message }];
+    const userContent = image
+      ? [{ type: "text", text: message }, { type: "image_url", image_url: { url: image } }]
+      : message;
+    const messages: unknown[] = [...history, { role: "user", content: userContent }];
     const tools = coachTools.map(({ name, description, parameters }) => ({
       type: "function",
       function: { name, description, parameters },

@@ -1307,7 +1307,7 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, onMealPhot
   );
 }
 
-type DisplayCoachMessage = CoachMessage & { sources?: Array<{ title: string; url: string }> };
+type DisplayCoachMessage = CoachMessage & { imageUrl?: string; sources?: Array<{ title: string; url: string }> };
 
 function groceryItemsFromReply(content: string) {
   const section = content.match(/(?:^|\n)\s*(?:\*\*)?grocery list(?:\*\*)?\s*:?\s*\n([\s\S]*)/i)?.[1];
@@ -1331,7 +1331,8 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
   const [groceryItems, setGroceryItems] = useState<GroceryItem[]>([]);
   const [loadedGroceryKey, setLoadedGroceryKey] = useState("");
   const [groceryDraft, setGroceryDraft] = useState("");
-  const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
+  const [attachedImage, setAttachedImage] = useState<string | null>(null);
+  const coachImageInputRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   const grocerySettingKey = user ? `${GROCERY_ITEMS_SETTING}:${user.id}` : undefined;
@@ -1409,12 +1410,13 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [messages, loading]);
 
   const send = async (suggestion?: string) => {
-    const content = (suggestion ?? draft).trim();
+    const image = suggestion ? undefined : attachedImage;
+    const content = (suggestion ?? draft).trim() || (image ? "Please take a look at this photo." : "");
     if (!content || !user || loading || loadedUserId !== user.id) return;
     if (!activeChatId) return;
-    const userMessage: DisplayCoachMessage = { id: crypto.randomUUID(), chatId: activeChatId, role: "user", content, createdAt: new Date().toISOString() };
+    const userMessage: DisplayCoachMessage = { id: crypto.randomUUID(), chatId: activeChatId, role: "user", content, createdAt: new Date().toISOString(), ...(image ? { imageUrl: image } : {}) };
     const history = messages.slice(-12).map(({ role, content: previous }) => ({ role, content: previous }));
-    setMessages((current) => [...current, userMessage]); setDraft(""); setError(""); setLoading(true);
+    setMessages((current) => [...current, userMessage]); setDraft(""); setAttachedImage(null); setError(""); setLoading(true);
     try {
       try { await saveCloudCoachMessage(user.id, userMessage); } catch { setError("This reply will continue, but cloud history is temporarily unavailable."); }
       const session = await getSupabase()?.auth.getSession();
@@ -1425,6 +1427,7 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           message: content,
+          ...(image ? { image } : {}),
           history,
           localDate: localDateKey(),
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -1450,6 +1453,7 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
       setMessages((current) => [...current, assistantMessage]);
       try { await saveCloudCoachMessage(user.id, assistantMessage); } catch { setError("Reply received. Cloud history is temporarily unavailable."); }
     } catch (caught) {
+      if (image) setAttachedImage(image);
       setError(caught instanceof Error ? caught.message : "The Coach is unavailable right now.");
     } finally { setLoading(false); }
   };
@@ -1498,6 +1502,15 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
     addGroceries([groceryDraft]);
     setGroceryDraft("");
   };
+  const attachCoachImage = async (file?: File) => {
+    if (!file) return;
+    try {
+      setAttachedImage(await imageToDataUrl(file));
+      setError("");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "That photo could not be attached. Try another image.");
+    }
+  };
 
   if (!configured) return (
       <main className="page coach-page"><header className="page-header"><span className="eyebrow">Nutrition only</span><h1>Coach</h1><p>{hideCalories ? "Nutrition guidance using your actual diary." : "Calorie-aware guidance using your actual diary."}</p></header><section className="coach-gate card"><MessageCircle /><h2>Coach setup is waiting</h2><p>Connect the project database to activate private, diary-aware coaching.</p></section></main>
@@ -1521,12 +1534,12 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
         <div className="coach-scope"><ShieldCheck size={15} /><span>{hideCalories ? "Food and nutrition only" : "Food, calories and nutrition"} · recipes and grocery lists are saved only when you choose</span></div>
         <section className="coach-thread" aria-live="polite">
           {messages.length === 0 && <div className="coach-welcome"><span className="coach-orb"><Sparkles /></span><h2>What should we make?</h2><p>Talk through dinner, use up what you have, or log a packaged food by scanning its barcode or photographing its nutrition label.</p><div className="coach-starters">{starters.map((starter) => <button key={starter} onClick={() => send(starter)}>{starter}</button>)}</div></div>}
-          {messages.map((message) => { const visibleContent = hideCalories ? hideCalorieValues(message.content) : message.content; const groceries = message.role === "assistant" ? groceryItemsFromReply(visibleContent) : []; return <article key={message.id} className={`coach-message ${message.role}`}><span>{message.role === "assistant" ? "Coach" : "You"}</span><p>{visibleContent}</p>{groceries.length > 0 && <div className="recipe-grocery-action"><strong>Want to cook this?</strong><button className="add-groceries" onClick={() => addGroceries(groceries)}><ListChecks size={15} />Add {groceries.length} ingredients to groceries</button></div>}{!!message.sources?.length && <div className="coach-sources"><strong>Sources</strong>{message.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.title}</a>)}</div>}</article>; })}
+          {messages.map((message) => { const visibleContent = hideCalories ? hideCalorieValues(message.content) : message.content; const groceries = message.role === "assistant" ? groceryItemsFromReply(visibleContent) : []; return <article key={message.id} className={`coach-message ${message.role}`}><span>{message.role === "assistant" ? "Coach" : "You"}</span>{message.imageUrl && <img className="coach-message-image" src={message.imageUrl} alt="Photo shared with Coach" />}<p>{visibleContent}</p>{groceries.length > 0 && <div className="recipe-grocery-action"><strong>Want to cook this?</strong><button className="add-groceries" onClick={() => addGroceries(groceries)}><ListChecks size={15} />Add {groceries.length} ingredients to groceries</button></div>}{!!message.sources?.length && <div className="coach-sources"><strong>Sources</strong>{message.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.title}</a>)}</div>}</article>; })}
           {loading && <div className="coach-typing"><i /><i /><i /><span>Coach is thinking through it…</span></div>}
           {error && <div className="inline-alert error" role="alert"><Info size={17} /><span>{error}</span><button className="text-button" type="button" onClick={() => { setError(""); setLoadedUserId(""); setHistoryAttempt((value) => value + 1); }}>Retry</button></div>}
           <div ref={endRef} />
         </section>
-        <div className="coach-composer-wrap"><div className="coach-log-actions"><button type="button" onClick={() => onOpenAdd("scan")}><ScanLine size={16} />Scan barcode</button><button type="button" onClick={() => onOpenAdd("label")}><Camera size={16} />Read nutrition label</button></div><form className="coach-composer" onSubmit={(event) => { event.preventDefault(); send(); }}><button className="coach-attach" type="button" aria-label="Add a food package" aria-expanded={attachmentMenuOpen} onClick={() => setAttachmentMenuOpen((open) => !open)}><Plus /></button>{attachmentMenuOpen && <div className="coach-attachment-menu" role="menu" aria-label="Add a food package"><button type="button" role="menuitem" onClick={() => { setAttachmentMenuOpen(false); onOpenAdd("scan"); }}><ScanLine size={17} />Scan barcode</button><button type="button" role="menuitem" onClick={() => { setAttachmentMenuOpen(false); onOpenAdd("camera"); }}><Camera size={17} />Open camera</button><button type="button" role="menuitem" onClick={() => { setAttachmentMenuOpen(false); onOpenAdd("photo"); }}><Upload size={17} />Choose photo</button></div>}<input aria-label="Message the nutrition Coach" value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={6000} placeholder="Ask about dinner, recipes, or your food log…" /><button className="coach-send" type="submit" disabled={!draft.trim() || loading} aria-label="Send"><Send /></button></form></div>
+        <div className="coach-composer-wrap"><div className="coach-log-actions"><button type="button" onClick={() => onOpenAdd("scan")}><ScanLine size={16} />Scan barcode</button><button type="button" onClick={() => onOpenAdd("label")}><Camera size={16} />Read nutrition label</button></div><form className="coach-composer" onSubmit={(event) => { event.preventDefault(); void send(); }}>{attachedImage && <div className="coach-attachment"><img src={attachedImage} alt="Photo attached to your message" /><button type="button" onClick={() => setAttachedImage(null)} aria-label="Remove attached photo"><X size={15} /></button></div>}<input ref={coachImageInputRef} className="visually-hidden-file" type="file" accept="image/*" onChange={(event) => { void attachCoachImage(event.target.files?.[0]); event.currentTarget.value = ""; }} /><button className="coach-attach" type="button" aria-label="Attach a photo" onClick={() => coachImageInputRef.current?.click()}><Plus /></button><input aria-label="Message the nutrition Coach" value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={6000} placeholder={attachedImage ? "Add a note about this photo…" : "Ask about dinner, recipes, or your food log…"} /><button className="coach-send" type="submit" disabled={(!draft.trim() && !attachedImage) || loading} aria-label="Send"><Send /></button></form></div>
       </>}
       {section === "groceries" && <section className="grocery-workspace"><div className="grocery-intro"><span className="coach-orb"><ListChecks /></span><div><h2>Your grocery list</h2><p>Items from Coach land here when you add them. This account’s list stays on this device.</p></div></div><form className="grocery-composer" onSubmit={addGrocery}><input value={groceryDraft} onChange={(event) => setGroceryDraft(event.target.value)} placeholder="Add an item yourself" maxLength={120} /><button type="submit" disabled={!groceryDraft.trim()}>Add</button></form>{accountGroceryItems.length > 0 ? <div className="grocery-list">{accountGroceryItems.map((item) => <div key={item.id} className={item.checked ? "checked" : ""}><button className="grocery-toggle" onClick={() => updateGroceries((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, checked: !candidate.checked } : candidate))} aria-label={`Mark ${item.name} as ${item.checked ? "needed" : "picked up"}`}>{item.checked && <Check size={14} />}</button><span>{item.name}</span><button className="grocery-remove" onClick={() => updateGroceries((current) => current.filter((candidate) => candidate.id !== item.id))} aria-label={`Remove ${item.name}`}><X size={16} /></button></div>)}</div> : <div className="grocery-empty"><Package size={28} /><strong>Start with a dinner idea</strong><p>Ask Coach for a recipe or meal plan, then add the suggested ingredients here.</p><button className="secondary-button" onClick={() => setSection("chat")}><MessageCircle size={16} />Open Coach</button></div>}{accountGroceryItems.some((item) => item.checked) && <button className="text-button muted clear-picked" onClick={() => updateGroceries((current) => current.filter((item) => !item.checked))}>Clear picked-up items</button>}</section>}
     </main>
