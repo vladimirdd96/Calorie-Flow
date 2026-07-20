@@ -345,12 +345,12 @@ function DiscoverView({ foods, onSelect, onAdd, hideCalories }: { foods: Food[];
   const starterFoods = foods.filter((food) => food.source === "seed").slice(0, 6);
   return (
     <main className="page">
-      <header className="page-header"><span className="eyebrow">Your food shelf</span><h1>Log what you remember.</h1><p>Your own foods and recent meals stay at hand, even when the packaging is long gone.</p></header>
+      <header className="page-header"><span className="eyebrow">Your food shelf</span><h1>Add food your way.</h1><p>Your saved foods and recent meals stay at hand, even when the packaging is long gone.</p></header>
       <button className="search-launch card" onClick={() => onAdd("search")}><Search size={20} /><span>Search foods, brands or barcodes</span><kbd>+</kbd></button>
       <section className="feature-actions">
         <button onClick={() => onAdd("scan")}><span className="action-icon mint"><ScanLine /></span><strong>Scan barcode</strong><small>Package lookup</small></button>
-        <button onClick={() => onAdd("label")}><span className="action-icon blue"><Camera /></span><strong>Read label</strong><small>AI assisted</small></button>
-        <button onClick={() => onAdd("manual")}><span className="action-icon amber"><Pencil /></span><strong>Custom food</strong><small>Save your usual</small></button>
+        <button onClick={() => onAdd("label")}><span className="action-icon blue"><Camera /></span><strong>Read nutrition label</strong><small>Use a package photo</small></button>
+        <button onClick={() => onAdd("manual")}><span className="action-icon amber"><Pencil /></span><strong>Add custom food</strong><small>Save foods you make</small></button>
       </section>
       {personalFoods.length > 0 && <section className="discover-list">
         <div className="section-heading"><div><span className="eyebrow">Made yours</span><h2>Your saved foods</h2></div><span className="subtle">{personalFoods.length} saved</span></div>
@@ -361,7 +361,7 @@ function DiscoverView({ foods, onSelect, onAdd, hideCalories }: { foods: Food[];
         <div className="card food-list">{recent.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => onSelect(food)} />)}</div>
       </section>}
       {!personalFoods.length && !recent.length && <section className="discover-list starter-section">
-        <div className="starter-message"><div><span className="eyebrow">Start your shelf</span><h2>Save the foods you return to.</h2><p>Search, scan or add one from memory once. It will be ready for a one-tap log next time.</p></div><button className="text-button" onClick={() => onAdd("manual")}><Pencil size={16} />Add from memory</button></div>
+        <div className="starter-message"><div><span className="eyebrow">Start your shelf</span><h2>Save the foods you return to.</h2><p>Search, scan, or add a custom food once. It will be ready for a one-tap log next time.</p></div><button className="text-button" onClick={() => onAdd("manual")}><Pencil size={16} />Add custom food</button></div>
         <div className="section-heading"><div><span className="eyebrow">Common starting points</span><h2>Reference foods</h2></div></div>
         <div className="card food-list">{starterFoods.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => onSelect(food)} />)}</div>
       </section>}
@@ -973,7 +973,7 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, hideCalori
       {loading && <div className="search-status"><i />Searching local and packaged foods…</div>}
       {error && <div className="inline-alert"><WifiOff size={17} />{error}</div>}
       <div className="food-list sheet-food-list">{results.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div>
-      {!loading && query && results.length === 0 && <div className="search-empty"><Database /><strong>No match yet</strong><p>Create it once; next time it will be waiting.</p><button className="secondary-button" onClick={() => setView("manual")}>Add custom food</button></div>}
+      {!loading && query && results.length === 0 && <div className="search-empty"><Database /><strong>No match yet</strong><p>Add it as a custom food and it will be ready next time.</p><button className="secondary-button" onClick={() => setView("manual")}>Add custom food</button></div>}
       {!query && <div className="quick-list"><span className="eyebrow">Try something simple</span>{foods.slice(0, 6).map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div>}
       <div className="data-credit"><Database size={15} /><span>Product results by Open Food Facts · ODbL</span></div>
     </div>
@@ -988,7 +988,7 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, hideCalori
       {coachReply && <div className="intake-reply"><span>Coach</span><p>{coachReply}</p><button className="text-button" onClick={() => { setQuery(intakeDraft); setView("search"); void runSearch(intakeDraft); }}><Search size={16} />Find a food to log</button></div>}
       {error && <div className="inline-alert error"><Info size={17} />{error}</div>}
       {!!recent.length && <div className="quick-list"><span className="eyebrow">Recent · one tap</span>{recent.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div>}
-      <button className="text-button intake-manual" onClick={() => setView("manual")}><Pencil size={16} />Enter food manually</button>
+      <button className="text-button intake-manual" onClick={() => setView("manual")}><Pencil size={16} />Add custom food</button>
       <div className="simple-note"><ShieldCheck size={17} /><span>Barcode and saved-food search work directly. Package photos are sent to AI only after you add them.</span></div>
     </div>
   );
