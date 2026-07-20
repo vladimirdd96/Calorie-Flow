@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getSupabase } from "@/lib/supabase";
+import { getAppOrigin, getSupabase } from "@/lib/supabase";
 
 export default function AuthCallback() {
   const [error, setError] = useState("");
@@ -21,7 +21,7 @@ export default function AuthCallback() {
         return;
       }
       if (!supabase || !code) {
-        window.location.replace("/");
+        window.location.replace(new URL("/", getAppOrigin()).toString());
         return;
       }
 
@@ -32,7 +32,7 @@ export default function AuthCallback() {
         return;
       }
       window.history.replaceState({}, "", "/");
-      window.location.replace("/");
+      window.location.replace(new URL("/", getAppOrigin()).toString());
     };
 
     void complete();

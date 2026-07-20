@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { cloudSyncConfigured, getSupabase, type CloudUser, type SocialAuthProvider } from "@/lib/supabase";
+import { cloudSyncConfigured, getAuthCallbackUrl, getSupabase, type CloudUser, type SocialAuthProvider } from "@/lib/supabase";
 
 export function useAuth() {
   const [user, setUser] = useState<CloudUser | null>(null);
@@ -54,7 +54,7 @@ export function useAuth() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: new URL("/auth/callback", window.location.origin).toString(),
+        emailRedirectTo: getAuthCallbackUrl(),
         shouldCreateUser: true,
       },
     });
@@ -74,7 +74,7 @@ export function useAuth() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: new URL("/auth/callback", window.location.origin).toString() },
+      options: { emailRedirectTo: getAuthCallbackUrl() },
     });
     if (error) throw error;
     return { needsEmailConfirmation: !data.session };
@@ -85,7 +85,7 @@ export function useAuth() {
     if (!supabase) throw new Error("Cloud sync is not configured yet.");
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: new URL("/auth/callback", window.location.origin).toString() },
+      options: { redirectTo: getAuthCallbackUrl() },
     });
     if (error) throw error;
   }, []);
@@ -93,7 +93,7 @@ export function useAuth() {
   const requestPasswordReset = useCallback(async (email: string) => {
     const supabase = getSupabase();
     if (!supabase) throw new Error("Cloud sync is not configured yet.");
-    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: new URL("/auth/callback", window.location.origin).toString() });
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: getAuthCallbackUrl() });
     if (error) throw error;
   }, []);
 
