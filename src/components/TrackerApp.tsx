@@ -926,7 +926,9 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, hideCalori
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Food[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [searchError, setSearchError] = useState("");
+  const [intakeError, setIntakeError] = useState("");
+  const [manualNotice, setManualNotice] = useState("");
   const [unknownBarcode, setUnknownBarcode] = useState("");
   const [intakeDraft, setIntakeDraft] = useState("");
   const [coachReply, setCoachReply] = useState("");
@@ -935,13 +937,26 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, hideCalori
   const imageInputRef = useRef<HTMLInputElement>(null);
   const searchRequestRef = useRef(0);
   const recent = [...foods].filter((food) => food.lastUsedAt).sort((a, b) => (b.lastUsedAt || "").localeCompare(a.lastUsedAt || "")).slice(0, 6);
-  const pick = (food: Food, followUps: string[] = []) => { setSelected(food); setQuestions(followUps); };
+  const changeView = (nextView: AddView) => {
+    if (view === "search" && nextView !== "search") {
+      searchRequestRef.current += 1;
+      setLoading(false);
+      setSearchError("");
+    }
+    if (nextView !== "start") setIntakeError("");
+    if (nextView !== "manual") {
+      setUnknownBarcode("");
+      setManualNotice("");
+    }
+    setView(nextView);
+  };
+  const pick = (food: Food, followUps: string[] = []) => { setSearchError(""); setSelected(food); setQuestions(followUps); };
   const runSearch = useCallback(async (value: string) => {
     const requestId = ++searchRequestRef.current;
     const normalized = value.trim().toLowerCase();
-    if (!normalized) { setResults([]); setError(""); setLoading(false); return; }
+    if (!normalized) { setResults([]); setSearchError(""); setLoading(false); return; }
     const local = foods.filter((food) => `${food.name} ${food.brand || ""} ${food.barcode || ""}`.toLowerCase().includes(normalized)).slice(0, 10);
-    setResults(local); setLoading(true); setError("");
+    setResults(local); setLoading(true); setSearchError("");
     if (normalized.length < 2) { setLoading(false); return; }
     try {
       const remote = await searchOpenFoodFacts(value.trim());
@@ -949,7 +964,7 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, hideCalori
       const localIds = new Set(local.map((food) => food.id));
       setResults([...local, ...remote.filter((food) => !localIds.has(food.id))].slice(0, 25));
     } catch {
-      if (requestId === searchRequestRef.current && !local.length) setError("Online food search is unavailable. You can still add a custom food.");
+      if (requestId === searchRequestRef.current && !local.length) setSearchError("Online food search is unavailable. You can still add a custom food.");
     } finally {
       if (requestId === searchRequestRef.current) setLoading(false);
     }
@@ -965,9 +980,9 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, hideCalori
     const message = intakeDraft.trim();
     if (!message || askingCoach) return;
     const soundsConversational = /\b(i|my|me|how|what|can|should|help|ate|eaten|bite|bites|slice|slices|calorie|protein|macro|portion)\b|[?]/i.test(message);
-    setCoachReply(""); setError("");
+    setCoachReply(""); setIntakeError("");
     if (!soundsConversational) {
-      setQuery(message); setView("search"); await runSearch(message);
+      setQuery(message); changeView("search"); await runSearch(message);
       return;
     }
     setAskingCoach(true);
@@ -984,41 +999,41 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, hideCalori
       if (!response.ok) throw new Error(body.error || "The Coach is unavailable right now.");
       setCoachReply(body.reply);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "The Coach is unavailable right now.");
+      setIntakeError(caught instanceof Error ? caught.message : "The Coach is unavailable right now.");
     } finally { setAskingCoach(false); }
   };
   const addImages = (files?: FileList | File[]) => {
     if (!files?.length) return;
     setPendingImages(Array.from(files).slice(0, 3));
-    setView("label");
+    changeView("label");
   };
   const barcode = async (code: string, fallback?: Food, followUps: string[] = []) => {
-    setLoading(true); setError("");
+    setLoading(true); setManualNotice("");
     const cached = foods.find((food) => food.barcode === code);
     if (cached) { setLoading(false); pick(cached, followUps); return; }
     try {
       const food = await findByBarcode(code);
       if (food) pick(food, followUps);
       else if (fallback) pick(fallback, followUps);
-      else { setUnknownBarcode(code); setView("manual"); }
+      else { setUnknownBarcode(code); changeView("manual"); }
     } catch {
       if (fallback) pick(fallback, followUps);
-      else { setUnknownBarcode(code); setView("manual"); setError("This barcode wasn’t found. Add the label once and it will be saved on this device."); }
+      else { setUnknownBarcode(code); setManualNotice("This barcode wasn’t found. Add the label once and it will be saved on this device."); changeView("manual"); }
     }
     finally { setLoading(false); }
   };
   if (selected) return <PortionSheet food={selected} questions={questions} hideCalories={hideCalories} onLog={onLog} onClose={() => setSelected(undefined)} />;
-  if (view === "scan") return <>{loading && <div className="global-loader"><i />Looking up product…</div>}<BarcodeScanner onResult={barcode} onClose={() => setView("start")} /></>;
-  if (view === "label" || view === "camera" || view === "photo") return <LabelReader initialFiles={pendingImages} initialAction={view === "label" ? undefined : view} onFood={(food, followUps) => { if (food.barcode) void barcode(food.barcode, food, followUps); else pick(food, followUps); }} onClose={() => { setPendingImages([]); setView("start"); }} />;
-  if (view === "manual") return <><ManualFood initialBarcode={unknownBarcode} hideCalories={hideCalories} onSave={pick} onClose={() => setView("start")} />{error && <div className="inline-alert error"><Info size={17} />{error}</div>}</>;
+  if (view === "scan") return <>{loading && <div className="global-loader"><i />Looking up product…</div>}<BarcodeScanner onResult={barcode} onClose={() => changeView("start")} /></>;
+  if (view === "label" || view === "camera" || view === "photo") return <LabelReader initialFiles={pendingImages} initialAction={view === "label" ? undefined : view} onFood={(food, followUps) => { if (food.barcode) void barcode(food.barcode, food, followUps); else pick(food, followUps); }} onClose={() => { setPendingImages([]); changeView("start"); }} />;
+  if (view === "manual") return <><ManualFood initialBarcode={unknownBarcode} hideCalories={hideCalories} onSave={pick} onClose={() => changeView("start")} />{manualNotice && <div className="inline-alert error"><Info size={17} />{manualNotice}</div>}</>;
   if (view === "search") return (
     <div>
-      <div className="sheet-header"><button className="icon-button ghost" onClick={() => setView("start")}><ArrowLeft /></button><div><span className="eyebrow">Food database</span><h2>Search</h2></div><button className="icon-button ghost" onClick={onClose}><X /></button></div>
+      <div className="sheet-header"><button className="icon-button ghost" onClick={() => changeView("start")}><ArrowLeft /></button><div><span className="eyebrow">Food database</span><h2>Search</h2></div><button className="icon-button ghost" onClick={onClose}><X /></button></div>
       <form className="sheet-search" onSubmit={search}><Search size={19} /><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Food, brand or barcode" /><button type="submit">Search now</button></form>
       {loading && <div className="search-status"><i />Searching local and packaged foods…</div>}
-      {error && <div className="inline-alert"><WifiOff size={17} />{error}</div>}
+      {searchError && <div className="inline-alert"><WifiOff size={17} />{searchError}</div>}
       <div className="food-list sheet-food-list">{results.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div>
-      {!loading && query && results.length === 0 && <div className="search-empty"><Database /><strong>No match yet</strong><p>Add it as a custom food and it will be ready next time.</p><button className="secondary-button" onClick={() => setView("manual")}>Add custom food</button></div>}
+      {!loading && query && results.length === 0 && <div className="search-empty"><Database /><strong>No match yet</strong><p>Add it as a custom food and it will be ready next time.</p><button className="secondary-button" onClick={() => changeView("manual")}>Add custom food</button></div>}
       {!query && <div className="quick-list"><span className="eyebrow">Try something simple</span>{foods.slice(0, 6).map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div>}
       <div className="data-credit"><Database size={15} /><span>Product results by Open Food Facts · ODbL</span></div>
     </div>
@@ -1026,14 +1041,14 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, hideCalori
   return (
     <div className="coach-intake" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); addImages(event.dataTransfer.files); }}>
       <div className="sheet-header"><button className="icon-button ghost" onClick={onClose}><X /></button><div><span className="eyebrow">Log with Coach</span><h2>Add food or get help</h2></div><span /></div>
-      <div className="intake-actions"><button onClick={() => setView("scan")}><ScanLine size={17} />Barcode</button><button onClick={() => { setPendingImages([]); setView("label"); }}><Camera size={17} />Take photo</button><button onClick={() => imageInputRef.current?.click()}><Upload size={17} />Add photos</button></div>
+      <div className="intake-actions"><button onClick={() => changeView("scan")}><ScanLine size={17} />Barcode</button><button onClick={() => { setPendingImages([]); changeView("label"); }}><Camera size={17} />Take photo</button><button onClick={() => imageInputRef.current?.click()}><Upload size={17} />Add photos</button></div>
       <input ref={imageInputRef} className="visually-hidden-file" type="file" accept="image/*" capture="environment" multiple onChange={(event) => addImages(event.target.files || undefined)} />
       <label className="intake-input-label" htmlFor="coach-intake">Search a food or ask Coach</label>
       <form className="intake-composer" onSubmit={sendIntake}><input id="coach-intake" autoFocus value={intakeDraft} onChange={(event) => setIntakeDraft(event.target.value)} placeholder="Food or question" /><button type="submit" disabled={!intakeDraft.trim() || askingCoach} aria-label="Send to Coach">{askingCoach ? <span className="coach-loader" /> : <Send />}</button></form>
-      {coachReply && <div className="intake-reply"><span>Coach</span><p>{coachReply}</p><button className="text-button" onClick={() => { setQuery(intakeDraft); setView("search"); void runSearch(intakeDraft); }}><Search size={16} />Find a food to log</button></div>}
-      {error && <div className="inline-alert error"><Info size={17} />{error}</div>}
+      {coachReply && <div className="intake-reply"><span>Coach</span><p>{coachReply}</p><button className="text-button" onClick={() => { setQuery(intakeDraft); changeView("search"); void runSearch(intakeDraft); }}><Search size={16} />Find a food to log</button></div>}
+      {intakeError && <div className="inline-alert error"><Info size={17} />{intakeError}</div>}
       {!!recent.length && <div className="quick-list"><span className="eyebrow">Recent · one tap</span>{recent.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div>}
-      <button className="text-button intake-manual" onClick={() => setView("manual")}><Pencil size={16} />Add custom food</button>
+      <button className="text-button intake-manual" onClick={() => changeView("manual")}><Pencil size={16} />Add custom food</button>
       <div className="simple-note"><ShieldCheck size={17} /><span>Barcode and saved-food search work directly. Package photos are sent to AI only after you add them.</span></div>
     </div>
   );
