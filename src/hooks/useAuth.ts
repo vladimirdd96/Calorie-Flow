@@ -43,6 +43,25 @@ export function useAuth() {
     if (error) throw error;
   }, []);
 
+  const signInWithPassword = useCallback(async (email: string, password: string) => {
+    const supabase = getSupabase();
+    if (!supabase) throw new Error("Cloud sync is not configured yet.");
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+  }, []);
+
+  const signUp = useCallback(async (email: string, password: string) => {
+    const supabase = getSupabase();
+    if (!supabase) throw new Error("Cloud sync is not configured yet.");
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    if (error) throw error;
+    return { needsEmailConfirmation: !data.session };
+  }, []);
+
   const signInWithProvider = useCallback(async (provider: SocialAuthProvider) => {
     const supabase = getSupabase();
     if (!supabase) throw new Error("Cloud sync is not configured yet.");
@@ -60,5 +79,5 @@ export function useAuth() {
     if (error) throw error;
   }, []);
 
-  return { configured: cloudSyncConfigured, ready, user, sendMagicLink, signInWithProvider, signOut };
+  return { configured: cloudSyncConfigured, ready, user, sendMagicLink, signInWithPassword, signUp, signInWithProvider, signOut };
 }

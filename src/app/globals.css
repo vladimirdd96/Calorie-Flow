@@ -246,6 +246,21 @@ p { color: var(--muted); line-height: 1.55; }
 .provider-mark { width: 18px; display: inline-grid; place-items: center; font-size: 16px; font-weight: 800; line-height: 1; }
 .provider-mark.google { color: #4285f4; font-family: Arial, sans-serif; }
 .account-notice { margin: -3px 2px 0; color: var(--mint); font-size: 10px; }
+.auth-page { min-height: 100dvh; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at 20% 10%, rgba(125,255,213,.12), transparent 33%), var(--bg); }
+.auth-card { width: min(100%, 420px); padding: 26px; display: grid; gap: 18px; border-radius: var(--radius-lg); }
+.auth-brand { display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 800; letter-spacing: -.03em; }
+.auth-brand .brand-mark { width: 34px; height: 34px; font-size: 17px; }
+.auth-card h1 { margin: 6px 0 8px; font-size: 28px; line-height: 1.08; }
+.auth-card p { margin: 0; font-size: 12px; }
+.auth-form { display: grid; gap: 12px; }
+.auth-form label { display: grid; gap: 6px; color: var(--muted); font-size: 11px; font-weight: 700; }
+.auth-form input { min-height: 44px; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; color: var(--text); background: rgba(6,18,16,.72); font: inherit; }
+.auth-form input:focus { outline: 2px solid rgba(125,255,213,.5); outline-offset: 1px; border-color: var(--mint); }
+.auth-google { justify-content: center; }
+.auth-switch { text-align: center; color: var(--muted); }
+.auth-switch button, .auth-guest { padding: 0; border: 0; color: var(--mint); background: transparent; font: inherit; font-weight: 700; cursor: pointer; }
+.auth-guest { justify-self: center; font-size: 12px; }
+.auth-unavailable { display: flex; align-items: flex-start; gap: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; color: var(--muted); background: rgba(125,255,213,.05); }
 
 .coach-page { width: min(100%, 820px); margin: 0 auto; }
 .coach-header { min-height: 105px; display: flex; align-items: end; justify-content: space-between; gap: 16px; padding: 24px 2px 13px; }

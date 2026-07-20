@@ -14,6 +14,7 @@ Apply these rules to every task, regardless of size.
 - Stage only files touched by the task; never use `git add .`.
 - Run `npm run typecheck` for TypeScript changes and `npm run lint` for any code change. Run `npm test` when behavior is covered by tests.
 - Do not bypass hooks or commit a task that has failing relevant checks.
+- Once a task is complete, all relevant checks pass, and the UI has been verified when applicable, push the task commit so deployment is triggered before reporting completion.
 
 ## Scope and design
 

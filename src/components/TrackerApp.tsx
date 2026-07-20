@@ -14,6 +14,7 @@ import {
   Home,
   Info,
   LogOut,
+  LockKeyhole,
   Mail,
   MessageCircle,
   Package,
@@ -89,6 +90,9 @@ import type {
 type Tab = "today" | "search" | "coach" | "insights" | "profile";
 type AddView = "start" | "search" | "scan" | "label" | "manual";
 type SyncState = "local" | "syncing" | "synced" | "offline" | "error";
+type AuthMode = "sign-in" | "register";
+
+const AUTH_GATE_COMPLETE_KEY = "authGateComplete";
 
 const DEFAULT_PROFILE: Profile = {
   name: "",
@@ -944,6 +948,85 @@ function BottomNav({ tab, onChange, onAdd }: { tab: Tab; onChange: (tab: Tab) =>
   return <nav className="bottom-nav">{items.slice(0, 2).map((item) => <button key={item.tab} className={tab === item.tab ? "active" : ""} onClick={() => onChange(item.tab)}>{item.icon}<span>{item.label}</span></button>)}<button className="add-button" onClick={onAdd} aria-label="Add food"><Plus /></button>{items.slice(2).map((item) => <button key={item.tab} className={tab === item.tab ? "active" : ""} onClick={() => onChange(item.tab)}>{item.icon}<span>{item.label}</span></button>)}</nav>;
 }
 
+function AuthGateway({
+  configured,
+  onSignIn,
+  onSignUp,
+  onSignInWithProvider,
+  onContinueAsGuest,
+}: {
+  configured: boolean;
+  onSignIn: (email: string, password: string) => Promise<void>;
+  onSignUp: (email: string, password: string) => Promise<{ needsEmailConfirmation: boolean }>;
+  onSignInWithProvider: (provider: SocialAuthProvider) => Promise<void>;
+  onContinueAsGuest: () => void;
+}) {
+  const [mode, setMode] = useState<AuthMode>("sign-in");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
+  const isRegistering = mode === "register";
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!configured) return;
+    if (isRegistering && password !== confirmPassword) {
+      setNotice("Passwords do not match.");
+      return;
+    }
+    setBusy(true);
+    setNotice("");
+    try {
+      if (isRegistering) {
+        const { needsEmailConfirmation } = await onSignUp(email.trim(), password);
+        setNotice(needsEmailConfirmation ? "Check your inbox to confirm your account, then sign in." : "Your account is ready.");
+      } else {
+        await onSignIn(email.trim(), password);
+      }
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "We couldn't complete that request.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    setBusy(true);
+    setNotice("");
+    try {
+      await onSignInWithProvider("google");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Google sign-in could not start.");
+      setBusy(false);
+    }
+  };
+
+  return (
+    <main className="auth-page">
+      <section className="auth-card card" aria-labelledby="auth-title">
+        <div className="auth-brand"><span className="brand-mark large">C</span><span>Calorie Flow</span></div>
+        <div><span className="eyebrow">{isRegistering ? "Create your account" : "Welcome back"}</span><h1 id="auth-title">{isRegistering ? "Start your flow" : "Sign in to Calorie Flow"}</h1><p>{isRegistering ? "Save your diary privately and keep it in sync across your devices." : "Pick up right where you left off."}</p></div>
+        {!configured ? <p className="auth-unavailable"><LockKeyhole size={16} />Account sign-in needs Supabase configuration. You can still use Calorie Flow locally.</p> : <>
+          <form className="auth-form" onSubmit={submit}>
+            <label><span>Email</span><input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" /></label>
+            <label><span>Password</span><input type="password" autoComplete={isRegistering ? "new-password" : "current-password"} minLength={6} required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 6 characters" /></label>
+            {isRegistering && <label><span>Confirm password</span><input type="password" autoComplete="new-password" minLength={6} required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Repeat your password" /></label>}
+            <button className="primary-button" type="submit" disabled={busy}>{busy ? "Please wait…" : isRegistering ? "Create account" : "Sign in"}</button>
+          </form>
+          <div className="account-divider"><span>or</span></div>
+          <button className="secondary-button auth-google" type="button" disabled={busy} onClick={signInWithGoogle}><span className="provider-mark google" aria-hidden="true">G</span>Continue with Google</button>
+          {notice && <p className="account-notice" role="status">{notice}</p>}
+        </>}
+        <p className="auth-switch">{isRegistering ? "Already have an account?" : "New to Calorie Flow?"} <button type="button" onClick={() => { setMode(isRegistering ? "sign-in" : "register"); setNotice(""); }}>{isRegistering ? "Sign in" : "Create an account"}</button></p>
+        <button className="text-button auth-guest" type="button" onClick={onContinueAsGuest}>Continue without an account</button>
+        <p className="form-footnote">Guest data stays on this device. You can create an account later in Targets.</p>
+      </section>
+    </main>
+  );
+}
+
 export function TrackerApp() {
   const auth = useAuth();
   const [ready, setReady] = useState(false);
@@ -958,6 +1041,8 @@ export function TrackerApp() {
   const [toast, setToast] = useState("");
   const [syncState, setSyncState] = useState<SyncState>("local");
   const [syncAttempt, setSyncAttempt] = useState(0);
+  const [authGateReady, setAuthGateReady] = useState(false);
+  const [showAuthGateway, setShowAuthGateway] = useState(false);
   const syncIdentityRef = useRef("");
 
   const refresh = useCallback(async () => {
@@ -974,6 +1059,13 @@ export function TrackerApp() {
     if (params.has("scan")) { setInitialAddView("scan"); setAdding(true); }
     else if (params.has("add")) setAdding(true);
   }, [refresh]);
+  useEffect(() => {
+    const completed = window.localStorage.getItem(AUTH_GATE_COMPLETE_KEY) === "true";
+    // A signed-in session always takes precedence over a previous guest choice.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Hydrate a browser-only preference after mount.
+    setShowAuthGateway(!completed && !auth.user);
+    setAuthGateReady(true);
+  }, [auth.user]);
   useEffect(() => { if (!toast) return; const timer = window.setTimeout(() => setToast(""), 2800); return () => window.clearTimeout(timer); }, [toast]);
   useEffect(() => {
     const retry = () => { syncIdentityRef.current = ""; setSyncAttempt((value) => value + 1); };
@@ -1089,7 +1181,8 @@ export function TrackerApp() {
     error: "Sync needs attention",
   };
 
-  if (!ready || !auth.ready) return <div className="app-loading"><span className="brand-mark large">C</span><i /></div>;
+  if (!ready || !auth.ready || !authGateReady) return <div className="app-loading"><span className="brand-mark large">C</span><i /></div>;
+  if (showAuthGateway) return <AuthGateway configured={auth.configured} onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onContinueAsGuest={() => { window.localStorage.setItem(AUTH_GATE_COMPLETE_KEY, "true"); setShowAuthGateway(false); }} />;
   return (
     <div className="app-shell">
       <div className="ambient one" /><div className="ambient two" />
