@@ -17,6 +17,7 @@ import {
   LockKeyhole,
   Mail,
   MessageCircle,
+  ListChecks,
   Package,
   Pencil,
   Plus,
@@ -96,6 +97,10 @@ type Tab = "today" | "search" | "coach" | "insights" | "profile";
 type AddView = "start" | "search" | "scan" | "label" | "manual";
 type SyncState = "local" | "syncing" | "synced" | "offline" | "error";
 type AuthMode = "sign-in" | "register" | "forgot-password" | "update-password";
+type CoachSection = "chat" | "groceries";
+type GroceryItem = { id: string; name: string; checked: boolean; addedAt: string };
+
+const GROCERY_ITEMS_SETTING = "coach:grocery-items";
 
 
 const DEFAULT_PROFILE: Profile = {
@@ -832,7 +837,7 @@ function ManualFood({ initialBarcode, onSave, onClose, hideCalories }: { initial
     onSave({ id: `custom-${crypto.randomUUID()}`, name: name.trim(), brand: brand.trim() || undefined, barcode: barcode || undefined, servingGrams: servingGrams || 100, nutrientsPer100: { ...nutrition, calories }, source: "custom" });
   };
   return (
-    <form onSubmit={submit}>
+    <form className="sheet-form manual-food-form" onSubmit={submit}>
       <div className="sheet-header"><button type="button" className="icon-button ghost" onClick={onClose}><ArrowLeft /></button><div><span className="eyebrow">Full control</span><h2>Custom food</h2></div><span /></div>
       <div className="form-grid two"><label className="span-two"><span>Food name</span><input autoFocus required value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Homemade meatballs" /></label><label><span>Brand <small>optional</small></span><input value={brand} onChange={(event) => setBrand(event.target.value)} /></label><label><span>Barcode <small>optional</small></span><input inputMode="numeric" value={barcode} onChange={(event) => setBarcode(event.target.value)} /></label></div>
       <div className="nutrition-entry"><div className="entry-heading"><div><strong>Nutrition per 100 g</strong><small>{hideCalories ? "Energy is calculated quietly from macros" : "Copy the package values"}</small></div><Package size={20} /></div><div className="form-grid three">{!hideCalories && <label><span>Calories</span><input required type="number" inputMode="decimal" value={nutrition.calories || ""} onChange={(event) => updateNutrition("calories", event.target.value)} /></label>}<label><span>Protein</span><input type="number" inputMode="decimal" step="0.1" value={nutrition.protein || ""} onChange={(event) => updateNutrition("protein", event.target.value)} /></label><label><span>Carbs</span><input type="number" inputMode="decimal" step="0.1" value={nutrition.carbs || ""} onChange={(event) => updateNutrition("carbs", event.target.value)} /></label><label><span>Fat</span><input type="number" inputMode="decimal" step="0.1" value={nutrition.fat || ""} onChange={(event) => updateNutrition("fat", event.target.value)} /></label><label><span>Fibre</span><input type="number" inputMode="decimal" step="0.1" value={nutrition.fiber || ""} onChange={(event) => updateNutrition("fiber", event.target.value)} /></label><label><span>Sugar</span><input type="number" inputMode="decimal" step="0.1" value={nutrition.sugar || ""} onChange={(event) => updateNutrition("sugar", event.target.value)} /></label></div></div>
@@ -865,7 +870,7 @@ function PortionSheet({ food, questions, onLog, onClose, hideCalories }: { food:
     estimated: food.source === "ai-label" || !food.verified,
   }, { ...food, lastUsedAt: new Date().toISOString() });
   return (
-    <div>
+    <div className="portion-sheet">
       <div className="sheet-header"><button className="icon-button ghost" onClick={onClose}><ArrowLeft /></button><div><span className="eyebrow">Confirm amount</span><h2>Log food</h2></div><span /></div>
       <div className="selected-food"><FoodAvatar food={food} /><div><strong>{food.name}</strong><span>{food.brand || food.quantityLabel || "Nutrition per 100 g"}</span></div>{!hideCalories && <div className="selected-calories"><strong>{nutrition.calories}</strong><small>kcal</small></div>}</div>
       {!!questions?.length && <div className="follow-up"><Sparkles size={18} /><div><strong>One detail still matters</strong>{questions.map((question) => <p key={question}>{question}</p>)}<small>Use grams below if the package or serving amount is unknown.</small></div></div>}
@@ -873,9 +878,10 @@ function PortionSheet({ food, questions, onLog, onClose, hideCalories }: { food:
       <div className="unit-scroll">{units.map((option) => <button key={option} className={unit === option ? "active" : ""} onClick={() => { setUnit(option); setAmount(option === "g" || option === "ml" ? 100 : 1); }}>{unitLabels[option]}</button>)}</div>
       {(unit === "tbsp" || unit === "tsp" || unit === "ml") && <p className="estimate-note"><Info size={14} /> Volume-to-weight conversion is approximate unless the food provides it.</p>}
       <div className="nutrition-preview"><div><span>Protein</span><strong>{nutrition.protein} g</strong></div><div><span>Carbs</span><strong>{nutrition.carbs} g</strong></div><div><span>Fat</span><strong>{nutrition.fat} g</strong></div><div><span>Fibre</span><strong>{nutrition.fiber} g</strong></div></div>
-      <div className="field-block"><span>Add to</span><div className="segmented four">{(Object.keys(mealLabels) as MealType[]).map((type) => <button key={type} className={mealType === type ? "active" : ""} onClick={() => setMealType(type)}>{mealLabels[type]}</button>)}</div></div>
-      <button className="primary-button full" onClick={log}><Plus size={18} />{hideCalories ? "Log food" : `Log ${nutrition.calories} kcal`}</button>
-      <p className="form-footnote">{grams} g total · {food.source === "open-food-facts" ? "Open Food Facts" : food.source === "ai-label" ? "AI-extracted—check the package" : food.source === "custom" ? "Your custom food" : "Generic reference value"}</p>
+      <div className="portion-action-area">
+        <div className="field-block"><span>Add to</span><div className="segmented four">{(Object.keys(mealLabels) as MealType[]).map((type) => <button key={type} className={mealType === type ? "active" : ""} onClick={() => setMealType(type)}>{mealLabels[type]}</button>)}</div></div>
+        <div className="portion-submit"><button className="primary-button full" onClick={log}><Plus size={18} />{hideCalories ? "Log food" : `Log ${nutrition.calories} kcal`}</button><p className="form-footnote">{grams} g total · {food.source === "open-food-facts" ? "Open Food Facts" : food.source === "ai-label" ? "AI-extracted—check the package" : food.source === "custom" ? "Your custom food" : "Generic reference value"}</p></div>
+      </div>
     </div>
   );
 }
@@ -990,13 +996,29 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, hideCalori
 
 type DisplayCoachMessage = CoachMessage & { sources?: Array<{ title: string; url: string }> };
 
+function groceryItemsFromReply(content: string) {
+  const section = content.match(/(?:^|\n)\s*(?:\*\*)?grocery list(?:\*\*)?\s*:?\s*\n([\s\S]*)/i)?.[1];
+  if (!section) return [];
+  return section.split("\n")
+    .map((line) => line.match(/^\s*(?:[-*•]|\d+[.)])\s+(.+?)\s*$/)?.[1]?.replace(/\*\*/g, "").trim())
+    .filter((item): item is string => Boolean(item))
+    .slice(0, 24);
+}
+
 function CoachView({ configured, user, onOpenAccount, hideCalories }: { configured: boolean; user: CloudUser | null; onOpenAccount: () => void; hideCalories: boolean }) {
   const [messages, setMessages] = useState<DisplayCoachMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [loadedUserId, setLoadedUserId] = useState("");
+  const [section, setSection] = useState<CoachSection>("chat");
+  const [groceryItems, setGroceryItems] = useState<GroceryItem[]>([]);
+  const [groceryDraft, setGroceryDraft] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    getSetting<GroceryItem[]>(GROCERY_ITEMS_SETTING).then((stored) => setGroceryItems(Array.isArray(stored) ? stored : [])).catch(() => setGroceryItems([]));
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -1049,6 +1071,27 @@ function CoachView({ configured, user, onOpenAccount, hideCalories }: { configur
     await clearCloudCoachMessages(user.id);
     setMessages([]);
   };
+  const updateGroceries = (updater: (current: GroceryItem[]) => GroceryItem[]) => {
+    setGroceryItems((current) => {
+      const next = updater(current);
+      void setSetting(GROCERY_ITEMS_SETTING, next);
+      return next;
+    });
+  };
+  const addGroceries = (names: string[]) => {
+    const uniqueNames = [...new Set(names.map((name) => name.trim()).filter(Boolean))];
+    if (!uniqueNames.length) return;
+    updateGroceries((current) => {
+      const seen = new Set(current.map((item) => item.name.toLocaleLowerCase()));
+      return [...current, ...uniqueNames.filter((name) => !seen.has(name.toLocaleLowerCase())).map((name) => ({ id: crypto.randomUUID(), name, checked: false, addedAt: new Date().toISOString() }))];
+    });
+    setSection("groceries");
+  };
+  const addGrocery = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    addGroceries([groceryDraft]);
+    setGroceryDraft("");
+  };
 
   if (!configured) return (
     <main className="page coach-page"><header className="page-header"><span className="eyebrow">Nutrition only</span><h1>Coach</h1><p>{hideCalories ? "Nutrition guidance using your actual diary." : "Calorie-aware guidance using your actual diary."}</p></header><section className="coach-gate card"><MessageCircle /><h2>Coach setup is waiting</h2><p>Connect the project database and OpenAI key to activate private, diary-aware coaching.</p></section></main>
@@ -1060,34 +1103,37 @@ function CoachView({ configured, user, onOpenAccount, hideCalories }: { configur
     <main className="page coach-page"><header className="page-header"><span className="eyebrow">Your diary, in context</span><h1>Coach</h1></header><section className="coach-gate card"><span className="coach-loader" /><h2>Loading your private Coach…</h2></section></main>
   );
 
-  const starters = [hideCalories ? "How are my nutrients today?" : "How am I doing today?", "Suggest a high-protein dinner", "Find a healthy lunch near Sofia"];
+  const starters = [hideCalories ? "How are my nutrients today?" : "How am I doing today?", "Plan a quick dinner and make a grocery list", "What can I make with chicken and broccoli?"];
+  const remainingGroceries = groceryItems.filter((item) => !item.checked).length;
   return (
     <main className="page coach-page">
-      <header className="coach-header"><div><span className="eyebrow">Your diary, in context</span><h1>Coach</h1></div>{messages.length > 0 && <button className="text-button muted" onClick={clear}>Clear chat</button>}</header>
-      <div className="coach-scope"><ShieldCheck size={15} /><span>{hideCalories ? "Food and nutrition only" : "Food, calories and nutrition only"} · location is used only when you type it</span></div>
-      <section className="coach-thread" aria-live="polite">
-        {messages.length === 0 && <div className="coach-welcome"><span className="coach-orb"><Sparkles /></span><h2>Ask with your log attached.</h2><p>I can check your totals, spot patterns, suggest meals from your targets, or find food places when you provide a location.</p><div className="coach-starters">{starters.map((starter) => <button key={starter} onClick={() => send(starter)}>{starter}</button>)}</div></div>}
-        {messages.map((message) => <article key={message.id} className={`coach-message ${message.role}`}><span>{message.role === "assistant" ? "Coach" : "You"}</span><p>{message.content}</p>{!!message.sources?.length && <div className="coach-sources"><strong>Sources</strong>{message.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.title}</a>)}</div>}</article>)}
-        {loading && <div className="coach-typing"><i /><i /><i /><span>Coach is checking your diary…</span></div>}
-        {error && <div className="inline-alert error"><Info size={17} /><span>{error}</span></div>}
-        <div ref={endRef} />
-      </section>
-      <form className="coach-composer" onSubmit={(event) => { event.preventDefault(); send(); }}>
-        <input aria-label="Message the nutrition Coach" value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={6000} placeholder="Ask about today, a meal, or food nearby…" />
-        <button type="submit" disabled={!draft.trim() || loading} aria-label="Send"><Send /></button>
-      </form>
+      <header className="coach-header"><div><span className="eyebrow">Your food companion</span><h1>Coach</h1></div>{section === "chat" && messages.length > 0 && <button className="text-button muted" onClick={clear}>Clear chat</button>}</header>
+      <div className="coach-tabs" role="tablist" aria-label="Coach workspace"><button role="tab" aria-selected={section === "chat"} className={section === "chat" ? "active" : ""} onClick={() => setSection("chat")}><MessageCircle size={16} />Chat</button><button role="tab" aria-selected={section === "groceries"} className={section === "groceries" ? "active" : ""} onClick={() => setSection("groceries")}><ListChecks size={16} />Groceries{remainingGroceries > 0 && <span>{remainingGroceries}</span>}</button></div>
+      {section === "chat" && <>
+        <div className="coach-scope"><ShieldCheck size={15} /><span>{hideCalories ? "Food and nutrition only" : "Food, calories and nutrition"} · recipes and grocery lists are saved only when you choose</span></div>
+        <section className="coach-thread" aria-live="polite">
+          {messages.length === 0 && <div className="coach-welcome"><span className="coach-orb"><Sparkles /></span><h2>What should we make?</h2><p>Talk through dinner, use up what you have, plan meals around your targets, and turn a good idea into a grocery list.</p><div className="coach-starters">{starters.map((starter) => <button key={starter} onClick={() => send(starter)}>{starter}</button>)}</div></div>}
+          {messages.map((message) => { const groceries = message.role === "assistant" ? groceryItemsFromReply(message.content) : []; return <article key={message.id} className={`coach-message ${message.role}`}><span>{message.role === "assistant" ? "Coach" : "You"}</span><p>{message.content}</p>{groceries.length > 0 && <button className="add-groceries" onClick={() => addGroceries(groceries)}><ListChecks size={15} />Add {groceries.length} to groceries</button>}{!!message.sources?.length && <div className="coach-sources"><strong>Sources</strong>{message.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.title}</a>)}</div>}</article>; })}
+          {loading && <div className="coach-typing"><i /><i /><i /><span>Coach is thinking through it…</span></div>}
+          {error && <div className="inline-alert error"><Info size={17} /><span>{error}</span></div>}
+          <div ref={endRef} />
+        </section>
+        <form className="coach-composer" onSubmit={(event) => { event.preventDefault(); send(); }}><input aria-label="Message the nutrition Coach" value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={6000} placeholder="Ask about dinner, recipes, or your food log…" /><button type="submit" disabled={!draft.trim() || loading} aria-label="Send"><Send /></button></form>
+      </>}
+      {section === "groceries" && <section className="grocery-workspace"><div className="grocery-intro"><span className="coach-orb"><ListChecks /></span><div><h2>Your grocery list</h2><p>Items from Coach land here when you add them. This list stays on this device.</p></div></div><form className="grocery-composer" onSubmit={addGrocery}><input value={groceryDraft} onChange={(event) => setGroceryDraft(event.target.value)} placeholder="Add an item yourself" maxLength={120} /><button type="submit" disabled={!groceryDraft.trim()}>Add</button></form>{groceryItems.length > 0 ? <div className="grocery-list">{groceryItems.map((item) => <div key={item.id} className={item.checked ? "checked" : ""}><button className="grocery-toggle" onClick={() => updateGroceries((current) => current.map((candidate) => candidate.id === item.id ? { ...candidate, checked: !candidate.checked } : candidate))} aria-label={`Mark ${item.name} as ${item.checked ? "needed" : "picked up"}`}>{item.checked && <Check size={14} />}</button><span>{item.name}</span><button className="grocery-remove" onClick={() => updateGroceries((current) => current.filter((candidate) => candidate.id !== item.id))} aria-label={`Remove ${item.name}`}><X size={16} /></button></div>)}</div> : <div className="grocery-empty"><Package size={28} /><strong>Start with a dinner idea</strong><p>Ask Coach for a recipe or meal plan, then add the suggested ingredients here.</p><button className="secondary-button" onClick={() => setSection("chat")}><MessageCircle size={16} />Open Coach</button></div>}{groceryItems.some((item) => item.checked) && <button className="text-button muted clear-picked" onClick={() => updateGroceries((current) => current.filter((item) => !item.checked))}>Clear picked-up items</button>}</section>}
     </main>
   );
 }
 
-function BottomNav({ tab, onChange, onAdd }: { tab: Tab; onChange: (tab: Tab) => void; onAdd: () => void }) {
+function BottomNav({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => void }) {
   const items: Array<{ tab: Tab; label: string; icon: React.ReactNode }> = [
     { tab: "today", label: "Today", icon: <Home /> },
     { tab: "search", label: "Foods", icon: <Search /> },
+    { tab: "coach", label: "Coach", icon: <MessageCircle /> },
     { tab: "insights", label: "Insights", icon: <BarChart3 /> },
     { tab: "profile", label: "Targets", icon: <UserRound /> },
   ];
-  return <nav className="bottom-nav">{items.slice(0, 2).map((item) => <button key={item.tab} className={tab === item.tab ? "active" : ""} onClick={() => onChange(item.tab)}>{item.icon}<span>{item.label}</span></button>)}<button className="add-button" onClick={onAdd} aria-label="Add food"><Plus /></button>{items.slice(2).map((item) => <button key={item.tab} className={tab === item.tab ? "active" : ""} onClick={() => onChange(item.tab)}>{item.icon}<span>{item.label}</span></button>)}</nav>;
+  return <nav className="bottom-nav">{items.map((item) => <button key={item.tab} className={`${tab === item.tab ? "active" : ""} ${item.tab === "coach" ? "coach-nav-item" : ""}`} onClick={() => onChange(item.tab)}>{item.icon}<span>{item.label}</span></button>)}</nav>;
 }
 
 function AuthGateway({
@@ -1351,7 +1397,7 @@ export function TrackerApp() {
         {tab === "insights" && <InsightsView meals={meals} profile={profile} />}
         {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onExport={exportBackup} onImport={restoreBackup} configured={auth.configured} user={auth.user} syncState={auth.user ? syncState : "local"} onSendMagicLink={auth.sendMagicLink} onSignInWithProvider={auth.signInWithProvider} onSignOut={signOut} />}
       </div>
-      <BottomNav tab={tab} onChange={(nextTab) => { window.scrollTo(0, 0); setTab(nextTab); }} onAdd={() => openAdd()} />
+      <BottomNav tab={tab} onChange={(nextTab) => { window.scrollTo(0, 0); setTab(nextTab); }} />
       {adding && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); }} wide>{directFood ? <PortionSheet food={directFood} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} onClose={() => setAdding(false)} onLog={logMeal} />}</Sheet>}
       {!profile.onboardingDone && <div className="onboarding-overlay"><section className="onboarding-card"><TargetEditor profile={profile} onSave={saveProfile} onboarding /></section></div>}
       {toast && <div className="toast"><Check size={17} />{toast}</div>}

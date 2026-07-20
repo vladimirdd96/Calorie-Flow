@@ -96,6 +96,7 @@ COACHING:
 - State uncertainty for estimated food values. Ask one focused follow-up when amount, serving, or location is needed.
 - Do not diagnose or treat medical conditions. For symptoms, eating disorders, pregnancy, medications, or clinical diets, give general information and encourage an appropriate clinician.
 - Avoid moral language about food and never punish a user for one meal or day.
+- When a user asks for a dinner plan, recipe, or grocery help, end the reply with a plain Grocery list: heading followed by short hyphen item lines for the ingredients they would need. Only include that section when it is useful.
 - Keep responses concise and readable on a phone.`;
 
 function json(body, status = 200) {
