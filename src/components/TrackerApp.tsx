@@ -42,17 +42,21 @@ import {
   initializeFoods,
   put,
   remove,
+  replaceData,
   replaceLocalSnapshot,
   resetToGuestData,
   setSetting,
+  validateBackup,
 } from "@/lib/db";
 import {
   clearCloudCoachMessages,
   deleteCloudMeal,
+  getAllCloudCoachMessages,
   getCloudCoachMessages,
   getCloudSnapshot,
   mergeSnapshots,
   pushCloudSnapshot,
+  replaceCloudSnapshot,
   saveCloudCoachMessage,
   upsertCloudFood,
   upsertCloudMeal,
@@ -86,6 +90,7 @@ import type {
   ServingUnit,
   Sex,
 } from "@/lib/types";
+import type { BackupData } from "@/lib/db";
 
 type Tab = "today" | "search" | "coach" | "insights" | "profile";
 type AddView = "start" | "search" | "scan" | "label" | "manual";
@@ -526,6 +531,7 @@ function AccountCard({
 function ProfileView({
   profile,
   onSave,
+  onExport,
   onImport,
   configured,
   user,
@@ -536,7 +542,8 @@ function ProfileView({
 }: {
   profile: Profile;
   onSave: (profile: Profile) => void;
-  onImport: (data: { meals?: Meal[]; foods?: Food[]; profile?: Profile }) => Promise<void>;
+  onExport: () => Promise<BackupData>;
+  onImport: (data: BackupData, mode: "merge" | "replace") => Promise<void>;
   configured: boolean;
   user: CloudUser | null;
   syncState: SyncState;
@@ -546,18 +553,38 @@ function ProfileView({
 }) {
   const importRef = useRef<HTMLInputElement>(null);
   const [editingTargets, setEditingTargets] = useState(false);
+  const [restoreMode, setRestoreMode] = useState<"merge" | "replace">("merge");
+  const [backupNotice, setBackupNotice] = useState("");
+  const [exporting, setExporting] = useState(false);
   const download = async () => {
-    const data = await exportData();
-    const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `calorie-flow-${localDateKey()}.json`;
-    anchor.click();
-    URL.revokeObjectURL(url);
+    setExporting(true); setBackupNotice("");
+    try {
+      const data = await onExport();
+      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `calorie-flow-${localDateKey()}.json`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setBackupNotice("Your data archive was downloaded.");
+    } catch {
+      setBackupNotice("Couldn’t prepare a complete archive. Check your connection and try again.");
+    } finally {
+      setExporting(false);
+    }
   };
   const upload = async (file?: File) => {
     if (!file) return;
-    await onImport(JSON.parse(await file.text()));
+    try {
+      const data = validateBackup(JSON.parse(await file.text()));
+      if (restoreMode === "replace" && !window.confirm("Replace your current diary, foods, and targets with this backup? This cannot be undone.")) return;
+      await onImport(data, restoreMode);
+      setBackupNotice(restoreMode === "replace" ? "Backup replaced your current data." : "Backup merged with your current data.");
+    } catch {
+      setBackupNotice("That file isn’t a valid Calorie Flow backup.");
+    } finally {
+      if (importRef.current) importRef.current.value = "";
+    }
   };
   return (
     <main className="page">
@@ -566,15 +593,21 @@ function ProfileView({
       {editingTargets && <TargetEditor profile={profile} onSave={(next) => { onSave(next); setEditingTargets(false); }} onCancel={() => setEditingTargets(false)} />}
       <DisplayPreferences hideCalories={profile.hideCalories} onChange={(hideCalories) => onSave({ ...profile, hideCalories })} />
       <AccountCard configured={configured} user={user} syncState={syncState} onSendMagicLink={onSendMagicLink} onSignInWithProvider={onSignInWithProvider} onSignOut={onSignOut} />
-      <section className="data-tools">
-        <div className="section-heading"><div><span className="eyebrow">Your data</span><h2>Portable by design</h2></div></div>
+      <details className="data-tools">
+        <summary><ShieldCheck size={17} /><span>Data & privacy</span></summary>
         <div className="card tool-list">
-          <button onClick={download}><Download size={19} /><span><strong>Export backup</strong><small>Meals, custom foods and targets</small></span><ChevronRight size={17} /></button>
-          <button onClick={() => importRef.current?.click()}><Upload size={19} /><span><strong>Restore backup</strong><small>Import a Calorie Flow JSON file</small></span><ChevronRight size={17} /></button>
+          <button onClick={download} disabled={exporting}><Download size={19} /><span><strong>{exporting ? "Preparing archive…" : "Export your data"}</strong><small>Diary, foods, targets, and coach history</small></span><ChevronRight size={17} /></button>
+          <div className="restore-tools">
+            <div className="restore-mode" role="radiogroup" aria-label="Restore mode">
+              <label><input type="radio" name="restore-mode" checked={restoreMode === "merge"} onChange={() => setRestoreMode("merge")} />Merge with current data</label>
+              <label><input type="radio" name="restore-mode" checked={restoreMode === "replace"} onChange={() => setRestoreMode("replace")} />Replace current data</label>
+            </div>
+            <button onClick={() => importRef.current?.click()}><Upload size={19} /><span><strong>Restore a backup</strong><small>Import a Calorie Flow JSON archive</small></span><ChevronRight size={17} /></button>
+          </div>
           <input ref={importRef} type="file" accept="application/json" hidden onChange={(event) => upload(event.target.files?.[0])} />
         </div>
-        <div className="privacy-note"><ShieldCheck size={18} /><div><strong>Private by default, portable when you choose.</strong><p>Guest data stays in this browser. Signed-in data is isolated by account-level database rules. Label photos go to OpenAI only when you choose that action.</p></div></div>
-      </section>
+        {backupNotice && <p className="backup-notice" role="status">{backupNotice}</p>}
+      </details>
     </main>
   );
 }
@@ -1275,9 +1308,24 @@ export function TrackerApp() {
       });
     }
   };
-  const restoreBackup = async (data: { meals?: Meal[]; foods?: Food[]; profile?: Profile }) => {
-    await importData(data); await refresh(); setToast("Backup restored");
-    if (auth.user) syncWrite(async (userId) => pushCloudSnapshot(userId, await getLocalSnapshot()));
+  const exportBackup = async (): Promise<BackupData> => {
+    const local = await exportData();
+    if (!auth.user) return local;
+    const [remote, coachMessages] = await Promise.all([getCloudSnapshot(auth.user.id), getAllCloudCoachMessages(auth.user.id)]);
+    const merged = mergeSnapshots({ profile: local.profile, meals: local.meals, foods: local.foods }, remote);
+    return { ...local, ...merged, coachMessages };
+  };
+  const restoreBackup = async (data: BackupData, mode: "merge" | "replace") => {
+    if (mode === "replace") await replaceData(data);
+    else await importData(data);
+    await refresh(); setToast(mode === "replace" ? "Backup replaced current data" : "Backup restored");
+    if (auth.user) syncWrite(async (userId) => {
+      if (mode === "replace") await clearCloudCoachMessages(userId);
+      await Promise.all([
+        mode === "replace" ? replaceCloudSnapshot(userId, await getLocalSnapshot()) : pushCloudSnapshot(userId, await getLocalSnapshot()),
+        ...((data.coachMessages || []).map((message) => saveCloudCoachMessage(userId, message))),
+      ]);
+    });
   };
   const openAdd = (view: AddView = "start") => { setInitialAddView(view); setAdding(true); };
   const selectFood = (food: Food) => { setDirectFood(food); setAdding(true); };
@@ -1301,7 +1349,7 @@ export function TrackerApp() {
         {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={openAdd} />}
         {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} onOpenAccount={() => setTab("profile")} />}
         {tab === "insights" && <InsightsView meals={meals} profile={profile} />}
-        {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onImport={restoreBackup} configured={auth.configured} user={auth.user} syncState={auth.user ? syncState : "local"} onSendMagicLink={auth.sendMagicLink} onSignInWithProvider={auth.signInWithProvider} onSignOut={signOut} />}
+        {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onExport={exportBackup} onImport={restoreBackup} configured={auth.configured} user={auth.user} syncState={auth.user ? syncState : "local"} onSendMagicLink={auth.sendMagicLink} onSignInWithProvider={auth.signInWithProvider} onSignOut={signOut} />}
       </div>
       <BottomNav tab={tab} onChange={setTab} onAdd={() => openAdd()} />
       {adding && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); }} wide>{directFood ? <PortionSheet food={directFood} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} onClose={() => setAdding(false)} onLog={logMeal} />}</Sheet>}

@@ -100,6 +100,28 @@ export async function getCloudCoachMessages(userId: string, limit = 60): Promise
   }));
 }
 
+export async function getAllCloudCoachMessages(userId: string): Promise<CoachMessage[]> {
+  const messages: CoachMessage[] = [];
+  const pageSize = 500;
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await client()
+      .from("coach_messages")
+      .select("id,role,content,created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true })
+      .range(from, from + pageSize - 1);
+    if (error) throw error;
+    const page = (data || []).map((row) => ({
+      id: row.id,
+      role: row.role as CoachMessage["role"],
+      content: row.content,
+      createdAt: row.created_at,
+    }));
+    messages.push(...page);
+    if (page.length < pageSize) return messages;
+  }
+}
+
 export async function saveCloudCoachMessage(userId: string, message: CoachMessage) {
   const { error } = await client().from("coach_messages").upsert({
     user_id: userId,
@@ -134,6 +156,17 @@ export async function pushCloudSnapshot(userId: string, snapshot: CloudSnapshot)
       updated_at: food.lastUsedAt || now,
     }))),
   ]);
+}
+
+export async function replaceCloudSnapshot(userId: string, snapshot: CloudSnapshot) {
+  const results = await Promise.all([
+    client().from("user_profiles").delete().eq("user_id", userId),
+    client().from("user_meals").delete().eq("user_id", userId),
+    client().from("user_foods").delete().eq("user_id", userId),
+  ]);
+  const failure = results.find((result) => result.error)?.error;
+  if (failure) throw failure;
+  await pushCloudSnapshot(userId, snapshot);
 }
 
 export function mergeSnapshots(local: CloudSnapshot, remote: CloudSnapshot): CloudSnapshot {

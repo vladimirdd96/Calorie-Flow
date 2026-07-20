@@ -1,11 +1,48 @@
 import { seedFoods } from "./seed";
-import type { Food, Meal, Profile } from "./types";
+import type { CoachMessage, Food, Meal, Profile } from "./types";
 import type { CloudSnapshot } from "./cloud";
+import { z } from "zod";
 
 const DB_NAME = "calorie-flow";
 const DB_VERSION = 1;
 
 type StoreName = "meals" | "foods" | "settings";
+
+export type BackupData = {
+  version: 1;
+  exportedAt: string;
+  meals: Meal[];
+  foods: Food[];
+  profile?: Profile;
+  coachMessages?: CoachMessage[];
+};
+
+const nutritionSchema = z.object({
+  calories: z.number(), protein: z.number(), carbs: z.number(), fat: z.number(), fiber: z.number(), sugar: z.number(),
+});
+const foodSchema = z.object({
+  id: z.string().min(1), name: z.string().min(1), brand: z.string().optional(), barcode: z.string().optional(), imageUrl: z.string().optional(),
+  quantityLabel: z.string().optional(), servingGrams: z.number().optional(), servingLabel: z.string().optional(), packageGrams: z.number().optional(), pieceGrams: z.number().optional(),
+  nutrientsPer100: nutritionSchema, source: z.enum(["seed", "open-food-facts", "ai-label", "custom"]), verified: z.boolean().optional(), lastUsedAt: z.string().optional(),
+});
+const mealSchema = z.object({
+  id: z.string().min(1), foodId: z.string().optional(), name: z.string().min(1), brand: z.string().optional(), mealType: z.enum(["breakfast", "lunch", "dinner", "snack"]),
+  amount: z.number(), unit: z.enum(["serving", "g", "100g", "package", "piece", "tbsp", "tsp", "ml"]), grams: z.number(), nutrition: nutritionSchema,
+  createdAt: z.string().min(1), source: z.enum(["seed", "open-food-facts", "ai-label", "custom"]), estimated: z.boolean().optional(),
+});
+const profileSchema = z.object({
+  name: z.string(), sex: z.enum(["male", "female"]), age: z.number(), heightCm: z.number(), weightKg: z.number(), activity: z.enum(["sedentary", "light", "moderate", "active", "very-active"]),
+  goalMode: z.enum(["lose", "maintain", "gain"]), dietPreset: z.enum(["balanced", "high-protein", "keto", "high-protein-keto", "low-fat"]),
+  calorieTarget: z.number(), proteinTarget: z.number(), carbsTarget: z.number(), fatTarget: z.number(), fiberTarget: z.number(), hideCalories: z.boolean(), onboardingDone: z.boolean(),
+});
+const backupSchema = z.object({
+  version: z.literal(1), exportedAt: z.string().min(1), meals: z.array(mealSchema), foods: z.array(foodSchema), profile: profileSchema.optional(),
+  coachMessages: z.array(z.object({ id: z.string().min(1), role: z.enum(["user", "assistant"]), content: z.string(), createdAt: z.string().min(1) })).optional(),
+});
+
+export function validateBackup(data: unknown): BackupData {
+  return backupSchema.parse(data);
+}
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -75,15 +112,25 @@ export async function exportData() {
     getAll<Food>("foods"),
     getSetting<Profile>("profile"),
   ]);
-  return { version: 1, exportedAt: new Date().toISOString(), meals, foods, profile };
+  return {
+    version: 1 as const,
+    exportedAt: new Date().toISOString(),
+    meals,
+    foods: foods.filter((food) => food.source !== "seed" || Boolean(food.lastUsedAt)),
+    profile,
+  };
 }
 
-export async function importData(data: { meals?: Meal[]; foods?: Food[]; profile?: Profile }) {
+export async function importData(data: Pick<BackupData, "meals" | "foods" | "profile">) {
   await Promise.all([
     ...(data.meals || []).map((meal) => put("meals", meal)),
     ...(data.foods || []).map((food) => put("foods", food)),
   ]);
   if (data.profile) await setSetting("profile", data.profile);
+}
+
+export async function replaceData(data: Pick<BackupData, "meals" | "foods" | "profile">) {
+  await replaceLocalSnapshot(data);
 }
 
 export async function getLocalSnapshot(): Promise<CloudSnapshot> {
