@@ -161,6 +161,17 @@ function changeDate(dateKey: string, amount: number) {
   return localDateKey(date);
 }
 
+function GoogleIcon() {
+  return (
+    <svg className="provider-mark google" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path fill="#4285F4" d="M21.35 12.27c0-.79-.07-1.55-.2-2.27H12v4.3h5.92a5.05 5.05 0 0 1-2.18 3.31v2.78h3.57c2.08-1.92 3.28-4.74 3.28-8.12Z" />
+      <path fill="#34A853" d="M12 21.72c2.64 0 4.85-.87 6.47-2.36l-3.57-2.78c-.99.66-2.26 1.06-3.65 1.06-2.81 0-5.19-1.9-6.04-4.45H4.53v2.87A9.77 9.77 0 0 0 12 21.72Z" />
+      <path fill="#FBBC05" d="M5.96 13.22A5.87 5.87 0 0 1 5.63 12c0-.42.07-.82.2-1.21V7.92H2.15A9.77 9.77 0 0 0 2.15 16l3.81-2.78Z" />
+      <path fill="#EA4335" d="M12 6.33c1.52 0 2.89.52 3.97 1.55l2.98-2.98C16.84 2.93 14.64 2 12 2a9.77 9.77 0 0 0-7.47 3.64l3.3 2.57c.85-2.01 3.23-3.45 6.04-3.45Z" />
+    </svg>
+  );
+}
+
 function ProgressRing({ value, target }: { value: number; target: number }) {
   const progress = Math.min(1, value / Math.max(1, target));
   const circumference = 2 * Math.PI * 82;
@@ -460,7 +471,7 @@ function AccountCard({
             </form>
             <div className="account-divider"><span>or</span></div>
             <div className="social-auth-buttons">
-              <button className="secondary-button" type="button" disabled={busy} onClick={() => signInWithProvider("google")}><span className="provider-mark google" aria-hidden="true">G</span>Continue with Google</button>
+              <button className="secondary-button" type="button" disabled={busy} onClick={() => signInWithProvider("google")}><GoogleIcon />Continue with Google</button>
             </div>
             {notice && <p className="account-notice">{notice}</p>}
           </>
@@ -1026,7 +1037,7 @@ function AuthGateway({
             {(isRegistering || isUpdatingPassword) && <label><span>Confirm password</span><input type="password" autoComplete="new-password" minLength={6} required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Repeat your password" /></label>}
             <button className="primary-button" type="submit" disabled={busy}>{busy ? "Please wait…" : isRegistering ? "Create account" : isUpdatingPassword ? "Save new password" : mode === "forgot-password" ? "Email reset link" : "Sign in"}</button>
           </form>
-          {!isPasswordReset && <><div className="account-divider"><span>or</span></div><button className="secondary-button auth-google" type="button" disabled={busy} onClick={signInWithGoogle}><span className="provider-mark google" aria-hidden="true">G</span>Continue with Google</button></>}
+          {!isPasswordReset && <><div className="account-divider"><span>or</span></div><button className="secondary-button auth-google" type="button" disabled={busy} onClick={signInWithGoogle}><GoogleIcon />Continue with Google</button></>}
           {notice && <p className="account-notice" role="status">{notice}</p>}
         </>}
         {!isPasswordReset && <><p className="auth-switch">{isRegistering ? "Already have an account?" : "New to Calorie Flow?"} <button type="button" onClick={() => { setMode(isRegistering ? "sign-in" : "register"); setNotice(""); }}>{isRegistering ? "Sign in" : "Create an account"}</button></p>{mode === "sign-in" && <button className="auth-guest auth-recovery" type="button" onClick={() => { setMode("forgot-password"); setNotice(""); }}>Forgot your password?</button>}</>}
