@@ -15,9 +15,12 @@ export function useAuth() {
 
     const loadSession = async () => {
       try {
-        const code = new URLSearchParams(window.location.search).get("code");
-        if (code && window.location.pathname === "/") {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get("code");
+        if (code) {
           await supabase.auth.exchangeCodeForSession(code);
+          window.history.replaceState({}, "", "/");
+        } else if (params.has("error") || params.has("error_description")) {
           window.history.replaceState({}, "", "/");
         }
         const { data } = await supabase.auth.getSession();
