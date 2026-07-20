@@ -8,8 +8,8 @@ Calorie Flow works without an account. These steps enable passwordless accounts,
 2. Open **SQL Editor** and run `supabase/migrations/202607180001_user_sync.sql`.
    For existing projects, also run the newer `coach_chat_threads` migration to enable separate saved Coach conversations.
 3. In **Authentication → URL Configuration**, set:
-   - Site URL: `https://calorie-flow.vladimirdd96.chatgpt.site`
-   - Redirect URL: `https://calorie-flow.vladimirdd96.chatgpt.site/**`
+   - Site URL: `https://calorie-flow.vladimirdd96.workers.dev`
+   - Redirect URL: `https://calorie-flow.vladimirdd96.workers.dev/**`
 4. Keep email authentication enabled. The app uses passwordless magic links.
 
 The migration enables Row Level Security on every user table. The browser receives only the Supabase publishable key; never expose the service-role key.
@@ -39,7 +39,7 @@ The Worker uses the `AI` binding configured in `wrangler.jsonc`, so there is no 
 
 Email magic links and Google sign-in create the same Supabase user account. The app keeps each account's profile, meals, foods, and Coach history isolated through Row Level Security.
 
-In **Authentication → URL Configuration**, add each deployed app origin to the redirect allow list, including `http://localhost:3000/**` for development and `https://calorie-flow.vladimirdd96.chatgpt.site/**` for the current production site.
+In **Authentication → URL Configuration**, add each deployed app origin to the redirect allow list, including `http://localhost:3000/**` for development and `https://calorie-flow.vladimirdd96.workers.dev/**` for the current production site.
 
 To enable Google, create a Web OAuth client in Google Cloud and add this authorized redirect URI:
 
