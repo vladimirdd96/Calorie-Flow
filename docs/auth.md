@@ -2,7 +2,7 @@
 
 # Authentication and sync
 
-Calorie Flow opens directly in local guest mode. Account setup is optional in Targets. `src/hooks/useAuth.ts` manages Supabase passwordless magic links, Google OAuth, session recovery, and legacy password recovery events. `src/lib/supabase.ts` creates a browser client only when both public Supabase variables are configured.
+On a fresh install with Supabase configured, Calorie Flow asks whether to create/sign into an account before target setup. Users can choose Continue as guest, preserving local-first use. Account setup remains available in Targets. `src/hooks/useAuth.ts` manages Supabase passwordless magic links, Google OAuth, session recovery, and legacy password recovery events. `src/lib/supabase.ts` creates a browser client only when both public Supabase variables are configured.
 
 Signed-in users have a private Supabase-backed copy of their diary.
 

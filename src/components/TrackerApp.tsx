@@ -1302,6 +1302,7 @@ function AuthGateway({
   onSignInWithProvider,
   onRequestPasswordReset,
   onUpdatePassword,
+  onContinueAsGuest,
   passwordRecovery,
 }: {
   configured: boolean;
@@ -1310,6 +1311,7 @@ function AuthGateway({
   onSignInWithProvider: (provider: SocialAuthProvider) => Promise<void>;
   onRequestPasswordReset: (email: string) => Promise<void>;
   onUpdatePassword: (password: string) => Promise<void>;
+  onContinueAsGuest: () => void;
   passwordRecovery: boolean;
 }) {
   const [mode, setMode] = useState<AuthMode>(passwordRecovery ? "update-password" : "sign-in");
@@ -1379,6 +1381,7 @@ function AuthGateway({
         </>}
         {!isPasswordReset && <><p className="auth-switch">{isRegistering ? "Already have an account?" : "New to Calorie Flow?"} <button type="button" onClick={() => { setMode(isRegistering ? "sign-in" : "register"); setNotice(""); }}>{isRegistering ? "Sign in" : "Create an account"}</button></p>{mode === "sign-in" && <button className="auth-guest auth-recovery" type="button" onClick={() => { setMode("forgot-password"); setNotice(""); }}>Forgot your password?</button>}</>}
         {isPasswordReset && <button className="text-button auth-guest" type="button" onClick={() => { setMode("sign-in"); setNotice(""); }}>Back to sign in</button>}
+        {!isPasswordReset && <button className="auth-guest" type="button" onClick={onContinueAsGuest}>Continue as guest</button>}
       </section>
     </main>
   );
@@ -1389,6 +1392,7 @@ export function TrackerApp() {
   const [ready, setReady] = useState(false);
   const [startupError, setStartupError] = useState("");
   const [profile, setProfile] = useState(DEFAULT_PROFILE);
+  const [authPromptCompleted, setAuthPromptCompleted] = useState(false);
   const [foods, setFoods] = useState<Food[]>([]);
   const [meals, setMeals] = useState<Meal[]>([]);
   const [tab, setTab] = useState<Tab>("today");
@@ -1408,8 +1412,9 @@ export function TrackerApp() {
 
   const refresh = useCallback(async () => {
     await initializeFoods();
-    const [storedProfile, storedFoods, storedMeals] = await Promise.all([getSetting<Profile>("profile"), getAll<Food>("foods"), getAll<Meal>("meals")]);
+    const [storedProfile, storedFoods, storedMeals, storedAuthPromptCompleted] = await Promise.all([getSetting<Profile>("profile"), getAll<Food>("foods"), getAll<Meal>("meals"), getSetting<boolean>("authPromptCompleted")]);
     setProfile(storedProfile || DEFAULT_PROFILE); setFoods(storedFoods); setMeals(storedMeals); setStartupError(""); setReady(true);
+    setAuthPromptCompleted(storedAuthPromptCompleted === true);
   }, []);
   useEffect(() => {
     // IndexedDB is our external store; hydrate it once when the client mounts.
@@ -1601,7 +1606,8 @@ export function TrackerApp() {
 
   if (startupError) return <main className="app-loading load-error" role="alert"><Database size={30} /><h1>Diary unavailable</h1><p>{startupError}</p><button className="primary-button" onClick={() => { setStartupError(""); void refresh().catch(() => setStartupError("Your private diary could not be opened. Your data has not been reset.")); }}>Try again</button></main>;
   if (!ready || !auth.ready) return <div className="app-loading" role="status" aria-label="Opening your private diary"><span className="brand-mark large">C</span><i /></div>;
-  if (auth.passwordRecovery) return <AuthGateway key="recovery" configured={auth.configured} passwordRecovery onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} />;
+  if (auth.passwordRecovery) return <AuthGateway key="recovery" configured={auth.configured} passwordRecovery onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} onContinueAsGuest={() => undefined} />;
+  if (auth.configured && !auth.user && !authPromptCompleted && !profile.onboardingDone) return <AuthGateway configured passwordRecovery={false} onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} onContinueAsGuest={() => { setAuthPromptCompleted(true); void setSetting("authPromptCompleted", true); }} />;
   const modalOpen = adding || !profile.onboardingDone;
   return (
     <div className="app-shell">
