@@ -184,6 +184,35 @@ const DEFAULT_PROFILE: Profile = {
   onboardingDone: false,
 };
 
+function providerAvatarUrl(user: CloudUser | null) {
+  const candidate = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  return typeof candidate === "string" && candidate.trim() ? candidate : undefined;
+}
+
+function resizeAvatar(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("The image could not be read."));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error("The image could not be opened."));
+      image.onload = () => {
+        const size = 256;
+        const scale = Math.min(size / image.naturalWidth, size / image.naturalHeight, 1);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const context = canvas.getContext("2d");
+        if (!context) return reject(new Error("The image could not be prepared."));
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", .82));
+      };
+      image.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 const mealLabels: Record<MealType, string> = {
   breakfast: "Breakfast",
   lunch: "Lunch",
@@ -522,6 +551,61 @@ function AppearancePreferences({ theme, onChange }: { theme: ThemeMode; onChange
   );
 }
 
+function ProfileIdentity({ profile, user, onSave }: { profile: Profile; user: CloudUser | null; onSave: (profile: Profile) => void }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [name, setName] = useState(profile.name);
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl);
+  const [notice, setNotice] = useState("");
+  const fallbackAvatar = providerAvatarUrl(user);
+  const visibleAvatar = avatarUrl || fallbackAvatar;
+  const initials = (name.trim() || user?.email?.split("@")[0] || "You").slice(0, 1).toUpperCase();
+
+  const save = () => {
+    onSave({ ...profile, name: name.trim(), avatarUrl });
+    setNotice("Profile saved");
+  };
+  const chooseAvatar = async (file?: File) => {
+    if (!file) return;
+    try {
+      const nextAvatar = await resizeAvatar(file);
+      setAvatarUrl(nextAvatar);
+      onSave({ ...profile, name: name.trim(), avatarUrl: nextAvatar });
+      setNotice("Photo updated");
+    } catch {
+      setNotice("That image could not be used. Try another photo.");
+    } finally {
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+  const removeCustomAvatar = () => {
+    setAvatarUrl(undefined);
+    onSave({ ...profile, name: name.trim(), avatarUrl: undefined });
+    setNotice(fallbackAvatar ? "Using your Google photo again" : "Photo removed");
+  };
+
+  return (
+    <section className="profile-identity" aria-labelledby="profile-identity-heading">
+      <div className="section-heading"><div><span className="eyebrow">About you</span><h2 id="profile-identity-heading">Profile</h2></div></div>
+      <div className="profile-identity-editor">
+        <button className="avatar-picker" type="button" onClick={() => fileRef.current?.click()} aria-label="Choose a profile photo">
+          {visibleAvatar ? <img src={visibleAvatar} alt="" /> : <span>{initials}</span>}
+          <i><Upload size={14} /></i>
+        </button>
+        <div className="profile-identity-fields">
+          <label><span>Display name</span><input value={name} maxLength={120} onChange={(event) => setName(event.target.value)} placeholder="Your name" /></label>
+          <small>{user ? "Your account photo is used by default. Upload a different one whenever you like." : "Add a name and photo so this diary feels like yours."}</small>
+        </div>
+      </div>
+      <input ref={fileRef} type="file" accept="image/*" hidden onChange={(event) => void chooseAvatar(event.target.files?.[0])} />
+      <div className="profile-identity-actions">
+        <button className="primary-button" type="button" onClick={save}>Save profile</button>
+        {avatarUrl && <button className="text-button muted" type="button" onClick={removeCustomAvatar}>Use default photo</button>}
+      </div>
+      {notice && <p className="account-notice" role="status">{notice}</p>}
+    </section>
+  );
+}
+
 function AccountCard({
   configured,
   user,
@@ -572,7 +656,7 @@ function AccountCard({
       <div className="section-heading"><div><span className="eyebrow">Optional account</span><h2>Account & sync</h2></div></div>
       <div className="account-card card">
         {!configured ? (
-          <div className="account-message"><Cloud /><div><strong>Cloud sync needs project setup</strong><p>The app remains fully usable on this device until Supabase is connected.</p></div></div>
+          <div className="account-message"><Cloud /><div><strong>Cloud sync is not available yet</strong><p>This install is running locally. A Supabase project is needed to sign in and sync across devices.</p></div></div>
         ) : user ? (
           <>
             <div className="account-user"><span><Cloud size={20} /></span><div><strong>{user.email || "Signed-in account"}</strong><small>{statusText[syncState]}</small></div></div>
@@ -661,7 +745,8 @@ function ProfileView({
   };
   return (
     <main className="page">
-      <header className="page-header"><span className="eyebrow">Your plan</span><h1>Your daily baseline</h1><p>A calm place to set direction, then get on with living.</p></header>
+      <header className="page-header"><span className="eyebrow">Your account</span><h1>Your profile</h1><p>Make Calorie Flow feel like yours, then set the targets that guide your day.</p></header>
+      <ProfileIdentity key={`${profile.name}:${profile.avatarUrl || ""}`} profile={profile} user={user} onSave={onSave} />
       <TargetSummary profile={profile} onEdit={() => setEditingTargets(true)} />
       {editingTargets && <TargetEditor profile={profile} onSave={(next) => { onSave(next); setEditingTargets(false); }} onCancel={() => setEditingTargets(false)} />}
       <DisplayPreferences hideCalories={profile.hideCalories} onChange={(hideCalories) => onSave({ ...profile, hideCalories })} />
@@ -1324,7 +1409,7 @@ function BottomNav({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => void }
     { tab: "search", label: "Foods", icon: <Search /> },
     { tab: "coach", label: "Coach", icon: <MessageCircle /> },
     { tab: "insights", label: "Insights", icon: <BarChart3 /> },
-    { tab: "profile", label: "Targets", icon: <UserRound /> },
+    { tab: "profile", label: "Profile", icon: <UserRound /> },
   ];
   return <nav className="bottom-nav" aria-label="Primary navigation">{items.map((item) => <button key={item.tab} aria-current={tab === item.tab ? "page" : undefined} className={`${tab === item.tab ? "active" : ""} ${item.tab === "coach" ? "coach-nav-item" : ""}`} onClick={() => onChange(item.tab)}>{item.icon}<span>{item.label}</span></button>)}</nav>;
 }
@@ -1556,7 +1641,7 @@ export function TrackerApp() {
       });
   };
   const saveProfile = async (next: Profile) => {
-    setProfile(next); await setSetting("profile", next); setToast("Targets saved");
+    setProfile(next); await setSetting("profile", next); setToast("Profile saved");
     syncWrite((userId) => upsertCloudProfile(userId, next));
   };
   const logMeal = async (meal: Meal, food: Food) => {
@@ -1630,7 +1715,7 @@ export function TrackerApp() {
   };
   const openAdd = (view: AddView = "start") => { setInitialAddView(view); setAdding(true); };
   const selectFood = (food: Food) => { setDirectFood(food); setAdding(true); };
-  const signOut = async () => { await auth.signOut(); setToast("Signed out · guest mode active"); };
+  const signOut = async () => { await auth.signOut(); setAuthPromptCompleted(true); await setSetting("authPromptCompleted", true); setToast("Signed out · guest mode active"); };
   const changeTheme = (nextTheme: ThemeMode) => {
     setTheme(nextTheme);
     void setSetting(THEME_SETTING, nextTheme);
@@ -1647,7 +1732,7 @@ export function TrackerApp() {
   if (startupError) return <main className="app-loading load-error" role="alert"><Database size={30} /><h1>Diary unavailable</h1><p>{startupError}</p><button className="primary-button" onClick={() => { setStartupError(""); void refresh().catch(() => setStartupError("Your private diary could not be opened. Your data has not been reset.")); }}>Try again</button></main>;
   if (!ready || !auth.ready) return <div className="app-loading" role="status" aria-label="Opening your private diary"><BrandMark large /><i /></div>;
   if (auth.passwordRecovery) return <AuthGateway key="recovery" configured={auth.configured} passwordRecovery onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} onContinueAsGuest={() => undefined} />;
-  if (auth.configured && !auth.user && !authPromptCompleted && !profile.onboardingDone) return <AuthGateway configured passwordRecovery={false} onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} onContinueAsGuest={() => { setAuthPromptCompleted(true); void setSetting("authPromptCompleted", true); }} />;
+  if (auth.configured && !auth.user && !authPromptCompleted) return <AuthGateway configured passwordRecovery={false} onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} onContinueAsGuest={() => { setAuthPromptCompleted(true); void setSetting("authPromptCompleted", true); }} />;
   const modalOpen = adding || !profile.onboardingDone;
   return (
     <div className="app-shell">

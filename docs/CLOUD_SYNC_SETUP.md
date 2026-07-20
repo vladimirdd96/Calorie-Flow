@@ -52,7 +52,7 @@ Copy its client ID and secret to **Authentication → Sign In / Up → Google** 
 ## 5. Verify
 
 1. On a fresh visit, finish local onboarding and confirm the diary works without signing in.
-2. In **Targets → Account & sync**, send a magic link or continue with Google.
+2. In **Profile → Account & sync**, send a magic link or continue with Google.
 3. Log a meal, then sign in on another device and confirm it appears.
 4. Open **Coach** and ask “How am I doing today?”
 5. Ask “Find a high-protein lunch near Sofia” to verify food-place web search.

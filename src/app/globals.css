@@ -301,6 +301,18 @@ p { color: var(--muted); line-height: 1.55; }
 .restore-tools > button { border-top: 0; }
 .backup-notice { margin: 9px 4px 0; color: var(--muted); font-size: 10px; }
 .account-section { margin-bottom: 34px; }
+.profile-identity { margin-bottom: 34px; }
+.profile-identity-editor { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 15px; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--panel); }
+.avatar-picker { position: relative; width: 72px; height: 72px; padding: 0; overflow: hidden; border: 1px solid var(--border-strong); border-radius: 23px; color: var(--mint); background: var(--control-surface-strong); cursor: pointer; }
+.avatar-picker > img, .avatar-picker > span { width: 100%; height: 100%; display: grid; place-items: center; object-fit: cover; font-size: 25px; font-weight: 900; }
+.avatar-picker > i { position: absolute; right: 4px; bottom: 4px; width: 24px; height: 24px; display: grid; place-items: center; border: 2px solid var(--panel); border-radius: 999px; color: var(--bg); background: var(--mint); font-style: normal; }
+.profile-identity-fields { min-width: 0; display: grid; gap: 8px; }
+.profile-identity-fields label { display: grid; gap: 6px; color: var(--muted); font-size: 11px; font-weight: 700; }
+.profile-identity-fields input { min-height: 42px; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; color: var(--text); background: var(--control-surface); font: inherit; }
+.profile-identity-fields small { color: var(--muted); font-size: 10px; line-height: 1.45; }
+.profile-identity-actions { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
+.profile-identity-actions .primary-button { min-height: 42px; padding: 0 14px; font-size: 11px; }
+.profile-identity-actions .text-button { padding: 0; }
 .account-card { padding: 17px; display: grid; gap: 15px; border-radius: var(--radius-md); }
 .account-message, .account-user { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 12px; }
 .account-message > svg { color: var(--mint); }

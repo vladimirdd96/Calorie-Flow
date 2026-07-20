@@ -53,6 +53,7 @@ export type DietPreset = "balanced" | "high-protein" | "keto" | "high-protein-ke
 
 export type Profile = {
   name: string;
+  avatarUrl?: string;
   sex: Sex;
   age: number;
   heightCm: number;

@@ -4,6 +4,15 @@ import type { CoachChat, CoachMessage, Food, LabelAnalysis, Meal, Nutrition, Pro
 const finiteNonNegative = z.number().finite().min(0);
 const positiveFinite = z.number().finite().positive();
 const optionalShortText = z.string().trim().max(240).optional();
+const optionalAvatar = z.string().trim().max(400_000).refine((value) => {
+  if (value.startsWith("data:image/")) return true;
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
+}, "Avatar must be an image URL or an image data URL").optional();
 const localDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 export const nutritionSchema = z.object({
@@ -50,6 +59,7 @@ export const mealSchema = z.object({
 
 export const profileSchema = z.object({
   name: z.string().trim().max(120),
+  avatarUrl: optionalAvatar,
   sex: z.enum(["male", "female"]),
   age: z.number().int().min(16).max(100),
   heightCm: z.number().finite().min(120).max(230),
