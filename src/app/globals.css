@@ -635,6 +635,14 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
   .starter-message .text-button { padding-bottom: 0; }
 }
 
+/* iOS Safari zooms controls whose text is smaller than 16px on focus. Keep
+   the mobile viewport steady while allowing deliberately larger controls to
+   retain their own sizing. */
+@media (max-width: 759px) {
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea, .coach-chat-picker select { font-size: 16px; }
+  .amount-control input { font-size: 28px; }
+}
+
 @media (min-width: 1080px) {
   .app-shell { padding-bottom: 0; padding-left: 100px; }
   .content-shell { width: min(100%, 1030px); }
