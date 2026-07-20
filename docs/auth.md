@@ -2,9 +2,9 @@
 
 # Authentication and sync
 
-Calorie Flow opens an account gateway on the first visit, while preserving local-only use as an explicit choice. `src/hooks/useAuth.ts` manages Supabase email/password registration, password recovery, magic links, and Google OAuth. `src/lib/supabase.ts` creates a browser client only when both public Supabase variables are configured.
+Calorie Flow opens an account gateway until the user signs in. `src/hooks/useAuth.ts` manages Supabase email/password registration, password recovery, magic links, and Google OAuth. `src/lib/supabase.ts` creates a browser client only when both public Supabase variables are configured.
 
-Guest records remain in IndexedDB. Signed-in users can opt into a private Supabase-backed copy. Never make an account a prerequisite for adding or viewing meals.
+Signed-in users have a private Supabase-backed copy of their diary.
 
 The browser receives only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Service-role keys are prohibited. The Cloudflare worker verifies the user's access token before paid AI calls.
 
