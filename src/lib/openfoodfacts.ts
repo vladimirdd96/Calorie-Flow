@@ -39,10 +39,19 @@ function mapNutrition(product: OffProduct): Nutrition {
   };
 }
 
+function hasNutritionData(product: OffProduct) {
+  const nutrients = product.nutriments || {};
+  return [
+    "energy-kcal_100g", "energy_100g", "proteins_100g", "carbohydrates_100g", "fat_100g", "fiber_100g", "sugars_100g",
+  ].some((key) => Object.hasOwn(nutrients, key) && Number.isFinite(Number(nutrients[key])));
+}
+
 function mapProduct(product: OffProduct): Food | null {
   const name = product.product_name || product.generic_name;
   const nutrition = mapNutrition(product);
-  if (!name || !nutrition.calories) return null;
+  // A zero value is valid nutrition data: sugar-free drinks and water must not
+  // disappear from packaged-food search just because they contain no calories.
+  if (!name || !hasNutritionData(product)) return null;
   return {
     id: `off-${product.code || crypto.randomUUID()}`,
     name,
@@ -71,7 +80,7 @@ export async function searchOpenFoodFacts(query: string): Promise<Food[]> {
     action: "process",
     json: "true",
     search_terms: query,
-    page_size: "18",
+    page_size: "50",
     fields,
   });
   const response = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?${params}`);
