@@ -836,7 +836,7 @@ function ManualFood({ initialBarcode, onSave, onClose, hideCalories }: { initial
       <div className="sheet-header"><button type="button" className="icon-button ghost" onClick={onClose}><ArrowLeft /></button><div><span className="eyebrow">Full control</span><h2>Custom food</h2></div><span /></div>
       <div className="form-grid two"><label className="span-two"><span>Food name</span><input autoFocus required value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Homemade meatballs" /></label><label><span>Brand <small>optional</small></span><input value={brand} onChange={(event) => setBrand(event.target.value)} /></label><label><span>Barcode <small>optional</small></span><input inputMode="numeric" value={barcode} onChange={(event) => setBarcode(event.target.value)} /></label></div>
       <div className="nutrition-entry"><div className="entry-heading"><div><strong>Nutrition per 100 g</strong><small>{hideCalories ? "Energy is calculated quietly from macros" : "Copy the package values"}</small></div><Package size={20} /></div><div className="form-grid three">{!hideCalories && <label><span>Calories</span><input required type="number" inputMode="decimal" value={nutrition.calories || ""} onChange={(event) => updateNutrition("calories", event.target.value)} /></label>}<label><span>Protein</span><input type="number" inputMode="decimal" step="0.1" value={nutrition.protein || ""} onChange={(event) => updateNutrition("protein", event.target.value)} /></label><label><span>Carbs</span><input type="number" inputMode="decimal" step="0.1" value={nutrition.carbs || ""} onChange={(event) => updateNutrition("carbs", event.target.value)} /></label><label><span>Fat</span><input type="number" inputMode="decimal" step="0.1" value={nutrition.fat || ""} onChange={(event) => updateNutrition("fat", event.target.value)} /></label><label><span>Fibre</span><input type="number" inputMode="decimal" step="0.1" value={nutrition.fiber || ""} onChange={(event) => updateNutrition("fiber", event.target.value)} /></label><label><span>Sugar</span><input type="number" inputMode="decimal" step="0.1" value={nutrition.sugar || ""} onChange={(event) => updateNutrition("sugar", event.target.value)} /></label></div></div>
-      <label><span>Default serving weight</span><div className="input-suffix"><input type="number" inputMode="decimal" min="0.1" value={servingGrams} onChange={(event) => setServingGrams(Number(event.target.value))} /><span>g</span></div></label>
+      <label><span>Default serving weight</span><div className="input-suffix"><input type="number" inputMode="decimal" min="0.1" step="0.1" value={servingGrams} onChange={(event) => setServingGrams(Number(event.target.value))} /><span>g</span></div></label>
       <button className="primary-button full" type="submit">Continue to amount<ChevronRight size={18} /></button>
     </form>
   );
@@ -1340,7 +1340,7 @@ export function TrackerApp() {
   };
 
   if (!ready || !auth.ready) return <div className="app-loading"><span className="brand-mark large">C</span><i /></div>;
-  if (!auth.user || auth.passwordRecovery) return <AuthGateway key={auth.passwordRecovery ? "recovery" : "standard"} configured={auth.configured} passwordRecovery={auth.passwordRecovery} onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} />;
+  if (auth.passwordRecovery) return <AuthGateway key="recovery" configured={auth.configured} passwordRecovery onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} />;
   return (
     <div className="app-shell">
       <div className="ambient one" /><div className="ambient two" />
@@ -1351,7 +1351,7 @@ export function TrackerApp() {
         {tab === "insights" && <InsightsView meals={meals} profile={profile} />}
         {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onExport={exportBackup} onImport={restoreBackup} configured={auth.configured} user={auth.user} syncState={auth.user ? syncState : "local"} onSendMagicLink={auth.sendMagicLink} onSignInWithProvider={auth.signInWithProvider} onSignOut={signOut} />}
       </div>
-      <BottomNav tab={tab} onChange={setTab} onAdd={() => openAdd()} />
+      <BottomNav tab={tab} onChange={(nextTab) => { window.scrollTo(0, 0); setTab(nextTab); }} onAdd={() => openAdd()} />
       {adding && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); }} wide>{directFood ? <PortionSheet food={directFood} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} onClose={() => setAdding(false)} onLog={logMeal} />}</Sheet>}
       {!profile.onboardingDone && <div className="onboarding-overlay"><section className="onboarding-card"><TargetEditor profile={profile} onSave={saveProfile} onboarding /></section></div>}
       {toast && <div className="toast"><Check size={17} />{toast}</div>}
