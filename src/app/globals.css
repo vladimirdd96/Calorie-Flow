@@ -245,7 +245,6 @@ p { color: var(--muted); line-height: 1.55; }
 .social-auth-buttons .secondary-button { justify-content: center; }
 .provider-mark { width: 18px; display: inline-grid; place-items: center; font-size: 16px; font-weight: 800; line-height: 1; }
 .provider-mark.google { color: #4285f4; font-family: Arial, sans-serif; }
-.provider-mark.apple { color: var(--text); font-size: 19px; font-weight: 400; }
 .account-notice { margin: -3px 2px 0; color: var(--mint); font-size: 10px; }
 
 .coach-page { width: min(100%, 820px); margin: 0 auto; }

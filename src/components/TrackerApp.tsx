@@ -458,7 +458,6 @@ function AccountCard({
             <div className="account-divider"><span>or</span></div>
             <div className="social-auth-buttons">
               <button className="secondary-button" type="button" disabled={busy} onClick={() => signInWithProvider("google")}><span className="provider-mark google" aria-hidden="true">G</span>Continue with Google</button>
-              <button className="secondary-button" type="button" disabled={busy} onClick={() => signInWithProvider("apple")}><span className="provider-mark apple" aria-hidden="true"></span>Continue with Apple</button>
             </div>
             {notice && <p className="account-notice">{notice}</p>}
           </>

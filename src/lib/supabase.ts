@@ -24,4 +24,4 @@ export function getSupabase() {
 }
 
 export type CloudUser = User;
-export type SocialAuthProvider = Extract<Provider, "apple" | "google">;
+export type SocialAuthProvider = Extract<Provider, "google">;

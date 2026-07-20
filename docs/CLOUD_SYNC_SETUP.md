@@ -38,7 +38,7 @@ The OpenAI key stays server-side. A ChatGPT subscription does not include API us
 
 ## 4. Configure account providers
 
-Email magic links, Google, and Apple sign-in all create the same Supabase user account. The app keeps each account's profile, meals, foods, and Coach history isolated through Row Level Security.
+Email magic links and Google sign-in create the same Supabase user account. The app keeps each account's profile, meals, foods, and Coach history isolated through Row Level Security.
 
 In **Authentication → URL Configuration**, add each deployed app origin to the redirect allow list, including `http://localhost:3000/**` for development and `https://calorie-flow.vladimirdd96.chatgpt.site/**` for the current production site.
 
@@ -49,8 +49,6 @@ https://ujuccgqmzrxeqmaucnbm.supabase.co/auth/v1/callback
 ```
 
 Copy its client ID and secret to **Authentication → Sign In / Up → Google** in Supabase.
-
-To enable Apple, configure a Services ID and signing key in Apple Developer, then use the same Supabase callback URL above. Add the Services ID, Team ID, Key ID, and generated secret to **Authentication → Sign In / Up → Apple**. Apple web OAuth secrets expire every six months, so schedule their rotation.
 
 ## 5. Verify
 
