@@ -15,7 +15,8 @@ export function getSupabase() {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: true,
+        // Auth callbacks are exchanged explicitly so the code can be removed from the URL.
+        detectSessionInUrl: false,
         flowType: "pkce",
       },
     });

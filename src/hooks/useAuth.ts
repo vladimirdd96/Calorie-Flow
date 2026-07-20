@@ -13,12 +13,20 @@ export function useAuth() {
     if (!supabase) return;
     let active = true;
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (active) {
-        setUser(data.session?.user || null);
-        setReady(true);
+    const loadSession = async () => {
+      try {
+        const code = new URLSearchParams(window.location.search).get("code");
+        if (code && window.location.pathname === "/") {
+          await supabase.auth.exchangeCodeForSession(code);
+          window.history.replaceState({}, "", "/");
+        }
+        const { data } = await supabase.auth.getSession();
+        if (active) setUser(data.session?.user || null);
+      } finally {
+        if (active) setReady(true);
       }
-    });
+    };
+    void loadSession();
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (active) {
         setUser(session?.user || null);
@@ -38,7 +46,7 @@ export function useAuth() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: new URL("/auth/callback", window.location.origin).toString(),
         shouldCreateUser: true,
       },
     });
@@ -58,7 +66,7 @@ export function useAuth() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: window.location.origin },
+      options: { emailRedirectTo: new URL("/auth/callback", window.location.origin).toString() },
     });
     if (error) throw error;
     return { needsEmailConfirmation: !data.session };
@@ -69,7 +77,7 @@ export function useAuth() {
     if (!supabase) throw new Error("Cloud sync is not configured yet.");
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: new URL("/auth/callback", window.location.origin).toString() },
     });
     if (error) throw error;
   }, []);
@@ -77,7 +85,7 @@ export function useAuth() {
   const requestPasswordReset = useCallback(async (email: string) => {
     const supabase = getSupabase();
     if (!supabase) throw new Error("Cloud sync is not configured yet.");
-    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: new URL("/auth/callback", window.location.origin).toString() });
     if (error) throw error;
   }, []);
 
