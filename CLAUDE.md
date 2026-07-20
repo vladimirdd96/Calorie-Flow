@@ -2,7 +2,7 @@
 
 ## Core principle
 
-Make the smallest correct change with explicit contracts and a single source of truth. Calorie Flow is local-first: a user must be able to track meals without an account, while Supabase sync and Workers AI features remain opt-in enhancements.
+Make the smallest correct change with explicit contracts and a single source of truth. Calorie Flow requires an account, while its IndexedDB cache keeps tracking fast and available offline.
 
 ## Docs system
 
@@ -34,7 +34,7 @@ Update relevant documentation in the same change when an architectural decision 
 
 ### Configuration
 
-Read application configuration through `src/lib/env.ts`; do not introduce new direct `process.env` reads in application code. Public browser variables may be optional so guest mode can work. Secrets are server-only and must never use the `NEXT_PUBLIC_` prefix.
+Read application configuration through `src/lib/env.ts`; do not introduce new direct `process.env` reads in application code. Public browser variables may be optional for development tooling, but the diary must not open without Supabase configuration. Secrets are server-only and must never use the `NEXT_PUBLIC_` prefix.
 
 ### Runtime boundaries
 

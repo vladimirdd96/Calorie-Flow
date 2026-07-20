@@ -1,6 +1,6 @@
 # Calorie Flow
 
-A radically simple, local-first calorie-tracking PWA. It keeps the essential daily view in one place and reveals advanced controls only when they are useful.
+A radically simple, private calorie-tracking PWA. It keeps the essential daily view in one place and reveals advanced controls only when they are useful.
 
 ## What works
 
@@ -11,11 +11,11 @@ A radically simple, local-first calorie-tracking PWA. It keeps the essential dai
 - Open Food Facts name search and barcode lookup
 - Live camera barcode scanning through ZXing, plus manual code entry fallback
 - AI nutrition-label extraction with structured follow-up questions
-- Optional passwordless account with private cross-device Supabase sync
+- Required passwordless account with private cross-device Supabase sync
 - Nutrition-only AI Coach with read-only tools for the user's targets, meals, and saved foods
 - Food-place search when the user explicitly types a location; no device-location access
 - Custom foods, editable nutrition, JSON backup/restore, and offline PWA install
-- Local IndexedDB guest mode: no account is required
+- Local IndexedDB cache for signed-in users, including offline tracking
 
 ## Run locally
 
@@ -46,7 +46,7 @@ The small bundled list contains generic reference foods and is not medical advic
 
 ## Privacy
 
-Guest meal history and profile data stay in IndexedDB. Signed-in users opt into a Supabase-backed copy protected by per-user Row Level Security. Open Food Facts receives search terms/barcodes when used. A label photo is sent to Cloudflare Workers AI only when the user explicitly chooses AI label reading. Coach questions and the minimum relevant diary context are sent to Workers AI when the Coach is used. The app includes export/import so data is portable.
+Signed-in users keep a local IndexedDB cache alongside a Supabase-backed copy protected by per-user Row Level Security. Open Food Facts receives search terms/barcodes when used. A label photo is sent to Cloudflare Workers AI only when the user explicitly chooses AI label reading. Coach questions and the minimum relevant diary context are sent to Workers AI when the Coach is used. The app includes export/import so data is portable.
 
 ## Validation
 

@@ -6,6 +6,7 @@ import {
   BarChart3,
   Camera,
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Database,
@@ -48,7 +49,6 @@ import {
   remove,
   replaceData,
   replaceLocalSnapshot,
-  resetToGuestData,
   setSetting,
   validateBackup,
 } from "@/lib/db";
@@ -110,9 +110,12 @@ type CoachSection = "chat" | "groceries";
 type GroceryItem = { id: string; name: string; checked: boolean; addedAt: string };
 const themeModes = { light: "light", dark: "dark" } as const;
 type ThemeMode = typeof themeModes[keyof typeof themeModes];
+const chatTextSizes = { compact: "compact", comfortable: "comfortable", large: "large" } as const;
+type ChatTextSize = typeof chatTextSizes[keyof typeof chatTextSizes];
 
 const GROCERY_ITEMS_SETTING = "coach:grocery-items";
 const THEME_SETTING = "appearance:theme";
+const CHAT_TEXT_SIZE_SETTING = "appearance:chat-text-size";
 const HOME_SCREEN_PROMPT_SETTING = "homeScreenPromptCompleted";
 const FOCUSABLE_SELECTOR = [
   "button:not([disabled])",
@@ -129,6 +132,10 @@ function BrandMark({ large = false }: { large?: boolean }) {
 
 function isThemeMode(value: unknown): value is ThemeMode {
   return value === themeModes.light || value === themeModes.dark;
+}
+
+function isChatTextSize(value: unknown): value is ChatTextSize {
+  return value === chatTextSizes.compact || value === chatTextSizes.comfortable || value === chatTextSizes.large;
 }
 
 function isStandaloneDisplay() {
@@ -198,6 +205,11 @@ const DEFAULT_PROFILE: Profile = {
 function providerAvatarUrl(user: CloudUser | null) {
   const candidate = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
   return typeof candidate === "string" && candidate.trim() ? candidate : undefined;
+}
+
+function accountDisplayName(user: CloudUser | null) {
+  const candidates = [user?.user_metadata?.full_name, user?.user_metadata?.name];
+  return candidates.find((candidate): candidate is string => typeof candidate === "string" && Boolean(candidate.trim()))?.trim();
 }
 
 function resizeAvatar(file: File) {
@@ -585,11 +597,19 @@ function TargetSummary({ profile, onEdit }: { profile: Profile; onEdit: () => vo
   );
 }
 
-function DisplayPreferences({ hideCalories, onChange }: { hideCalories: boolean; onChange: (hideCalories: boolean) => void }) {
+function DisplayPreferences({ hideCalories, onChange, chatTextSize, onChatTextSizeChange }: { hideCalories: boolean; onChange: (hideCalories: boolean) => void; chatTextSize: ChatTextSize; onChatTextSizeChange: (size: ChatTextSize) => void }) {
   return (
     <section className="display-section">
       <div className="section-heading"><div><span className="eyebrow">App display</span><h2>Calorie visibility</h2></div></div>
       <button className={`display-preference ${hideCalories ? "active" : ""}`} type="button" aria-pressed={hideCalories} onClick={() => onChange(!hideCalories)}><span><strong>{hideCalories ? "Calories are hidden" : "Calories are visible"}</strong><small>{hideCalories ? "Your diary and insights focus on macros and nutrients." : "Hide calorie numbers throughout the app whenever you prefer."}</small></span><span className="toggle" /></button>
+      <div className="chat-text-preference">
+        <div><strong>Coach text size</strong><small>Change message density without shrinking buttons or inputs.</small></div>
+        <div className="segmented three" role="group" aria-label="Coach text size">
+          <button type="button" aria-pressed={chatTextSize === chatTextSizes.compact} className={chatTextSize === chatTextSizes.compact ? "active" : ""} onClick={() => onChatTextSizeChange(chatTextSizes.compact)}>Compact</button>
+          <button type="button" aria-pressed={chatTextSize === chatTextSizes.comfortable} className={chatTextSize === chatTextSizes.comfortable ? "active" : ""} onClick={() => onChatTextSizeChange(chatTextSizes.comfortable)}>Comfortable</button>
+          <button type="button" aria-pressed={chatTextSize === chatTextSizes.large} className={chatTextSize === chatTextSizes.large ? "active" : ""} onClick={() => onChatTextSizeChange(chatTextSizes.large)}>Large</button>
+        </div>
+      </div>
     </section>
   );
 }
@@ -608,7 +628,7 @@ function AppearancePreferences({ theme, onChange }: { theme: ThemeMode; onChange
 
 function ProfileIdentity({ profile, user, onSave }: { profile: Profile; user: CloudUser | null; onSave: (profile: Profile) => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
-  const [name, setName] = useState(profile.name);
+  const [name, setName] = useState(profile.name || accountDisplayName(user) || "");
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl);
   const [notice, setNotice] = useState("");
   const fallbackAvatar = providerAvatarUrl(user);
@@ -662,43 +682,14 @@ function ProfileIdentity({ profile, user, onSave }: { profile: Profile; user: Cl
 }
 
 function AccountCard({
-  configured,
   user,
   syncState,
-  onSendMagicLink,
-  onSignInWithProvider,
   onSignOut,
 }: {
-  configured: boolean;
   user: CloudUser | null;
   syncState: SyncState;
-  onSendMagicLink: (email: string) => Promise<void>;
-  onSignInWithProvider: (provider: SocialAuthProvider) => Promise<void>;
   onSignOut: () => Promise<void>;
 }) {
-  const [email, setEmail] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState("");
-  const signInWithProvider = async (provider: SocialAuthProvider) => {
-    setBusy(true); setNotice("");
-    try {
-      await onSignInWithProvider(provider);
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : `Could not start ${provider} sign-in.`);
-      setBusy(false);
-    }
-  };
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!email.trim()) return;
-    setBusy(true); setNotice("");
-    try {
-      await onSendMagicLink(email.trim());
-      setNotice("Check your email for the secure sign-in link.");
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : "The sign-in link could not be sent.");
-    } finally { setBusy(false); }
-  };
   const statusText: Record<SyncState, string> = {
     local: "Saved on this device",
     syncing: "Syncing changes…",
@@ -708,29 +699,14 @@ function AccountCard({
   };
   return (
     <section className="account-section">
-      <div className="section-heading"><div><span className="eyebrow">Optional account</span><h2>Account & sync</h2></div></div>
+      <div className="section-heading"><div><span className="eyebrow">Private account</span><h2>Account & sync</h2></div></div>
       <div className="account-card card">
-        {!configured ? (
-          <div className="account-message"><Cloud /><div><strong>Cloud sync is not available yet</strong><p>This install is running locally. A Supabase project is needed to sign in and sync across devices.</p></div></div>
-        ) : user ? (
+        {user ? (
           <>
             <div className="account-user"><span><Cloud size={20} /></span><div><strong>{user.email || "Signed-in account"}</strong><small>{statusText[syncState]}</small></div></div>
             <button className="secondary-button" onClick={onSignOut}><LogOut size={17} />Sign out</button>
           </>
-        ) : (
-          <>
-            <div className="account-message"><Cloud /><div><strong>Use your diary on every device</strong><p>Sign in with a one-time email link. You can keep using guest mode without an account.</p></div></div>
-            <form className="magic-link-form" onSubmit={submit}>
-              <label><span>Email</span><input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" /></label>
-              <button className="primary-button" type="submit" disabled={busy}><Mail size={17} />{busy ? "Sending…" : "Email sign-in link"}</button>
-            </form>
-            <div className="account-divider"><span>or</span></div>
-            <div className="social-auth-buttons">
-              <button className="secondary-button" type="button" disabled={busy} onClick={() => signInWithProvider("google")}><GoogleIcon />Continue with Google</button>
-            </div>
-            {notice && <p className="account-notice" role="status">{notice}</p>}
-          </>
-        )}
+        ) : <div className="account-message"><Cloud /><div><strong>Account required</strong><p>Sign in to keep your diary private and available across devices.</p></div></div>}
       </div>
     </section>
   );
@@ -741,27 +717,25 @@ function ProfileView({
   onSave,
   onExport,
   onImport,
-  configured,
   user,
   syncState,
-  onSendMagicLink,
-  onSignInWithProvider,
   onSignOut,
   theme,
   onThemeChange,
+  chatTextSize,
+  onChatTextSizeChange,
 }: {
   profile: Profile;
   onSave: (profile: Profile) => void;
   onExport: () => Promise<BackupData>;
   onImport: (data: BackupData, mode: "merge" | "replace") => Promise<void>;
-  configured: boolean;
   user: CloudUser | null;
   syncState: SyncState;
-  onSendMagicLink: (email: string) => Promise<void>;
-  onSignInWithProvider: (provider: SocialAuthProvider) => Promise<void>;
   onSignOut: () => Promise<void>;
   theme: ThemeMode;
   onThemeChange: (theme: ThemeMode) => void;
+  chatTextSize: ChatTextSize;
+  onChatTextSizeChange: (size: ChatTextSize) => void;
 }) {
   const importRef = useRef<HTMLInputElement>(null);
   const [editingTargets, setEditingTargets] = useState(false);
@@ -804,11 +778,15 @@ function ProfileView({
       <ProfileIdentity key={`${profile.name}:${profile.avatarUrl || ""}`} profile={profile} user={user} onSave={onSave} />
       <TargetSummary profile={profile} onEdit={() => setEditingTargets(true)} />
       {editingTargets && <TargetEditor profile={profile} onSave={(next) => { onSave(next); setEditingTargets(false); }} onCancel={() => setEditingTargets(false)} />}
-      <DisplayPreferences hideCalories={profile.hideCalories} onChange={(hideCalories) => onSave({ ...profile, hideCalories })} />
+      <DisplayPreferences hideCalories={profile.hideCalories} onChange={(hideCalories) => onSave({ ...profile, hideCalories })} chatTextSize={chatTextSize} onChatTextSizeChange={onChatTextSizeChange} />
       <AppearancePreferences theme={theme} onChange={onThemeChange} />
-      <AccountCard configured={configured} user={user} syncState={syncState} onSendMagicLink={onSendMagicLink} onSignInWithProvider={onSignInWithProvider} onSignOut={onSignOut} />
+      <AccountCard user={user} syncState={syncState} onSignOut={onSignOut} />
       <details className="data-tools">
-        <summary><ShieldCheck size={17} /><span>Data & privacy</span></summary>
+        <summary>
+          <ShieldCheck size={17} aria-hidden="true" />
+          <span className="data-tools-copy"><strong>Data & privacy</strong><small>Export or restore your information</small></span>
+          <ChevronDown className="data-tools-chevron" size={17} aria-hidden="true" />
+        </summary>
         <div className="card tool-list">
           <button onClick={download} disabled={exporting}><Download size={19} /><span><strong>{exporting ? "Preparing archive…" : "Export your data"}</strong><small>Diary, foods, targets, and coach history</small></span><ChevronRight size={17} /></button>
           <div className="restore-tools">
@@ -832,7 +810,10 @@ function Sheet({ children, onClose, wide = false }: { children: React.ReactNode;
     document.body.classList.add("sheet-open");
     return () => { document.body.classList.remove("sheet-open"); };
   }, []);
-  return <div className="sheet-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section ref={surfaceRef} className={`sheet ${wide ? "wide" : ""}`} role="dialog" aria-modal="true" aria-label="Add food" tabIndex={-1}><div className="sheet-handle" aria-hidden="true" />{children}</section></div>;
+  const dismissOnBackdrop = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget) onClose();
+  };
+  return <div className="sheet-backdrop" onPointerDown={dismissOnBackdrop}><section ref={surfaceRef} className={`sheet ${wide ? "wide" : ""}`} role="dialog" aria-modal="true" aria-label="Add food" tabIndex={-1}><div className="sheet-handle" aria-hidden="true" />{children}</section></div>;
 }
 
 function OnboardingDialog({ profile, onSave }: { profile: Profile; onSave: (profile: Profile) => void }) {
@@ -1318,7 +1299,7 @@ function groceryItemsFromReply(content: string) {
     .slice(0, 24);
 }
 
-function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }: { configured: boolean; user: CloudUser | null; onOpenAccount: () => void; onOpenAdd: (view: AddView) => void; hideCalories: boolean }) {
+function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories, chatTextSize }: { configured: boolean; user: CloudUser | null; onOpenAccount: () => void; onOpenAdd: (view: AddView) => void; hideCalories: boolean; chatTextSize: ChatTextSize }) {
   const [messages, setMessages] = useState<DisplayCoachMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
@@ -1516,7 +1497,7 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
       <main className="page coach-page"><header className="page-header"><span className="eyebrow">Nutrition only</span><h1>Coach</h1><p>{hideCalories ? "Nutrition guidance using your actual diary." : "Calorie-aware guidance using your actual diary."}</p></header><section className="coach-gate card"><MessageCircle /><h2>Coach setup is waiting</h2><p>Connect the project database to activate private, diary-aware coaching.</p></section></main>
   );
   if (!user) return (
-    <main className="page coach-page"><header className="page-header"><span className="eyebrow">Nutrition only</span><h1>Coach</h1><p>{hideCalories ? "Nutrition guidance using your actual diary." : "Calorie-aware guidance using your actual diary."}</p></header><section className="coach-gate card"><MessageCircle /><h2>Sign in for private coaching</h2><p>The Coach reads only the signed-in user’s targets, meals, and saved foods. Guest tracking still works without an account.</p><button className="primary-button" onClick={onOpenAccount}><Mail size={17} />Open account setup</button></section></main>
+      <main className="page coach-page"><header className="page-header"><span className="eyebrow">Nutrition only</span><h1>Coach</h1><p>{hideCalories ? "Nutrition guidance using your actual diary." : "Calorie-aware guidance using your actual diary."}</p></header><section className="coach-gate card"><MessageCircle /><h2>Sign in for private coaching</h2><p>The Coach reads only the signed-in user’s targets, meals, and saved foods.</p><button className="primary-button" onClick={onOpenAccount}><Mail size={17} />Open account setup</button></section></main>
   );
   if (loadedUserId !== user.id) return (
     <main className="page coach-page"><header className="page-header"><span className="eyebrow">Your diary, in context</span><h1>Coach</h1></header><section className="coach-gate card"><span className="coach-loader" /><h2>Loading your private Coach…</h2></section></main>
@@ -1526,7 +1507,7 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories }:
   const accountGroceryItems = loadedGroceryKey === grocerySettingKey ? groceryItems : [];
   const remainingGroceries = accountGroceryItems.filter((item) => !item.checked).length;
   return (
-    <main className="page coach-page">
+    <main className={`page coach-page coach-text-${chatTextSize}`}>
       <header className="coach-header"><div><span className="eyebrow">Your food companion</span><h1>Coach</h1></div>{section === "chat" && <div className="coach-header-actions"><button className="text-button" onClick={() => void newChat()}><Plus size={15} />New chat</button>{messages.length > 0 && <button className="text-button muted" onClick={() => void clear()}>Clear</button>}</div>}</header>
       {section === "chat" && <div className="coach-chat-picker"><label htmlFor="coach-chat-select">Conversation</label><select id="coach-chat-select" value={activeChatId} onChange={(event) => void switchChat(event.target.value)}>{chats.map((chat) => <option key={chat.id} value={chat.id}>{chat.title}</option>)}</select>{chats.length > 1 && <button className="icon-button ghost" onClick={() => void removeChat()} aria-label="Delete current conversation"><Trash2 size={15} /></button>}</div>}
       <div className="coach-tabs" role="tablist" aria-label="Coach workspace"><button id="coach-chat-tab" role="tab" aria-selected={section === "chat"} aria-controls="coach-chat-panel" className={section === "chat" ? "active" : ""} onClick={() => setSection("chat")}><MessageCircle size={16} />Chat</button><button id="coach-groceries-tab" role="tab" aria-selected={section === "groceries"} aria-controls="coach-groceries-panel" className={section === "groceries" ? "active" : ""} onClick={() => setSection("groceries")}><ListChecks size={16} />Groceries{remainingGroceries > 0 && <span>{remainingGroceries}</span>}</button></div>
@@ -1564,20 +1545,19 @@ function AuthGateway({
   onSignInWithProvider,
   onRequestPasswordReset,
   onUpdatePassword,
-  onContinueAsGuest,
   passwordRecovery,
 }: {
   configured: boolean;
   onSignIn: (email: string, password: string) => Promise<void>;
-  onSignUp: (email: string, password: string) => Promise<{ needsEmailConfirmation: boolean }>;
+  onSignUp: (email: string, password: string, name: string) => Promise<{ needsEmailConfirmation: boolean }>;
   onSignInWithProvider: (provider: SocialAuthProvider) => Promise<void>;
   onRequestPasswordReset: (email: string) => Promise<void>;
   onUpdatePassword: (password: string) => Promise<void>;
-  onContinueAsGuest: () => void;
   passwordRecovery: boolean;
 }) {
   const [mode, setMode] = useState<AuthMode>(passwordRecovery ? "update-password" : "sign-in");
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -1589,6 +1569,10 @@ function AuthGateway({
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!configured) return;
+    if (isRegistering && !name.trim()) {
+      setNotice("Enter your name to create your account.");
+      return;
+    }
     if ((isRegistering || isUpdatingPassword) && password !== confirmPassword) {
       setNotice("Passwords do not match.");
       return;
@@ -1603,7 +1587,7 @@ function AuthGateway({
         await onUpdatePassword(password);
         setNotice("Your password is updated. You can continue to your diary.");
       } else if (isRegistering) {
-        const { needsEmailConfirmation } = await onSignUp(email.trim(), password);
+        const { needsEmailConfirmation } = await onSignUp(email.trim(), password, name.trim());
         setNotice(needsEmailConfirmation ? "Check your inbox to confirm your account, then sign in." : "Your account is ready.");
       } else {
         await onSignIn(email.trim(), password);
@@ -1631,8 +1615,9 @@ function AuthGateway({
       <section className="auth-card card" aria-labelledby="auth-title">
         <div className="auth-brand"><BrandMark large /><span>Calorie Flow</span></div>
         <div><span className="eyebrow">{isRegistering ? "Create your account" : isUpdatingPassword ? "Choose a new password" : mode === "forgot-password" ? "Reset your password" : "Welcome back"}</span><h1 id="auth-title">{isRegistering ? "Start your flow" : isUpdatingPassword ? "Secure your diary" : mode === "forgot-password" ? "Get back in" : "Sign in to Calorie Flow"}</h1><p>{isRegistering ? "Save your diary privately and keep it in sync across your devices." : isUpdatingPassword ? "Use a new password you have not used elsewhere." : mode === "forgot-password" ? "We’ll email a secure reset link if this address has an account." : "Pick up right where you left off."}</p></div>
-        {!configured ? <p className="auth-unavailable"><LockKeyhole size={16} />Account sign-in needs Supabase configuration. You can still use Calorie Flow locally.</p> : <>
+        {!configured ? <p className="auth-unavailable"><LockKeyhole size={16} />Account sign-in is unavailable until this deployment is connected to Supabase.</p> : <>
           <form className="auth-form" onSubmit={submit}>
+            {isRegistering && <label><span>Name</span><input type="text" autoComplete="name" required value={name} onChange={(event) => setName(event.target.value)} placeholder="Your name" /></label>}
             {!isUpdatingPassword && <label><span>Email</span><input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" /></label>}
             {mode !== "forgot-password" && <label><span>{isRegistering || isUpdatingPassword ? "New password" : "Password"}</span><input type="password" autoComplete={isRegistering || isUpdatingPassword ? "new-password" : "current-password"} minLength={6} required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 6 characters" /></label>}
             {(isRegistering || isUpdatingPassword) && <label><span>Confirm password</span><input type="password" autoComplete="new-password" minLength={6} required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Repeat your password" /></label>}
@@ -1641,9 +1626,8 @@ function AuthGateway({
           {!isPasswordReset && <><div className="account-divider"><span>or</span></div><button className="secondary-button auth-google" type="button" disabled={busy} onClick={signInWithGoogle}><GoogleIcon />Continue with Google</button></>}
           {notice && <p className="account-notice" role="status">{notice}</p>}
         </>}
-        {!isPasswordReset && <><p className="auth-switch">{isRegistering ? "Already have an account?" : "New to Calorie Flow?"} <button type="button" onClick={() => { setMode(isRegistering ? "sign-in" : "register"); setNotice(""); }}>{isRegistering ? "Sign in" : "Create an account"}</button></p>{mode === "sign-in" && <button className="auth-guest auth-recovery" type="button" onClick={() => { setMode("forgot-password"); setNotice(""); }}>Forgot your password?</button>}</>}
-        {isPasswordReset && <button className="text-button auth-guest" type="button" onClick={() => { setMode("sign-in"); setNotice(""); }}>Back to sign in</button>}
-        {!isPasswordReset && <button className="auth-guest" type="button" onClick={onContinueAsGuest}>Continue as guest</button>}
+        {!isPasswordReset && <><p className="auth-switch">{isRegistering ? "Already have an account?" : "New to Calorie Flow?"} <button type="button" onClick={() => { setMode(isRegistering ? "sign-in" : "register"); setNotice(""); }}>{isRegistering ? "Sign in" : "Create an account"}</button></p>{mode === "sign-in" && <button className="auth-secondary auth-recovery" type="button" onClick={() => { setMode("forgot-password"); setNotice(""); }}>Forgot your password?</button>}</>}
+        {isPasswordReset && <button className="text-button auth-secondary" type="button" onClick={() => { setMode("sign-in"); setNotice(""); }}>Back to sign in</button>}
       </section>
     </main>
   );
@@ -1654,7 +1638,6 @@ export function TrackerApp() {
   const [ready, setReady] = useState(false);
   const [startupError, setStartupError] = useState("");
   const [profile, setProfile] = useState(DEFAULT_PROFILE);
-  const [authPromptCompleted, setAuthPromptCompleted] = useState(false);
   const [foods, setFoods] = useState<Food[]>([]);
   const [meals, setMeals] = useState<Meal[]>([]);
   const [tab, setTab] = useState<Tab>("today");
@@ -1667,6 +1650,7 @@ export function TrackerApp() {
   const [syncState, setSyncState] = useState<SyncState>("local");
   const [syncAttempt, setSyncAttempt] = useState(0);
   const [theme, setTheme] = useState<ThemeMode>(themeModes.light);
+  const [chatTextSize, setChatTextSize] = useState<ChatTextSize>(chatTextSizes.comfortable);
   const [showHomeScreenPrompt, setShowHomeScreenPrompt] = useState(false);
   const [undoMeal, setUndoMeal] = useState<{ meal: Meal; timerId: number }>();
   const syncIdentityRef = useRef("");
@@ -1676,9 +1660,8 @@ export function TrackerApp() {
 
   const refresh = useCallback(async () => {
     await initializeFoods();
-    const [storedProfile, storedFoods, storedMeals, storedAuthPromptCompleted] = await Promise.all([getSetting<Profile>("profile"), getAll<Food>("foods"), getAll<Meal>("meals"), getSetting<boolean>("authPromptCompleted")]);
+    const [storedProfile, storedFoods, storedMeals] = await Promise.all([getSetting<Profile>("profile"), getAll<Food>("foods"), getAll<Meal>("meals")]);
     setProfile(storedProfile || DEFAULT_PROFILE); setFoods(storedFoods); setMeals(storedMeals); setStartupError(""); setReady(true);
-    setAuthPromptCompleted(storedAuthPromptCompleted === true);
   }, []);
   useEffect(() => {
     // IndexedDB is our external store; hydrate it once when the client mounts.
@@ -1694,6 +1677,13 @@ export function TrackerApp() {
     let active = true;
     getSetting<unknown>(THEME_SETTING).then((storedTheme) => {
       if (active && isThemeMode(storedTheme)) setTheme(storedTheme);
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, []);
+  useEffect(() => {
+    let active = true;
+    getSetting<unknown>(CHAT_TEXT_SIZE_SETTING).then((storedSize) => {
+      if (active && isChatTextSize(storedSize)) setChatTextSize(storedSize);
     }).catch(() => undefined);
     return () => { active = false; };
   }, []);
@@ -1718,21 +1708,15 @@ export function TrackerApp() {
     return () => window.removeEventListener("online", retry);
   }, []);
   useEffect(() => {
-    if (!ready || !auth.ready || !auth.configured) return;
-    const identity = auth.user ? `user:${auth.user.id}` : "guest";
+    if (!ready || !auth.ready || !auth.user) return;
+    const user = auth.user;
+    const identity = `user:${user.id}`;
     if (syncIdentityRef.current === identity) return;
     syncIdentityRef.current = identity;
     let active = true;
     const synchronize = async () => {
       const owner = await getSetting<string>("dataOwner");
-      if (!auth.user) {
-        if (owner?.startsWith("user:")) await resetToGuestData();
-        else await setSetting("dataOwner", "guest");
-        if (active) { setSyncState("local"); await refresh(); }
-        return;
-      }
-
-      const userId = auth.user.id;
+      const userId = user.id;
       if (active) setSyncState("syncing");
       const [local, remote, dirty, tombstones] = await Promise.all([
         getLocalSnapshot(),
@@ -1748,11 +1732,15 @@ export function TrackerApp() {
         next = mergeSnapshots(remote, local);
         next.profile = local.profile || remote.profile;
         shouldPush = true;
-      } else if (!owner || owner === "guest") {
+      } else {
         next = mergeSnapshots(local, remote);
         shouldPush = true;
-      } else {
-        next = remote;
+      }
+
+      const accountName = accountDisplayName(user);
+      if (accountName && !next.profile?.name.trim()) {
+        next.profile = { ...(next.profile || DEFAULT_PROFILE), name: accountName };
+        shouldPush = true;
       }
 
       const deletedIds = tombstones || [];
@@ -1891,10 +1879,14 @@ export function TrackerApp() {
   };
   const openAdd = (view: AddView = "start") => { setInitialAddView(view); setAdding(true); };
   const selectFood = (food: Food) => { setDirectFood(food); setAdding(true); };
-  const signOut = async () => { await auth.signOut(); setAuthPromptCompleted(true); await setSetting("authPromptCompleted", true); setToast("Signed out · guest mode active"); };
+  const signOut = async () => { await auth.signOut(); };
   const changeTheme = (nextTheme: ThemeMode) => {
     setTheme(nextTheme);
     void setSetting(THEME_SETTING, nextTheme);
+  };
+  const changeChatTextSize = (nextSize: ChatTextSize) => {
+    setChatTextSize(nextSize);
+    void setSetting(CHAT_TEXT_SIZE_SETTING, nextSize);
   };
 
   const syncLabel: Record<SyncState, string> = {
@@ -1907,18 +1899,17 @@ export function TrackerApp() {
 
   if (startupError) return <main className="app-loading load-error" role="alert"><Database size={30} /><h1>Diary unavailable</h1><p>{startupError}</p><button className="primary-button" onClick={() => { setStartupError(""); void refresh().catch(() => setStartupError("Your private diary could not be opened. Your data has not been reset.")); }}>Try again</button></main>;
   if (!ready || !auth.ready) return <div className="app-loading" role="status" aria-label="Opening your private diary"><BrandMark large /><i /></div>;
-  if (auth.passwordRecovery) return <AuthGateway key="recovery" configured={auth.configured} passwordRecovery onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} onContinueAsGuest={() => undefined} />;
-  if (auth.configured && !auth.user && !authPromptCompleted) return <AuthGateway configured passwordRecovery={false} onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} onContinueAsGuest={() => { setAuthPromptCompleted(true); void setSetting("authPromptCompleted", true); }} />;
-  const modalOpen = adding || !profile.onboardingDone;
+  if (auth.passwordRecovery || !auth.user) return <AuthGateway key={auth.passwordRecovery ? "recovery" : "sign-in"} configured={auth.configured} passwordRecovery={auth.passwordRecovery} onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} />;
+  const modalOpen = adding || !!editingMeal || !profile.onboardingDone;
   return (
     <div className="app-shell">
       <div className="ambient one" /><div className="ambient two" />
       <div className="content-shell" inert={modalOpen} aria-hidden={modalOpen || undefined}>
         {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={() => openAdd()} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} onEdit={setEditingMeal} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} />}
         {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={openAdd} />}
-        {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} onOpenAccount={() => setTab("profile")} onOpenAdd={openAdd} />}
+        {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} chatTextSize={chatTextSize} onOpenAccount={() => setTab("profile")} onOpenAdd={openAdd} />}
         {tab === "insights" && <InsightsView meals={meals} profile={profile} />}
-        {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onExport={exportBackup} onImport={restoreBackup} configured={auth.configured} user={auth.user} syncState={auth.user ? syncState : "local"} onSendMagicLink={auth.sendMagicLink} onSignInWithProvider={auth.signInWithProvider} onSignOut={signOut} theme={theme} onThemeChange={changeTheme} />}
+      {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onExport={exportBackup} onImport={restoreBackup} user={auth.user} syncState={syncState} onSignOut={signOut} theme={theme} onThemeChange={changeTheme} chatTextSize={chatTextSize} onChatTextSizeChange={changeChatTextSize} />}
       </div>
       <div inert={modalOpen} aria-hidden={modalOpen || undefined}><BottomNav tab={tab} onChange={(nextTab) => { window.scrollTo(0, 0); setTab(nextTab); }} /></div>
       {adding && profile.onboardingDone && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); }} wide>{directFood ? <PortionSheet food={directFood} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} onClose={() => setAdding(false)} onLog={logMeal} onMealPhoto={addPhotoMeal} />}</Sheet>}

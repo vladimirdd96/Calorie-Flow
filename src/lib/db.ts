@@ -178,8 +178,3 @@ export async function replaceLocalSnapshot(snapshot: CloudSnapshot) {
   snapshot.foods.forEach((food) => foods.set(food.id, food));
   await writeSnapshot({ ...snapshot, foods: [...foods.values()] }, "replace");
 }
-
-export async function resetToGuestData() {
-  await replaceLocalSnapshot({ meals: [], foods: seedFoods, profile: undefined });
-  await setSetting("dataOwner", "guest");
-}

@@ -1,21 +1,21 @@
-# ADR-001: Local-first tracking with optional cloud sync
+# ADR-001: Authenticated tracking with a local cache
 
 **Date:** 2026-07-20  
 **Status:** accepted
 
 ## Context
 
-Calorie tracking needs to be quick, private, and available without network access. Some users still need an account and cross-device access.
+Calorie tracking needs to be quick, private, and available without network access while keeping each diary tied to an account for recovery and cross-device access.
 
 ## Decision
 
-Store guest data in IndexedDB and make Supabase authentication and synchronization optional. The interface must continue to work when no public Supabase configuration is present.
+Require Supabase authentication before opening the diary. Store the active account's working copy in IndexedDB for fast and offline use, and synchronize it with Supabase when configured and online.
 
 ## Consequences
 
-**Good:** Immediate onboarding, offline use, and an account-free path.  
-**Bad:** Synchronization and conflict handling add complexity, and clients must support both local and signed-in states.
+**Good:** Private account ownership, cross-device recovery, and offline use.
+**Bad:** Account setup and synchronization are required before tracking can begin.
 
 ## Alternatives considered
 
-- Cloud-only storage — rejected because it requires account setup and network access before logging food.
+- Cloud-only storage — rejected because it would make offline tracking unavailable.
