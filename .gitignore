@@ -5,6 +5,7 @@ node_modules
 .sites-output
 out
 coverage
+*.tsbuildinfo
 .env*
 !.env.example
 *.log

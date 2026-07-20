@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { serverEnv } from "@/lib/env";
 
 export const runtime = "nodejs";
 
@@ -41,7 +42,7 @@ function extractOutputText(response: { output?: Array<{ content?: Array<{ type?:
 }
 
 export async function POST(request: NextRequest) {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = serverEnv.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
       { error: "AI label reading is ready but needs an OPENAI_API_KEY on the server." },
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || "gpt-5.6-luna",
+        model: serverEnv.OPENAI_LABEL_MODEL || "gpt-4.1-mini",
         reasoning: { effort: "none" },
         input: [
           {
