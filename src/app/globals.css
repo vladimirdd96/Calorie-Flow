@@ -133,6 +133,7 @@ p { color: var(--muted); line-height: 1.55; }
 .page-header { padding: 34px 2px 20px; max-width: 610px; }
 .page-header .eyebrow { margin-bottom: 9px; }
 .page-header p { margin-bottom: 0; font-size: 14px; }
+.targets-page { width: min(100%, 720px); margin-inline: auto; }
 .search-launch { width: 100%; min-height: 58px; padding: 0 16px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; text-align: left; color: var(--muted); }
 .search-launch svg { color: var(--mint); }
 .search-launch kbd { width: 27px; height: 27px; display: grid; place-items: center; border-radius: 9px; background: rgba(125,255,213,.1); color: var(--mint); border: 0; }
