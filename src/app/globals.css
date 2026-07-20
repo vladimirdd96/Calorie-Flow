@@ -349,14 +349,10 @@ p { color: var(--muted); line-height: 1.55; }
 .simple-note svg { color: var(--mint); }
 .coach-intake { display: grid; gap: 16px; padding-bottom: 4px; }
 .coach-intake .sheet-header { margin-bottom: 0; }
-.intake-intro { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 13px; padding: 2px 4px; }
-.intake-intro .coach-orb { width: 46px; height: 46px; margin: 0; border-radius: 16px; }
-.intake-intro > div { display: grid; gap: 4px; }
-.intake-intro strong { font-size: 13px; }
-.intake-intro small { color: var(--muted); font-size: 10px; line-height: 1.45; }
 .intake-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .intake-actions button { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; color: var(--muted); background: rgba(18,32,29,.72); border: 1px solid var(--border); border-radius: 13px; font-size: 10px; font-weight: 800; }
 .intake-actions button:hover { color: var(--mint); border-color: var(--border-strong); }
+.intake-input-label { margin: 2px 4px -8px; color: var(--muted); font-size: 11px; font-weight: 800; }
 .intake-composer { display: grid; grid-template-columns: 1fr 46px; gap: 8px; padding: 6px; border: 1px solid var(--border-strong); border-radius: 18px; background: rgba(6,14,12,.6); }
 .intake-composer input { min-height: 44px; border: 0; background: transparent; padding: 0 7px; }
 .intake-composer input:focus { outline: 0; }

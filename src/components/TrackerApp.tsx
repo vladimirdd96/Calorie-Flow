@@ -941,11 +941,11 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, hideCalori
   );
   return (
     <div className="coach-intake" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); addImages(event.dataTransfer.files); }}>
-      <div className="sheet-header"><button className="icon-button ghost" onClick={onClose}><X /></button><div><span className="eyebrow">Log with Coach</span><h2>What did you have?</h2></div><span /></div>
-      <div className="intake-intro"><span className="coach-orb"><Sparkles /></span><div><strong>Tell me, search, or show me the package.</strong><small>I’ll use your saved foods first and only ask when a detail affects the log.</small></div></div>
+      <div className="sheet-header"><button className="icon-button ghost" onClick={onClose}><X /></button><div><span className="eyebrow">Log with Coach</span><h2>Add food or get help</h2></div><span /></div>
       <div className="intake-actions"><button onClick={() => setView("scan")}><ScanLine size={17} />Barcode</button><button onClick={() => { setPendingImages([]); setView("label"); }}><Camera size={17} />Take photo</button><button onClick={() => imageInputRef.current?.click()}><Upload size={17} />Add photos</button></div>
       <input ref={imageInputRef} className="visually-hidden-file" type="file" accept="image/*" capture="environment" multiple onChange={(event) => addImages(event.target.files || undefined)} />
-      <form className="intake-composer" onSubmit={sendIntake}><input autoFocus value={intakeDraft} onChange={(event) => setIntakeDraft(event.target.value)} placeholder='Search “Greek yogurt” or ask “I had two bites of pizza”' /><button type="submit" disabled={!intakeDraft.trim() || askingCoach} aria-label="Send to Coach">{askingCoach ? <span className="coach-loader" /> : <Send />}</button></form>
+      <label className="intake-input-label" htmlFor="coach-intake">Search a food or ask Coach</label>
+      <form className="intake-composer" onSubmit={sendIntake}><input id="coach-intake" autoFocus value={intakeDraft} onChange={(event) => setIntakeDraft(event.target.value)} placeholder="Food or question" /><button type="submit" disabled={!intakeDraft.trim() || askingCoach} aria-label="Send to Coach">{askingCoach ? <span className="coach-loader" /> : <Send />}</button></form>
       {coachReply && <div className="intake-reply"><span>Coach</span><p>{coachReply}</p><button className="text-button" onClick={() => { setQuery(intakeDraft); setView("search"); void runSearch(intakeDraft); }}><Search size={16} />Find a food to log</button></div>}
       {error && <div className="inline-alert error"><Info size={17} />{error}</div>}
       {!!recent.length && <div className="quick-list"><span className="eyebrow">Recent · one tap</span>{recent.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div>}
