@@ -818,7 +818,7 @@ function LabelReader({ onFood, onClose, initialFiles = [], initialAction }: { on
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || "The label could not be read.");
       const result = labelAnalysisSchema.parse(body);
-      onFood({
+      const scannedFood: Food = {
         id: `ai-${crypto.randomUUID()}`,
         name: result.productName || "Scanned label",
         brand: result.brand || undefined,
@@ -827,7 +827,24 @@ function LabelReader({ onFood, onClose, initialFiles = [], initialAction }: { on
         packageGrams: result.packageSizeG || undefined,
         nutrientsPer100: result.per100,
         source: "ai-label",
-      }, result.followUpQuestions);
+      };
+
+      // The image reader supplies the nutrition facts; the catalogue can still
+      // supply a product thumbnail and cleaner package metadata when the name
+      // is recognized, even when no barcode was visible.
+      if (result.productName) {
+        try {
+          const query = [result.brand, result.productName].filter(Boolean).join(" ");
+          const match = (await searchOpenFoodFacts(query))[0];
+          if (match) {
+            onFood({ ...scannedFood, brand: scannedFood.brand || match.brand, imageUrl: match.imageUrl, quantityLabel: match.quantityLabel, barcode: scannedFood.barcode || match.barcode }, result.followUpQuestions);
+            return;
+          }
+        } catch {
+          // AI-extracted nutrition remains useful when the optional catalogue is offline.
+        }
+      }
+      onFood(scannedFood, result.followUpQuestions);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The label could not be read.");
     } finally { setLoading(false); }

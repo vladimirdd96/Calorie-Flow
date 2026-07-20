@@ -125,19 +125,38 @@ function json(body, status = 200) {
 }
 
 async function foodSearch(request) {
-  const query = new URL(request.url).searchParams.get("q")?.trim() || "";
-  if (query.length < 2 || query.length > 100) return json({ error: "Search for between 2 and 100 characters." }, 400);
+  const requestUrl = new URL(request.url);
+  const barcode = (requestUrl.searchParams.get("barcode")?.trim() || "").replace(/\D/g, "");
 
   const fields = [
     "code", "product_name", "generic_name", "brands", "quantity", "serving_size", "serving_quantity",
     "product_quantity", "image_front_small_url", "image_front_url", "nutrition_data_per", "nutriments",
   ].join(",");
+  if (barcode.length >= 8 && barcode.length <= 18) {
+    const productUrl = new URL(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json`);
+    productUrl.searchParams.set("fields", fields);
+    productUrl.searchParams.set("lc", "bg,en");
+    productUrl.searchParams.set("cc", "bg");
+    try {
+      const upstream = await fetch(productUrl, { headers: { "User-Agent": "Calorie Flow/1.0 (food-search)" } });
+      if (!upstream.ok) return json({ error: "Online product lookup is temporarily unavailable." }, 503);
+      const data = await upstream.json();
+      return json({ product: data?.status === 1 && data?.product ? { ...data.product, code: data.code || barcode } : null });
+    } catch {
+      return json({ error: "Online product lookup is temporarily unavailable." }, 503);
+    }
+  }
+  const query = requestUrl.searchParams.get("q")?.trim() || "";
+  if (query.length < 2 || query.length > 100) return json({ error: "Search for between 2 and 100 characters." }, 400);
   const searchUrl = new URL("https://search.openfoodfacts.org/search");
   searchUrl.searchParams.set("q", query);
   searchUrl.searchParams.set("page_size", "50");
   searchUrl.searchParams.set("fields", fields);
   searchUrl.searchParams.set("boost_phrase", "true");
-  const legacyParams = new URLSearchParams({ action: "process", json: "true", search_terms: query, page_size: "50", fields });
+  searchUrl.searchParams.set("lc", "bg,en");
+  searchUrl.searchParams.set("cc", "bg");
+  searchUrl.searchParams.set("countries_tags_en", "Bulgaria");
+  const legacyParams = new URLSearchParams({ action: "process", json: "true", search_terms: query, page_size: "50", fields, lc: "bg,en", cc: "bg" });
   const legacyUrl = `https://world.openfoodfacts.org/cgi/search.pl?${legacyParams}`;
 
   try {

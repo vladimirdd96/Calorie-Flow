@@ -15,11 +15,6 @@ type OffProduct = {
   nutriments?: Record<string, number | string | undefined>;
 };
 
-const fields = [
-  "code", "product_name", "generic_name", "brands", "quantity", "serving_size", "serving_quantity",
-  "product_quantity", "image_front_small_url", "image_front_url", "nutrition_data_per", "nutriments",
-].join(",");
-
 const searchCache = new Map<string, { expiresAt: number; foods: Food[] }>();
 const SEARCH_CACHE_TTL_MS = 2 * 60_000;
 
@@ -71,11 +66,11 @@ function mapProduct(product: OffProduct): Food | null {
 }
 
 export async function findByBarcode(barcode: string): Promise<Food | null> {
-  const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json?fields=${fields}`);
+  const response = await fetch(`/api/food-search?barcode=${encodeURIComponent(barcode)}`);
   if (!response.ok) throw new Error("Product lookup failed");
   const data = await response.json();
-  if (data.status !== 1 || !data.product) return null;
-  return mapProduct({ ...data.product, code: data.code || barcode });
+  if (!data.product) return null;
+  return mapProduct({ ...data.product, code: data.product.code || barcode });
 }
 
 export async function searchOpenFoodFacts(query: string): Promise<Food[]> {
