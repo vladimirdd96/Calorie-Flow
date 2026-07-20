@@ -211,6 +211,14 @@ function extractOutputText(response: JsonRecord) {
   return isRecord(choice) && isRecord(choice.message) && typeof choice.message.content === "string" ? choice.message.content : undefined;
 }
 
+function publicCoachError(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+  if (/not a multimodal model|model|cache\/|workers ai|ai\.run|invalid response/i.test(message)) {
+    return "The Coach could not process that photo right now. Please try again or use the meal-photo option.";
+  }
+  return message || "The Coach is unavailable right now.";
+}
+
 export async function POST(request: NextRequest) {
   const auth = await authenticatePaidFeature(request);
   if (!auth.ok) return json({ error: auth.error }, auth.status);
@@ -244,13 +252,17 @@ export async function POST(request: NextRequest) {
 
     let response: JsonRecord | undefined;
     for (let turn = 0; turn < 4; turn += 1) {
-      response = await workersAiResponse({
+      const aiPayload = {
         messages: [{ role: "system", content: `${coachInstructions}${visibilityInstruction}\n\nTIME CONTEXT:\n- The user's current local date is ${localDate}.\n- Their browser time zone is ${timezone}. Use this context when they say today, yesterday, or this week.` }, ...messages],
         tools,
         tool_choice: "auto",
+        ...(image ? { chat_template_kwargs: { thinking: false } } : {}),
         max_completion_tokens: 700,
         temperature: 0.2,
-      });
+      } satisfies Record<string, unknown>;
+      response = image
+        ? await (await getWorkersAi()).run(workersAiModels.coachVision, aiPayload) as JsonRecord
+        : await workersAiResponse(aiPayload);
       const choice = Array.isArray(response.choices) ? response.choices[0] : undefined;
       const assistantMessage = isRecord(choice) && isRecord(choice.message) ? choice.message : undefined;
       const calls = assistantMessage && Array.isArray(assistantMessage.tool_calls)
@@ -284,6 +296,6 @@ export async function POST(request: NextRequest) {
     if (!reply) return json({ error: "The Coach did not return an answer." }, 502);
     return json({ reply: hideCalories ? hideCalorieValues(reply) : reply, sources: [] });
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : "The Coach is unavailable right now." }, 500);
+    return json({ error: publicCoachError(error) }, 500);
   }
 }

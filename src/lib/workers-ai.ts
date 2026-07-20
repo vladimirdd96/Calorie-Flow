@@ -2,6 +2,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 export const workersAiModels = {
   coach: "@cf/zai-org/glm-4.7-flash",
+  coachVision: "@cf/moonshotai/kimi-k2.6",
   label: "@cf/moonshotai/kimi-k2.6",
 } as const;
 

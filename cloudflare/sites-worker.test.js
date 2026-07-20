@@ -127,6 +127,30 @@ describe("Sites Worker", () => {
     expect(aiCalls).toBe(2);
   });
 
+  it("routes Coach photo messages to the multimodal model", async () => {
+    let requestedModel = "";
+    vi.stubGlobal("fetch", vi.fn(async (url) => {
+      const value = String(url);
+      if (value.includes("/auth/v1/user")) return Response.json({ id: "00000000-0000-0000-0000-000000000001" });
+      if (value.includes("/rest/v1/user_profiles")) return Response.json([{ data: {} }]);
+      throw new Error(`Unexpected fetch: ${url}`);
+    }));
+    const response = await worker.fetch(
+      new Request("https://example.com/api/coach", {
+        method: "POST",
+        headers: { Authorization: "Bearer valid-session" },
+        body: JSON.stringify({ message: "What is in this meal?", image: "data:image/jpeg;base64,AA==" }),
+      }),
+      environment({
+        SUPABASE_URL: "https://project.supabase.co",
+        SUPABASE_PUBLISHABLE_KEY: "public-key",
+        AI: { run: async (model, input) => { requestedModel = model; expect(input.chat_template_kwargs).toEqual({ thinking: false }); return { choices: [{ message: { content: "It looks like breakfast." } }] }; } },
+      }),
+    );
+    expect(response.status).toBe(200);
+    expect(requestedModel).toBe("@cf/moonshotai/kimi-k2.6");
+  });
+
   it("redacts calorie values when the profile hides them", async () => {
     vi.stubGlobal("fetch", vi.fn(async (url) => {
       const value = String(url);

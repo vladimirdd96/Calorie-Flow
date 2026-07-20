@@ -325,6 +325,12 @@ function hideCalorieValues(content) {
   return content.replace(/\b\d[\d,.]*\s*(?:-|–|—)?\s*(?:kcal|calories?)\b/gi, "energy hidden");
 }
 
+function publicCoachError(error) {
+  const message = error instanceof Error ? error.message : "";
+  if (/not a multimodal model|model|cache\/|workers ai|ai\.run|invalid response/i.test(message)) return "The Coach could not process that photo right now. Please try again or use the meal-photo option.";
+  return message || "The Coach is unavailable right now.";
+}
+
 async function readCoachProfile(auth, env) {
   const rows = await supabaseRead(env, auth.token, "user_profiles", [
     ["select", "data"],
@@ -385,6 +391,7 @@ async function coach(request, env) {
   try {
     const body = await request.json();
     const message = typeof body.message === "string" ? body.message.trim().slice(0, 6000) : "";
+    const image = typeof body.image === "string" && body.image.startsWith("data:image/") && body.image.length <= 10_000_000 ? body.image : undefined;
     if (!message) return json({ error: "Ask a food or calorie question first." }, 400);
     if (isUnrelatedRequest(message)) {
       return json({
@@ -399,7 +406,8 @@ async function coach(request, env) {
       const content = typeof item?.content === "string" ? item.content.slice(0, 6000) : "";
       return role && content ? [{ role, content }] : [];
     }) : [];
-    const messages = [...history, { role: "user", content: message }];
+    const userContent = image ? [{ type: "text", text: message }, { type: "image_url", image_url: { url: image } }] : message;
+    const messages = [...history, { role: "user", content: userContent }];
     const tools = coachTools.map(({ name, description, parameters }) => ({ type: "function", function: { name, description, parameters } }));
     const localDate = typeof body.localDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.localDate) ? body.localDate : new Date().toISOString().slice(0, 10);
     const timezone = typeof body.timezone === "string" && /^[A-Za-z_+\/-]{1,80}$/.test(body.timezone) ? body.timezone : "unknown";
@@ -411,10 +419,11 @@ async function coach(request, env) {
 
     let response;
     for (let turn = 0; turn < 4; turn += 1) {
-      response = await workersAiResponse(env, "@cf/zai-org/glm-4.7-flash", {
+      response = await workersAiResponse(env, image ? "@cf/moonshotai/kimi-k2.6" : "@cf/zai-org/glm-4.7-flash", {
         messages: [{ role: "system", content: `${coachInstructions}${visibilityInstruction}\n\nTIME CONTEXT:\n- The user's current local date is ${localDate}.\n- Their browser time zone is ${timezone}. Use this context when they say today, yesterday, or this week.` }, ...messages],
         tools,
         tool_choice: "auto",
+        ...(image ? { chat_template_kwargs: { thinking: false } } : {}),
         max_completion_tokens: 700,
         temperature: 0.2,
       });
@@ -437,7 +446,7 @@ async function coach(request, env) {
     if (!reply) return json({ error: "The Coach did not return an answer." }, 502);
     return json({ reply: toolAuth.hideCalories ? hideCalorieValues(reply) : reply, sources: [] });
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : "The Coach is unavailable right now." }, 500);
+    return json({ error: publicCoachError(error) }, 500);
   }
 }
 
