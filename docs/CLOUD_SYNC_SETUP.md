@@ -43,3 +43,15 @@ The OpenAI key stays server-side. A ChatGPT subscription does not include API us
 3. Open **Coach** and ask “How am I doing today?”
 4. Ask “Find a high-protein lunch near Sofia” to verify food-place web search.
 5. Ask the Coach to write code; it should decline and redirect to nutrition.
+
+## 5. Enable GitHub deployments
+
+The `Deploy to Cloudflare` workflow deploys the Worker after every push to `main`.
+Create a GitHub Actions environment named `production`, then add these environment secrets:
+
+```dotenv
+CLOUDFLARE_ACCOUNT_ID=your_cloudflare_account_id
+CLOUDFLARE_API_TOKEN=your_scoped_workers_deployment_token
+```
+
+Create the token in Cloudflare with the **Edit Cloudflare Workers** template, scoped only to the account (and zone, if applicable) that owns Calorie Flow. Do not add OpenAI or Supabase runtime credentials to GitHub: manage those as Cloudflare Worker secrets or dashboard variables so deployments do not copy application secrets through GitHub.
