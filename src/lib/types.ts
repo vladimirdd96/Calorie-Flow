@@ -40,6 +40,8 @@ export type Meal = {
   grams: number;
   nutrition: Nutrition;
   createdAt: string;
+  /** The local calendar day the user assigned when logging the meal. */
+  loggedDate?: string;
   source: FoodSource;
   estimated?: boolean;
 };

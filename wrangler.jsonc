@@ -2,10 +2,15 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "calorie-flow",
   "main": ".open-next/worker.js",
-  "compatibility_date": "2026-07-18",
+  "compatibility_date": "2026-07-20",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "head_sampling_rate": 1 },
+    "traces": { "enabled": true, "head_sampling_rate": 0.05 }
   }
 }

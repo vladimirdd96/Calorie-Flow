@@ -99,6 +99,27 @@ COACHING:
 - When a user asks for a dinner plan, recipe, or grocery help, end the reply with a plain Grocery list: heading followed by short hyphen item lines for the ingredients they would need. Only include that section when it is useful.
 - Keep responses concise and readable on a phone.`;
 
+function isRecord(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function isFiniteNonNegative(value) {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
+function parseLabelAnalysis(value) {
+  if (!isRecord(value) || !isRecord(value.per100)) return null;
+  const optionalText = (field, max) => field === null || (typeof field === "string" && field.length <= max);
+  const optionalPositive = (field) => field === null || (typeof field === "number" && Number.isFinite(field) && field > 0);
+  const nutrients = ["calories", "protein", "carbs", "fat", "fiber", "sugar"];
+  if (!optionalText(value.productName, 240) || !optionalText(value.brand, 240) || !optionalText(value.barcode, 64)) return null;
+  if (!nutrients.every((key) => isFiniteNonNegative(value.per100[key]))) return null;
+  if (!optionalPositive(value.servingSizeG) || !optionalPositive(value.packageSizeG)) return null;
+  if (!["low", "medium", "high"].includes(value.confidence) || typeof value.needsFollowUp !== "boolean") return null;
+  if (!Array.isArray(value.followUpQuestions) || value.followUpQuestions.length > 3 || value.followUpQuestions.some((question) => typeof question !== "string" || !question.trim() || question.length > 240)) return null;
+  return value;
+}
+
 function json(body, status = 200) {
   return Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 }
@@ -174,7 +195,7 @@ async function authenticate(request, env) {
     });
     if (!response.ok) return { error: json({ error: "Your session expired. Please sign in again." }, 401) };
     const user = await response.json();
-    if (!user?.id) return { error: json({ error: "Your session could not be verified." }, 401) };
+    if (!isRecord(user) || typeof user.id !== "string" || !user.id) return { error: json({ error: "Your session could not be verified." }, 401) };
     return { token, user };
   } catch {
     return { error: json({ error: "Account verification is temporarily unavailable." }, 503) };
@@ -192,7 +213,9 @@ async function supabaseRead(env, token, table, params) {
     },
   });
   if (!response.ok) throw new Error(`Database query failed (${response.status}).`);
-  return response.json();
+  const body = await response.json();
+  if (!Array.isArray(body)) throw new Error("Database returned an invalid response.");
+  return body;
 }
 
 function clamp(value, min, max, fallback) {
@@ -200,26 +223,52 @@ function clamp(value, min, max, fallback) {
   return Number.isFinite(number) ? Math.min(max, Math.max(min, Math.round(number))) : fallback;
 }
 
+function withoutCalories(nutrition) {
+  if (!isRecord(nutrition)) return nutrition;
+  const { calories, ...rest } = nutrition;
+  void calories;
+  return rest;
+}
+
+function profileForCoach(profile, hideCalories) {
+  if (!profile) return { status: "No profile is saved yet." };
+  if (!hideCalories) return profile;
+  const { calorieTarget, ...rest } = profile;
+  void calorieTarget;
+  return rest;
+}
+
+function hideCalorieValues(content) {
+  return content.replace(/\b\d[\d,.]*\s*(?:-|–|—)?\s*(?:kcal|calories?)\b/gi, "energy hidden");
+}
+
+async function readCoachProfile(auth, env) {
+  const rows = await supabaseRead(env, auth.token, "user_profiles", [
+    ["select", "data"],
+    ["user_id", `eq.${auth.user.id}`],
+    ["limit", "1"],
+  ]);
+  return isRecord(rows[0]?.data) ? rows[0].data : undefined;
+}
+
 async function runCoachTool(name, args, auth, env) {
   if (name === "get_profile") {
-    const rows = await supabaseRead(env, auth.token, "user_profiles", [
-      ["select", "data"],
-      ["user_id", `eq.${auth.user.id}`],
-      ["limit", "1"],
-    ]);
-    return rows[0]?.data || { status: "No profile is saved yet." };
+    return profileForCoach(auth.profile, auth.hideCalories);
   }
   if (name === "get_meals") {
     const params = [
       ["select", "data"],
       ["user_id", `eq.${auth.user.id}`],
       ["order", "created_at.desc"],
-      ["limit", String(clamp(args.limit, 1, 500, 200))],
+      ["limit", "500"],
     ];
-    if (args.from && /^\d{4}-\d{2}-\d{2}$/.test(args.from)) params.push(["created_at", `gte.${args.from}T00:00:00Z`]);
-    if (args.to && /^\d{4}-\d{2}-\d{2}$/.test(args.to)) params.push(["created_at", `lte.${args.to}T23:59:59Z`]);
     const rows = await supabaseRead(env, auth.token, "user_meals", params);
-    return rows.map((row) => row.data);
+    const from = typeof args.from === "string" && /^\d{4}-\d{2}-\d{2}$/.test(args.from) ? args.from : undefined;
+    const to = typeof args.to === "string" && /^\d{4}-\d{2}-\d{2}$/.test(args.to) ? args.to : undefined;
+    return rows.flatMap((row) => isRecord(row) && isRecord(row.data) ? [row.data] : []).filter((meal) => {
+      const date = meal?.loggedDate || (typeof meal?.createdAt === "string" ? meal.createdAt.slice(0, 10) : "");
+      return (!from || date >= from) && (!to || date <= to);
+    }).slice(0, clamp(args.limit, 1, 500, 200)).map((meal) => auth.hideCalories ? { ...meal, nutrition: withoutCalories(meal.nutrition) } : meal);
   }
   if (name === "get_saved_foods") {
     const rows = await supabaseRead(env, auth.token, "user_foods", [
@@ -228,9 +277,10 @@ async function runCoachTool(name, args, auth, env) {
       ["order", "updated_at.desc"],
       ["limit", String(clamp(args.limit, 1, 200, 60))],
     ]);
-    const foods = rows.map((row) => row.data);
+    const foods = rows.flatMap((row) => isRecord(row) && isRecord(row.data) ? [row.data] : []);
     const query = typeof args.query === "string" ? args.query.trim().toLowerCase() : "";
-    return query ? foods.filter((food) => `${food.name || ""} ${food.brand || ""}`.toLowerCase().includes(query)) : foods;
+    const filtered = query ? foods.filter((food) => `${food.name || ""} ${food.brand || ""}`.toLowerCase().includes(query)) : foods;
+    return filtered.map((food) => auth.hideCalories ? { ...food, nutrientsPer100: withoutCalories(food.nutrientsPer100) } : food);
   }
   return { error: "Unknown tool." };
 }
@@ -251,6 +301,7 @@ async function openAIResponse(env, payload) {
   });
   const body = await response.json();
   if (!response.ok) throw new Error(body?.error?.message || "The Coach is unavailable right now.");
+  if (!isRecord(body) || !Array.isArray(body.output)) throw new Error("The Coach returned an invalid response.");
   return body;
 }
 
@@ -281,12 +332,17 @@ async function coach(request, env) {
     if (needsFoodPlaceSearch(message)) tools.push({ type: "web_search", search_context_size: "low" });
     const localDate = typeof body.localDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.localDate) ? body.localDate : new Date().toISOString().slice(0, 10);
     const timezone = typeof body.timezone === "string" && /^[A-Za-z_+\/-]{1,80}$/.test(body.timezone) ? body.timezone : "unknown";
+    const profile = await readCoachProfile(auth, env);
+    const toolAuth = { ...auth, profile, hideCalories: Boolean(profile?.hideCalories) };
+    const visibilityInstruction = toolAuth.hideCalories
+      ? "\n\nDISPLAY PREFERENCE:\n- The user hides calorie numbers. Never state, repeat, estimate, or infer numeric calorie or energy values, including values from conversation history. Discuss macros, fibre, portions, foods, and meal patterns instead."
+      : "";
 
     let response;
     for (let turn = 0; turn < 4; turn += 1) {
       response = await openAIResponse(env, {
         model: env.OPENAI_COACH_MODEL || "gpt-5.6-sol",
-        instructions: `${coachInstructions}\n\nTIME CONTEXT:\n- The user's current local date is ${localDate}.\n- Their browser time zone is ${timezone}. Use this context when they say today, yesterday, or this week.`,
+        instructions: `${coachInstructions}${visibilityInstruction}\n\nTIME CONTEXT:\n- The user's current local date is ${localDate}.\n- Their browser time zone is ${timezone}. Use this context when they say today, yesterday, or this week.`,
         reasoning: { effort: "low" },
         tools,
         tool_choice: "auto",
@@ -299,7 +355,7 @@ async function coach(request, env) {
       for (const call of calls) {
         let result;
         try {
-          result = await runCoachTool(call.name, JSON.parse(call.arguments || "{}"), auth, env);
+          result = await runCoachTool(call.name, JSON.parse(call.arguments || "{}"), toolAuth, env);
         } catch (error) {
           result = { error: error instanceof Error ? error.message : "Tool failed." };
         }
@@ -309,7 +365,7 @@ async function coach(request, env) {
 
     const reply = extractOutputText(response);
     if (!reply) return json({ error: "The Coach did not return an answer." }, 502);
-    return json({ reply, sources: extractSources(response) });
+    return json({ reply: toolAuth.hideCalories ? hideCalorieValues(reply) : reply, sources: extractSources(response) });
   } catch (error) {
     return json({ error: error instanceof Error ? error.message : "The Coach is unavailable right now." }, 500);
   }
@@ -357,7 +413,9 @@ async function analyzeLabel(request, env) {
     if (!apiResponse.ok) return json({ error: responseBody?.error?.message || "The label could not be read right now." }, apiResponse.status);
     const outputText = extractOutputText(responseBody);
     if (!outputText) return json({ error: "No label data was returned." }, 502);
-    return json(JSON.parse(outputText));
+    const parsed = parseLabelAnalysis(JSON.parse(outputText));
+    if (!parsed) return json({ error: "The label service returned invalid nutrition data." }, 502);
+    return json(parsed);
   } catch {
     return json({ error: "The label could not be read. Try a sharper, closer photo." }, 500);
   }

@@ -41,6 +41,9 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7"
   },
+  "overrides": {
+    "postcss": "8.5.19"
+  },
   "lint-staged": {
     "*.{ts,tsx}": [
       "eslint --fix",

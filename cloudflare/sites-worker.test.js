@@ -50,6 +50,14 @@ describe("Sites Worker", () => {
     expect(response.status).toBe(401);
   });
 
+  it("also protects paid label analysis behind a verified session", async () => {
+    const response = await worker.fetch(
+      new Request("https://example.com/api/analyze-label", { method: "POST", body: JSON.stringify({ image: "data:image/png;base64,AA==" }) }),
+      environment({ SUPABASE_URL: "https://project.supabase.co", SUPABASE_PUBLISHABLE_KEY: "public-key", OPENAI_API_KEY: "secret" }),
+    );
+    expect(response.status).toBe(401);
+  });
+
   it("blocks unrelated app-building requests inside the Coach", async () => {
     vi.stubGlobal("fetch", vi.fn(async (url) => {
       if (String(url).includes("/auth/v1/user")) return Response.json({ id: "00000000-0000-0000-0000-000000000001" });
@@ -91,5 +99,27 @@ describe("Sites Worker", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ reply: "Your target is 2,500 kcal." });
     expect(openAICalls).toBe(2);
+  });
+
+  it("redacts calorie values when the profile hides them", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url) => {
+      const value = String(url);
+      if (value.includes("/auth/v1/user")) return Response.json({ id: "00000000-0000-0000-0000-000000000001" });
+      if (value.includes("/rest/v1/user_profiles")) return Response.json([{ data: { hideCalories: true, calorieTarget: 2500 } }]);
+      if (value.includes("api.openai.com/v1/responses")) {
+        return Response.json({ output: [{ type: "message", content: [{ type: "output_text", text: "You have 650 kcal left." }] }] });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    }));
+    const response = await worker.fetch(
+      new Request("https://example.com/api/coach", {
+        method: "POST",
+        headers: { Authorization: "Bearer valid-session" },
+        body: JSON.stringify({ message: "How am I doing today?" }),
+      }),
+      environment({ SUPABASE_URL: "https://project.supabase.co", SUPABASE_PUBLISHABLE_KEY: "public-key", OPENAI_API_KEY: "secret" }),
+    );
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ reply: "You have energy hidden left." });
   });
 });
