@@ -18,8 +18,13 @@ export function useAuth() {
         const params = new URLSearchParams(window.location.search);
         const code = params.get("code");
         if (code) {
-          await supabase.auth.exchangeCodeForSession(code);
-          window.history.replaceState({}, "", "/");
+          try {
+            await supabase.auth.exchangeCodeForSession(code);
+          } catch {
+            // The code may be stale or already consumed; either way, do not strand it in the URL.
+          } finally {
+            window.history.replaceState({}, "", "/");
+          }
         } else if (params.has("error") || params.has("error_description")) {
           window.history.replaceState({}, "", "/");
         }
