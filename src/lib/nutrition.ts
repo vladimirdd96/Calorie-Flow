@@ -1,4 +1,4 @@
-import type { ActivityLevel, DietPreset, Food, Nutrition, Profile, ServingUnit } from "./types";
+import type { ActivityLevel, DietPreset, Food, MealType, Nutrition, Profile, ServingUnit } from "./types";
 
 export const EMPTY_NUTRITION: Nutrition = {
   calories: 0,
@@ -112,6 +112,15 @@ export function localDateKey(date = new Date()) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+/** Suggest a meal using the browser's local timezone; callers can still let the user override it. */
+export function suggestedMealType(date = new Date()): MealType {
+  const hour = date.getHours();
+  if (hour < 11) return "breakfast";
+  if (hour < 15) return "lunch";
+  if (hour < 20) return "dinner";
+  return "snack";
 }
 
 export function formatUnit(unit: ServingUnit, amount: number) {

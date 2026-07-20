@@ -76,6 +76,7 @@ import {
   round,
   scaleNutrition,
   sumNutrition,
+  suggestedMealType,
 } from "@/lib/nutrition";
 import { findByBarcode, searchOpenFoodFacts } from "@/lib/openfoodfacts";
 import { labelAnalysisSchema } from "@/lib/schemas";
@@ -200,14 +201,6 @@ const dietMeta: Record<DietPreset, { label: string; description: string }> = {
   "high-protein-keto": { label: "Protein keto", description: "30 g carbs, more protein" },
   "low-fat": { label: "Low fat", description: "20% calories from fat" },
 };
-
-function getMealType(): MealType {
-  const hour = new Date().getHours();
-  if (hour < 11) return "breakfast";
-  if (hour < 15) return "lunch";
-  if (hour < 20) return "dinner";
-  return "snack";
-}
 
 function dayLabel(dateKey: string) {
   const today = localDateKey();
@@ -960,7 +953,7 @@ function PortionSheet({ food, questions, onLog, onClose, hideCalories }: { food:
   const initialUnit: ServingUnit = food.packageGrams ? "package" : food.servingGrams ? "serving" : "g";
   const [unit, setUnit] = useState<ServingUnit>(initialUnit);
   const [amount, setAmount] = useState(initialUnit === "g" ? 100 : 1);
-  const [mealType, setMealType] = useState<MealType>(getMealType());
+  const [mealType, setMealType] = useState<MealType>(() => suggestedMealType());
   const grams = gramsFor(food, amount, unit);
   const nutrition = scaleNutrition(food.nutrientsPer100, grams);
   const log = (event: FormEvent<HTMLFormElement>) => {
