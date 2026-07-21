@@ -432,14 +432,16 @@ function EmptyMeals({ onAdd }: { onAdd: () => void }) {
   );
 }
 
-function HomeScreenPrompt() {
+function HomeScreenPrompt({ onDismiss }: { onDismiss: () => void }) {
   return (
     <section className="home-screen-prompt card" aria-labelledby="home-screen-prompt-title">
+      <button className="home-screen-prompt-close icon-button ghost" type="button" onClick={onDismiss} aria-label="Dismiss Home Screen tip"><X size={17} /></button>
       <div className="home-screen-prompt-heading">
         <span className="action-icon mint"><Share2 size={19} /></span>
         <div><strong id="home-screen-prompt-title">Keep Calorie Flow close</strong><p>Add it to your Home Screen for one-tap logging, even when you’re offline.</p></div>
       </div>
       <div className="home-screen-prompt-steps"><span><b>1</b>Tap Share</span><span><b>2</b>Choose <strong>Add to Home Screen</strong></span></div>
+      <button className="home-screen-prompt-dismiss text-button muted" type="button" onClick={onDismiss}>Not now</button>
     </section>
   );
 }
@@ -457,6 +459,7 @@ function TodayView({
   onDuplicate,
   syncLabel,
   showHomeScreenPrompt,
+  onDismissHomeScreenPrompt,
   onOpenCalendar,
 }: {
   profile: Profile;
@@ -471,6 +474,7 @@ function TodayView({
   onDuplicate: (meal: Meal) => void;
   syncLabel: string;
   showHomeScreenPrompt: boolean;
+  onDismissHomeScreenPrompt: () => void;
   onOpenCalendar: () => void;
 }) {
   const [dropTarget, setDropTarget] = useState<string>();
@@ -490,7 +494,7 @@ function TodayView({
         <button className="icon-button ghost" disabled={dateKey >= localDateKey()} onClick={() => onDateChange(changeDate(dateKey, 1))} aria-label="Next day"><ChevronRight /></button>
       </div>
 
-      {showHomeScreenPrompt && <HomeScreenPrompt />}
+      {showHomeScreenPrompt && <HomeScreenPrompt onDismiss={onDismissHomeScreenPrompt} />}
 
       <section className="hero-grid">
         <div className="hero-card card">
@@ -2323,7 +2327,7 @@ export function TrackerApp() {
     <div className="app-shell">
       <div className="ambient one" /><div className="ambient two" />
       <div className="content-shell" inert={modalOpen} aria-hidden={modalOpen || undefined}>
-        {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={() => openAdd()} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} onEdit={setEditingMeal} onDropMeal={dropMeal} onDuplicate={setDuplicateMealDraft} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} onOpenCalendar={() => setCalendarOpen(true)} />}
+        {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={() => openAdd()} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} onEdit={setEditingMeal} onDropMeal={dropMeal} onDuplicate={setDuplicateMealDraft} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} onDismissHomeScreenPrompt={() => setShowHomeScreenPrompt(false)} onOpenCalendar={() => setCalendarOpen(true)} />}
         {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={openAdd} />}
         {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} chatTextSize={chatTextSize} onLogCoachMeal={logCoachMeal} onOpenAccount={() => setTab("profile")} onOpenAdd={openAdd} />}
         {tab === "insights" && <InsightsView meals={meals} profile={profile} onSave={saveProfile} weightTrackingEnabled={weightTrackingEnabled} />}

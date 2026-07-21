@@ -287,7 +287,8 @@ p { color: var(--muted); line-height: 1.55; }
 .weight-prompt-actions .primary-button { min-height: 44px; }
 .weight-prompt-actions .secondary-button { min-height: 44px; }
 .coach-check-in { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; margin-top: 14px; padding: 12px 4px; text-align: left; color: var(--text); background: transparent; border: 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-.home-screen-prompt { display: grid; gap: 13px; margin: 18px 0 20px; padding: 15px 16px; border-color: var(--border-strong); background: color-mix(in oklch, var(--panel-strong) 32%, var(--panel)); }
+.home-screen-prompt { position: relative; display: grid; gap: 13px; margin: 18px 0 20px; padding: 15px 16px 12px; border-color: var(--border-strong); background: color-mix(in oklch, var(--panel-strong) 32%, var(--panel)); }
+.home-screen-prompt-close { position: absolute; top: 9px; right: 9px; width: 30px; height: 30px; }
 .home-screen-prompt-heading { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 11px; }
 .home-screen-prompt-heading .action-icon { margin-top: 1px; }
 .home-screen-prompt-heading strong { display: block; font-size: 13px; }
@@ -296,6 +297,7 @@ p { color: var(--muted); line-height: 1.55; }
 .home-screen-prompt-steps span { display: inline-flex; align-items: center; gap: 6px; }
 .home-screen-prompt-steps b { width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; color: var(--bg); background: var(--mint); font-size: 9px; }
 .home-screen-prompt-steps strong { color: var(--text); }
+.home-screen-prompt-dismiss { justify-self: start; padding: 0; font-size: 11px; }
 .coach-check-in > span:nth-child(2) { min-width: 0; display: grid; gap: 3px; }
 .coach-check-in strong { font-size: 12px; }
 .coach-check-in small { color: var(--muted); font-size: 10px; }
