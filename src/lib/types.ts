@@ -68,6 +68,12 @@ export type Profile = {
   fiberTarget: number;
   hideCalories: boolean;
   onboardingDone: boolean;
+  weightEntries?: WeightEntry[];
+};
+
+export type WeightEntry = {
+  date: string;
+  weightKg: number;
 };
 
 export type LabelAnalysis = {

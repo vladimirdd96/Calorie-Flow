@@ -102,6 +102,7 @@ import type {
   Profile,
   ServingUnit,
   Sex,
+  WeightEntry,
 } from "@/lib/types";
 import type { BackupData } from "@/lib/db";
 
@@ -225,6 +226,7 @@ const DEFAULT_PROFILE: Profile = {
   fiberTarget: 30,
   hideCalories: false,
   onboardingDone: false,
+  weightEntries: [],
 };
 
 function providerAvatarUrl(user: CloudUser | null) {
@@ -602,7 +604,16 @@ function DiscoverView({ foods, onSelect, onAdd, hideCalories }: { foods: Food[];
   );
 }
 
-function InsightsView({ meals, profile }: { meals: Meal[]; profile: Profile }) {
+type WeightPeriod = "week" | "month" | "all";
+
+function startOfWeek(date: Date) {
+  const result = new Date(date);
+  const day = result.getDay() || 7;
+  result.setDate(result.getDate() - day + 1);
+  return result;
+}
+
+function InsightsView({ meals, profile, onSave }: { meals: Meal[]; profile: Profile; onSave: (profile: Profile) => void }) {
   const days = Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
     date.setDate(date.getDate() - (6 - index));
@@ -614,6 +625,33 @@ function InsightsView({ meals, profile }: { meals: Meal[]; profile: Profile }) {
   const loggedDays = days.filter((day) => day.total.calories > 0);
   const average = loggedDays.length ? loggedDays.reduce((sum, day) => sum + day.total.calories, 0) / loggedDays.length : 0;
   const proteinAverage = loggedDays.length ? loggedDays.reduce((sum, day) => sum + day.total.protein, 0) / loggedDays.length : 0;
+  const [weightPeriod, setWeightPeriod] = useState<WeightPeriod>("week");
+  const entries = [...(profile.weightEntries || [])].sort((a, b) => b.date.localeCompare(a.date));
+  const latestWeight = entries[0]?.weightKg ?? profile.weightKg;
+  const [weightDate, setWeightDate] = useState(localDateKey());
+  const [weightInput, setWeightInput] = useState(String(latestWeight));
+  const periodEntries = entries.filter((entry) => {
+    if (weightPeriod === "all") return true;
+    const now = new Date();
+    const entryDate = new Date(`${entry.date}T12:00:00`);
+    if (weightPeriod === "month") return entryDate >= new Date(now.getFullYear(), now.getMonth(), 1);
+    return entryDate >= startOfWeek(now);
+  });
+  const weightAverage = periodEntries.length ? periodEntries.reduce((sum, entry) => sum + entry.weightKg, 0) / periodEntries.length : 0;
+  const weightChange = periodEntries.length > 1 ? periodEntries[0].weightKg - periodEntries[periodEntries.length - 1].weightKg : 0;
+  const groupedWeights = Array.from(new Map(periodEntries.map((entry) => {
+    const date = new Date(`${entry.date}T12:00:00`);
+    const key = weightPeriod === "week" ? localDateKey(startOfWeek(date)) : entry.date.slice(0, 7);
+    return [key, { key, entries: periodEntries.filter((candidate) => (weightPeriod === "week" ? localDateKey(startOfWeek(new Date(`${candidate.date}T12:00:00`))) : candidate.date.slice(0, 7)) === key) }];
+  })).values()).sort((a, b) => b.key.localeCompare(a.key));
+  const saveWeight = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const weightKg = Number(weightInput);
+    if (!Number.isFinite(weightKg) || weightKg < 20 || weightKg > 500) return;
+    const nextEntries = [...entries.filter((entry) => entry.date !== weightDate), { date: weightDate, weightKg }].sort((a, b) => a.date.localeCompare(b.date));
+    onSave({ ...profile, weightKg, weightEntries: nextEntries });
+  };
+  const removeWeight = (entry: WeightEntry) => onSave({ ...profile, weightEntries: entries.filter((candidate) => candidate.date !== entry.date) });
   return (
     <main className="page">
       <header className="page-header"><span className="eyebrow">No judgement</span><h1>Your rhythm</h1><p>A lightweight view of patterns—not another dashboard to manage.</p></header>
@@ -621,6 +659,25 @@ function InsightsView({ meals, profile }: { meals: Meal[]; profile: Profile }) {
         {!profile.hideCalories && <div className="card"><span>Daily average</span><strong>{Math.round(average).toLocaleString()}</strong><small>kcal on logged days</small></div>}
         <div className="card"><span>Protein average</span><strong>{Math.round(proteinAverage)} g</strong><small>target {profile.proteinTarget} g</small></div>
         {profile.hideCalories && <div className="card"><span>Fibre average</span><strong>{Math.round(loggedDays.length ? loggedDays.reduce((sum, day) => sum + day.total.fiber, 0) / loggedDays.length : 0)} g</strong><small>target {profile.fiberTarget} g</small></div>}
+      </section>
+      <section className="weight-section" aria-labelledby="weight-heading">
+        <div className="section-heading"><div><span className="eyebrow">Optional progress log</span><h2 id="weight-heading">Body weight</h2></div><span className="subtle">{entries.length} {entries.length === 1 ? "entry" : "entries"}</span></div>
+        <form className="weight-log card" onSubmit={saveWeight}>
+          <div><span className="weight-log-label">Log a weigh-in</span><p>Use the same conditions when you can. Trends are more useful than any single day.</p></div>
+          <div className="weight-log-fields"><label><span>Date</span><input type="date" value={weightDate} max={localDateKey()} onChange={(event) => setWeightDate(event.target.value)} /></label><label><span>Weight</span><div className="input-suffix"><input required type="number" inputMode="decimal" min="20" max="500" step="0.1" value={weightInput} onChange={(event) => setWeightInput(event.target.value)} /><span>kg</span></div></label><button className="primary-button" type="submit"><Plus size={17} />Save weight</button></div>
+        </form>
+        <div className="weight-controls" role="group" aria-label="Weight average period">
+          {(Object.entries({ week: "This week", month: "This month", all: "All time" }) as [WeightPeriod, string][]).map(([period, label]) => <button key={period} type="button" className={weightPeriod === period ? "active" : ""} aria-pressed={weightPeriod === period} onClick={() => setWeightPeriod(period)}>{label}</button>)}
+        </div>
+        <div className="weight-summary-strip">
+          <button className="weight-metric card" type="button" onClick={() => setWeightPeriod("week")}><span>Average</span><strong>{weightAverage ? `${weightAverage.toFixed(1)} kg` : "—"}</strong><small>{weightPeriod === "week" ? "this week" : weightPeriod === "month" ? "this month" : "all time"}</small></button>
+          <button className="weight-metric card" type="button" onClick={() => setWeightPeriod("all")}><span>Change</span><strong className={weightChange < 0 ? "weight-down" : weightChange > 0 ? "weight-up" : ""}>{periodEntries.length > 1 ? `${weightChange > 0 ? "+" : ""}${weightChange.toFixed(1)} kg` : "—"}</strong><small>oldest to latest</small></button>
+        </div>
+        {groupedWeights.length > 0 ? <div className="weight-history">{groupedWeights.map((group) => {
+          const groupAverage = group.entries.reduce((sum, entry) => sum + entry.weightKg, 0) / group.entries.length;
+          const label = weightPeriod === "week" ? `Week of ${new Date(`${group.key}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : new Date(`${group.key}-01T12:00:00`).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+          return <details className="weight-history-group" key={group.key}><summary><span><strong>{label}</strong><small>{group.entries.length} {group.entries.length === 1 ? "weigh-in" : "weigh-ins"}</small></span><b>{groupAverage.toFixed(1)} kg</b></summary><div className="weight-history-entries">{group.entries.map((entry) => <div className="weight-history-entry" key={entry.date}><span>{new Date(`${entry.date}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}</span><strong>{entry.weightKg.toFixed(1)} kg</strong><button type="button" className="icon-button subtle-button" onClick={() => removeWeight(entry)} aria-label={`Remove weight logged on ${entry.date}`}><Trash2 size={14} /></button></div>)}</div></details>;
+        })}</div> : <div className="weight-empty card"><strong>Your weight history starts here.</strong><p>Log a weigh-in above to see daily entries and rolling averages.</p></div>}
       </section>
       {!profile.hideCalories && <section className="chart-card card">
         <div className="section-heading compact"><div><span className="eyebrow">Last 7 days</span><h2>Calories</h2></div><span className="legend"><i /> {profile.calorieTarget.toLocaleString()} target</span></div>
@@ -2059,7 +2116,7 @@ export function TrackerApp() {
         {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={() => openAdd()} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} onEdit={setEditingMeal} onMoveMeal={moveMeal} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} onOpenCalendar={() => setCalendarOpen(true)} />}
         {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={openAdd} />}
         {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} chatTextSize={chatTextSize} onLogCoachMeal={logCoachMeal} onOpenAccount={() => setTab("profile")} onOpenAdd={openAdd} />}
-        {tab === "insights" && <InsightsView meals={meals} profile={profile} />}
+        {tab === "insights" && <InsightsView meals={meals} profile={profile} onSave={saveProfile} />}
       {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onExport={exportBackup} onImport={restoreBackup} user={auth.user} syncState={syncState} onSignOut={signOut} theme={theme} onThemeChange={changeTheme} chatTextSize={chatTextSize} onChatTextSizeChange={changeChatTextSize} />}
       </div>
       <div inert={modalOpen} aria-hidden={modalOpen || undefined}><BottomNav tab={tab} onChange={(nextTab) => { window.scrollTo(0, 0); setTab(nextTab); }} /></div>

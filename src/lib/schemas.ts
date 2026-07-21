@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { CoachChat, CoachMealAction, CoachMealChoice, CoachMessage, Food, LabelAnalysis, Meal, MealPhotoAnalysis, Nutrition, Profile } from "./types";
+import type { CoachChat, CoachMealAction, CoachMealChoice, CoachMessage, Food, LabelAnalysis, Meal, MealPhotoAnalysis, Nutrition, Profile, WeightEntry } from "./types";
 
 const finiteNonNegative = z.number().finite().min(0);
 const positiveFinite = z.number().finite().positive();
@@ -14,6 +14,7 @@ const optionalAvatar = z.string().trim().max(400_000).refine((value) => {
   }
 }, "Avatar must be an image URL or an image data URL").optional();
 const localDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const weightEntrySchema = z.object({ date: localDateSchema, weightKg: z.number().finite().min(20).max(500) }).strict() satisfies z.ZodType<WeightEntry>;
 
 export const nutritionSchema = z.object({
   calories: finiteNonNegative,
@@ -74,6 +75,7 @@ export const profileSchema = z.object({
   fiberTarget: finiteNonNegative.max(2_000),
   hideCalories: z.boolean(),
   onboardingDone: z.boolean(),
+  weightEntries: z.array(weightEntrySchema).max(10_000).optional(),
 }).strict() satisfies z.ZodType<Profile>;
 
 export const coachMessageSchema = z.object({
