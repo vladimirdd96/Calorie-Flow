@@ -450,6 +450,19 @@ function FoodAvatar({ food, name }: { food?: Food; name?: string }) {
 
 function MealRow({ meal, onDelete, onEdit, onDuplicate, onDragStart, onDragOver, onDrop, dropPosition, hideCalories }: { meal: Meal; onDelete: () => void; onEdit: () => void; onDuplicate: () => void; onDragStart: (meal: Meal, event: React.DragEvent<HTMLDivElement>) => void; onDragOver: (event: React.DragEvent<HTMLDivElement>) => void; onDrop: (event: React.DragEvent<HTMLDivElement>) => void; dropPosition?: "before" | "after"; hideCalories: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const dismiss = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", dismiss);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => { document.removeEventListener("pointerdown", dismiss); document.removeEventListener("keydown", closeOnEscape); };
+  }, [menuOpen]);
   return (
     <div className={`meal-row ${dropPosition ? `drop-${dropPosition}` : ""}`} draggable onDragStart={(event) => onDragStart(meal, event)} onDragOver={onDragOver} onDrop={onDrop} title="Drag to reorder or move to another meal">
       <span className="meal-drag-handle" aria-hidden="true"><GripVertical size={17} /></span>
@@ -459,7 +472,7 @@ function MealRow({ meal, onDelete, onEdit, onDuplicate, onDragStart, onDragOver,
         <span>{meal.amount} {formatUnit(meal.unit, meal.amount)} · P {meal.nutrition.protein} · C {meal.nutrition.carbs} · F {meal.nutrition.fat}</span>
       </div>
       {!hideCalories && <strong className="meal-kcal"><span>{Math.round(meal.nutrition.calories)}</span><small>kcal</small></strong>}
-      <span className="meal-actions"><button type="button" className="meal-menu-trigger" onClick={() => setMenuOpen((open) => !open)} aria-label={`Options for ${meal.name}`} aria-expanded={menuOpen}><MoreHorizontal size={18} /></button>{menuOpen && <span className="meal-action-menu" role="menu"><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onEdit(); }}><Pencil size={14} />Edit</button><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onDuplicate(); }}><Copy size={14} />Duplicate</button><button type="button" role="menuitem" className="danger" onClick={() => { setMenuOpen(false); onDelete(); }}><Trash2 size={14} />Delete</button></span>}</span>
+      <span ref={menuRef} className="meal-actions"><button type="button" className="meal-menu-trigger" onClick={() => setMenuOpen((open) => !open)} aria-label={`Options for ${meal.name}`} aria-expanded={menuOpen}><MoreHorizontal size={18} /></button>{menuOpen && <span className="meal-action-menu" role="menu"><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onEdit(); }}><Pencil size={14} />Edit</button><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onDuplicate(); }}><Copy size={14} />Duplicate</button><button type="button" role="menuitem" className="danger" onClick={() => { setMenuOpen(false); onDelete(); }}><Trash2 size={14} />Delete</button></span>}</span>
     </div>
   );
 }
@@ -474,7 +487,6 @@ function MealEditor({ meal, onSave, onClose, hideCalories }: { meal: Meal; onSav
   const [amount, setAmount] = useState(String(meal.amount));
   const [mealType, setMealType] = useState<MealType>(meal.mealType);
   const [error, setError] = useState("");
-  const surfaceRef = useModalFocus(onClose);
   const submit = (event: FormEvent) => {
     event.preventDefault();
     const nextAmount = Number(amount);
@@ -482,8 +494,8 @@ function MealEditor({ meal, onSave, onClose, hideCalories }: { meal: Meal; onSav
     const ratio = nextAmount / meal.amount;
     onSave({ ...meal, name: name.trim(), amount: nextAmount, mealType, grams: round(meal.grams * ratio), nutrition: scaleNutrition(meal.nutrition, ratio * 100) });
   };
-  return <div ref={surfaceRef as unknown as React.RefObject<HTMLDivElement>} className="meal-editor" tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="meal-editor-title">
-    <div className="sheet-header"><div><span className="eyebrow">Your diary</span><h2 id="meal-editor-title">Edit meal</h2></div><button className="icon-button ghost" onClick={onClose} aria-label="Close editor"><X /></button></div>
+  return <div className="meal-editor">
+    <div className="sheet-header"><div><span className="eyebrow">Your diary</span><h2 id="meal-editor-title">Edit meal</h2></div><span /></div>
     <form className="meal-editor-form" onSubmit={submit}>
       <label><span>Meal and additions</span><input autoFocus value={name} onChange={(event) => setName(event.target.value)} maxLength={240} /></label>
       <div className="form-grid two"><label><span>Amount</span><input type="number" min="0.1" step="0.1" value={amount} onChange={(event) => setAmount(event.target.value)} /></label><label><span>Meal</span><ThemedSelect ariaLabel="Meal" value={mealType} onChange={(value) => setMealType(value as MealType)} options={(Object.keys(mealLabels) as MealType[]).map((type) => ({ value: type, label: mealLabels[type] }))} /></label></div>
@@ -636,7 +648,7 @@ function CalendarSheet({ dateKey, meals, profile, onDateChange, onClose }: { dat
   const chooseDate = (key: string) => { onDateChange(key); onClose(); };
 
   return <div className="calendar-sheet">
-    <div className="sheet-header"><div><span className="eyebrow">Your diary</span><h2>Month at a glance</h2></div><button className="icon-button ghost" onClick={onClose} aria-label="Close calendar"><X /></button></div>
+    <div className="sheet-header"><div><span className="eyebrow">Your diary</span><h2>Month at a glance</h2></div><span /></div>
     <p className="calendar-intro">Tap a day to jump to its log. Rings show how close you were to your daily guide.</p>
     <div className="calendar-toolbar"><button className="icon-button ghost" onClick={previousMonth} aria-label="Previous month"><ChevronLeft /></button><strong>{monthTitle}</strong><button className="icon-button ghost" onClick={nextMonth} disabled={monthStart.getFullYear() === new Date(`${today}T12:00:00`).getFullYear() && monthStart.getMonth() >= new Date(`${today}T12:00:00`).getMonth()} aria-label="Next month"><ChevronRight /></button></div>
     <div className="calendar-weekdays" aria-hidden="true">{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => <span key={day}>{day}</span>)}</div>
@@ -1120,11 +1132,13 @@ function ProfileView({
 
 function Sheet({ children, onClose, wide = false, label = "Sheet", className = "" }: { children: React.ReactNode; onClose: () => void; wide?: boolean; label?: string; className?: string }) {
   const surfaceRef = useModalFocus(onClose);
+  const [portalReady, setPortalReady] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const dragRef = useRef<{ pointerId: number; startY: number } | undefined>(undefined);
   useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setPortalReady(true));
     document.body.classList.add("sheet-open");
-    return () => { document.body.classList.remove("sheet-open"); };
+    return () => { window.cancelAnimationFrame(frame); document.body.classList.remove("sheet-open"); };
   }, []);
   const dismissOnBackdrop = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) onClose();
@@ -1144,7 +1158,8 @@ function Sheet({ children, onClose, wide = false, label = "Sheet", className = "
     if (shouldClose) onClose();
     else setDragOffset(0);
   };
-  return <div className="sheet-backdrop" onPointerDown={dismissOnBackdrop}><section ref={surfaceRef} className={`sheet ${wide ? "wide" : ""} ${className}`.trim()} style={{ transform: dragOffset ? `translateY(${dragOffset}px)` : undefined, transition: dragOffset ? "none" : "transform .2s ease" }} role="dialog" aria-modal="true" aria-label={label} tabIndex={-1}><button className="sheet-handle" type="button" aria-label="Drag down to close" onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} /><button className="sheet-close icon-button ghost" type="button" aria-label="Close" onClick={onClose}><X size={18} /></button>{children}</section></div>;
+  const overlay = <div className="sheet-backdrop" onPointerDown={dismissOnBackdrop}><section ref={surfaceRef} className={`sheet ${wide ? "wide" : ""} ${className}`.trim()} style={{ transform: dragOffset ? `translateY(${dragOffset}px)` : undefined, transition: dragOffset ? "none" : "transform .2s ease" }} role="dialog" aria-modal="true" aria-label={label} tabIndex={-1}><button className="sheet-handle" type="button" aria-label="Drag down to close" onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} /><button className="sheet-close icon-button ghost" type="button" aria-label="Close" onClick={onClose}><X size={18} /></button>{children}</section></div>;
+  return portalReady && typeof document !== "undefined" ? createPortal(overlay, document.body) : overlay;
 }
 
 function OnboardingDialog({ profile, onSave, onCancel }: { profile: Profile; onSave: (profile: Profile) => void; onCancel?: () => void }) {
@@ -1256,6 +1271,7 @@ function LabelReader({ onFood, onClose, initialFiles = [], initialAction }: { on
   const analyzeRef = useRef<(files?: FileList | File[]) => Promise<void>>(undefined);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | undefined>(undefined);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [previews, setPreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -1265,12 +1281,23 @@ function LabelReader({ onFood, onClose, initialFiles = [], initialAction }: { on
   const stopCamera = () => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = undefined;
+    setCameraStream(null);
     if (videoRef.current) videoRef.current.srcObject = null;
     setCameraLive(false);
   };
   useEffect(() => () => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
   }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!cameraStream || !cameraLive || !video) return;
+    video.srcObject = cameraStream;
+    void video.play().catch(() => setError("The camera preview could not start. Choose a photo instead."));
+    return () => {
+      if (video.srcObject === cameraStream) video.srcObject = null;
+    };
+  }, [cameraLive, cameraStream]);
 
   const analyzeImages = async (images: string[]) => {
     setError(""); setLoading(true);
@@ -1346,10 +1373,7 @@ function LabelReader({ onFood, onClose, initialFiles = [], initialAction }: { on
         video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
+      setCameraStream(stream);
       setCameraLive(true);
     } catch (caught) {
       const name = caught instanceof DOMException ? caught.name : "";
@@ -1385,7 +1409,7 @@ function LabelReader({ onFood, onClose, initialFiles = [], initialAction }: { on
         {loading && <span className="analyzing"><i /><strong>Reading the package…</strong></span>}
       </div>}
       {!cameraLive && <div className="label-camera-actions"><button className="primary-button" onClick={startCamera} disabled={starting}><Camera size={18} />{starting ? "Opening camera…" : "Open rear camera"}</button><button className="secondary-button" onClick={() => inputRef.current?.click()}><Upload size={18} />Choose photo</button></div>}
-      <input ref={inputRef} className="visually-hidden-file" type="file" accept="image/*" multiple onChange={(event) => analyze(event.target.files || undefined)} />
+      <input ref={inputRef} className="visually-hidden-file" type="file" accept="image/*" capture="environment" multiple onChange={(event) => analyze(event.target.files || undefined)} />
       {error && <div className="inline-alert error" role="alert"><Info size={17} /><span>{error}</span></div>}
       <div className="label-tips"><strong>For the best result</strong><ul><li>Add up to three details: nutrition table, barcode, and package size.</li><li>One photo is fine when it has everything.</li><li>You’ll confirm the amount and meal before anything is logged.</li></ul></div>
     </div>
@@ -1499,7 +1523,7 @@ function PortionSheet({ food, questions, onLog, onClose, hideCalories }: { food:
   );
 }
 
-function AddFoodSheet({ foods, initialView = "start", onClose, onLog, onMealPhoto, hideCalories }: { foods: Food[]; initialView?: AddView; onClose: () => void; onLog: (meal: Meal, food: Food) => void; onMealPhoto: (analysis: MealPhotoAnalysis) => void; hideCalories: boolean }) {
+function AddFoodSheet({ foods, initialView = "start", onLog, onMealPhoto, hideCalories }: { foods: Food[]; initialView?: AddView; onLog: (meal: Meal, food: Food) => void; onMealPhoto: (analysis: MealPhotoAnalysis) => void; hideCalories: boolean }) {
   const [view, setView] = useState<AddView>(initialView);
   const [selected, setSelected] = useState<Food>();
   const [questions, setQuestions] = useState<string[]>([]);
@@ -1612,7 +1636,7 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, onMealPhot
   if (view === "manual") return <ManualFood initialBarcode={unknownBarcode} notice={manualNotice} hideCalories={hideCalories} onSave={pick} onClose={() => changeView("start")} />;
   if (view === "search") return (
     <div>
-      <div className="sheet-header"><button className="icon-button ghost" onClick={() => changeView("start")} aria-label="Back to add food options"><ArrowLeft /></button><div><span className="eyebrow">Food database</span><h2>Search</h2></div><button className="icon-button ghost" onClick={onClose} aria-label="Close add food"><X /></button></div>
+      <div className="sheet-header"><button className="icon-button ghost" onClick={() => changeView("start")} aria-label="Back to add food options"><ArrowLeft /></button><div><span className="eyebrow">Food database</span><h2>Search</h2></div><span /></div>
       <form className="sheet-search" onSubmit={search}><Search size={19} /><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Food, brand or barcode" /><button type="submit">Search now</button></form>
       {loading && <div className="search-status" role="status"><i />Searching local and packaged foods…</div>}
       {searchError && <div className="inline-alert" role="alert"><WifiOff size={17} />{searchError}</div>}
@@ -1624,7 +1648,7 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, onMealPhot
   );
   return (
     <div className="coach-intake" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); addImages(event.dataTransfer.files); }}>
-      <div className="sheet-header"><button className="icon-button ghost" onClick={onClose} aria-label="Close add food"><X /></button><div><span className="eyebrow">Log with Coach</span><h2>Add food or get help</h2></div><span /></div>
+      <div className="sheet-header"><span /><div><span className="eyebrow">Log with Coach</span><h2>Add food or get help</h2></div><span /></div>
       <div className="intake-actions"><button onClick={() => changeView("scan")}><ScanLine size={17} />Barcode</button><button onClick={() => { setPendingImages([]); changeView("camera"); }}><Camera size={17} />Take photo</button><button onClick={() => imageInputRef.current?.click()}><Upload size={17} />Add photos</button></div>
       <input ref={imageInputRef} className="visually-hidden-file" type="file" accept="image/*" capture="environment" multiple onChange={(event) => addImages(event.target.files || undefined)} />
       <label className="intake-input-label" htmlFor="coach-intake">Search a food or ask Coach</label>
@@ -1680,6 +1704,22 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, onLogCoachMeal,
   const [loggedChoiceLabels, setLoggedChoiceLabels] = useState<string[]>([]);
   const coachImageInputRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const coachHistoryRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!menuChatId && !mobileHistoryOpen) return;
+    const dismissMenu = (event: PointerEvent) => {
+      if (menuChatId && !coachHistoryRef.current?.contains(event.target as Node)) setMenuChatId(null);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setMenuChatId(null);
+      setMobileHistoryOpen(false);
+    };
+    document.addEventListener("pointerdown", dismissMenu);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => { document.removeEventListener("pointerdown", dismissMenu); document.removeEventListener("keydown", closeOnEscape); };
+  }, [menuChatId, mobileHistoryOpen]);
 
   const grocerySettingKey = user ? `${GROCERY_ITEMS_SETTING}:${user.id}` : undefined;
   useEffect(() => {
@@ -1966,11 +2006,11 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, onLogCoachMeal,
   const accountGroceryItems = loadedGroceryKey === grocerySettingKey ? activeGroceryList?.items || [] : [];
   const remainingGroceries = accountGroceryItems.filter((item) => !item.checked).length;
   return (
-    <main className={`page coach-page coach-text-${chatTextSize}`}>
+    <main className={`page coach-page coach-text-${chatTextSize}`} inert={groceryModal !== null || undefined}>
       <header className="coach-header">{section === "chat" && <button className="coach-mobile-menu" type="button" aria-expanded={mobileHistoryOpen} aria-controls="coach-history-drawer" aria-label={mobileHistoryOpen ? "Close previous chats" : "Open previous chats"} onClick={() => setMobileHistoryOpen((open) => !open)}>{mobileHistoryOpen ? <X size={19} /> : <Menu size={19} />}</button>}<div><span className="eyebrow">Your food companion</span><h1>{section === "chat" ? activeChat?.title || "New conversation" : "Coach"}</h1></div>{section === "chat" && <div className="coach-header-actions"><button className="text-button coach-new-chat" onClick={() => void newChat()} aria-label="Start a new chat"><Plus size={15} /><span className="coach-new-chat-label">New chat</span></button>{messages.length > 0 && <button className="text-button muted" onClick={() => void clear()}>Clear</button>}</div>}</header>
       {section === "chat" && mobileHistoryOpen && <button className="coach-mobile-backdrop" type="button" aria-label="Close previous chats" onClick={() => setMobileHistoryOpen(false)} />}
       <div className="coach-layout">
-        {section === "chat" && <aside id="coach-history-drawer" className={`coach-history ${mobileHistoryOpen ? "mobile-open" : ""}`} aria-label="Previous chats"><div className="coach-history-heading"><span className="coach-history-label">Chats</span><button className="coach-history-mobile-toggle" type="button" aria-expanded={mobileHistoryOpen} aria-label="Close previous chats" onClick={() => setMobileHistoryOpen(false)}><span>{activeChat?.title || "New conversation"}</span><Menu size={17} /></button><button className="icon-button ghost" type="button" onClick={() => void newChat()} aria-label="Start a new chat"><Plus size={16} /></button></div><div className="coach-history-list">{chats.map((chat) => <div className={`coach-history-row ${chat.id === activeChatId ? "active" : ""}`} key={chat.id}>{renamingChatId === chat.id ? <form className="coach-rename-form" onSubmit={(event) => { event.preventDefault(); void saveRename(); }}><input autoFocus value={renameDraft} onChange={(event) => setRenameDraft(event.target.value)} maxLength={120} aria-label="Chat name" /><button type="submit" aria-label="Save chat name"><Check size={14} /></button></form> : <><button className="coach-history-chat" type="button" title={chat.title} onClick={() => { void switchChat(chat.id); setMobileHistoryOpen(false); }}><span>{chat.title}</span><small>{new Date(chat.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</small></button><span className="coach-history-menu-wrap"><button className="coach-history-menu-trigger" type="button" aria-label={`Chat options for ${chat.title}`} aria-expanded={menuChatId === chat.id} onClick={() => setMenuChatId((current) => current === chat.id ? null : chat.id)}><MoreHorizontal size={17} /></button>{menuChatId === chat.id && <span className="coach-chat-menu" role="menu"><button type="button" role="menuitem" onClick={() => beginRename(chat)}><Pencil size={14} />Rename</button><button type="button" role="menuitem" className="danger" onClick={() => void removeChat(chat.id)}><Trash2 size={14} />Delete</button></span>}</span></>}</div>)}</div></aside>}
+        {section === "chat" && <aside ref={coachHistoryRef} id="coach-history-drawer" className={`coach-history ${mobileHistoryOpen ? "mobile-open" : ""}`} aria-label="Previous chats"><div className="coach-history-heading"><span className="coach-history-label">Chats</span><button className="coach-history-mobile-toggle" type="button" aria-expanded={mobileHistoryOpen} aria-label="Close previous chats" onClick={() => setMobileHistoryOpen(false)}><span>{activeChat?.title || "New conversation"}</span><Menu size={17} /></button><button className="icon-button ghost" type="button" onClick={() => void newChat()} aria-label="Start a new chat"><Plus size={16} /></button></div><div className="coach-history-list">{chats.map((chat) => <div className={`coach-history-row ${chat.id === activeChatId ? "active" : ""}`} key={chat.id}>{renamingChatId === chat.id ? <form className="coach-rename-form" onSubmit={(event) => { event.preventDefault(); void saveRename(); }}><input autoFocus value={renameDraft} onChange={(event) => setRenameDraft(event.target.value)} maxLength={120} aria-label="Chat name" /><button type="submit" aria-label="Save chat name"><Check size={14} /></button></form> : <><button className="coach-history-chat" type="button" title={chat.title} onClick={() => { void switchChat(chat.id); setMobileHistoryOpen(false); }}><span>{chat.title}</span><small>{new Date(chat.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</small></button><span className="coach-history-menu-wrap"><button className="coach-history-menu-trigger" type="button" aria-label={`Chat options for ${chat.title}`} aria-expanded={menuChatId === chat.id} onClick={() => setMenuChatId((current) => current === chat.id ? null : chat.id)}><MoreHorizontal size={17} /></button>{menuChatId === chat.id && <span className="coach-chat-menu" role="menu"><button type="button" role="menuitem" onClick={() => beginRename(chat)}><Pencil size={14} />Rename</button><button type="button" role="menuitem" className="danger" onClick={() => void removeChat(chat.id)}><Trash2 size={14} />Delete</button></span>}</span></>}</div>)}</div></aside>}
         <div className="coach-main">
       <div className="coach-tabs" role="tablist" aria-label="Coach workspace"><button id="coach-chat-tab" role="tab" aria-selected={section === "chat"} aria-controls="coach-chat-panel" className={section === "chat" ? "active" : ""} onClick={() => setSection("chat")}><MessageCircle size={16} />Chat</button><button id="coach-groceries-tab" role="tab" aria-selected={section === "groceries"} aria-controls="coach-groceries-panel" className={section === "groceries" ? "active" : ""} onClick={() => setSection("groceries")}><ListChecks size={16} />Groceries{remainingGroceries > 0 && <span>{remainingGroceries}</span>}</button></div>
       {section === "chat" && <>
@@ -1985,8 +2025,8 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, onLogCoachMeal,
         <div className="coach-composer-wrap"><div className="coach-log-actions"><button type="button" onClick={() => onOpenAdd("scan")}><ScanLine size={16} />Scan barcode</button><button type="button" onClick={() => onOpenAdd("camera")}><Camera size={16} />Read nutrition label</button></div><form className="coach-composer" onSubmit={(event) => { event.preventDefault(); void send(); }}>{attachedImage && <div className="coach-attachment"><img src={attachedImage} alt="Photo attached to your message" /><button type="button" onClick={() => setAttachedImage(null)} aria-label="Remove attached photo"><X size={15} /></button></div>}<input ref={coachImageInputRef} className="visually-hidden-file" type="file" accept="image/*" onChange={(event) => { void attachCoachImage(event.target.files?.[0]); event.currentTarget.value = ""; }} /><button className="coach-attach" type="button" aria-label="Attach a photo" onClick={() => coachImageInputRef.current?.click()}><Plus /></button><input aria-label="Message the nutrition Coach" value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={6000} placeholder={attachedImage ? "Add a note about this photo…" : "Ask about dinner, recipes, or your food log…"} /><button className="coach-send" type="submit" disabled={(!draft.trim() && !attachedImage) || loading} aria-label="Send"><Send /></button></form></div>
       </>}
       {section === "groceries" && <section className="grocery-workspace"><div className="grocery-intro"><span className="coach-orb"><ListChecks /></span><div><h2>{activeGroceryList?.name || "Your groceries"}</h2><p>Keep separate lists for meal plans, weekly shopping, or different stores.</p></div><button className="icon-button ghost" type="button" onClick={() => { setGroceryListDraft(activeGroceryList?.name || ""); setGroceryModal("manage"); }} aria-label="Manage grocery lists"><Pencil size={16} /></button></div><div className="grocery-list-toolbar"><label htmlFor="grocery-list-select">List</label><ThemedSelect ariaLabel="Grocery list" value={activeGroceryListId} onChange={setActiveGroceryListId} options={groceryLists.map((list) => ({ value: list.id, label: list.name }))} /><button type="button" className="secondary-button" onClick={() => { setGroceryListDraft(""); setGroceryModal("manage"); }}><Plus size={15} />New list</button></div><form className="grocery-composer" onSubmit={addGrocery}><input value={groceryDraft} onChange={(event) => setGroceryDraft(event.target.value)} placeholder="Add an item yourself" maxLength={120} /><button type="submit" disabled={!groceryDraft.trim()}>Add</button></form>{accountGroceryItems.length > 0 ? <div className="grocery-list">{accountGroceryItems.map((item) => <div key={item.id} className={item.checked ? "checked" : ""}><button className="grocery-toggle" onClick={() => updateGroceryLists((current) => current.map((list) => list.id === activeGroceryListId ? { ...list, items: list.items.map((candidate) => candidate.id === item.id ? { ...candidate, checked: !candidate.checked } : candidate), updatedAt: new Date().toISOString() } : list))} aria-label={`Mark ${item.name} as ${item.checked ? "needed" : "picked up"}`}>{item.checked && <Check size={14} />}</button><span>{item.name}</span><button className="grocery-remove" onClick={() => updateGroceryLists((current) => current.map((list) => list.id === activeGroceryListId ? { ...list, items: list.items.filter((candidate) => candidate.id !== item.id), updatedAt: new Date().toISOString() } : list))} aria-label={`Remove ${item.name}`}><X size={16} /></button></div>)}</div> : <div className="grocery-empty"><Package size={28} /><strong>Start with a dinner idea</strong><p>Ask Coach for a recipe or meal plan, then add the suggested ingredients here.</p><button className="secondary-button" onClick={() => setSection("chat")}><MessageCircle size={16} />Open Coach</button></div>}{accountGroceryItems.some((item) => item.checked) && <button className="text-button muted clear-picked" onClick={() => updateGroceryLists((current) => current.map((list) => list.id === activeGroceryListId ? { ...list, items: list.items.filter((item) => !item.checked), updatedAt: new Date().toISOString() } : list))}>Clear picked-up items</button>}</section>}
-      {groceryModal === "choose" && <Sheet label="Choose a grocery list" onClose={() => { setGroceryModal(null); setPendingGroceries([]); }}><div className="sheet-header"><span /><div><span className="eyebrow">Add ingredients</span><h2>Choose a list</h2></div><button className="icon-button ghost" onClick={() => { setGroceryModal(null); setPendingGroceries([]); }} aria-label="Close"><X size={17} /></button></div><p className="grocery-modal-copy">Where should these {pendingGroceries.length} ingredients go?</p><div className="grocery-list-choices">{groceryLists.map((list) => <button key={list.id} type="button" onClick={() => { addGroceriesToList(list.id, pendingGroceries); setPendingGroceries([]); setGroceryModal(null); }}><span><strong>{list.name}</strong><small>{list.items.filter((item) => !item.checked).length} items still needed</small></span><ChevronRight size={17} /></button>)}</div><button type="button" className="secondary-button full" onClick={() => { setGroceryModal("manage"); setGroceryListDraft(""); }}><Plus size={16} />Create a new list</button></Sheet>}
-      {groceryModal === "manage" && <Sheet label="Manage grocery lists" onClose={() => setGroceryModal(null)}><div className="sheet-header"><span /><div><span className="eyebrow">Your lists</span><h2>Manage groceries</h2></div><button className="icon-button ghost" onClick={() => setGroceryModal(null)} aria-label="Close"><X size={17} /></button></div><form className="grocery-list-create" onSubmit={createGroceryList}><input value={groceryListDraft} onChange={(event) => setGroceryListDraft(event.target.value)} placeholder="New list name" maxLength={60} /><button className="primary-button" type="submit" disabled={!groceryListDraft.trim()}>Create</button></form><div className="grocery-manage-list">{groceryLists.map((list) => <button key={list.id} type="button" className={list.id === activeGroceryListId ? "active" : ""} onClick={() => { setActiveGroceryListId(list.id); setGroceryListDraft(list.name); }}><span>{list.name}<small>{list.items.length} items</small></span><Check size={16} /></button>)}</div>{activeGroceryList && <div className="grocery-manage-actions"><button className="secondary-button" type="button" onClick={renameGroceryList} disabled={!groceryListDraft.trim()}>Rename selected</button><button className="text-button danger" type="button" onClick={deleteGroceryList} disabled={groceryLists.length < 2}>Delete selected</button></div>}</Sheet>}
+      {groceryModal === "choose" && <Sheet label="Choose a grocery list" onClose={() => { setGroceryModal(null); setPendingGroceries([]); }}><div className="sheet-header"><span /><div><span className="eyebrow">Add ingredients</span><h2>Choose a list</h2></div><span /></div><p className="grocery-modal-copy">Where should these {pendingGroceries.length} ingredients go?</p><div className="grocery-list-choices">{groceryLists.map((list) => <button key={list.id} type="button" onClick={() => { addGroceriesToList(list.id, pendingGroceries); setPendingGroceries([]); setGroceryModal(null); }}><span><strong>{list.name}</strong><small>{list.items.filter((item) => !item.checked).length} items still needed</small></span><ChevronRight size={17} /></button>)}</div><button type="button" className="secondary-button full" onClick={() => { setGroceryModal("manage"); setGroceryListDraft(""); }}><Plus size={16} />Create a new list</button></Sheet>}
+      {groceryModal === "manage" && <Sheet label="Manage grocery lists" onClose={() => setGroceryModal(null)}><div className="sheet-header"><span /><div><span className="eyebrow">Your lists</span><h2>Manage groceries</h2></div><span /></div><form className="grocery-list-create" onSubmit={createGroceryList}><input value={groceryListDraft} onChange={(event) => setGroceryListDraft(event.target.value)} placeholder="New list name" maxLength={60} /><button className="primary-button" type="submit" disabled={!groceryListDraft.trim()}>Create</button></form><div className="grocery-manage-list">{groceryLists.map((list) => <button key={list.id} type="button" className={list.id === activeGroceryListId ? "active" : ""} onClick={() => { setActiveGroceryListId(list.id); setGroceryListDraft(list.name); }}><span>{list.name}<small>{list.items.length} items</small></span><Check size={16} /></button>)}</div>{activeGroceryList && <div className="grocery-manage-actions"><button className="secondary-button" type="button" onClick={renameGroceryList} disabled={!groceryListDraft.trim()}>Rename selected</button><button className="text-button danger" type="button" onClick={deleteGroceryList} disabled={groceryLists.length < 2}>Delete selected</button></div>}</Sheet>}
         </div>
       </div>
     </main>
@@ -2441,7 +2481,7 @@ export function TrackerApp() {
   if (startupError) return <main className="app-loading load-error" role="alert"><Database size={30} /><h1>Diary unavailable</h1><p>{startupError}</p><button className="primary-button" onClick={() => { setStartupError(""); void refresh().catch(() => setStartupError("Your private diary could not be opened. Your data has not been reset.")); }}>Try again</button></main>;
   if (!ready || !auth.ready) return <div className="app-loading" role="status" aria-label="Opening your private diary"><BrandMark large /><i /></div>;
   if (auth.passwordRecovery || !auth.user) return <AuthGateway key={auth.passwordRecovery ? "recovery" : "sign-in"} configured={auth.configured} passwordRecovery={auth.passwordRecovery} onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} />;
-  const modalOpen = adding || !!editingMeal || calendarOpen || !profile.onboardingDone || weightPromptOpen;
+  const modalOpen = adding || !!editingMeal || !!duplicateMealDraft || calendarOpen || !profile.onboardingDone || weightPromptOpen;
   return (
     <div className="app-shell">
       <div className="ambient one" /><div className="ambient two" />
@@ -2453,9 +2493,9 @@ export function TrackerApp() {
       {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onRestartOnboarding={restartOnboarding} onExport={exportBackup} onImport={restoreBackup} user={auth.user} syncState={syncState} onSignOut={signOut} theme={theme} onThemeChange={changeTheme} chatTextSize={chatTextSize} onChatTextSizeChange={changeChatTextSize} weightTracking={profile.weightTracking} />}
       </div>
       <div inert={modalOpen} aria-hidden={modalOpen || undefined}><BottomNav tab={tab} onChange={(nextTab) => { window.scrollTo(0, 0); setTab(nextTab); }} /></div>
-      {adding && profile.onboardingDone && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); }} wide>{directFood ? <PortionSheet food={directFood} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} onClose={() => setAdding(false)} onLog={logMeal} onMealPhoto={addPhotoMeal} />}</Sheet>}
+      {adding && profile.onboardingDone && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); }} wide>{directFood ? <PortionSheet food={directFood} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} onLog={logMeal} onMealPhoto={addPhotoMeal} />}</Sheet>}
       {calendarOpen && <Sheet onClose={() => setCalendarOpen(false)} wide label="Calendar"><CalendarSheet dateKey={dateKey} meals={meals} profile={profile} onDateChange={setDateKey} onClose={() => setCalendarOpen(false)} /></Sheet>}
-      {editingMeal && <Sheet onClose={() => setEditingMeal(undefined)}><MealEditor meal={editingMeal} hideCalories={profile.hideCalories} onSave={(meal) => editingMeal.id.startsWith("photo-") ? saveNewMeal(meal) : saveEditedMeal(meal)} onClose={() => setEditingMeal(undefined)} /></Sheet>}
+      {editingMeal && <Sheet onClose={() => setEditingMeal(undefined)} label="Edit meal"><MealEditor meal={editingMeal} hideCalories={profile.hideCalories} onSave={(meal) => editingMeal.id.startsWith("photo-") ? saveNewMeal(meal) : saveEditedMeal(meal)} onClose={() => setEditingMeal(undefined)} /></Sheet>}
       {duplicateMealDraft && <Sheet onClose={() => setDuplicateMealDraft(undefined)} label="Duplicate meal" className="duplicate-meal-dialog"><DuplicateMealSheet meal={duplicateMealDraft} onDuplicate={(mealType) => void duplicateMeal(duplicateMealDraft, mealType)} onClose={() => setDuplicateMealDraft(undefined)} /></Sheet>}
       {!profile.onboardingDone && <OnboardingDialog profile={profile} onSave={finishOnboarding} onCancel={onboardingOrigin ? cancelOnboarding : undefined} />}
       {weightPromptOpen && <WeightTrackingPrompt onEnable={enableWeightTracking} onDisable={disableWeightTracking} onDefer={deferWeightTracking} />}
