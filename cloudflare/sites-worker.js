@@ -55,6 +55,22 @@ const mealPhotoSchema = {
 
 const coachTools = [
   {
+    type: "function", name: "prepare_meal_log",
+    description: "Prepare a meal to log only when the user explicitly asks you to log, save, add, or record it, or has just selected a logging option. Do not call for analysis alone. Use exact visible nutrition totals from an image when available.", strict: true,
+    parameters: { type: "object", additionalProperties: false, properties: {
+      name: { type: "string" }, mealType: { type: "string", enum: ["breakfast", "lunch", "dinner", "snack"] }, amount: { type: "number" }, unit: { type: "string", enum: ["serving", "g", "100g", "package", "piece", "tbsp", "tsp", "ml"] }, grams: { type: "number" }, calories: { type: "number" }, protein: { type: "number" }, carbs: { type: "number" }, fat: { type: "number" }, fiber: { type: "number" }, sugar: { type: "number" }, loggedDate: { type: "string" }, estimated: { type: "boolean" },
+    }, required: ["name", "mealType", "amount", "unit", "grams", "calories", "protein", "carbs", "fat", "fiber", "sugar", "loggedDate", "estimated"] },
+  },
+  {
+    type: "function", name: "offer_meal_choices",
+    description: "Offer clickable logging choices when the user wants to log but the meal type or date is ambiguous. Include complete meal data in every choice.", strict: true,
+    parameters: { type: "object", additionalProperties: false, properties: {
+      choices: { type: "array", minItems: 2, maxItems: 4, items: { type: "object", additionalProperties: false, properties: {
+        label: { type: "string" }, name: { type: "string" }, mealType: { type: "string", enum: ["breakfast", "lunch", "dinner", "snack"] }, amount: { type: "number" }, unit: { type: "string", enum: ["serving", "g", "100g", "package", "piece", "tbsp", "tsp", "ml"] }, grams: { type: "number" }, calories: { type: "number" }, protein: { type: "number" }, carbs: { type: "number" }, fat: { type: "number" }, fiber: { type: "number" }, sugar: { type: "number" }, loggedDate: { type: "string" }, estimated: { type: "boolean" },
+      }, required: ["label", "name", "mealType", "amount", "unit", "grams", "calories", "protein", "carbs", "fat", "fiber", "sugar", "loggedDate", "estimated"] } },
+    }, required: ["choices"] },
+  },
+  {
     type: "function",
     name: "get_profile",
     description: "Read the signed-in user's calorie target, macro targets, body metrics, goal, activity, and diet preference.",
@@ -110,6 +126,10 @@ DATA AND TOOLS:
 COACHING:
 - Start with the useful answer, then a compact explanation.
 - State uncertainty for estimated food values. Ask one focused follow-up when amount, serving, or location is needed.
+- When the user explicitly says to log, save, add, or record a meal, call prepare_meal_log with the complete meal details. This action is returned to the app and saved after your answer. Do not call it for photo analysis or advice alone.
+- When a user attaches a food image and labels it with a meal/date phrase such as “yesterday’s breakfast” or “today’s lunch”, treat that as an explicit request to log it, even if the verb “log” is omitted.
+- If the user wants to log but the meal type or date is genuinely ambiguous, call offer_meal_choices with two to four complete alternatives. The app makes these choices clickable and saves the selected one directly.
+- A request such as “what was yesterday’s breakfast?” is analysis only unless the user also asks to log it.
 - Do not diagnose or treat medical conditions. For symptoms, eating disorders, pregnancy, medications, or clinical diets, give general information and encourage an appropriate clinician.
 - Avoid moral language about food and never punish a user for one meal or day.
 - When a user asks for a dinner plan, recipe, or grocery help, end the reply with a plain Grocery list: heading followed by short hyphen item lines for the ingredients they would need. Only include that section when it is useful.
@@ -340,7 +360,39 @@ async function readCoachProfile(auth, env) {
   return isRecord(rows[0]?.data) ? rows[0].data : undefined;
 }
 
+function validCoachMeal(value) {
+  if (!isRecord(value) || typeof value.name !== "string" || !value.name.trim() || !["breakfast", "lunch", "dinner", "snack"].includes(value.mealType)) return null;
+  if (typeof value.amount !== "number" || !Number.isFinite(value.amount) || value.amount <= 0 || typeof value.grams !== "number" || !Number.isFinite(value.grams) || value.grams <= 0 || !["serving", "g", "100g", "package", "piece", "tbsp", "tsp", "ml"].includes(value.unit)) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value.loggedDate) || typeof value.estimated !== "boolean") return null;
+  const nutrition = ["calories", "protein", "carbs", "fat", "fiber", "sugar"].reduce((result, key) => {
+    if (result === null) return null;
+    const number = value[key];
+    if (typeof number !== "number" || !Number.isFinite(number) || number < 0) return null;
+    result[key] = number;
+    return result;
+  }, {});
+  return nutrition ? { name: value.name.trim().slice(0, 240), mealType: value.mealType, amount: value.amount, unit: value.unit, grams: value.grams, nutrition, loggedDate: value.loggedDate, estimated: value.estimated } : null;
+}
+
+function runCoachAction(name, args) {
+  if (name === "prepare_meal_log") {
+    const meal = validCoachMeal(args);
+    return meal ? { type: "meal_action", meal } : { type: "meal_action_error", error: "The meal details were incomplete." };
+  }
+  if (name === "offer_meal_choices") {
+    const choices = Array.isArray(args.choices) ? args.choices.flatMap((choice) => {
+      if (!isRecord(choice)) return [];
+      const meal = validCoachMeal(choice);
+      return meal && typeof choice.label === "string" && choice.label.trim() ? [{ label: choice.label.trim().slice(0, 120), meal }] : [];
+    }) : [];
+    return choices.length >= 2 ? { type: "meal_choices", choices } : { type: "meal_choices_error", error: "The meal choices were incomplete." };
+  }
+  return undefined;
+}
+
 async function runCoachTool(name, args, auth, env) {
+  const action = runCoachAction(name, args);
+  if (action) return action;
   if (name === "get_profile") {
     return profileForCoach(auth.profile, auth.hideCalories);
   }
@@ -418,6 +470,8 @@ async function coach(request, env) {
       : "";
 
     let response;
+    let mealAction;
+    let mealChoices;
     for (let turn = 0; turn < 4; turn += 1) {
       response = await workersAiResponse(env, image ? "@cf/moonshotai/kimi-k2.6" : "@cf/zai-org/glm-4.7-flash", {
         messages: [{ role: "system", content: `${coachInstructions}${visibilityInstruction}\n\nTIME CONTEXT:\n- The user's current local date is ${localDate}.\n- Their browser time zone is ${timezone}. Use this context when they say today, yesterday, or this week.` }, ...messages],
@@ -438,13 +492,15 @@ async function coach(request, env) {
         } catch (error) {
           result = { error: error instanceof Error ? error.message : "Tool failed." };
         }
+        if (result?.type === "meal_action" && result.meal) mealAction = result.meal;
+        if (result?.type === "meal_choices" && result.choices) mealChoices = result.choices;
         messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(result) });
       }
     }
 
     const reply = extractOutputText(response);
     if (!reply) return json({ error: "The Coach did not return an answer." }, 502);
-    return json({ reply: toolAuth.hideCalories ? hideCalorieValues(reply) : reply, sources: [] });
+    return json({ reply: toolAuth.hideCalories ? hideCalorieValues(reply) : reply, sources: [], ...(mealAction ? { mealAction } : {}), ...(mealChoices ? { mealChoices } : {}) });
   } catch (error) {
     return json({ error: publicCoachError(error) }, 500);
   }

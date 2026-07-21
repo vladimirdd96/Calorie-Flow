@@ -83,11 +83,13 @@ import {
   suggestedMealType,
 } from "@/lib/nutrition";
 import { findByBarcode, searchOpenFoodFacts } from "@/lib/openfoodfacts";
-import { labelAnalysisSchema, mealPhotoAnalysisSchema } from "@/lib/schemas";
+import { coachMealActionSchema, coachMealChoiceSchema, labelAnalysisSchema, mealPhotoAnalysisSchema } from "@/lib/schemas";
 import { getSupabase, type CloudUser, type SocialAuthProvider } from "@/lib/supabase";
 import type {
   ActivityLevel,
   CoachChat,
+  CoachMealAction,
+  CoachMealChoice,
   CoachMessage,
   DietPreset,
   Food,
@@ -1315,7 +1317,7 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, onMealPhot
   );
 }
 
-type DisplayCoachMessage = CoachMessage & { imageUrl?: string; sources?: Array<{ title: string; url: string }> };
+type DisplayCoachMessage = CoachMessage & { imageUrl?: string; sources?: Array<{ title: string; url: string }>; mealAction?: CoachMealAction; mealChoices?: CoachMealChoice[] };
 
 function groceryItemsFromReply(content: string) {
   const section = content.match(/(?:^|\n)\s*(?:\*\*)?grocery list(?:\*\*)?\s*:?\s*\n([\s\S]*)/i)?.[1];
@@ -1326,7 +1328,7 @@ function groceryItemsFromReply(content: string) {
     .slice(0, 24);
 }
 
-function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories, chatTextSize }: { configured: boolean; user: CloudUser | null; onOpenAccount: () => void; onOpenAdd: (view: AddView) => void; hideCalories: boolean; chatTextSize: ChatTextSize }) {
+function CoachView({ configured, user, onOpenAccount, onOpenAdd, onLogCoachMeal, hideCalories, chatTextSize }: { configured: boolean; user: CloudUser | null; onOpenAccount: () => void; onOpenAdd: (view: AddView) => void; onLogCoachMeal: (action: CoachMealAction) => Promise<void>; hideCalories: boolean; chatTextSize: ChatTextSize }) {
   const [messages, setMessages] = useState<DisplayCoachMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
@@ -1340,6 +1342,7 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories, c
   const [loadedGroceryKey, setLoadedGroceryKey] = useState("");
   const [groceryDraft, setGroceryDraft] = useState("");
   const [attachedImage, setAttachedImage] = useState<string | null>(null);
+  const [loggedChoiceLabels, setLoggedChoiceLabels] = useState<string[]>([]);
   const coachImageInputRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -1445,6 +1448,11 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories, c
       const bodyRecord = body && typeof body === "object" ? body as Record<string, unknown> : {};
       if (!response.ok) throw new Error(typeof bodyRecord.error === "string" ? bodyRecord.error : "The Coach is unavailable right now.");
       if (typeof bodyRecord.reply !== "string") throw new Error("The Coach returned an invalid response.");
+      const mealActionResult = coachMealActionSchema.safeParse(bodyRecord.mealAction);
+      const mealChoices = Array.isArray(bodyRecord.mealChoices) ? bodyRecord.mealChoices.flatMap((choice) => {
+        const parsed = coachMealChoiceSchema.safeParse(choice);
+        return parsed.success ? [parsed.data] : [];
+      }) : [];
       const sources = Array.isArray(bodyRecord.sources) ? bodyRecord.sources.flatMap((source) => {
         if (!source || typeof source !== "object") return [];
         const record = source as Record<string, unknown>;
@@ -1457,13 +1465,25 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories, c
         content: hideCalories ? hideCalorieValues(bodyRecord.reply) : bodyRecord.reply,
         createdAt: new Date().toISOString(),
         sources,
+        ...(mealActionResult.success ? { mealAction: mealActionResult.data } : {}),
+        ...(mealChoices.length ? { mealChoices } : {}),
       };
       setMessages((current) => [...current, assistantMessage]);
       try { await saveCloudCoachMessage(user.id, assistantMessage); } catch { setError("Reply received. Cloud history is temporarily unavailable."); }
+      if (mealActionResult.success) {
+        try { await onLogCoachMeal(mealActionResult.data); } catch { setError("The Coach found the meal, but it could not be saved yet. Please try again."); }
+      }
     } catch (caught) {
       if (image) setAttachedImage(image);
       setError(caught instanceof Error ? caught.message : "The Coach is unavailable right now.");
     } finally { setLoading(false); }
+  };
+  const logChoice = async (choice: CoachMealChoice) => {
+    if (loggedChoiceLabels.includes(choice.label)) return;
+    try {
+      await onLogCoachMeal(choice.meal);
+      setLoggedChoiceLabels((current) => [...current, choice.label]);
+    } catch { setError("The meal could not be saved yet. Please try again."); }
   };
   const clear = async () => {
     if (!user || !messages.length) return;
@@ -1542,7 +1562,7 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, hideCalories, c
         <div className="coach-scope"><ShieldCheck size={15} /><span>{hideCalories ? "Food and nutrition only" : "Food, calories and nutrition"} · recipes and grocery lists are saved only when you choose</span></div>
         <section className="coach-thread" aria-live="polite">
           {messages.length === 0 && <div className="coach-welcome"><span className="coach-orb"><Sparkles /></span><h2>What should we make?</h2><p>Talk through dinner, use up what you have, or log a packaged food by scanning its barcode or photographing its nutrition label.</p><div className="coach-starters">{starters.map((starter) => <button key={starter} onClick={() => send(starter)}>{starter}</button>)}</div></div>}
-          {messages.map((message) => { const visibleContent = hideCalories ? hideCalorieValues(message.content) : message.content; const groceries = message.role === "assistant" ? groceryItemsFromReply(visibleContent) : []; return <article key={message.id} className={`coach-message ${message.role}`}><span>{message.role === "assistant" ? "Coach" : "You"}</span>{message.imageUrl && <img className="coach-message-image" src={message.imageUrl} alt="Photo shared with Coach" />}<p>{visibleContent}</p>{groceries.length > 0 && <div className="recipe-grocery-action"><strong>Want to cook this?</strong><button className="add-groceries" onClick={() => addGroceries(groceries)}><ListChecks size={15} />Add {groceries.length} ingredients to groceries</button></div>}{!!message.sources?.length && <div className="coach-sources"><strong>Sources</strong>{message.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.title}</a>)}</div>}</article>; })}
+          {messages.map((message) => { const visibleContent = hideCalories ? hideCalorieValues(message.content) : message.content; const groceries = message.role === "assistant" ? groceryItemsFromReply(visibleContent) : []; return <article key={message.id} className={`coach-message ${message.role}`}><span>{message.role === "assistant" ? "Coach" : "You"}</span>{message.imageUrl && <img className="coach-message-image" src={message.imageUrl} alt="Photo shared with Coach" />}<p>{visibleContent}</p>{message.mealAction && <div className="coach-log-confirmation"><Check size={16} /><span>Logged as {mealLabels[message.mealAction.mealType]} · {message.mealAction.loggedDate}</span></div>}{message.mealChoices && <div className="coach-meal-choices"><strong>Choose where to log it</strong>{message.mealChoices.map((choice) => <button key={choice.label} type="button" disabled={loggedChoiceLabels.includes(choice.label)} onClick={() => void logChoice(choice)}>{loggedChoiceLabels.includes(choice.label) ? "Logged · " : ""}{choice.label}</button>)}</div>}{groceries.length > 0 && <div className="recipe-grocery-action"><strong>Want to cook this?</strong><button className="add-groceries" onClick={() => addGroceries(groceries)}><ListChecks size={15} />Add {groceries.length} ingredients to groceries</button></div>}{!!message.sources?.length && <div className="coach-sources"><strong>Sources</strong>{message.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.title}</a>)}</div>}</article>; })}
           {loading && <div className="coach-typing"><i /><i /><i /><span>Coach is thinking through it…</span></div>}
           {error && <div className="inline-alert error" role="alert"><Info size={17} /><span>{error}</span><button className="text-button" type="button" onClick={() => { setError(""); setLoadedUserId(""); setHistoryAttempt((value) => value + 1); }}>Retry</button></div>}
           <div ref={endRef} />
@@ -1839,6 +1859,25 @@ export function TrackerApp() {
     setMeals((current) => [...current, meal]); setEditingMeal(undefined); setToast(`${meal.name} logged`); setTab("today");
     syncWrite((userId) => upsertCloudMeal(userId, meal));
   };
+  const logCoachMeal = async (action: CoachMealAction) => {
+    const meal: Meal = {
+      id: `coach-${crypto.randomUUID()}`,
+      name: action.name,
+      mealType: action.mealType,
+      amount: action.amount,
+      unit: action.unit,
+      grams: action.grams,
+      nutrition: action.nutrition,
+      createdAt: new Date(`${action.loggedDate}T12:00:00`).toISOString(),
+      loggedDate: action.loggedDate,
+      source: "custom",
+      estimated: action.estimated,
+    };
+    await put("meals", meal);
+    setMeals((current) => [...current, meal]);
+    setToast(`${meal.name} logged`);
+    syncWrite((userId) => upsertCloudMeal(userId, meal));
+  };
   const addPhotoMeal = (analysis: MealPhotoAnalysis) => {
     const details = analysis.components.length ? ` · ${analysis.components.join(", ")}` : "";
     const meal: Meal = { id: `photo-${crypto.randomUUID()}`, name: `${analysis.name}${details}`.slice(0, 240), mealType: analysis.mealType, amount: analysis.amount, unit: analysis.unit, grams: analysis.grams, nutrition: analysis.nutrition, createdAt: new Date().toISOString(), loggedDate: dateKey, source: "custom", estimated: analysis.confidence !== "high" };
@@ -1934,7 +1973,7 @@ export function TrackerApp() {
       <div className="content-shell" inert={modalOpen} aria-hidden={modalOpen || undefined}>
         {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={() => openAdd()} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} onEdit={setEditingMeal} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} />}
         {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={openAdd} />}
-        {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} chatTextSize={chatTextSize} onOpenAccount={() => setTab("profile")} onOpenAdd={openAdd} />}
+        {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} chatTextSize={chatTextSize} onLogCoachMeal={logCoachMeal} onOpenAccount={() => setTab("profile")} onOpenAdd={openAdd} />}
         {tab === "insights" && <InsightsView meals={meals} profile={profile} />}
       {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onExport={exportBackup} onImport={restoreBackup} user={auth.user} syncState={syncState} onSignOut={signOut} theme={theme} onThemeChange={changeTheme} chatTextSize={chatTextSize} onChatTextSizeChange={changeChatTextSize} />}
       </div>

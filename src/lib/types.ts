@@ -93,6 +93,22 @@ export type MealPhotoAnalysis = {
   confidence: "low" | "medium" | "high";
 };
 
+export type CoachMealAction = {
+  name: string;
+  mealType: MealType;
+  amount: number;
+  unit: ServingUnit;
+  grams: number;
+  nutrition: Nutrition;
+  loggedDate: string;
+  estimated: boolean;
+};
+
+export type CoachMealChoice = {
+  label: string;
+  meal: CoachMealAction;
+};
+
 export type CoachMessage = {
   id: string;
   chatId: string;

@@ -409,6 +409,11 @@ p { color: var(--muted); line-height: 1.55; }
 .coach-message { max-width: min(88%, 620px); padding: 13px 15px; border-radius: 18px; }
 .coach-message > span { display: block; margin-bottom: 5px; color: var(--muted-2); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
 .coach-message p { margin: 0; color: var(--text); font-size: var(--coach-message-size); line-height: 1.55; white-space: pre-wrap; }
+.coach-log-confirmation { display: flex; align-items: center; gap: 7px; margin-top: 12px; padding-top: 10px; color: var(--mint-strong); border-top: 1px solid var(--border); font-size: 11px; font-weight: 800; }
+.coach-meal-choices { display: grid; gap: 7px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+.coach-meal-choices strong { color: var(--muted); font-size: 10px; }
+.coach-meal-choices button { min-height: 40px; padding: 0 11px; border: 1px solid var(--border-strong); border-radius: 10px; color: var(--mint-strong); background: rgba(125,255,213,.07); font: inherit; font-size: 11px; font-weight: 800; text-align: left; }
+.coach-meal-choices button:disabled { color: var(--muted); background: var(--panel); opacity: .8; }
 .coach-message-image { display: block; width: min(100%, 260px); max-height: 260px; margin: 0 0 10px; object-fit: cover; border-radius: 12px; border: 1px solid var(--border-strong); }
 .coach-message.user { align-self: flex-end; border-bottom-right-radius: 6px; background: linear-gradient(145deg, rgba(125,255,213,.16), rgba(51,214,195,.09)); border: 1px solid var(--border-strong); }
 .coach-message.assistant { align-self: flex-start; border-bottom-left-radius: 6px; background: var(--panel); border: 1px solid var(--border); }

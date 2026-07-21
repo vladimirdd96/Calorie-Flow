@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { CoachChat, CoachMessage, Food, LabelAnalysis, Meal, MealPhotoAnalysis, Nutrition, Profile } from "./types";
+import type { CoachChat, CoachMealAction, CoachMealChoice, CoachMessage, Food, LabelAnalysis, Meal, MealPhotoAnalysis, Nutrition, Profile } from "./types";
 
 const finiteNonNegative = z.number().finite().min(0);
 const positiveFinite = z.number().finite().positive();
@@ -113,6 +113,22 @@ export const mealPhotoAnalysisSchema = z.object({
   components: z.array(z.string().trim().min(1).max(120)).max(20),
   confidence: z.enum(["low", "medium", "high"]),
 }).strict() satisfies z.ZodType<MealPhotoAnalysis>;
+
+export const coachMealActionSchema = z.object({
+  name: z.string().trim().min(1).max(240),
+  mealType: z.enum(["breakfast", "lunch", "dinner", "snack"]),
+  amount: positiveFinite,
+  unit: z.enum(["serving", "g", "100g", "package", "piece", "tbsp", "tsp", "ml"]),
+  grams: positiveFinite,
+  nutrition: nutritionSchema,
+  loggedDate: localDateSchema,
+  estimated: z.boolean(),
+}).strict() satisfies z.ZodType<CoachMealAction>;
+
+export const coachMealChoiceSchema = z.object({
+  label: z.string().trim().min(1).max(120),
+  meal: coachMealActionSchema,
+}).strict() satisfies z.ZodType<CoachMealChoice>;
 
 export const backupSchema = z.object({
   version: z.literal(1),

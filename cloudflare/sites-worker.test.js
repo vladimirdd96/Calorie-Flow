@@ -151,6 +151,33 @@ describe("Sites Worker", () => {
     expect(requestedModel).toBe("@cf/moonshotai/kimi-k2.6");
   });
 
+  it("returns a validated meal action when the Coach is asked to log a photo", async () => {
+    let calls = 0;
+    vi.stubGlobal("fetch", vi.fn(async (url) => {
+      const value = String(url);
+      if (value.includes("/auth/v1/user")) return Response.json({ id: "00000000-0000-0000-0000-000000000001" });
+      if (value.includes("/rest/v1/user_profiles")) return Response.json([{ data: {} }]);
+      throw new Error(`Unexpected fetch: ${url}`);
+    }));
+    const response = await worker.fetch(
+      new Request("https://example.com/api/coach", {
+        method: "POST", headers: { Authorization: "Bearer valid-session" },
+        body: JSON.stringify({ message: "Yesterday's breakfast", image: "data:image/jpeg;base64,AA==" }),
+      }),
+      environment({
+        SUPABASE_URL: "https://project.supabase.co", SUPABASE_PUBLISHABLE_KEY: "public-key",
+        AI: { run: async () => {
+          calls += 1;
+          if (calls === 1) return { choices: [{ message: { content: null, tool_calls: [{ id: "log_1", function: { name: "prepare_meal_log", arguments: JSON.stringify({ name: "Eggs and bread", mealType: "breakfast", amount: 1, unit: "serving", grams: 300, calories: 490, protein: 43, carbs: 17, fat: 27, fiber: 7, sugar: 4, loggedDate: "2026-07-20", estimated: false }) } }] } }] };
+          return { choices: [{ message: { content: "I logged yesterday's breakfast." } }] };
+        } },
+      }),
+    );
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ mealAction: { name: "Eggs and bread", mealType: "breakfast", loggedDate: "2026-07-20" } });
+    expect(calls).toBe(2);
+  });
+
   it("redacts calorie values when the profile hides them", async () => {
     vi.stubGlobal("fetch", vi.fn(async (url) => {
       const value = String(url);

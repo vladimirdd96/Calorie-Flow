@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { serverEnv } from "@/lib/env";
 import { authenticatePaidFeature, type PaidFeatureAuthResult } from "@/lib/server-auth";
-import { foodSchema, mealSchema, profileSchema } from "@/lib/schemas";
+import { coachMealActionSchema, coachMealChoiceSchema, foodSchema, mealSchema, profileSchema } from "@/lib/schemas";
 import type { Food, Meal, Nutrition, Profile } from "@/lib/types";
 import { getWorkersAi, workersAiModels } from "@/lib/workers-ai";
 
@@ -20,6 +20,22 @@ const coachRequestSchema = z.object({
 }).strict();
 
 const coachTools = [
+  {
+    type: "function", name: "prepare_meal_log",
+    description: "Prepare a meal to log only when the user explicitly asks you to log/save/add it, or has just selected a logging option. Do not call for analysis alone. Use exact visible nutrition totals from an image when available.", strict: true,
+    parameters: { type: "object", additionalProperties: false, properties: {
+      name: { type: "string" }, mealType: { type: "string", enum: ["breakfast", "lunch", "dinner", "snack"] }, amount: { type: "number" }, unit: { type: "string", enum: ["serving", "g", "100g", "package", "piece", "tbsp", "tsp", "ml"] }, grams: { type: "number" }, calories: { type: "number" }, protein: { type: "number" }, carbs: { type: "number" }, fat: { type: "number" }, fiber: { type: "number" }, sugar: { type: "number" }, loggedDate: { type: "string" }, estimated: { type: "boolean" },
+    }, required: ["name", "mealType", "amount", "unit", "grams", "calories", "protein", "carbs", "fat", "fiber", "sugar", "loggedDate", "estimated"] },
+  },
+  {
+    type: "function", name: "offer_meal_choices",
+    description: "Offer clickable logging choices when the user wants to log but one detail is ambiguous, such as breakfast versus lunch or today versus yesterday. Include complete meal data in every choice.", strict: true,
+    parameters: { type: "object", additionalProperties: false, properties: {
+      choices: { type: "array", minItems: 2, maxItems: 4, items: { type: "object", additionalProperties: false, properties: {
+        label: { type: "string" }, name: { type: "string" }, mealType: { type: "string", enum: ["breakfast", "lunch", "dinner", "snack"] }, amount: { type: "number" }, unit: { type: "string", enum: ["serving", "g", "100g", "package", "piece", "tbsp", "tsp", "ml"] }, grams: { type: "number" }, calories: { type: "number" }, protein: { type: "number" }, carbs: { type: "number" }, fat: { type: "number" }, fiber: { type: "number" }, sugar: { type: "number" }, loggedDate: { type: "string" }, estimated: { type: "boolean" },
+      }, required: ["label", "name", "mealType", "amount", "unit", "grams", "calories", "protein", "carbs", "fat", "fiber", "sugar", "loggedDate", "estimated"] } },
+    }, required: ["choices"] },
+  },
   {
     type: "function",
     name: "get_profile",
@@ -76,6 +92,10 @@ DATA AND TOOLS:
 COACHING:
 - Start with the useful answer, then a compact explanation.
 - State uncertainty for estimated food values. Ask one focused follow-up when amount, serving, or location is needed.
+- When the user explicitly says to log, save, add, or record a meal, call prepare_meal_log with the complete meal details. This action is returned to the app and saved after your answer. Do not call it for photo analysis or advice alone.
+- When a user attaches a food image and labels it with a meal/date phrase such as “yesterday’s breakfast” or “today’s lunch”, treat that as an explicit request to log it, even if the verb “log” is omitted.
+- If the user wants to log but the meal type or date is genuinely ambiguous, call offer_meal_choices with two to four complete alternatives. The app makes these choices clickable and saves the selected one directly.
+- A request such as “what was yesterday’s breakfast?” is analysis only unless the user also asks to log it.
 - Do not diagnose or treat medical conditions. For symptoms, eating disorders, pregnancy, medications, or clinical diets, give general information and encourage an appropriate clinician.
 - Avoid moral language about food and never punish a user for one meal or day.
 - When a user asks for a dinner plan, recipe, or grocery help, end the reply with a plain Grocery list: heading followed by short hyphen item lines for the ingredients they would need. Only include that section when it is useful.
@@ -166,6 +186,26 @@ async function readProfile(auth: VerifiedAuth) {
 }
 
 async function runCoachTool(name: string, args: JsonRecord, context: ToolContext) {
+  if (name === "prepare_meal_log") {
+    const parsed = coachMealActionSchema.safeParse({
+      name: args.name, mealType: args.mealType, amount: args.amount, unit: args.unit, grams: args.grams,
+      nutrition: { calories: args.calories, protein: args.protein, carbs: args.carbs, fat: args.fat, fiber: args.fiber, sugar: args.sugar },
+      loggedDate: args.loggedDate, estimated: args.estimated,
+    });
+    return parsed.success ? { type: "meal_action", meal: parsed.data } : { type: "meal_action_error", error: "The meal details were incomplete." };
+  }
+  if (name === "offer_meal_choices") {
+    const choices = Array.isArray(args.choices) ? args.choices.flatMap((choice) => {
+      if (!isRecord(choice)) return [];
+      const parsed = coachMealChoiceSchema.safeParse({
+        label: choice.label,
+        meal: { name: choice.name, mealType: choice.mealType, amount: choice.amount, unit: choice.unit, grams: choice.grams,
+          nutrition: { calories: choice.calories, protein: choice.protein, carbs: choice.carbs, fat: choice.fat, fiber: choice.fiber, sugar: choice.sugar }, loggedDate: choice.loggedDate, estimated: choice.estimated },
+      });
+      return parsed.success ? [parsed.data] : [];
+    }) : [];
+    return choices.length >= 2 ? { type: "meal_choices", choices } : { type: "meal_choices_error", error: "The meal choices were incomplete." };
+  }
   if (name === "get_profile") return profileForCoach(context.profile, context.hideCalories);
   if (name === "get_meals") {
     const rows = await supabaseRead(context, "user_meals", [
@@ -251,6 +291,8 @@ export async function POST(request: NextRequest) {
       : "";
 
     let response: JsonRecord | undefined;
+    let mealAction: unknown;
+    let mealChoices: unknown;
     for (let turn = 0; turn < 4; turn += 1) {
       const aiPayload = {
         messages: [{ role: "system", content: `${coachInstructions}${visibilityInstruction}\n\nTIME CONTEXT:\n- The user's current local date is ${localDate}.\n- Their browser time zone is ${timezone}. Use this context when they say today, yesterday, or this week.` }, ...messages],
@@ -287,6 +329,8 @@ export async function POST(request: NextRequest) {
         } catch (error) {
           result = { error: error instanceof Error ? error.message : "Tool failed." };
         }
+        if (isRecord(result) && result.type === "meal_action") mealAction = result.meal;
+        if (isRecord(result) && result.type === "meal_choices") mealChoices = result.choices;
         messages.push({ role: "tool", tool_call_id: callId, content: JSON.stringify(result) });
       }
     }
@@ -294,7 +338,7 @@ export async function POST(request: NextRequest) {
     if (!response) return json({ error: "The Coach did not return an answer." }, 502);
     const reply = extractOutputText(response);
     if (!reply) return json({ error: "The Coach did not return an answer." }, 502);
-    return json({ reply: hideCalories ? hideCalorieValues(reply) : reply, sources: [] });
+    return json({ reply: hideCalories ? hideCalorieValues(reply) : reply, sources: [], ...(mealAction ? { mealAction } : {}), ...(mealChoices ? { mealChoices } : {}) });
   } catch (error) {
     return json({ error: publicCoachError(error) }, 500);
   }
