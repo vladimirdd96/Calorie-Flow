@@ -42,10 +42,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function extractOutputText(response: unknown) {
-  if (!isRecord(response) || !Array.isArray(response.choices)) return undefined;
-  const message = response.choices[0];
-  if (!isRecord(message) || !isRecord(message.message)) return undefined;
-  return typeof message.message.content === "string" ? message.message.content : undefined;
+  if (!isRecord(response)) return undefined;
+  if (Array.isArray(response.choices)) {
+    const choice = response.choices[0];
+    if (isRecord(choice)) {
+      if (isRecord(choice.message) && typeof choice.message.content === "string") return choice.message.content;
+      if (typeof choice.text === "string") return choice.text;
+    }
+  }
+  for (const key of ["response", "output_text", "result"] as const) {
+    if (typeof response[key] === "string") return response[key];
+  }
+  return undefined;
 }
 
 function isImageData(value: unknown): value is string {
@@ -86,7 +94,12 @@ export async function POST(request: NextRequest) {
     });
     const outputText = extractOutputText(responseBody);
     if (!outputText) return NextResponse.json({ error: "No label data was returned." }, { status: 502 });
-    const parsed = labelAnalysisSchema.safeParse(JSON.parse(outputText));
+    let parsed;
+    try {
+      parsed = labelAnalysisSchema.safeParse(JSON.parse(outputText));
+    } catch {
+      parsed = { success: false } as const;
+    }
     if (!parsed.success) return NextResponse.json({ error: "The label service returned invalid nutrition data." }, { status: 502 });
     return NextResponse.json(parsed.data);
   } catch {

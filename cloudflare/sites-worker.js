@@ -517,7 +517,7 @@ async function analyzeLabel(request, env) {
       return json({ error: "Add one to three package photos, each under 10 MB." }, 400);
     }
 
-    const responseBody = await workersAiResponse(env, "@cf/moonshotai/kimi-k2.6", {
+    const responseBody = await env.AI.run("@cf/moonshotai/kimi-k2.6", {
       messages: [
         { role: "system", content: "Read one or more photos of the same food package. They may show a nutrition label, barcode, front of pack, ingredients, serving information, or package size. Extract package nutrition accurately and combine facts across images. Normalize all nutrients to 100 g or 100 ml. If the label only gives a serving, calculate per 100 from the visible serving weight. Use 0 only when the label explicitly indicates zero; otherwise return 0 and ask a short follow-up question naming the missing value. Never guess product weight, serving weight, or package weight. Calories are kcal." },
         { role: "user", content: [{ type: "text", text: "Identify this food package and return the structured result. A barcode alone is useful: return it even if other nutrition details are unavailable." }, ...images.map((image) => ({ type: "image_url", image_url: { url: image } }))] },
@@ -526,7 +526,7 @@ async function analyzeLabel(request, env) {
       max_completion_tokens: 700,
       temperature: 0,
     });
-    const outputText = extractOutputText(responseBody);
+    const outputText = extractVisionText(responseBody);
     if (!outputText) return json({ error: "No label data was returned." }, 502);
     const parsed = parseLabelAnalysis(JSON.parse(outputText));
     if (!parsed) return json({ error: "The label service returned invalid nutrition data." }, 502);
