@@ -110,6 +110,7 @@ import { weightTrackingStatuses } from "@/lib/types";
 import type { BackupData } from "@/lib/db";
 
 type Tab = "today" | "search" | "coach" | "insights" | "profile";
+type ProfileSection = "profile" | "customize";
 type AddView = "start" | "search" | "scan" | "label" | "camera" | "photo" | "manual";
 type SyncState = "local" | "syncing" | "synced" | "offline" | "error";
 type AuthMode = "sign-in" | "register" | "forgot-password" | "update-password";
@@ -801,7 +802,7 @@ function WeightTrackingPreference({ status, onChange }: { status?: WeightTrackin
 function AppearancePreferences({ theme, onChange }: { theme: ThemeMode; onChange: (theme: ThemeMode) => void }) {
   return (
     <section className="display-section appearance-section">
-      <div className="section-heading"><div><span className="eyebrow">Appearance</span><h2>Use the light</h2></div></div>
+      <div className="section-heading"><div><span className="eyebrow">Appearance</span><h2>Theme</h2></div></div>
       <div className="theme-choice" role="group" aria-label="Colour theme">
         <button className={theme === themeModes.light ? "active" : ""} type="button" aria-pressed={theme === themeModes.light} onClick={() => onChange(themeModes.light)}><Sun size={17} /><span><strong>Light</strong><small>Warm and clear for everyday meals</small></span></button>
         <button className={theme === themeModes.dark ? "active" : ""} type="button" aria-pressed={theme === themeModes.dark} onClick={() => onChange(themeModes.dark)}><Moon size={17} /><span><strong>Dark</strong><small>Quieter for late-night logging</small></span></button>
@@ -927,6 +928,7 @@ function ProfileView({
 }) {
   const importRef = useRef<HTMLInputElement>(null);
   const [editingTargets, setEditingTargets] = useState(false);
+  const [profileSection, setProfileSection] = useState<ProfileSection>("profile");
   const targetDisclosureRef = useDismissibleDisclosure<HTMLDivElement>(editingTargets, () => setEditingTargets(false));
   const [dataToolsOpen, setDataToolsOpen] = useState(false);
   const dataToolsRef = useDismissibleDisclosure<HTMLDetailsElement>(dataToolsOpen, () => setDataToolsOpen(false));
@@ -965,20 +967,28 @@ function ProfileView({
   };
   return (
     <main className="page">
-      <header className="page-header"><span className="eyebrow">Your account</span><h1>Your profile</h1><p>Make Calorie Flow feel like yours, then set the targets that guide your day.</p></header>
-      <ProfileIdentity key={`${profile.name}:${profile.avatarUrl || ""}`} profile={profile} user={user} onSave={onSave} />
-      <div ref={targetDisclosureRef}>
-        <TargetSummary profile={profile} expanded={editingTargets} onEdit={() => setEditingTargets((open) => !open)} />
-        {editingTargets && <div id="target-editor"><TargetEditor profile={profile} onSave={(next) => { onSave(next); setEditingTargets(false); }} onCancel={() => setEditingTargets(false)} /></div>}
+      <header className="page-header"><span className="eyebrow">Your account</span><h1>{profileSection === "profile" ? "Your profile" : "Make it yours"}</h1><p>{profileSection === "profile" ? "Keep your identity, targets, and private data in one place." : "Tune the parts of Calorie Flow that should work your way."}</p></header>
+      <div className="profile-tabs" role="tablist" aria-label="Profile sections">
+        <button id="profile-tab" type="button" role="tab" aria-selected={profileSection === "profile"} aria-controls="profile-panel" className={profileSection === "profile" ? "active" : ""} onClick={() => setProfileSection("profile")}>Profile</button>
+        <button id="customize-tab" type="button" role="tab" aria-selected={profileSection === "customize"} aria-controls="customize-panel" className={profileSection === "customize" ? "active" : ""} onClick={() => setProfileSection("customize")}>Customize</button>
       </div>
-      <section className="onboarding-restart" aria-labelledby="onboarding-restart-heading">
-        <div><span className="eyebrow">Want a fresh start?</span><h2 id="onboarding-restart-heading">Run setup again</h2><p>Revisit your goals, activity, and nutrition style. Your diary stays safely in place.</p></div>
-        <button className="secondary-button" type="button" onClick={onRestartOnboarding}><RotateCcw size={16} />Run setup again</button>
-      </section>
-      <DisplayPreferences hideCalories={profile.hideCalories} onChange={(hideCalories) => onSave({ ...profile, hideCalories })} chatTextSize={chatTextSize} onChatTextSizeChange={onChatTextSizeChange} />
-      <WeightTrackingPreference status={weightTracking} onChange={(next) => onSave({ ...profile, weightTracking: next })} />
-      <AppearancePreferences theme={theme} onChange={onThemeChange} />
-      <AccountCard user={user} syncState={syncState} onSignOut={onSignOut} />
+      {profileSection === "profile" ? <div id="profile-panel" role="tabpanel" aria-labelledby="profile-tab" tabIndex={0}>
+        <ProfileIdentity key={`${profile.name}:${profile.avatarUrl || ""}`} profile={profile} user={user} onSave={onSave} />
+        <div ref={targetDisclosureRef}>
+          <TargetSummary profile={profile} expanded={editingTargets} onEdit={() => setEditingTargets((open) => !open)} />
+          {editingTargets && <div id="target-editor"><TargetEditor profile={profile} onSave={(next) => { onSave(next); setEditingTargets(false); }} onCancel={() => setEditingTargets(false)} /></div>}
+        </div>
+        <section className="onboarding-restart" aria-labelledby="onboarding-restart-heading">
+          <div><span className="eyebrow">Want a fresh start?</span><h2 id="onboarding-restart-heading">Run setup again</h2><p>Revisit your goals, activity, and nutrition style. Your diary stays safely in place.</p></div>
+          <button className="secondary-button" type="button" onClick={onRestartOnboarding}><RotateCcw size={16} />Run setup again</button>
+        </section>
+        <AccountCard user={user} syncState={syncState} onSignOut={onSignOut} />
+      </div> : <div id="customize-panel" role="tabpanel" aria-labelledby="customize-tab" tabIndex={0}>
+        <section className="customize-intro" aria-labelledby="customize-heading"><div><span className="eyebrow">Your preferences</span><h2 id="customize-heading">A calmer tracker, your way</h2><p>These choices only change how Calorie Flow feels and what it shows. Your diary stays private on this device.</p></div></section>
+        <DisplayPreferences hideCalories={profile.hideCalories} onChange={(hideCalories) => onSave({ ...profile, hideCalories })} chatTextSize={chatTextSize} onChatTextSizeChange={onChatTextSizeChange} />
+        <WeightTrackingPreference status={weightTracking} onChange={(next) => onSave({ ...profile, weightTracking: next })} />
+        <AppearancePreferences theme={theme} onChange={onThemeChange} />
+      </div>}
       <details ref={dataToolsRef} className="data-tools" open={dataToolsOpen} onToggle={(event) => setDataToolsOpen(event.currentTarget.open)}>
         <summary>
           <ShieldCheck size={17} aria-hidden="true" />
@@ -1004,6 +1014,8 @@ function ProfileView({
 
 function Sheet({ children, onClose, wide = false, label = "Sheet" }: { children: React.ReactNode; onClose: () => void; wide?: boolean; label?: string }) {
   const surfaceRef = useModalFocus(onClose);
+  const [dragOffset, setDragOffset] = useState(0);
+  const dragRef = useRef<{ pointerId: number; startY: number } | undefined>(undefined);
   useEffect(() => {
     document.body.classList.add("sheet-open");
     return () => { document.body.classList.remove("sheet-open"); };
@@ -1011,7 +1023,22 @@ function Sheet({ children, onClose, wide = false, label = "Sheet" }: { children:
   const dismissOnBackdrop = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) onClose();
   };
-  return <div className="sheet-backdrop" onPointerDown={dismissOnBackdrop}><section ref={surfaceRef} className={`sheet ${wide ? "wide" : ""}`} role="dialog" aria-modal="true" aria-label={label} tabIndex={-1}><div className="sheet-handle" aria-hidden="true" />{children}</section></div>;
+  const startDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
+    dragRef.current = { pointerId: event.pointerId, startY: event.clientY };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+  const moveDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (!dragRef.current || dragRef.current.pointerId !== event.pointerId) return;
+    setDragOffset(Math.max(0, event.clientY - dragRef.current.startY));
+  };
+  const endDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (!dragRef.current || dragRef.current.pointerId !== event.pointerId) return;
+    const shouldClose = dragOffset > 90;
+    dragRef.current = undefined;
+    if (shouldClose) onClose();
+    else setDragOffset(0);
+  };
+  return <div className="sheet-backdrop" onPointerDown={dismissOnBackdrop}><section ref={surfaceRef} className={`sheet ${wide ? "wide" : ""}`} style={{ transform: dragOffset ? `translateY(${dragOffset}px)` : undefined, transition: dragOffset ? "none" : "transform .2s ease" }} role="dialog" aria-modal="true" aria-label={label} tabIndex={-1}><button className="sheet-handle" type="button" aria-label="Drag down to close" onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} /><button className="sheet-close icon-button ghost" type="button" aria-label="Close" onClick={onClose}><X size={18} /></button>{children}</section></div>;
 }
 
 function OnboardingDialog({ profile, onSave }: { profile: Profile; onSave: (profile: Profile) => void }) {
@@ -1025,15 +1052,15 @@ function OnboardingDialog({ profile, onSave }: { profile: Profile; onSave: (prof
   );
 }
 
-function WeightTrackingPrompt({ onEnable, onDisable }: { onEnable: () => void; onDisable: () => void }) {
+function WeightTrackingPrompt({ onEnable, onDisable, onDefer }: { onEnable: () => void; onDisable: () => void; onDefer: () => void }) {
   return (
-    <Sheet label="Weight tracking" wide onClose={onDisable}>
+    <Sheet label="Weight tracking" wide onClose={onDefer}>
       <div className="weight-prompt">
         <span className="action-icon mint"><BarChart3 /></span>
         <span className="eyebrow">Optional progress log</span>
         <h2>Want to track your weight?</h2>
         <p>Log daily kilograms and see weekly or monthly averages in Insights. Your entries stay private on this device unless you choose account sync.</p>
-        <div className="weight-prompt-actions"><button className="primary-button" type="button" onClick={onEnable}>Yes, track my weight<ChevronRight size={17} /></button><button className="secondary-button" type="button" onClick={onDisable}>No, don’t track my weight</button></div>
+        <div className="weight-prompt-actions"><button className="primary-button" type="button" onClick={onEnable}>Yes, track my weight<ChevronRight size={17} /></button><button className="secondary-button" type="button" onClick={onDefer}>Not now</button><button className="text-button muted" type="button" onClick={onDisable}>No, don’t track my weight</button></div>
       </div>
     </Sheet>
   );
@@ -1973,6 +2000,7 @@ export function TrackerApp() {
   const [theme, setTheme] = useState<ThemeMode>(themeModes.light);
   const [chatTextSize, setChatTextSize] = useState<ChatTextSize>(chatTextSizes.comfortable);
   const [showHomeScreenPrompt, setShowHomeScreenPrompt] = useState(false);
+  const [weightPromptDismissedFor, setWeightPromptDismissedFor] = useState<string | null>(null);
   const [undoMeal, setUndoMeal] = useState<{ meal: Meal; timerId: number }>();
   const syncIdentityRef = useRef("");
   const syncMutationRef = useRef(0);
@@ -2245,9 +2273,10 @@ export function TrackerApp() {
     void setSetting(CHAT_TEXT_SIZE_SETTING, nextSize);
   };
   const weightTrackingEnabled = profile.weightTracking === weightTrackingStatuses.enabled;
-  const weightPromptOpen = profile.onboardingDone && profile.weightTracking === undefined;
-  const enableWeightTracking = () => { void saveProfile({ ...profile, weightTracking: weightTrackingStatuses.enabled }); };
+  const weightPromptOpen = profile.onboardingDone && profile.weightTracking === undefined && weightPromptDismissedFor !== auth.user?.id;
+  const enableWeightTracking = () => { setWeightPromptDismissedFor(auth.user?.id || ""); void saveProfile({ ...profile, weightTracking: weightTrackingStatuses.enabled }); };
   const disableWeightTracking = () => { void saveProfile({ ...profile, weightTracking: weightTrackingStatuses.disabled }); };
+  const deferWeightTracking = () => setWeightPromptDismissedFor(auth.user?.id || "");
 
   const syncLabel: Record<SyncState, string> = {
     local: "Private on this device",
@@ -2276,7 +2305,7 @@ export function TrackerApp() {
       {calendarOpen && <Sheet onClose={() => setCalendarOpen(false)} wide label="Calendar"><CalendarSheet dateKey={dateKey} meals={meals} profile={profile} onDateChange={setDateKey} onClose={() => setCalendarOpen(false)} /></Sheet>}
       {editingMeal && <Sheet onClose={() => setEditingMeal(undefined)}><MealEditor meal={editingMeal} hideCalories={profile.hideCalories} onSave={(meal) => editingMeal.id.startsWith("photo-") ? saveNewMeal(meal) : saveEditedMeal(meal)} onClose={() => setEditingMeal(undefined)} /></Sheet>}
       {!profile.onboardingDone && <OnboardingDialog profile={profile} onSave={saveProfile} />}
-      {weightPromptOpen && <WeightTrackingPrompt onEnable={enableWeightTracking} onDisable={disableWeightTracking} />}
+      {weightPromptOpen && <WeightTrackingPrompt onEnable={enableWeightTracking} onDisable={disableWeightTracking} onDefer={deferWeightTracking} />}
       {undoMeal && <div className="toast undo-toast" role="status"><span>Meal removed</span><button type="button" onClick={undoDeleteMeal}>Undo</button></div>}
       {toast && <div className="toast"><Check size={17} />{toast}</div>}
     </div>
