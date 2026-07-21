@@ -50,6 +50,8 @@ export type Sex = "male" | "female";
 export type GoalMode = "lose" | "maintain" | "gain";
 export type ActivityLevel = "sedentary" | "light" | "moderate" | "active" | "very-active";
 export type DietPreset = "balanced" | "high-protein" | "keto" | "high-protein-keto" | "low-fat";
+export const weightTrackingStatuses = { enabled: "enabled", disabled: "disabled" } as const;
+export type WeightTrackingStatus = typeof weightTrackingStatuses[keyof typeof weightTrackingStatuses];
 
 export type Profile = {
   name: string;
@@ -69,6 +71,7 @@ export type Profile = {
   hideCalories: boolean;
   onboardingDone: boolean;
   weightEntries?: WeightEntry[];
+  weightTracking?: WeightTrackingStatus;
 };
 
 export type WeightEntry = {

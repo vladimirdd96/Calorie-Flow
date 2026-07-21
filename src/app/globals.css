@@ -275,6 +275,13 @@ p { color: var(--muted); line-height: 1.55; }
 .weight-empty strong { font-size: 13px; }
 .weight-empty p { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
 .subtle-button { color: var(--muted); }
+.weight-prompt { display: grid; gap: 12px; padding: 10px 4px 4px; }
+.weight-prompt > .action-icon { margin-bottom: 4px; }
+.weight-prompt h2 { margin: 0; font-size: 25px; letter-spacing: -.04em; }
+.weight-prompt p { max-width: 52ch; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+.weight-prompt-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; }
+.weight-prompt-actions .primary-button { min-height: 44px; }
+.weight-prompt-actions .secondary-button { min-height: 44px; }
 .coach-check-in { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; margin-top: 14px; padding: 12px 4px; text-align: left; color: var(--text); background: transparent; border: 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .home-screen-prompt { display: grid; gap: 13px; margin: 18px 0 20px; padding: 15px 16px; border-color: var(--border-strong); background: color-mix(in oklch, var(--panel-strong) 32%, var(--panel)); }
 .home-screen-prompt-heading { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 11px; }

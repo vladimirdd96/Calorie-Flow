@@ -76,6 +76,7 @@ export const profileSchema = z.object({
   hideCalories: z.boolean(),
   onboardingDone: z.boolean(),
   weightEntries: z.array(weightEntrySchema).max(10_000).optional(),
+  weightTracking: z.enum(["enabled", "disabled"]).optional(),
 }).strict() satisfies z.ZodType<Profile>;
 
 export const coachMessageSchema = z.object({

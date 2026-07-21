@@ -103,7 +103,9 @@ import type {
   ServingUnit,
   Sex,
   WeightEntry,
+  WeightTrackingStatus,
 } from "@/lib/types";
+import { weightTrackingStatuses } from "@/lib/types";
 import type { BackupData } from "@/lib/db";
 
 type Tab = "today" | "search" | "coach" | "insights" | "profile";
@@ -613,7 +615,7 @@ function startOfWeek(date: Date) {
   return result;
 }
 
-function InsightsView({ meals, profile, onSave }: { meals: Meal[]; profile: Profile; onSave: (profile: Profile) => void }) {
+function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: { meals: Meal[]; profile: Profile; onSave: (profile: Profile) => void; weightTrackingEnabled: boolean }) {
   const days = Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
     date.setDate(date.getDate() - (6 - index));
@@ -659,9 +661,9 @@ function InsightsView({ meals, profile, onSave }: { meals: Meal[]; profile: Prof
         {!profile.hideCalories && <div className="card"><span>Daily average</span><strong>{Math.round(average).toLocaleString()}</strong><small>kcal on logged days</small></div>}
         <div className="card"><span>Protein average</span><strong>{Math.round(proteinAverage)} g</strong><small>target {profile.proteinTarget} g</small></div>
         {profile.hideCalories && <div className="card"><span>Fibre average</span><strong>{Math.round(loggedDays.length ? loggedDays.reduce((sum, day) => sum + day.total.fiber, 0) / loggedDays.length : 0)} g</strong><small>target {profile.fiberTarget} g</small></div>}
-        <div className="card"><span>Weight average</span><strong>{weightAverage ? `${weightAverage.toFixed(1)} kg` : "—"}</strong><small>{weightPeriod === "week" ? "this week" : weightPeriod === "month" ? "this month" : "all time"}</small></div>
+        {weightTrackingEnabled && <div className="card"><span>Weight average</span><strong>{weightAverage ? `${weightAverage.toFixed(1)} kg` : "—"}</strong><small>{weightPeriod === "week" ? "this week" : weightPeriod === "month" ? "this month" : "all time"}</small></div>}
       </section>
-      <section className="weight-section" aria-labelledby="weight-heading">
+      {weightTrackingEnabled && <section className="weight-section" aria-labelledby="weight-heading">
         <div className="section-heading"><div><span className="eyebrow">Optional progress log</span><h2 id="weight-heading">Body weight</h2></div><span className="subtle">{entries.length} {entries.length === 1 ? "entry" : "entries"}</span></div>
         <form className="weight-log card" onSubmit={saveWeight}>
           <div><span className="weight-log-label">Log a weigh-in</span><p>Use the same conditions when you can. Trends are more useful than any single day.</p></div>
@@ -679,7 +681,7 @@ function InsightsView({ meals, profile, onSave }: { meals: Meal[]; profile: Prof
           const label = weightPeriod === "week" ? `Week of ${new Date(`${group.key}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : new Date(`${group.key}-01T12:00:00`).toLocaleDateString(undefined, { month: "long", year: "numeric" });
           return <details className="weight-history-group" key={group.key}><summary><span><strong>{label}</strong><small>{group.entries.length} {group.entries.length === 1 ? "weigh-in" : "weigh-ins"}</small></span><b>{groupAverage.toFixed(1)} kg</b></summary><div className="weight-history-entries">{group.entries.map((entry) => <div className="weight-history-entry" key={entry.date}><span>{new Date(`${entry.date}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}</span><strong>{entry.weightKg.toFixed(1)} kg</strong><button type="button" className="icon-button subtle-button" onClick={() => removeWeight(entry)} aria-label={`Remove weight logged on ${entry.date}`}><Trash2 size={14} /></button></div>)}</div></details>;
         })}</div> : <div className="weight-empty card"><strong>Your weight history starts here.</strong><p>Log a weigh-in above to see daily entries and rolling averages.</p></div>}
-      </section>
+      </section>}
       {!profile.hideCalories && <section className="chart-card card">
         <div className="section-heading compact"><div><span className="eyebrow">Last 7 days</span><h2>Calories</h2></div><span className="legend"><i /> {profile.calorieTarget.toLocaleString()} target</span></div>
         <div className="chart-area">
@@ -756,6 +758,16 @@ function DisplayPreferences({ hideCalories, onChange, chatTextSize, onChatTextSi
           <button type="button" aria-pressed={chatTextSize === chatTextSizes.large} className={chatTextSize === chatTextSizes.large ? "active" : ""} onClick={() => onChatTextSizeChange(chatTextSizes.large)}>Large</button>
         </div>
       </div>
+    </section>
+  );
+}
+
+function WeightTrackingPreference({ status, onChange }: { status?: WeightTrackingStatus; onChange: (status: WeightTrackingStatus) => void }) {
+  const enabled = status === weightTrackingStatuses.enabled;
+  return (
+    <section className="display-section">
+      <div className="section-heading"><div><span className="eyebrow">Optional progress</span><h2>Weight tracking</h2></div></div>
+      <button className={`display-preference ${enabled ? "active" : ""}`} type="button" aria-pressed={enabled} onClick={() => onChange(enabled ? weightTrackingStatuses.disabled : weightTrackingStatuses.enabled)}><span><strong>{enabled ? "Weight tracking is on" : "Weight tracking is off"}</strong><small>{enabled ? "Show averages and daily weigh-ins in Insights." : "Add daily weigh-ins and averages to your Insights page."}</small></span><span className="toggle" /></button>
     </section>
   );
 }
@@ -870,6 +882,7 @@ function ProfileView({
   onThemeChange,
   chatTextSize,
   onChatTextSizeChange,
+  weightTracking,
 }: {
   profile: Profile;
   onSave: (profile: Profile) => void;
@@ -882,6 +895,7 @@ function ProfileView({
   onThemeChange: (theme: ThemeMode) => void;
   chatTextSize: ChatTextSize;
   onChatTextSizeChange: (size: ChatTextSize) => void;
+  weightTracking?: WeightTrackingStatus;
 }) {
   const importRef = useRef<HTMLInputElement>(null);
   const [editingTargets, setEditingTargets] = useState(false);
@@ -930,6 +944,7 @@ function ProfileView({
         {editingTargets && <div id="target-editor"><TargetEditor profile={profile} onSave={(next) => { onSave(next); setEditingTargets(false); }} onCancel={() => setEditingTargets(false)} /></div>}
       </div>
       <DisplayPreferences hideCalories={profile.hideCalories} onChange={(hideCalories) => onSave({ ...profile, hideCalories })} chatTextSize={chatTextSize} onChatTextSizeChange={onChatTextSizeChange} />
+      <WeightTrackingPreference status={weightTracking} onChange={(next) => onSave({ ...profile, weightTracking: next })} />
       <AppearancePreferences theme={theme} onChange={onThemeChange} />
       <AccountCard user={user} syncState={syncState} onSignOut={onSignOut} />
       <details ref={dataToolsRef} className="data-tools" open={dataToolsOpen} onToggle={(event) => setDataToolsOpen(event.currentTarget.open)}>
@@ -975,6 +990,20 @@ function OnboardingDialog({ profile, onSave }: { profile: Profile; onSave: (prof
         <TargetEditor profile={profile} onSave={onSave} onboarding />
       </section>
     </div>
+  );
+}
+
+function WeightTrackingPrompt({ onEnable, onNotNow }: { onEnable: () => void; onNotNow: () => void }) {
+  return (
+    <Sheet label="Weight tracking" wide onClose={onNotNow}>
+      <div className="weight-prompt">
+        <span className="action-icon mint"><BarChart3 /></span>
+        <span className="eyebrow">Optional progress log</span>
+        <h2>Want to track your weight?</h2>
+        <p>Log daily kilograms and see weekly or monthly averages in Insights. Your entries stay private on this device unless you choose account sync.</p>
+        <div className="weight-prompt-actions"><button className="primary-button" type="button" onClick={onEnable}>Turn on weight tracking<ChevronRight size={17} /></button><button className="secondary-button" type="button" onClick={onNotNow}>Not now</button></div>
+      </div>
+    </Sheet>
   );
 }
 
@@ -1826,6 +1855,7 @@ export function TrackerApp() {
   const [theme, setTheme] = useState<ThemeMode>(themeModes.light);
   const [chatTextSize, setChatTextSize] = useState<ChatTextSize>(chatTextSizes.comfortable);
   const [showHomeScreenPrompt, setShowHomeScreenPrompt] = useState(false);
+  const [weightPromptDismissedFor, setWeightPromptDismissedFor] = useState<string | null>(null);
   const [undoMeal, setUndoMeal] = useState<{ meal: Meal; timerId: number }>();
   const syncIdentityRef = useRef("");
   const syncMutationRef = useRef(0);
@@ -2088,7 +2118,7 @@ export function TrackerApp() {
   };
   const openAdd = (view: AddView = "start") => { setInitialAddView(view); setAdding(true); };
   const selectFood = (food: Food) => { setDirectFood(food); setAdding(true); };
-  const signOut = async () => { await auth.signOut(); };
+  const signOut = async () => { setWeightPromptDismissedFor(null); await auth.signOut(); };
   const changeTheme = (nextTheme: ThemeMode) => {
     setTheme(nextTheme);
     void setSetting(THEME_SETTING, nextTheme);
@@ -2097,6 +2127,10 @@ export function TrackerApp() {
     setChatTextSize(nextSize);
     void setSetting(CHAT_TEXT_SIZE_SETTING, nextSize);
   };
+  const weightTrackingEnabled = profile.weightTracking === weightTrackingStatuses.enabled;
+  const weightPromptOpen = profile.onboardingDone && profile.weightTracking === undefined && weightPromptDismissedFor !== auth.user?.id;
+  const enableWeightTracking = () => { setWeightPromptDismissedFor(auth.user?.id || ""); void saveProfile({ ...profile, weightTracking: weightTrackingStatuses.enabled }); };
+  const deferWeightTracking = () => setWeightPromptDismissedFor(auth.user?.id || "");
 
   const syncLabel: Record<SyncState, string> = {
     local: "Private on this device",
@@ -2109,7 +2143,7 @@ export function TrackerApp() {
   if (startupError) return <main className="app-loading load-error" role="alert"><Database size={30} /><h1>Diary unavailable</h1><p>{startupError}</p><button className="primary-button" onClick={() => { setStartupError(""); void refresh().catch(() => setStartupError("Your private diary could not be opened. Your data has not been reset.")); }}>Try again</button></main>;
   if (!ready || !auth.ready) return <div className="app-loading" role="status" aria-label="Opening your private diary"><BrandMark large /><i /></div>;
   if (auth.passwordRecovery || !auth.user) return <AuthGateway key={auth.passwordRecovery ? "recovery" : "sign-in"} configured={auth.configured} passwordRecovery={auth.passwordRecovery} onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} />;
-  const modalOpen = adding || !!editingMeal || calendarOpen || !profile.onboardingDone;
+  const modalOpen = adding || !!editingMeal || calendarOpen || !profile.onboardingDone || weightPromptOpen;
   return (
     <div className="app-shell">
       <div className="ambient one" /><div className="ambient two" />
@@ -2117,14 +2151,15 @@ export function TrackerApp() {
         {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={() => openAdd()} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} onEdit={setEditingMeal} onMoveMeal={moveMeal} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} onOpenCalendar={() => setCalendarOpen(true)} />}
         {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={openAdd} />}
         {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} chatTextSize={chatTextSize} onLogCoachMeal={logCoachMeal} onOpenAccount={() => setTab("profile")} onOpenAdd={openAdd} />}
-        {tab === "insights" && <InsightsView meals={meals} profile={profile} onSave={saveProfile} />}
-      {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onExport={exportBackup} onImport={restoreBackup} user={auth.user} syncState={syncState} onSignOut={signOut} theme={theme} onThemeChange={changeTheme} chatTextSize={chatTextSize} onChatTextSizeChange={changeChatTextSize} />}
+        {tab === "insights" && <InsightsView meals={meals} profile={profile} onSave={saveProfile} weightTrackingEnabled={weightTrackingEnabled} />}
+      {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onExport={exportBackup} onImport={restoreBackup} user={auth.user} syncState={syncState} onSignOut={signOut} theme={theme} onThemeChange={changeTheme} chatTextSize={chatTextSize} onChatTextSizeChange={changeChatTextSize} weightTracking={profile.weightTracking} />}
       </div>
       <div inert={modalOpen} aria-hidden={modalOpen || undefined}><BottomNav tab={tab} onChange={(nextTab) => { window.scrollTo(0, 0); setTab(nextTab); }} /></div>
       {adding && profile.onboardingDone && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); }} wide>{directFood ? <PortionSheet food={directFood} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} onClose={() => setAdding(false)} onLog={logMeal} onMealPhoto={addPhotoMeal} />}</Sheet>}
       {calendarOpen && <Sheet onClose={() => setCalendarOpen(false)} wide label="Calendar"><CalendarSheet dateKey={dateKey} meals={meals} profile={profile} onDateChange={setDateKey} onClose={() => setCalendarOpen(false)} /></Sheet>}
       {editingMeal && <Sheet onClose={() => setEditingMeal(undefined)}><MealEditor meal={editingMeal} hideCalories={profile.hideCalories} onSave={(meal) => editingMeal.id.startsWith("photo-") ? saveNewMeal(meal) : saveEditedMeal(meal)} onClose={() => setEditingMeal(undefined)} /></Sheet>}
       {!profile.onboardingDone && <OnboardingDialog profile={profile} onSave={saveProfile} />}
+      {weightPromptOpen && <WeightTrackingPrompt onEnable={enableWeightTracking} onNotNow={deferWeightTracking} />}
       {undoMeal && <div className="toast undo-toast" role="status"><span>Meal removed</span><button type="button" onClick={undoDeleteMeal}>Undo</button></div>}
       {toast && <div className="toast"><Check size={17} />{toast}</div>}
     </div>
