@@ -6,6 +6,7 @@ import {
   BarChart3,
   Camera,
   Check,
+  Copy,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -280,6 +281,7 @@ const mealLabels: Record<MealType, string> = {
   dinner: "Dinner",
   snack: "Snack",
 };
+const compareMealOrder = (a: Meal, b: Meal) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER) || a.createdAt.localeCompare(b.createdAt);
 
 const unitLabels: Record<ServingUnit, string> = {
   serving: "Serving",
@@ -373,9 +375,9 @@ function FoodAvatar({ food, name }: { food?: Food; name?: string }) {
   return <div className="food-avatar fallback">{(name || food?.name || "F").slice(0, 1).toUpperCase()}</div>;
 }
 
-function MealRow({ meal, onDelete, onEdit, onDragStart, hideCalories }: { meal: Meal; onDelete: () => void; onEdit: () => void; onDragStart: (meal: Meal, event: React.DragEvent<HTMLDivElement>) => void; hideCalories: boolean }) {
+function MealRow({ meal, onDelete, onEdit, onDuplicate, onDragStart, onDragOver, onDrop, dropPosition, hideCalories }: { meal: Meal; onDelete: () => void; onEdit: () => void; onDuplicate: () => void; onDragStart: (meal: Meal, event: React.DragEvent<HTMLDivElement>) => void; onDragOver: (event: React.DragEvent<HTMLDivElement>) => void; onDrop: (event: React.DragEvent<HTMLDivElement>) => void; dropPosition?: "before" | "after"; hideCalories: boolean }) {
   return (
-    <div className="meal-row" draggable onDragStart={(event) => onDragStart(meal, event)} title="Drag to another meal">
+    <div className={`meal-row ${dropPosition ? `drop-${dropPosition}` : ""}`} draggable onDragStart={(event) => onDragStart(meal, event)} onDragOver={onDragOver} onDrop={onDrop} title="Drag to reorder or move to another meal">
       <span className="meal-drag-handle" aria-hidden="true"><GripVertical size={17} /></span>
       <div className="meal-icon"><Utensils size={17} /></div>
       <div className="meal-copy">
@@ -383,10 +385,16 @@ function MealRow({ meal, onDelete, onEdit, onDragStart, hideCalories }: { meal: 
         <span>{meal.amount} {formatUnit(meal.unit, meal.amount)} · P {meal.nutrition.protein} · C {meal.nutrition.carbs} · F {meal.nutrition.fat}</span>
       </div>
       {!hideCalories && <strong className="meal-kcal">{Math.round(meal.nutrition.calories)}</strong>}
-      <button className="icon-button ghost" onClick={onEdit} aria-label={`Edit ${meal.name}`}><Pencil size={16} /></button>
-      <button className="icon-button ghost danger-hover" onClick={onDelete} aria-label={`Delete ${meal.name}`}><Trash2 size={17} /></button>
+      <button type="button" className="icon-button ghost" onClick={onEdit} aria-label={`Edit ${meal.name}`}><Pencil size={16} /></button>
+      <button type="button" className="icon-button ghost" onClick={onDuplicate} aria-label={`Duplicate ${meal.name}`}><Copy size={16} /></button>
+      <button type="button" className="icon-button ghost danger-hover" onClick={onDelete} aria-label={`Delete ${meal.name}`}><Trash2 size={17} /></button>
     </div>
   );
+}
+
+function DuplicateMealSheet({ meal, onDuplicate, onClose }: { meal: Meal; onDuplicate: (mealType: MealType) => void; onClose: () => void }) {
+  const [mealType, setMealType] = useState<MealType>(meal.mealType);
+  return <div className="meal-editor"><div className="sheet-header"><div><span className="eyebrow">Your diary</span><h2>Duplicate meal</h2></div><button className="icon-button ghost" type="button" onClick={onClose} aria-label="Close duplicate meal dialog"><X /></button></div><div className="duplicate-meal-copy"><strong>{meal.name}</strong><p>Choose where to add a copy. The original meal stays where it is.</p></div><label className="meal-editor-form"><span>Add copy to</span><select value={mealType} onChange={(event) => setMealType(event.target.value as MealType)}>{(Object.keys(mealLabels) as MealType[]).map((type) => <option key={type} value={type}>{mealLabels[type]}</option>)}</select></label><div className="sheet-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="button" className="primary-button" onClick={() => onDuplicate(mealType)}><Copy size={17} />Duplicate</button></div></div>;
 }
 
 function MealEditor({ meal, onSave, onClose, hideCalories }: { meal: Meal; onSave: (meal: Meal) => void; onClose: () => void; hideCalories: boolean }) {
@@ -445,7 +453,8 @@ function TodayView({
   onOpenCoach,
   onDelete,
   onEdit,
-  onMoveMeal,
+  onDropMeal,
+  onDuplicate,
   syncLabel,
   showHomeScreenPrompt,
   onOpenCalendar,
@@ -458,12 +467,13 @@ function TodayView({
   onOpenCoach: () => void;
   onDelete: (id: string) => void;
   onEdit: (meal: Meal) => void;
-  onMoveMeal: (meal: Meal, mealType: MealType) => void;
+  onDropMeal: (meal: Meal, mealType: MealType, targetMealId?: string, insertAfter?: boolean) => void;
+  onDuplicate: (meal: Meal) => void;
   syncLabel: string;
   showHomeScreenPrompt: boolean;
   onOpenCalendar: () => void;
 }) {
-  const [dropTarget, setDropTarget] = useState<MealType>();
+  const [dropTarget, setDropTarget] = useState<string>();
   const total = useMemo(() => sumNutrition(meals.map((meal) => meal.nutrition)), [meals]);
   const remaining = Math.max(0, profile.calorieTarget - total.calories);
   const grouped = (Object.keys(mealLabels) as MealType[]).map((type) => ({ type, meals: meals.filter((meal) => meal.mealType === type) }));
@@ -510,8 +520,8 @@ function TodayView({
         {meals.length === 0 ? <EmptyMeals onAdd={onAdd} /> : grouped.map(({ type, meals: groupMeals }) => (
           <div className="meal-group" key={type}>
             <div className="meal-group-title"><span>{mealLabels[type]}</span>{!profile.hideCalories && <span>{Math.round(sumNutrition(groupMeals.map((meal) => meal.nutrition)).calories)} kcal</span>}</div>
-            <div className={`meal-list card ${dropTarget === type ? "drop-target" : ""}`} onDragOver={(event) => { event.preventDefault(); setDropTarget(type); }} onDragLeave={() => setDropTarget(undefined)} onDrop={(event) => { event.preventDefault(); const mealId = event.dataTransfer.getData("text/meal-id"); const meal = meals.find((candidate) => candidate.id === mealId) || groupMeals.find((candidate) => candidate.id === mealId); if (meal) onMoveMeal(meal, type); setDropTarget(undefined); }}>
-              {groupMeals.length ? groupMeals.map((meal) => <MealRow key={meal.id} meal={meal} hideCalories={profile.hideCalories} onDelete={() => onDelete(meal.id)} onEdit={() => onEdit(meal)} onDragStart={(draggedMeal, event) => { event.dataTransfer.setData("text/meal-id", draggedMeal.id); event.dataTransfer.effectAllowed = "move"; }} />) : <div className="empty-meal-drop">Drop food here</div>}
+            <div className={`meal-list card ${dropTarget === type ? "drop-target" : ""}`} onDragOver={(event) => { event.preventDefault(); setDropTarget(type); }} onDragLeave={() => setDropTarget(undefined)} onDrop={(event) => { event.preventDefault(); const mealId = event.dataTransfer.getData("text/meal-id"); const meal = meals.find((candidate) => candidate.id === mealId); if (meal) onDropMeal(meal, type); setDropTarget(undefined); }}>
+              {groupMeals.length ? groupMeals.map((meal) => <MealRow key={meal.id} meal={meal} hideCalories={profile.hideCalories} dropPosition={dropTarget === `${type}:${meal.id}:before` ? "before" : dropTarget === `${type}:${meal.id}:after` ? "after" : undefined} onDelete={() => onDelete(meal.id)} onEdit={() => onEdit(meal)} onDuplicate={() => onDuplicate(meal)} onDragStart={(draggedMeal, event) => { event.dataTransfer.setData("text/meal-id", draggedMeal.id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); setDropTarget(`${type}:${meal.id}:${event.clientY < rect.top + rect.height / 2 ? "before" : "after"}`); }} onDrop={(event) => { event.preventDefault(); event.stopPropagation(); const mealId = event.dataTransfer.getData("text/meal-id"); const draggedMeal = meals.find((candidate) => candidate.id === mealId); if (draggedMeal) { const rect = event.currentTarget.getBoundingClientRect(); onDropMeal(draggedMeal, type, meal.id, event.clientY >= rect.top + rect.height / 2); } setDropTarget(undefined); }} />) : <div className="empty-meal-drop">Drop food here</div>}
             </div>
           </div>
         ))}
@@ -1559,6 +1569,7 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, onLogCoachMeal,
   const [activeChatId, setActiveChatId] = useState("");
   const [renamingChatId, setRenamingChatId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
+  const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
   const [section, setSection] = useState<CoachSection>("chat");
   const [groceryLists, setGroceryLists] = useState<GroceryList[]>([]);
   const [activeGroceryListId, setActiveGroceryListId] = useState("");
@@ -1851,7 +1862,7 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, onLogCoachMeal,
     <main className={`page coach-page coach-text-${chatTextSize}`}>
       <header className="coach-header"><div><span className="eyebrow">Your food companion</span><h1>{section === "chat" ? activeChat?.title || "New conversation" : "Coach"}</h1></div>{section === "chat" && <div className="coach-header-actions">{messages.length > 0 && <button className="text-button muted" onClick={() => void clear()}>Clear</button>}</div>}</header>
       <div className="coach-layout">
-        {section === "chat" && <aside className="coach-history" aria-label="Previous chats"><div className="coach-history-heading"><span>Chats</span><button className="icon-button ghost" type="button" onClick={() => void newChat()} aria-label="Start a new chat"><Plus size={16} /></button></div><div className="coach-history-list">{chats.map((chat) => <div className={`coach-history-row ${chat.id === activeChatId ? "active" : ""}`} key={chat.id}>{renamingChatId === chat.id ? <form className="coach-rename-form" onSubmit={(event) => { event.preventDefault(); void saveRename(); }}><input autoFocus value={renameDraft} onChange={(event) => setRenameDraft(event.target.value)} maxLength={120} aria-label="Chat name" /><button type="submit" aria-label="Save chat name"><Check size={14} /></button></form> : <><button className="coach-history-chat" type="button" onClick={() => void switchChat(chat.id)}><span>{chat.title}</span><small>{new Date(chat.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</small></button><button className="coach-history-rename" type="button" onClick={() => beginRename(chat)} aria-label={`Rename ${chat.title}`}><Pencil size={14} /></button></>}</div>)}</div>{chats.length > 1 && <button className="text-button danger coach-delete-chat" type="button" onClick={() => void removeChat()}><Trash2 size={14} />Delete current chat</button>}</aside>}
+        {section === "chat" && <aside className={`coach-history ${mobileHistoryOpen ? "mobile-open" : ""}`} aria-label="Previous chats"><div className="coach-history-heading"><span className="coach-history-label">Chats</span><button className="coach-history-mobile-toggle" type="button" aria-expanded={mobileHistoryOpen} onClick={() => setMobileHistoryOpen((open) => !open)}><span>{activeChat?.title || "New conversation"}</span><ChevronDown size={15} /></button><button className="icon-button ghost" type="button" onClick={() => void newChat()} aria-label="Start a new chat"><Plus size={16} /></button></div><div className="coach-history-list">{chats.map((chat) => <div className={`coach-history-row ${chat.id === activeChatId ? "active" : ""}`} data-title={chat.title} key={chat.id}>{renamingChatId === chat.id ? <form className="coach-rename-form" onSubmit={(event) => { event.preventDefault(); void saveRename(); }}><input autoFocus value={renameDraft} onChange={(event) => setRenameDraft(event.target.value)} maxLength={120} aria-label="Chat name" /><button type="submit" aria-label="Save chat name"><Check size={14} /></button></form> : <><button className="coach-history-chat" type="button" onClick={() => { void switchChat(chat.id); setMobileHistoryOpen(false); }}><span>{chat.title}</span><small>{new Date(chat.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</small></button><button className="coach-history-rename" type="button" onClick={() => beginRename(chat)} aria-label={`Rename ${chat.title}`}><Pencil size={14} /></button></>}</div>)}</div>{chats.length > 1 && <button className="text-button danger coach-delete-chat" type="button" onClick={() => void removeChat()}><Trash2 size={14} />Delete current chat</button>}</aside>}
         <div className="coach-main">
       <div className="coach-tabs" role="tablist" aria-label="Coach workspace"><button id="coach-chat-tab" role="tab" aria-selected={section === "chat"} aria-controls="coach-chat-panel" className={section === "chat" ? "active" : ""} onClick={() => setSection("chat")}><MessageCircle size={16} />Chat</button><button id="coach-groceries-tab" role="tab" aria-selected={section === "groceries"} aria-controls="coach-groceries-panel" className={section === "groceries" ? "active" : ""} onClick={() => setSection("groceries")}><ListChecks size={16} />Groceries{remainingGroceries > 0 && <span>{remainingGroceries}</span>}</button></div>
       {section === "chat" && <>
@@ -1994,6 +2005,7 @@ export function TrackerApp() {
   const [initialAddView, setInitialAddView] = useState<AddView>("start");
   const [directFood, setDirectFood] = useState<Food>();
   const [editingMeal, setEditingMeal] = useState<Meal>();
+  const [duplicateMealDraft, setDuplicateMealDraft] = useState<Meal>();
   const [toast, setToast] = useState("");
   const [syncState, setSyncState] = useState<SyncState>("local");
   const [syncAttempt, setSyncAttempt] = useState(0);
@@ -2118,7 +2130,7 @@ export function TrackerApp() {
     return () => { active = false; };
   }, [auth.configured, auth.ready, auth.user, ready, refresh, syncAttempt]);
 
-  const dayMeals = useMemo(() => meals.filter((meal) => (meal.loggedDate || localDateKey(new Date(meal.createdAt))) === dateKey).sort((a, b) => a.createdAt.localeCompare(b.createdAt)), [meals, dateKey]);
+  const dayMeals = useMemo(() => meals.filter((meal) => (meal.loggedDate || localDateKey(new Date(meal.createdAt))) === dateKey).sort(compareMealOrder), [meals, dateKey]);
   const syncWrite = (work: (userId: string) => Promise<void>) => {
     if (!auth.user) return;
     const userId = auth.user.id;
@@ -2160,10 +2172,27 @@ export function TrackerApp() {
     setEditingMeal(undefined); setToast("Meal updated");
     syncWrite((userId) => upsertCloudMeal(userId, savedMeal));
   };
-  const moveMeal = async (meal: Meal, mealType: MealType) => {
-    if (meal.mealType === mealType) return;
-    await saveEditedMeal({ ...meal, mealType });
-    setToast(`Moved to ${mealLabels[mealType]}`);
+  const dropMeal = async (meal: Meal, mealType: MealType, targetMealId?: string, insertAfter = false) => {
+    const dayMeals = meals.filter((candidate) => (candidate.loggedDate || localDateKey(new Date(candidate.createdAt))) === dateKey).sort(compareMealOrder);
+    const nextByType = new Map<MealType, Meal[]>((Object.keys(mealLabels) as MealType[]).map((type) => [type, dayMeals.filter((candidate) => candidate.mealType === type && candidate.id !== meal.id)]));
+    const destination = nextByType.get(mealType) || [];
+    const targetIndex = targetMealId ? destination.findIndex((candidate) => candidate.id === targetMealId) : -1;
+    destination.splice(targetIndex < 0 ? destination.length : targetIndex + (insertAfter ? 1 : 0), 0, { ...meal, mealType, loggedDate: meal.loggedDate || dateKey });
+    nextByType.set(mealType, destination);
+    const changed = [...nextByType.values()].flat().map((candidate, index) => ({ ...candidate, position: nextByType.get(candidate.mealType)?.findIndex((item) => item.id === candidate.id) ?? index }));
+    await Promise.all(changed.map((candidate) => put("meals", candidate)));
+    setMeals((current) => current.map((candidate) => changed.find((next) => next.id === candidate.id) || candidate));
+    syncWrite((userId) => Promise.all(changed.map((candidate) => upsertCloudMeal(userId, candidate))).then(() => undefined));
+    setToast(meal.mealType === mealType ? "Meal order updated" : `Moved to ${mealLabels[mealType]}`);
+  };
+  const duplicateMeal = async (meal: Meal, mealType: MealType) => {
+    const destinationMeals = meals.filter((candidate) => (candidate.loggedDate || localDateKey(new Date(candidate.createdAt))) === dateKey && candidate.mealType === mealType).sort(compareMealOrder);
+    const copy: Meal = { ...meal, id: `duplicate-${crypto.randomUUID()}`, mealType, loggedDate: meal.loggedDate || dateKey, createdAt: new Date().toISOString(), position: destinationMeals.length };
+    await put("meals", copy);
+    setMeals((current) => [...current, copy]);
+    syncWrite((userId) => upsertCloudMeal(userId, copy));
+    setDuplicateMealDraft(undefined);
+    setToast(`Copied to ${mealLabels[mealType]}`);
   };
   const saveNewMeal = async (meal: Meal) => {
     await put("meals", meal);
@@ -2294,7 +2323,7 @@ export function TrackerApp() {
     <div className="app-shell">
       <div className="ambient one" /><div className="ambient two" />
       <div className="content-shell" inert={modalOpen} aria-hidden={modalOpen || undefined}>
-        {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={() => openAdd()} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} onEdit={setEditingMeal} onMoveMeal={moveMeal} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} onOpenCalendar={() => setCalendarOpen(true)} />}
+        {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={() => openAdd()} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} onEdit={setEditingMeal} onDropMeal={dropMeal} onDuplicate={setDuplicateMealDraft} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} onOpenCalendar={() => setCalendarOpen(true)} />}
         {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={openAdd} />}
         {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} chatTextSize={chatTextSize} onLogCoachMeal={logCoachMeal} onOpenAccount={() => setTab("profile")} onOpenAdd={openAdd} />}
         {tab === "insights" && <InsightsView meals={meals} profile={profile} onSave={saveProfile} weightTrackingEnabled={weightTrackingEnabled} />}
@@ -2304,6 +2333,7 @@ export function TrackerApp() {
       {adding && profile.onboardingDone && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); }} wide>{directFood ? <PortionSheet food={directFood} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} onClose={() => setAdding(false)} onLog={logMeal} onMealPhoto={addPhotoMeal} />}</Sheet>}
       {calendarOpen && <Sheet onClose={() => setCalendarOpen(false)} wide label="Calendar"><CalendarSheet dateKey={dateKey} meals={meals} profile={profile} onDateChange={setDateKey} onClose={() => setCalendarOpen(false)} /></Sheet>}
       {editingMeal && <Sheet onClose={() => setEditingMeal(undefined)}><MealEditor meal={editingMeal} hideCalories={profile.hideCalories} onSave={(meal) => editingMeal.id.startsWith("photo-") ? saveNewMeal(meal) : saveEditedMeal(meal)} onClose={() => setEditingMeal(undefined)} /></Sheet>}
+      {duplicateMealDraft && <Sheet onClose={() => setDuplicateMealDraft(undefined)} label="Duplicate meal"><DuplicateMealSheet meal={duplicateMealDraft} onDuplicate={(mealType) => void duplicateMeal(duplicateMealDraft, mealType)} onClose={() => setDuplicateMealDraft(undefined)} /></Sheet>}
       {!profile.onboardingDone && <OnboardingDialog profile={profile} onSave={saveProfile} />}
       {weightPromptOpen && <WeightTrackingPrompt onEnable={enableWeightTracking} onDisable={disableWeightTracking} onDefer={deferWeightTracking} />}
       {undoMeal && <div className="toast undo-toast" role="status"><span>Meal removed</span><button type="button" onClick={undoDeleteMeal}>Undo</button></div>}

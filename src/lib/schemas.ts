@@ -53,6 +53,7 @@ export const mealSchema = z.object({
   grams: positiveFinite,
   nutrition: nutritionSchema,
   createdAt: z.string().datetime({ offset: true }),
+  position: z.number().int().nonnegative().optional(),
   loggedDate: localDateSchema.optional(),
   source: z.enum(["seed", "open-food-facts", "food-data-central", "ai-label", "custom"]),
   estimated: z.boolean().optional(),
