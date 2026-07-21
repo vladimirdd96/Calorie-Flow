@@ -908,6 +908,20 @@ function DisplayPreferences({ hideCalories, onChange, chatTextSize, onChatTextSi
   );
 }
 
+function MeasurementPreferences({ profile, onChange }: { profile: Profile; onChange: (measurementSystem: Profile["measurementSystem"]) => void }) {
+  const measurementSystem = measurementSystemFor(profile);
+  return (
+    <section className="display-section">
+      <div className="section-heading"><div><span className="eyebrow">Measurements</span><h2>Units</h2></div></div>
+      <p className="display-subsection-description">Choose how height and body weight appear throughout Calorie Flow.</p>
+      <div className="segmented two" role="group" aria-label="Measurement units">
+        <button type="button" aria-pressed={measurementSystem === measurementSystems.metric} className={measurementSystem === measurementSystems.metric ? "active" : ""} onClick={() => onChange(measurementSystems.metric)}>Centimetres & kilograms</button>
+        <button type="button" aria-pressed={measurementSystem === measurementSystems.imperial} className={measurementSystem === measurementSystems.imperial ? "active" : ""} onClick={() => onChange(measurementSystems.imperial)}>Inches & pounds</button>
+      </div>
+    </section>
+  );
+}
+
 function WeightTrackingPreference({ status, onChange }: { status?: WeightTrackingStatus; onChange: (status: WeightTrackingStatus) => void }) {
   const enabled = status === weightTrackingStatuses.enabled;
   return (
@@ -1123,6 +1137,7 @@ function ProfileView({
         <AccountCard user={user} syncState={syncState} onSignOut={onSignOut} />
       </div> : <div id="customize-panel" role="tabpanel" aria-labelledby="customize-tab" tabIndex={0}>
         <section className="customize-intro" aria-labelledby="customize-heading"><div><span className="eyebrow">Your preferences</span><h2 id="customize-heading">A calmer tracker, your way</h2><p>These choices only change how Calorie Flow feels and what it shows. Your diary stays private on this device.</p></div></section>
+        <MeasurementPreferences profile={profile} onChange={(measurementSystem) => onSave({ ...profile, measurementSystem })} />
         <DisplayPreferences hideCalories={profile.hideCalories} onChange={(hideCalories) => onSave({ ...profile, hideCalories })} chatTextSize={chatTextSize} onChatTextSizeChange={onChatTextSizeChange} />
         <WeightTrackingPreference status={weightTracking} onChange={(next) => onSave({ ...profile, weightTracking: next })} />
         <AppearancePreferences theme={theme} onChange={onThemeChange} />
