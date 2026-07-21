@@ -12,6 +12,7 @@ import {
   Database,
   Download,
   Cloud,
+  GripVertical,
   Home,
   Info,
   LogOut,
@@ -356,6 +357,7 @@ function FoodAvatar({ food, name }: { food?: Food; name?: string }) {
 function MealRow({ meal, onDelete, onEdit, onDragStart, hideCalories }: { meal: Meal; onDelete: () => void; onEdit: () => void; onDragStart: (meal: Meal, event: React.DragEvent<HTMLDivElement>) => void; hideCalories: boolean }) {
   return (
     <div className="meal-row" draggable onDragStart={(event) => onDragStart(meal, event)} title="Drag to another meal">
+      <span className="meal-drag-handle" aria-hidden="true"><GripVertical size={17} /></span>
       <div className="meal-icon"><Utensils size={17} /></div>
       <div className="meal-copy">
         <strong>{meal.name}</strong>

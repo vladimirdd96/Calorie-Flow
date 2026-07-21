@@ -163,8 +163,9 @@ p { color: var(--muted); line-height: 1.55; }
 .meal-list { min-height: 58px; border-radius: var(--radius-md); overflow: hidden; transition: border-color .2s ease, background .2s ease; }
 .meal-list.drop-target { border-color: var(--mint); background: rgba(125,255,213,.08); }
 .empty-meal-drop { min-height: 58px; display: grid; place-items: center; color: var(--muted-2); font-size: 11px; font-weight: 700; }
-.meal-row { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 11px; padding: 14px; cursor: grab; }
+.meal-row { display: grid; grid-template-columns: auto auto 1fr auto auto; align-items: center; gap: 9px; padding: 14px; cursor: grab; }
 .meal-row:active { cursor: grabbing; }
+.meal-drag-handle { display: grid; place-items: center; color: var(--muted-2); }
 .meal-row + .meal-row { border-top: 1px solid var(--border); }
 .meal-icon { width: 35px; height: 35px; display: grid; place-items: center; border-radius: 12px; color: var(--mint); background: rgba(125,255,213,.08); }
 .meal-copy { min-width: 0; display: grid; gap: 4px; }
@@ -724,7 +725,7 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
   .feature-actions strong, .add-grid strong { font-size: 11px; }
   .form-grid.three { grid-template-columns: 1fr 1fr; }
   .segmented.four button { font-size: 9px; }
-  .meal-row { grid-template-columns: minmax(0, 1fr) auto auto; }
+  .meal-row { grid-template-columns: auto minmax(0, 1fr) auto auto; }
   .meal-row .meal-icon { display: none; }
 }
 
