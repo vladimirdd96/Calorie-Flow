@@ -175,7 +175,8 @@ p { color: var(--muted); line-height: 1.55; }
 .meal-copy { min-width: 0; display: grid; gap: 4px; }
 .meal-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
 .meal-copy span { color: var(--muted); font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.meal-kcal { font-size: 14px; }
+.meal-kcal { display: inline-flex; align-items: baseline; gap: 4px; font-size: 14px; white-space: nowrap; }
+.meal-kcal small { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .duplicate-meal-copy { display: grid; gap: 5px; margin: 18px 0; }
 .duplicate-meal-copy p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .meal-editor { width: min(100%, 560px); padding: 24px; }
@@ -844,8 +845,7 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
   .coach-history-label { display: none; }
   .coach-history-mobile-toggle { min-width: 0; flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 0; overflow: hidden; color: var(--text); background: transparent; border: 0; font-size: 12px; font-weight: 800; text-align: left; }
   .coach-history-mobile-toggle span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .coach-history-mobile-toggle svg { flex: 0 0 auto; color: var(--muted); transition: transform .18s ease; }
-  .coach-history.mobile-open .coach-history-mobile-toggle svg { transform: rotate(180deg); }
+  .coach-history-mobile-toggle svg { flex: 0 0 auto; color: var(--muted); }
   .coach-history-heading .icon-button { width: 28px; height: 28px; }
   .coach-history-list { display: none; }
   .coach-history.mobile-open .coach-history-list { display: grid; gap: 3px; max-height: min(42vh, 280px); margin-top: 8px; overflow-y: auto; }
