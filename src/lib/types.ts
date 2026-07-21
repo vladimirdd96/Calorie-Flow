@@ -78,6 +78,16 @@ export type WeightTrackingStatus = typeof weightTrackingStatuses[keyof typeof we
 export const measurementSystems = { metric: "metric", imperial: "imperial" } as const;
 export type MeasurementSystem = typeof measurementSystems[keyof typeof measurementSystems];
 
+export type DailyTargets = {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber: number;
+};
+
+export type Weekday = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
+
 export type Profile = {
   name: string;
   avatarUrl?: string;
@@ -98,6 +108,8 @@ export type Profile = {
   measurementSystem?: MeasurementSystem;
   weightEntries?: WeightEntry[];
   weightTracking?: WeightTrackingStatus;
+  dailyTargets?: Partial<Record<Weekday, DailyTargets>>;
+  carbDisplay?: "total" | "net";
 };
 
 export type WeightEntry = {

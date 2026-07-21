@@ -84,7 +84,9 @@ import {
   formatUnit,
   gramsFor,
   localDateKey,
+  netCarbs,
   round,
+  resolveDailyTargets,
   scaleNutrition,
   sumNutrition,
   suggestedMealType,
@@ -111,6 +113,7 @@ import type {
   Sex,
   WeightEntry,
   WeightTrackingStatus,
+  Weekday,
 } from "@/lib/types";
 import { measurementSystems, weightTrackingStatuses } from "@/lib/types";
 import type { BackupData } from "@/lib/db";
@@ -614,7 +617,9 @@ function TodayView({
 }) {
   const [dropTarget, setDropTarget] = useState<string>();
   const total = useMemo(() => sumNutrition(meals.map((meal) => meal.nutrition)), [meals]);
-  const remaining = Math.max(0, profile.calorieTarget - total.calories);
+  const targets = resolveDailyTargets(profile, dateKey);
+  const carbs = profile.carbDisplay === "net" ? netCarbs(total) : total.carbs;
+  const remaining = Math.max(0, targets.calories - total.calories);
   const grouped = (Object.keys(mealLabels) as MealType[]).map((type) => ({ type, meals: meals.filter((meal) => meal.mealType === type) }));
   return (
     <main className="page today-page">
@@ -633,17 +638,17 @@ function TodayView({
 
       <section className="hero-grid">
         <div className="hero-card card">
-          {profile.hideCalories ? <div className="nutrition-focus"><span className="eyebrow">Today’s nutrients</span><strong>Focus on your macros</strong><p>Protein, carbs, fat and fibre stay visible. Energy numbers are hidden.</p></div> : <ProgressRing value={total.calories} target={profile.calorieTarget} />}
+          {profile.hideCalories ? <div className="nutrition-focus"><span className="eyebrow">Today’s nutrients</span><strong>Focus on your macros</strong><p>Protein, carbs, fat and fibre stay visible. Energy numbers are hidden.</p></div> : <ProgressRing value={total.calories} target={targets.calories} />}
           <div className="hero-stat-grid">
             {!profile.hideCalories && <div><span>Remaining</span><strong>{Math.round(remaining).toLocaleString()}</strong><small>kcal</small></div>}
-            <div><span>Fibre</span><strong>{round(total.fiber, 0)}</strong><small>/ {profile.fiberTarget} g</small></div>
+            <div><span>Fibre</span><strong>{round(total.fiber, 0)}</strong><small>/ {targets.fiber} g</small></div>
           </div>
         </div>
         <div className="macro-card card">
           <div className="section-heading compact"><div><span className="eyebrow">Today</span><h2>Macros</h2></div><span className="subtle">live totals</span></div>
-          <MacroBar label="Protein" value={total.protein} target={profile.proteinTarget} color="var(--protein)" />
-          <MacroBar label="Carbs" value={total.carbs} target={profile.carbsTarget} color="var(--carbs)" />
-          <MacroBar label="Fat" value={total.fat} target={profile.fatTarget} color="var(--fat)" />
+          <MacroBar label="Protein" value={total.protein} target={targets.protein} color="var(--protein)" />
+          <MacroBar label={profile.carbDisplay === "net" ? "Net carbs" : "Carbs"} value={carbs} target={targets.carbs} color="var(--carbs)" />
+          <MacroBar label="Fat" value={total.fat} target={targets.fat} color="var(--fat)" />
           <div className="target-note"><Info size={15} /> Targets are guides, not exact medical limits.</div>
         </div>
       </section>
@@ -712,13 +717,14 @@ function CalendarSheet({ dateKey, meals, profile, onDateChange, onClose }: { dat
         const isFuture = key > today;
         const isSelected = key === dateKey;
         const progressValue = profile.hideCalories ? total?.protein || 0 : total?.calories || 0;
-        const progressTarget = profile.hideCalories ? profile.proteinTarget : profile.calorieTarget;
+        const targets = resolveDailyTargets(profile, key);
+        const progressTarget = profile.hideCalories ? targets.protein : targets.calories;
         return <button key={key} className={`calendar-day ${isSelected ? "selected" : ""} ${total ? "logged" : ""}`} role="gridcell" onClick={() => chooseDate(key)} disabled={isFuture} aria-label={`${new Date(`${key}T12:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric" })}${total ? `, ${Math.round(progressValue)} of ${progressTarget} ${profile.hideCalories ? "grams protein" : "calories"}` : ", no meals logged"}`}>
           <span>{new Date(`${key}T12:00:00`).getDate()}</span>{total && <MiniProgressRing value={progressValue} target={progressTarget} label="" />}
         </button>;
       })() : <span className="calendar-day empty" key={`empty-${index}`} aria-hidden="true" />)}
     </div>
-    <div className="calendar-legend"><span><i className="legend-ring" /> Logged day</span><span><i className="legend-selected" /> Selected</span>{!profile.hideCalories && <small>Based on {profile.calorieTarget.toLocaleString()} kcal</small>}</div>
+    <div className="calendar-legend"><span><i className="legend-ring" /> Logged day</span><span><i className="legend-selected" /> Selected</span>{!profile.hideCalories && <small>Uses each day’s target</small>}</div>
   </div>;
 }
 
@@ -954,6 +960,51 @@ function DisplayPreferences({ hideCalories, onChange, chatTextSize, onChatTextSi
   );
 }
 
+const weekdayOptions: Array<{ value: Weekday; label: string }> = [
+  { value: "monday", label: "Monday" }, { value: "tuesday", label: "Tuesday" }, { value: "wednesday", label: "Wednesday" }, { value: "thursday", label: "Thursday" }, { value: "friday", label: "Friday" }, { value: "saturday", label: "Saturday" }, { value: "sunday", label: "Sunday" },
+];
+
+function CarbDisplayPreference({ profile, onSave }: { profile: Profile; onSave: (profile: Profile) => void }) {
+  const net = profile.carbDisplay === "net";
+  return <section className="display-section">
+    <div className="section-heading"><div><span className="eyebrow">Nutrition display</span><h2>Carbohydrates</h2></div></div>
+    <button className={`display-preference ${net ? "active" : ""}`} type="button" aria-pressed={net} onClick={() => onSave({ ...profile, carbDisplay: net ? "total" : "net" })}><span><strong>{net ? "Showing net carbs" : "Showing total carbs"}</strong><small>{net ? "Fibre is subtracted from carbohydrates throughout your diary." : "Show the full carbohydrate value from each food label."}</small></span><span className="toggle" /></button>
+  </section>;
+}
+
+function DailyTargetPreferences({ profile, onSave }: { profile: Profile; onSave: (profile: Profile) => void }) {
+  const [open, setOpen] = useState(false);
+  const [day, setDay] = useState<Weekday>("monday");
+  const current = profile.dailyTargets?.[day];
+  const base = { calories: profile.calorieTarget, protein: profile.proteinTarget, carbs: profile.carbsTarget, fat: profile.fatTarget, fiber: profile.fiberTarget };
+  const [draft, setDraft] = useState(current || base);
+  const resetDraft = (nextDay: Weekday) => setDraft(profile.dailyTargets?.[nextDay] || base);
+  const change = (key: keyof typeof draft, value: string) => setDraft((valueState) => ({ ...valueState, [key]: Math.max(0, Number(value)) }));
+  const save = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!Object.values(draft).every((value) => Number.isFinite(value)) || draft.calories <= 0) return;
+    onSave({ ...profile, dailyTargets: { ...profile.dailyTargets, [day]: draft } });
+    setOpen(false);
+  };
+  const clear = () => {
+    const remaining = { ...profile.dailyTargets };
+    delete remaining[day];
+    onSave({ ...profile, dailyTargets: Object.keys(remaining).length ? remaining : undefined });
+    setOpen(false);
+  };
+  const configured = Object.keys(profile.dailyTargets || {}).length;
+  return <section className="display-section daily-target-preferences">
+    <div className="section-heading"><div><span className="eyebrow">Flexible rhythm</span><h2>Targets by day</h2></div></div>
+    <p className="display-subsection-description">Keep a different plan for a rest day, weekend, or regular routine. Unset days use your baseline targets.</p>
+    <button className={`display-preference ${configured ? "active" : ""}`} type="button" aria-expanded={open} onClick={() => { if (!open) resetDraft(day); setOpen((value) => !value); }}><span><strong>{configured ? `${configured} day${configured === 1 ? "" : "s"} customised` : "Use the same targets every day"}</strong><small>Change a day without rewriting your usual plan.</small></span><ChevronDown size={18} aria-hidden="true" /></button>
+    {open && <form className="weekday-target-editor" onSubmit={save}>
+      <label><span>Day</span><ThemedSelect ariaLabel="Day with custom targets" value={day} onChange={(value) => { const nextDay = value as Weekday; setDay(nextDay); resetDraft(nextDay); }} options={weekdayOptions} /></label>
+      <div className="form-grid two"><label><span>Calories</span><input type="number" required min="1" max="20000" value={draft.calories} onChange={(event) => change("calories", event.target.value)} /></label><label><span>Fibre</span><input type="number" required min="0" max="2000" value={draft.fiber} onChange={(event) => change("fiber", event.target.value)} /></label><label><span>Protein</span><input type="number" required min="0" max="2000" value={draft.protein} onChange={(event) => change("protein", event.target.value)} /></label><label><span>Carbs</span><input type="number" required min="0" max="2000" value={draft.carbs} onChange={(event) => change("carbs", event.target.value)} /></label><label><span>Fat</span><input type="number" required min="0" max="2000" value={draft.fat} onChange={(event) => change("fat", event.target.value)} /></label></div>
+      <div className="target-editor-actions"><button className="secondary-button" type="button" onClick={() => setOpen(false)}>Cancel</button>{current && <button className="text-button muted" type="button" onClick={clear}>Reset {weekdayOptions.find((option) => option.value === day)?.label}</button>}<button className="primary-button" type="submit">Save day</button></div>
+    </form>}
+  </section>;
+}
+
 function MeasurementPreferences({ profile, onChange }: { profile: Profile; onChange: (measurementSystem: Profile["measurementSystem"]) => void }) {
   const measurementSystem = measurementSystemFor(profile);
   return (
@@ -1185,6 +1236,8 @@ function ProfileView({
         <section className="customize-intro" aria-labelledby="customize-heading"><div><span className="eyebrow">Your preferences</span><h2 id="customize-heading">A calmer tracker, your way</h2><p>These choices only change how Calorie Flow feels and what it shows. Your diary stays private on this device.</p></div></section>
         <MeasurementPreferences profile={profile} onChange={(measurementSystem) => onSave({ ...profile, measurementSystem })} />
         <DisplayPreferences hideCalories={profile.hideCalories} onChange={(hideCalories) => onSave({ ...profile, hideCalories })} chatTextSize={chatTextSize} onChatTextSizeChange={onChatTextSizeChange} />
+        <CarbDisplayPreference profile={profile} onSave={onSave} />
+        <DailyTargetPreferences profile={profile} onSave={onSave} />
         <WeightTrackingPreference status={weightTracking} onChange={(next) => onSave({ ...profile, weightTracking: next })} />
         <AppearancePreferences theme={theme} onChange={onThemeChange} />
       </div>}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateCalories, calculateMacroTargets, gramsFor, scaleNutrition, sumNutrition, suggestedMealType } from "./nutrition";
+import { calculateCalories, calculateMacroTargets, gramsFor, netCarbs, resolveDailyTargets, scaleNutrition, sumNutrition, suggestedMealType } from "./nutrition";
 import type { Food } from "./types";
 
 const food: Food = {
@@ -49,5 +49,21 @@ describe("nutrition calculations", () => {
     expect(suggestedMealType(new Date(2026, 6, 20, 11, 0))).toBe("lunch");
     expect(suggestedMealType(new Date(2026, 6, 20, 14, 59))).toBe("lunch");
     expect(suggestedMealType(new Date(2026, 6, 20, 15, 0))).toBe("dinner");
+  });
+
+  it("calculates net carbs without allowing fibre to make carbs negative", () => {
+    expect(netCarbs({ ...food.nutrientsPer100, carbs: 20, fiber: 4 })).toBe(16);
+    expect(netCarbs({ ...food.nutrientsPer100, carbs: 2, fiber: 4 })).toBe(0);
+  });
+
+  it("resolves a weekday target override without changing the base profile", () => {
+    const profile = {
+      sex: "male" as const, age: 29, heightCm: 191, weightKg: 84, activity: "moderate" as const, goalMode: "maintain" as const,
+      name: "", dietPreset: "balanced" as const, calorieTarget: 2500, proteinTarget: 160, carbsTarget: 280, fatTarget: 75, fiberTarget: 30,
+      hideCalories: false, onboardingDone: true,
+      dailyTargets: { monday: { calories: 2300, protein: 170, carbs: 210, fat: 80, fiber: 35 } },
+    };
+    expect(resolveDailyTargets(profile, "2026-07-20")).toEqual({ calories: 2300, protein: 170, carbs: 210, fat: 80, fiber: 35 });
+    expect(resolveDailyTargets(profile, "2026-07-21")).toEqual({ calories: 2500, protein: 160, carbs: 280, fat: 75, fiber: 30 });
   });
 });

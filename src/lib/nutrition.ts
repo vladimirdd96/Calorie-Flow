@@ -1,4 +1,4 @@
-import type { ActivityLevel, DietPreset, Food, MealType, Micronutrients, Nutrition, Profile, ServingUnit } from "./types";
+import type { ActivityLevel, DailyTargets, DietPreset, Food, MealType, Micronutrients, Nutrition, Profile, ServingUnit, Weekday } from "./types";
 
 export const EMPTY_NUTRITION: Nutrition = {
   calories: 0,
@@ -26,6 +26,23 @@ export const activityMultipliers: Record<ActivityLevel, number> = {
 export function round(value: number, digits = 1) {
   const factor = 10 ** digits;
   return Math.round((value + Number.EPSILON) * factor) / factor;
+}
+
+export function netCarbs(nutrition: Pick<Nutrition, "carbs" | "fiber">) {
+  return Math.max(0, round(nutrition.carbs - nutrition.fiber));
+}
+
+const weekdays: Weekday[] = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+
+export function baseDailyTargets(profile: Pick<Profile, "calorieTarget" | "proteinTarget" | "carbsTarget" | "fatTarget" | "fiberTarget">): DailyTargets {
+  return { calories: profile.calorieTarget, protein: profile.proteinTarget, carbs: profile.carbsTarget, fat: profile.fatTarget, fiber: profile.fiberTarget };
+}
+
+export function resolveDailyTargets(profile: Pick<Profile, "calorieTarget" | "proteinTarget" | "carbsTarget" | "fatTarget" | "fiberTarget" | "dailyTargets">, dateKey: string): DailyTargets {
+  const date = new Date(`${dateKey}T12:00:00`);
+  const fallback = baseDailyTargets(profile);
+  if (Number.isNaN(date.getTime())) return fallback;
+  return profile.dailyTargets?.[weekdays[date.getDay()]] || fallback;
 }
 
 export function sumNutrition(items: Nutrition[]): Nutrition {

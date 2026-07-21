@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { CoachChat, CoachMealAction, CoachMealChoice, CoachMessage, Food, LabelAnalysis, Meal, MealPhotoAnalysis, Nutrition, Profile, WeightEntry } from "./types";
+import type { CoachChat, CoachMealAction, CoachMealChoice, CoachMessage, DailyTargets, Food, LabelAnalysis, Meal, MealPhotoAnalysis, Nutrition, Profile, WeightEntry } from "./types";
 
 const finiteNonNegative = z.number().finite().min(0);
 const positiveFinite = z.number().finite().positive();
@@ -15,6 +15,7 @@ const optionalAvatar = z.string().trim().max(400_000).refine((value) => {
 }, "Avatar must be an image URL or an image data URL").optional();
 const localDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const weightEntrySchema = z.object({ date: localDateSchema, weightKg: z.number().finite().min(20).max(500) }).strict() satisfies z.ZodType<WeightEntry>;
+const dailyTargetsSchema = z.object({ calories: positiveFinite.max(20_000), protein: finiteNonNegative.max(2_000), carbs: finiteNonNegative.max(2_000), fat: finiteNonNegative.max(2_000), fiber: finiteNonNegative.max(2_000) }).strict() satisfies z.ZodType<DailyTargets>;
 
 export const nutritionSchema = z.object({
   calories: finiteNonNegative,
@@ -86,6 +87,8 @@ export const profileSchema = z.object({
   measurementSystem: z.enum(["metric", "imperial"]).optional(),
   weightEntries: z.array(weightEntrySchema).max(10_000).optional(),
   weightTracking: z.enum(["enabled", "disabled"]).optional(),
+  dailyTargets: z.object({ monday: dailyTargetsSchema.optional(), tuesday: dailyTargetsSchema.optional(), wednesday: dailyTargetsSchema.optional(), thursday: dailyTargetsSchema.optional(), friday: dailyTargetsSchema.optional(), saturday: dailyTargetsSchema.optional(), sunday: dailyTargetsSchema.optional() }).strict().optional(),
+  carbDisplay: z.enum(["total", "net"]).optional(),
 }).strict() satisfies z.ZodType<Profile>;
 
 export const coachMessageSchema = z.object({
