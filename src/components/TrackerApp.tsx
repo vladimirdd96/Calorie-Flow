@@ -515,6 +515,14 @@ function MicronutrientSummary({ nutrition }: { nutrition: Nutrition }) {
   return <section className="micro-summary card" aria-labelledby="micro-summary-heading"><div className="section-heading compact"><div><span className="eyebrow">More than macros</span><h2 id="micro-summary-heading">Micronutrients</h2></div><span className="subtle">tap a meal for details</span></div><div className="micro-summary-grid">{highlights.map(({ key, label, unit }) => <div key={key}><span>{label}</span><strong>{round(micros[key], 1)} <small>{unit}</small></strong></div>)}</div><p>Daily totals from foods with available label or catalogue data.</p></section>;
 }
 
+function DailyNutritionBreakdown({ nutrition, hideCalories }: { nutrition: Nutrition; hideCalories: boolean }) {
+  const micros = nutrition.micronutrients;
+  return <div className="macro-breakdown" id="daily-nutrition-breakdown">
+    <section className="detail-section" aria-labelledby="daily-macro-heading"><div className="detail-section-heading"><h3 id="daily-macro-heading">Macronutrients</h3><span>today’s total</span></div><div className="detail-grid macro-detail-grid">{!hideCalories && <div><span>Calories</span><strong>{Math.round(nutrition.calories)} <small>kcal</small></strong></div>}<div><span>Protein</span><strong>{round(nutrition.protein)} <small>g</small></strong></div><div><span>Carbs</span><strong>{round(nutrition.carbs)} <small>g</small></strong></div><div><span>Fat</span><strong>{round(nutrition.fat)} <small>g</small></strong></div><div><span>Fibre</span><strong>{round(nutrition.fiber)} <small>g</small></strong></div><div><span>Sugar</span><strong>{round(nutrition.sugar)} <small>g</small></strong></div></div></section>
+    <section className="detail-section" aria-labelledby="daily-micro-heading"><div className="detail-section-heading"><h3 id="daily-micro-heading">Micronutrients</h3><span>{micros ? "today’s total" : "not available yet"}</span></div>{micros ? <div className="detail-grid micro-detail-grid">{micronutrientLabels.map(({ key, label, unit }) => <div key={key}><span>{label}</span><strong>{round(micros[key], 2)} <small>{unit}</small></strong></div>)}</div> : <p className="detail-empty">Micronutrients appear here when your logged foods include label or catalogue data.</p>}</section>
+  </div>;
+}
+
 function MealRow({ meal, onDelete, onEdit, onDuplicate, onMove, onDetails, onDragStart, onDragOver, onDrop, dropPosition, hideCalories }: { meal: Meal; onDelete: () => void; onEdit: () => void; onDuplicate: () => void; onMove: () => void; onDetails: () => void; onDragStart: (meal: Meal, event: React.DragEvent<HTMLDivElement>) => void; onDragOver: (event: React.DragEvent<HTMLDivElement>) => void; onDrop: (event: React.DragEvent<HTMLDivElement>) => void; dropPosition?: "before" | "after"; hideCalories: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLSpanElement>(null);
@@ -660,6 +668,7 @@ function TodayView({
   onSaveProfile: (profile: Profile) => void;
 }) {
   const [dropTarget, setDropTarget] = useState<string>();
+  const [macrosExpanded, setMacrosExpanded] = useState(false);
   const total = useMemo(() => sumNutrition(meals.map((meal) => meal.nutrition)), [meals]);
   const targets = resolveDailyTargets(profile, dateKey);
   const carbs = profile.carbDisplay === "net" ? netCarbs(total) : total.carbs;
@@ -689,11 +698,12 @@ function TodayView({
           </div>
         </div>
         <div className="macro-card card">
-          <div className="section-heading compact"><div><span className="eyebrow">Today</span><h2>Macros</h2></div><span className="subtle">live totals</span></div>
+          <button type="button" className="macro-expand-trigger" aria-expanded={macrosExpanded} aria-controls="daily-nutrition-breakdown" onClick={() => setMacrosExpanded((expanded) => !expanded)}><span><span className="eyebrow">Today</span><strong>Macros</strong></span><span className="macro-expand-hint">{macrosExpanded ? "Hide details" : "Show all nutrients"}<ChevronDown size={17} aria-hidden="true" /></span></button>
           <MacroBar label="Protein" value={total.protein} target={targets.protein} color="var(--protein)" />
           <MacroBar label={profile.carbDisplay === "net" ? "Net carbs" : "Carbs"} value={carbs} target={targets.carbs} color="var(--carbs)" />
           <MacroBar label="Fat" value={total.fat} target={targets.fat} color="var(--fat)" />
           <div className="target-note"><Info size={15} /> Targets are guides, not exact medical limits.</div>
+          {macrosExpanded && <DailyNutritionBreakdown nutrition={total} hideCalories={profile.hideCalories} />}
         </div>
       </section>
 
