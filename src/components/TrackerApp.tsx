@@ -99,6 +99,7 @@ import { findByBarcode, searchOpenFoodFacts } from "@/lib/openfoodfacts";
 import { hydrationTotal, setWaterAmount } from "@/lib/hydration";
 import { activeFast, fastingProgress, fastingWindowHours } from "@/lib/fasting";
 import { groceryItemsForPlan, recipeMeal } from "@/lib/planning";
+import { mealsCsv } from "@/lib/reports";
 import { coachMealActionSchema, coachMealChoiceSchema, labelAnalysisSchema, mealPhotoAnalysisSchema } from "@/lib/schemas";
 import { getSupabase, type CloudUser, type SocialAuthProvider } from "@/lib/supabase";
 import type {
@@ -1228,6 +1229,21 @@ function ProfileView({
   const [restoreMode, setRestoreMode] = useState<"merge" | "replace">("merge");
   const [backupNotice, setBackupNotice] = useState("");
   const [exporting, setExporting] = useState(false);
+  const downloadCsv = async () => {
+    setExporting(true); setBackupNotice("");
+    try {
+      const data = await onExport();
+      const url = URL.createObjectURL(new Blob([mealsCsv(data.meals)], { type: "text/csv;charset=utf-8" }));
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `calorie-flow-meals-${localDateKey()}.csv`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setBackupNotice("Your meal report was downloaded as CSV.");
+    } catch {
+      setBackupNotice("Couldn’t prepare the meal report. Check your connection and try again.");
+    } finally { setExporting(false); }
+  };
   const download = async () => {
     setExporting(true); setBackupNotice("");
     try {
@@ -1293,6 +1309,7 @@ function ProfileView({
         </summary>
         <div className="card tool-list">
           <button onClick={download} disabled={exporting}><Download size={19} /><span><strong>{exporting ? "Preparing archive…" : "Export your data"}</strong><small>Diary, foods, targets, and coach history</small></span><ChevronRight size={17} /></button>
+          <button onClick={downloadCsv} disabled={exporting}><Download size={19} /><span><strong>{exporting ? "Preparing report…" : "Download meal report"}</strong><small>Meal-level CSV for spreadsheets or printing</small></span><ChevronRight size={17} /></button>
           <div className="restore-tools">
             <div className="restore-mode" role="radiogroup" aria-label="Restore mode">
               <label><input type="radio" name="restore-mode" checked={restoreMode === "merge"} onChange={() => setRestoreMode("merge")} />Merge with current data</label>
