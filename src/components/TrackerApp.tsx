@@ -43,6 +43,7 @@ import {
   X,
 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   exportData,
   getAll,
@@ -153,17 +154,40 @@ type ThemedSelectOption = { value: string; label: string };
 function ThemedSelect({ value, options, onChange, ariaLabel }: { value: string; options: ThemedSelectOption[]; onChange: (value: string) => void; ariaLabel: string }) {
   const [open, setOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(() => Math.max(0, options.findIndex((option) => option.value === value)));
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, width: 0, openAbove: false });
   const rootRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const selected = options.find((option) => option.value === value) || options[0];
 
   useEffect(() => {
     const dismiss = (event: PointerEvent) => {
-      if (rootRef.current && !rootRef.current.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      if (!rootRef.current?.contains(target) && !menuRef.current?.contains(target)) setOpen(false);
     };
     document.addEventListener("pointerdown", dismiss);
     return () => document.removeEventListener("pointerdown", dismiss);
   }, []);
+
+  const positionMenu = useCallback(() => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    const menuHeight = Math.min(280, options.length * 42 + 12);
+    const openAbove = window.innerHeight - rect.bottom < menuHeight + 12 && rect.top > menuHeight + 12;
+    setMenuPosition({ top: openAbove ? rect.top - menuHeight - 7 : rect.bottom + 7, left: rect.left, width: rect.width, openAbove });
+  }, [options.length]);
+
+  useEffect(() => {
+    if (!open) return;
+    positionMenu();
+    window.addEventListener("resize", positionMenu);
+    window.addEventListener("scroll", positionMenu, true);
+    return () => {
+      window.removeEventListener("resize", positionMenu);
+      window.removeEventListener("scroll", positionMenu, true);
+    };
+  }, [open, positionMenu]);
 
   const choose = (option: ThemedSelectOption) => {
     onChange(option.value);
@@ -191,7 +215,8 @@ function ThemedSelect({ value, options, onChange, ariaLabel }: { value: string; 
     }
   };
 
-  return <div ref={rootRef} className={`themed-select${open ? " open" : ""}`}><button ref={triggerRef} className="themed-select-trigger" type="button" aria-haspopup="listbox" aria-expanded={open} aria-label={ariaLabel} onClick={() => { setHighlightedIndex(Math.max(0, options.findIndex((option) => option.value === value))); setOpen((current) => !current); }} onKeyDown={onKeyDown}>{selected?.label}<ChevronDown size={18} aria-hidden="true" /></button>{open && <div className="themed-select-menu" role="listbox" aria-label={ariaLabel}>{options.map((option, index) => <button key={option.value} type="button" role="option" aria-selected={option.value === value} className={`themed-select-option${index === highlightedIndex ? " highlighted" : ""}${option.value === value ? " selected" : ""}`} onMouseEnter={() => setHighlightedIndex(index)} onClick={() => choose(option)}>{option.value === value ? <Check size={16} aria-hidden="true" /> : <span className="themed-select-option-placeholder" aria-hidden="true" />}<span>{option.label}</span></button>)}</div>}</div>;
+  const menu = open ? <div ref={menuRef} className={`themed-select-menu${menuPosition.openAbove ? " open-above" : ""}`} role="listbox" aria-label={ariaLabel} style={{ top: menuPosition.top, left: menuPosition.left, width: menuPosition.width }}>{options.map((option, index) => <button key={option.value} type="button" role="option" aria-selected={option.value === value} className={`themed-select-option${index === highlightedIndex ? " highlighted" : ""}${option.value === value ? " selected" : ""}`} onMouseEnter={() => setHighlightedIndex(index)} onClick={() => choose(option)}>{option.value === value ? <Check size={16} aria-hidden="true" /> : <span className="themed-select-option-placeholder" aria-hidden="true" />}<span>{option.label}</span></button>)}</div> : null;
+  return <div ref={rootRef} className={`themed-select${open ? " open" : ""}`}><button ref={triggerRef} className="themed-select-trigger" type="button" aria-haspopup="listbox" aria-expanded={open} aria-label={ariaLabel} onClick={() => { setHighlightedIndex(Math.max(0, options.findIndex((option) => option.value === value))); setOpen((current) => !current); }} onKeyDown={onKeyDown}>{selected?.label}<ChevronDown size={18} aria-hidden="true" /></button>{menu && createPortal(menu, document.body)}</div>;
 }
 
 function isThemeMode(value: unknown): value is ThemeMode {
@@ -424,6 +449,7 @@ function FoodAvatar({ food, name }: { food?: Food; name?: string }) {
 }
 
 function MealRow({ meal, onDelete, onEdit, onDuplicate, onDragStart, onDragOver, onDrop, dropPosition, hideCalories }: { meal: Meal; onDelete: () => void; onEdit: () => void; onDuplicate: () => void; onDragStart: (meal: Meal, event: React.DragEvent<HTMLDivElement>) => void; onDragOver: (event: React.DragEvent<HTMLDivElement>) => void; onDrop: (event: React.DragEvent<HTMLDivElement>) => void; dropPosition?: "before" | "after"; hideCalories: boolean }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   return (
     <div className={`meal-row ${dropPosition ? `drop-${dropPosition}` : ""}`} draggable onDragStart={(event) => onDragStart(meal, event)} onDragOver={onDragOver} onDrop={onDrop} title="Drag to reorder or move to another meal">
       <span className="meal-drag-handle" aria-hidden="true"><GripVertical size={17} /></span>
@@ -433,9 +459,7 @@ function MealRow({ meal, onDelete, onEdit, onDuplicate, onDragStart, onDragOver,
         <span>{meal.amount} {formatUnit(meal.unit, meal.amount)} · P {meal.nutrition.protein} · C {meal.nutrition.carbs} · F {meal.nutrition.fat}</span>
       </div>
       {!hideCalories && <strong className="meal-kcal"><span>{Math.round(meal.nutrition.calories)}</span><small>kcal</small></strong>}
-      <button type="button" className="icon-button ghost" onClick={onEdit} aria-label={`Edit ${meal.name}`}><Pencil size={16} /></button>
-      <button type="button" className="icon-button ghost" onClick={onDuplicate} aria-label={`Duplicate ${meal.name}`}><Copy size={16} /></button>
-      <button type="button" className="icon-button ghost danger-hover" onClick={onDelete} aria-label={`Delete ${meal.name}`}><Trash2 size={17} /></button>
+      <span className="meal-actions"><button type="button" className="meal-menu-trigger" onClick={() => setMenuOpen((open) => !open)} aria-label={`Options for ${meal.name}`} aria-expanded={menuOpen}><MoreHorizontal size={18} /></button>{menuOpen && <span className="meal-action-menu" role="menu"><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onEdit(); }}><Pencil size={14} />Edit</button><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onDuplicate(); }}><Copy size={14} />Duplicate</button><button type="button" role="menuitem" className="danger" onClick={() => { setMenuOpen(false); onDelete(); }}><Trash2 size={14} />Delete</button></span>}</span>
     </div>
   );
 }
