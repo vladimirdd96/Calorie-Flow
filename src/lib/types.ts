@@ -127,6 +127,7 @@ export type Profile = {
   weightEntries?: WeightEntry[];
   weightTracking?: WeightTrackingStatus;
   dailyTargets?: Partial<Record<Weekday, DailyTargets>>;
+  mealCalorieTargets?: Partial<Record<MealType, number>>;
   carbDisplay?: "total" | "net";
   waterTargetMl?: number;
   waterEntries?: WaterEntry[];

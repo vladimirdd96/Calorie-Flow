@@ -45,6 +45,10 @@ export function resolveDailyTargets(profile: Pick<Profile, "calorieTarget" | "pr
   return profile.dailyTargets?.[weekdays[date.getDay()]] || fallback;
 }
 
+export function resolveMealCalorieTarget(profile: Pick<Profile, "mealCalorieTargets">, mealType: MealType) {
+  return profile.mealCalorieTargets?.[mealType];
+}
+
 export function sumNutrition(items: Nutrition[]): Nutrition {
   const total = items.reduce(
     (total, item) => ({

@@ -107,6 +107,7 @@ export const profileSchema = z.object({
   weightEntries: z.array(weightEntrySchema).max(10_000).optional(),
   weightTracking: z.enum(["enabled", "disabled"]).optional(),
   dailyTargets: z.object({ monday: dailyTargetsSchema.optional(), tuesday: dailyTargetsSchema.optional(), wednesday: dailyTargetsSchema.optional(), thursday: dailyTargetsSchema.optional(), friday: dailyTargetsSchema.optional(), saturday: dailyTargetsSchema.optional(), sunday: dailyTargetsSchema.optional() }).strict().optional(),
+  mealCalorieTargets: z.object({ breakfast: positiveFinite.max(20_000).optional(), lunch: positiveFinite.max(20_000).optional(), dinner: positiveFinite.max(20_000).optional(), snack: positiveFinite.max(20_000).optional() }).strict().optional(),
   carbDisplay: z.enum(["total", "net"]).optional(),
   waterTargetMl: z.number().finite().int().min(250).max(20_000).optional(),
   waterEntries: z.array(waterEntrySchema).max(10_000).optional(),

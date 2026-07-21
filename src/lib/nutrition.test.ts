@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateCalories, calculateMacroTargets, gramsFor, netCarbs, resolveDailyTargets, scaleNutrition, sumNutrition, suggestedMealType } from "./nutrition";
+import { calculateCalories, calculateMacroTargets, gramsFor, netCarbs, resolveDailyTargets, resolveMealCalorieTarget, scaleNutrition, sumNutrition, suggestedMealType } from "./nutrition";
 import type { Food } from "./types";
 
 const food: Food = {
@@ -66,4 +66,10 @@ describe("nutrition calculations", () => {
     expect(resolveDailyTargets(profile, "2026-07-20")).toEqual({ calories: 2300, protein: 170, carbs: 210, fat: 80, fiber: 35 });
     expect(resolveDailyTargets(profile, "2026-07-21")).toEqual({ calories: 2500, protein: 160, carbs: 280, fat: 75, fiber: 30 });
   });
+
+  it("uses an optional target for an individual meal without inventing one", () => {
+    expect(resolveMealCalorieTarget({ mealCalorieTargets: { lunch: 720 } }, "lunch")).toBe(720);
+    expect(resolveMealCalorieTarget({ mealCalorieTargets: { lunch: 720 } }, "dinner")).toBeUndefined();
+  });
+
 });

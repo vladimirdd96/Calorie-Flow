@@ -97,6 +97,7 @@ import {
   netCarbs,
   round,
   resolveDailyTargets,
+  resolveMealCalorieTarget,
   scaleNutrition,
   sumNutrition,
   suggestedMealType,
@@ -729,7 +730,7 @@ function TodayView({
         <div className="section-heading"><div><span className="eyebrow">Daily log</span><h2>Your meals</h2></div></div>
         {grouped.map(({ type, meals: groupMeals }) => (
           <div className="meal-group" key={type}>
-            <div className="meal-group-title"><span>{mealLabels[type]}</span>{!profile.hideCalories && <span>{Math.round(sumNutrition(groupMeals.map((meal) => meal.nutrition)).calories)} kcal</span>}</div>
+            <div className="meal-group-title"><span>{mealLabels[type]}</span>{!profile.hideCalories && (() => { const target = resolveMealCalorieTarget(profile, type); const calories = Math.round(sumNutrition(groupMeals.map((meal) => meal.nutrition)).calories); return <span aria-label={target ? `${calories} of ${target} calorie guide` : `${calories} calories`}>{calories}{target ? ` / ${target}` : ""} kcal</span>; })()}</div>
             <div className={`meal-list card ${dropTarget === type ? "drop-target" : ""}`} onDragOver={(event) => { event.preventDefault(); setDropTarget(type); }} onDragLeave={() => setDropTarget(undefined)} onDrop={(event) => { event.preventDefault(); const mealId = event.dataTransfer.getData("text/meal-id"); const meal = meals.find((candidate) => candidate.id === mealId); if (meal) onDropMeal(meal, type); setDropTarget(undefined); }}>
               {groupMeals.map((meal) => <MealRow key={meal.id} meal={meal} hideCalories={profile.hideCalories} dropPosition={dropTarget === `${type}:${meal.id}:before` ? "before" : dropTarget === `${type}:${meal.id}:after` ? "after" : undefined} onDelete={() => onDelete(meal.id)} onEdit={() => onEdit(meal)} onDetails={() => onOpenDetails(meal)} onDuplicate={() => onDuplicate(meal)} onMove={() => onMove(meal)} onDragStart={(draggedMeal, event) => { event.dataTransfer.setData("text/meal-id", draggedMeal.id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); setDropTarget(`${type}:${meal.id}:${event.clientY < rect.top + rect.height / 2 ? "before" : "after"}`); }} onDrop={(event) => { event.preventDefault(); event.stopPropagation(); const mealId = event.dataTransfer.getData("text/meal-id"); const draggedMeal = meals.find((candidate) => candidate.id === mealId); if (draggedMeal) { const rect = event.currentTarget.getBoundingClientRect(); onDropMeal(draggedMeal, type, meal.id, event.clientY >= rect.top + rect.height / 2); } setDropTarget(undefined); }} />)}
               <MealAddRow mealType={type} onAdd={onAdd} />
@@ -1066,6 +1067,33 @@ function DailyTargetPreferences({ profile, onSave }: { profile: Profile; onSave:
       <div className="form-grid two"><label><span>Calories</span><input type="number" required min="1" max="20000" value={draft.calories} onChange={(event) => change("calories", event.target.value)} /></label><label><span>Fibre</span><input type="number" required min="0" max="2000" value={draft.fiber} onChange={(event) => change("fiber", event.target.value)} /></label><label><span>Protein</span><input type="number" required min="0" max="2000" value={draft.protein} onChange={(event) => change("protein", event.target.value)} /></label><label><span>Carbs</span><input type="number" required min="0" max="2000" value={draft.carbs} onChange={(event) => change("carbs", event.target.value)} /></label><label><span>Fat</span><input type="number" required min="0" max="2000" value={draft.fat} onChange={(event) => change("fat", event.target.value)} /></label></div>
       <div className="target-editor-actions"><button className="secondary-button" type="button" onClick={() => setOpen(false)}>Cancel</button>{current && <button className="text-button muted" type="button" onClick={clear}>Reset {weekdayOptions.find((option) => option.value === day)?.label}</button>}<button className="primary-button" type="submit">Save day</button></div>
     </form>}
+  </section>;
+}
+
+function MealTargetPreferences({ profile, onSave }: { profile: Profile; onSave: (profile: Profile) => void }) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<Partial<Record<MealType, number>>>(profile.mealCalorieTargets || {});
+  const resetDraft = () => setDraft(profile.mealCalorieTargets || {});
+  const update = (mealType: MealType, value: string) => setDraft((current) => {
+    const next = { ...current };
+    const target = Number(value);
+    if (!value || !Number.isFinite(target) || target <= 0) delete next[mealType];
+    else next[mealType] = target;
+    return next;
+  });
+  const save = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const valid = Object.values(draft).every((target) => target === undefined || (Number.isFinite(target) && target > 0 && target <= 20_000));
+    if (!valid) return;
+    onSave({ ...profile, mealCalorieTargets: Object.keys(draft).length ? draft : undefined });
+    setOpen(false);
+  };
+  const configured = Object.keys(profile.mealCalorieTargets || {}).length;
+  return <section className="display-section meal-target-preferences">
+    <div className="section-heading"><div><span className="eyebrow">Meal rhythm</span><h2>Meal calorie guides</h2></div></div>
+    <p className="display-subsection-description">Optional meal guides sit alongside your daily target. They never block logging or change your daily total.</p>
+    <button className={`display-preference ${configured ? "active" : ""}`} type="button" aria-expanded={open} onClick={() => { if (!open) resetDraft(); setOpen((value) => !value); }}><span><strong>{configured ? `${configured} meal${configured === 1 ? "" : "s"} guided` : "Set a guide for each meal"}</strong><small>See a chosen calorie range beside breakfast, lunch, dinner, or snacks.</small></span><ChevronDown size={18} aria-hidden="true" /></button>
+    {open && <form className="weekday-target-editor" onSubmit={save}><div className="form-grid two">{(Object.keys(mealLabels) as MealType[]).map((mealType) => <label key={mealType}><span>{mealLabels[mealType]} calories <small>Optional</small></span><input type="number" inputMode="numeric" min="1" max="20000" value={draft[mealType] || ""} onChange={(event) => update(mealType, event.target.value)} placeholder="No guide" /></label>)}</div><div className="target-editor-actions"><button className="secondary-button" type="button" onClick={() => setOpen(false)}>Cancel</button>{configured && <button className="text-button muted" type="button" onClick={() => { onSave({ ...profile, mealCalorieTargets: undefined }); setOpen(false); }}>Clear guides</button>}<button className="primary-button" type="submit">Save meal guides</button></div></form>}
   </section>;
 }
 
@@ -1420,6 +1448,7 @@ function ProfileView({
         <DisplayPreferences hideCalories={profile.hideCalories} onChange={(hideCalories) => onSave({ ...profile, hideCalories })} chatTextSize={chatTextSize} onChatTextSizeChange={onChatTextSizeChange} />
         <CarbDisplayPreference profile={profile} onSave={onSave} />
         <DailyTargetPreferences profile={profile} onSave={onSave} />
+        <MealTargetPreferences profile={profile} onSave={onSave} />
         <WeightTrackingPreference status={weightTracking} onChange={(next) => onSave({ ...profile, weightTracking: next })} />
         <AppearancePreferences theme={theme} onChange={onThemeChange} />
       </div>}
