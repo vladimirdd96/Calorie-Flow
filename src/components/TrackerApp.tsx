@@ -790,9 +790,9 @@ function DisplayPreferences({ hideCalories, onChange, chatTextSize, onChatTextSi
       <div className="chat-text-preference">
         <div><strong>Coach text size</strong><small>Change message density without shrinking buttons or inputs.</small></div>
         <div className="segmented three" role="group" aria-label="Coach text size">
-          <button type="button" aria-pressed={chatTextSize === chatTextSizes.compact} className={chatTextSize === chatTextSizes.compact ? "active" : ""} onClick={() => onChatTextSizeChange(chatTextSizes.compact)}>Compact</button>
-          <button type="button" aria-pressed={chatTextSize === chatTextSizes.comfortable} className={chatTextSize === chatTextSizes.comfortable ? "active" : ""} onClick={() => onChatTextSizeChange(chatTextSizes.comfortable)}>Comfortable</button>
-          <button type="button" aria-pressed={chatTextSize === chatTextSizes.large} className={chatTextSize === chatTextSizes.large ? "active" : ""} onClick={() => onChatTextSizeChange(chatTextSizes.large)}>Large</button>
+          <button type="button" aria-pressed={chatTextSize === chatTextSizes.compact} className={`text-size-option compact${chatTextSize === chatTextSizes.compact ? " active" : ""}`} onClick={() => onChatTextSizeChange(chatTextSizes.compact)}>Compact</button>
+          <button type="button" aria-pressed={chatTextSize === chatTextSizes.comfortable} className={`text-size-option comfortable${chatTextSize === chatTextSizes.comfortable ? " active" : ""}`} onClick={() => onChatTextSizeChange(chatTextSizes.comfortable)}>Comfortable</button>
+          <button type="button" aria-pressed={chatTextSize === chatTextSizes.large} className={`text-size-option large${chatTextSize === chatTextSizes.large ? " active" : ""}`} onClick={() => onChatTextSizeChange(chatTextSizes.large)}>Large</button>
         </div>
       </div>
     </section>
