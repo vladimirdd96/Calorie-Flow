@@ -33,9 +33,11 @@ Set these on the deployed Worker/Sites project:
 SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 FDC_API_KEY=YOUR_DATA_GOV_API_KEY
+NUTRITIONIX_APP_ID=YOUR_NUTRITIONIX_APP_ID
+NUTRITIONIX_APP_KEY=YOUR_NUTRITIONIX_APP_KEY
 ```
 
-The Worker uses the `AI` binding configured in `wrangler.jsonc`, so there is no AI API key to set. Workers AI has a daily free allocation and stops requests safely if the allocation is exhausted.
+The Worker uses the `AI` binding configured in `wrangler.jsonc`, so there is no AI API key to set. Workers AI has a daily free allocation and stops requests safely if the allocation is exhausted. FoodData Central and Nutritionix credentials are optional server-side variables: restaurant search is simply unavailable when Nutritionix is not configured. Never add either key with a `NEXT_PUBLIC_` prefix.
 
 ## 4. Configure account providers
 

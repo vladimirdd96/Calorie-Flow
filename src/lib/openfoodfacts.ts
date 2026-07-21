@@ -27,6 +27,23 @@ type FdcProduct = {
   _source?: "food-data-central";
 };
 
+type RestaurantProduct = {
+  _source?: "restaurant";
+  nix_item_id?: string;
+  food_name?: string;
+  brand_name?: string;
+  serving_qty?: number;
+  serving_unit?: string;
+  serving_weight_grams?: number;
+  nf_calories?: number;
+  nf_protein?: number;
+  nf_total_carbohydrate?: number;
+  nf_total_fat?: number;
+  nf_dietary_fiber?: number;
+  nf_sugars?: number;
+  photo?: { thumb?: string };
+};
+
 const searchCache = new Map<string, { expiresAt: number; foods: Food[] }>();
 const SEARCH_CACHE_TTL_MS = 2 * 60_000;
 
@@ -109,8 +126,37 @@ function mapFdcProduct(product: FdcProduct): Food | null {
   };
 }
 
-function mapProduct(product: OffProduct | FdcProduct): Food | null {
+function mapRestaurantProduct(product: RestaurantProduct): Food | null {
+  const grams = numberValue(product.serving_weight_grams);
+  const calories = numberValue(product.nf_calories);
+  const protein = numberValue(product.nf_protein);
+  const carbs = numberValue(product.nf_total_carbohydrate);
+  const fat = numberValue(product.nf_total_fat);
+  if (!product.nix_item_id || !product.food_name || !grams || (!calories && !protein && !carbs && !fat)) return null;
+  const per100 = (value: number) => Number((value / grams * 100).toFixed(1));
+  return {
+    id: `restaurant-${product.nix_item_id}`,
+    name: product.food_name,
+    brand: product.brand_name,
+    servingGrams: grams,
+    servingLabel: product.serving_qty && product.serving_unit ? `${product.serving_qty} ${product.serving_unit}` : undefined,
+    imageUrl: product.photo?.thumb,
+    nutrientsPer100: {
+      calories: Math.round(per100(calories)),
+      protein: per100(protein),
+      carbs: per100(carbs),
+      fat: per100(fat),
+      fiber: per100(numberValue(product.nf_dietary_fiber)),
+      sugar: per100(numberValue(product.nf_sugars)),
+    },
+    source: "restaurant",
+    verified: true,
+  };
+}
+
+function mapProduct(product: OffProduct | FdcProduct | RestaurantProduct): Food | null {
   if (product._source === "food-data-central") return mapFdcProduct(product);
+  if (product._source === "restaurant") return mapRestaurantProduct(product);
   const offProduct = product as OffProduct;
   const name = offProduct.product_name || offProduct.generic_name;
   const nutrition = mapNutrition(offProduct);
@@ -140,7 +186,7 @@ export async function findByBarcode(barcode: string): Promise<Food | null> {
   const record = data as { products?: unknown; product?: unknown };
   const products = Array.isArray(record.products) ? record.products : record.product ? [record.product] : [];
   return products.filter((product): product is Record<string, unknown> => Boolean(product) && typeof product === "object" && !Array.isArray(product))
-    .map((product) => mapProduct({ ...product, code: product.code || barcode } as OffProduct | FdcProduct)).find(Boolean) || null;
+    .map((product) => mapProduct({ ...product, code: product.code || barcode } as OffProduct | FdcProduct | RestaurantProduct)).find(Boolean) || null;
 }
 
 export async function searchOpenFoodFacts(query: string): Promise<Food[]> {

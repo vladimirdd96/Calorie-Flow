@@ -61,4 +61,43 @@ describe("searchOpenFoodFacts", () => {
       nutrientsPer100: expect.objectContaining({ calories: 410, protein: 20 }),
     }));
   });
+
+  it("maps restaurant menu items into a serving-aware food result", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ products: [{
+        _source: "restaurant",
+        nix_item_id: "cafe-iced-latte",
+        food_name: "Iced latte",
+        brand_name: "Example Cafe",
+        serving_qty: 1,
+        serving_unit: "cup",
+        serving_weight_grams: 355,
+        nf_calories: 190,
+        nf_protein: 10,
+        nf_total_carbohydrate: 22,
+        nf_total_fat: 7,
+        nf_dietary_fiber: 0,
+        nf_sugars: 20,
+        photo: { thumb: "https://images.example.test/latte.jpg" },
+      }] }),
+    }));
+
+    const foods = await searchOpenFoodFacts("iced latte");
+
+    expect(foods[0]).toEqual(expect.objectContaining({
+      id: "restaurant-cafe-iced-latte",
+      name: "Iced latte",
+      brand: "Example Cafe",
+      source: "restaurant",
+      servingGrams: 355,
+      servingLabel: "1 cup",
+      imageUrl: "https://images.example.test/latte.jpg",
+      nutrientsPer100: expect.objectContaining({
+        calories: expect.closeTo(54),
+        protein: expect.closeTo(2.8),
+        carbs: expect.closeTo(6.2),
+      }),
+    }));
+  });
 });

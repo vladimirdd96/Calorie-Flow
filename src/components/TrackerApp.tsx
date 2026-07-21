@@ -787,7 +787,7 @@ function CalendarSheet({ dateKey, meals, profile, onDateChange, onClose }: { dat
 }
 
 function FoodRow({ food, onSelect, hideCalories = false }: { food: Food; onSelect: () => void; hideCalories?: boolean }) {
-  const detail = food.brand || (food.source === "custom" ? "Your custom food" : food.source === "seed" ? food.servingLabel || "Reference food" : food.source === "food-data-central" ? "USDA FoodData Central" : "Saved food");
+  const detail = food.brand || (food.source === "custom" ? "Your custom food" : food.source === "seed" ? food.servingLabel || "Reference food" : food.source === "food-data-central" ? "USDA FoodData Central" : food.source === "restaurant" ? "Restaurant menu" : "Saved food");
   return (
     <button className="food-row" onClick={onSelect}>
       <FoodAvatar food={food} />
@@ -1748,7 +1748,7 @@ function PortionSheet({ food, questions, initialMealType, onLog, onClose, hideCa
         <div className="field-block"><span id="meal-type-label">Add to</span><div className="segmented four" role="group" aria-labelledby="meal-type-label">{(Object.keys(mealLabels) as MealType[]).map((type) => <button type="button" key={type} aria-pressed={mealType === type} className={mealType === type ? "active" : ""} onClick={() => setMealType(type)}>{mealLabels[type]}</button>)}</div></div>
       <label className="meal-date-field"><span>Meal date <small>Usually today</small></span><input type="date" value={loggedDate} max={localDateKey()} onChange={(event) => setLoggedDate(event.target.value || localDateKey())} /></label>
       <div className="multi-date-log"><button type="button" className="text-button" aria-expanded={additionalDatesOpen} onClick={() => setAdditionalDatesOpen((open) => !open)}>{additionalDatesOpen ? "Log one day instead" : "Log this on multiple days"}</button>{additionalDatesOpen && <div className="multi-date-options" role="group" aria-label="Days to log this food">{recentLogDates().map((date) => <button type="button" key={date} className={loggedDates.includes(date) ? "active" : ""} aria-pressed={loggedDates.includes(date)} onClick={() => setLoggedDates((current) => current.includes(date) ? current.filter((item) => item !== date) : [...current, date])}>{dayLabel(date)}</button>)}</div>}</div>
-      <div className="portion-submit"><button className="primary-button full" type="submit" disabled={additionalDatesOpen && loggedDates.length === 0}><Plus size={18} />{hideCalories ? "Log food" : `Log ${nutrition.calories} kcal`}</button><p className="form-footnote">{grams} g total · {food.source === "open-food-facts" ? "Open Food Facts" : food.source === "food-data-central" ? "USDA FoodData Central" : food.source === "ai-label" ? "AI-extracted—check the package" : food.source === "custom" ? "Your custom food" : "Generic reference value"}</p></div>
+      <div className="portion-submit"><button className="primary-button full" type="submit" disabled={additionalDatesOpen && loggedDates.length === 0}><Plus size={18} />{hideCalories ? "Log food" : `Log ${nutrition.calories} kcal`}</button><p className="form-footnote">{grams} g total · {food.source === "open-food-facts" ? "Open Food Facts" : food.source === "food-data-central" ? "USDA FoodData Central" : food.source === "restaurant" ? "Restaurant menu nutrition" : food.source === "ai-label" ? "AI-extracted—check the package" : food.source === "custom" ? "Your custom food" : "Generic reference value"}</p></div>
       </div>
     </form>
   );

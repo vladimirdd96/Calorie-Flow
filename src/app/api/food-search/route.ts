@@ -77,6 +77,41 @@ async function searchFoodDataCentral(query: string): Promise<Record<string, unkn
   return fdcProductsFromResponse(await upstream.json());
 }
 
+function nutritionixHeaders() {
+  return {
+    "User-Agent": "Calorie Flow/1.0 (food-search)",
+    "x-app-id": serverEnv.NUTRITIONIX_APP_ID || "",
+    "x-app-key": serverEnv.NUTRITIONIX_APP_KEY || "",
+  };
+}
+
+async function searchRestaurantMenus(query: string): Promise<Record<string, unknown>[]> {
+  if (!serverEnv.NUTRITIONIX_APP_ID || !serverEnv.NUTRITIONIX_APP_KEY) return [];
+  const url = new URL("https://trackapi.nutritionix.com/v2/search/instant");
+  url.searchParams.set("query", query);
+  const upstream = await fetch(url, { headers: nutritionixHeaders(), cache: "no-store" });
+  if (!upstream.ok) return [];
+  const payload: unknown = await upstream.json();
+  if (!payload || typeof payload !== "object") return [];
+  const branded = (payload as { branded?: unknown }).branded;
+  if (!Array.isArray(branded)) return [];
+  const candidates = branded
+    .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object" && !Array.isArray(item))
+    .filter((item) => typeof item.nix_item_id === "string")
+    .slice(0, 12);
+  const items: Array<Record<string, unknown> | null> = await Promise.all(candidates.map(async (candidate) => {
+    const itemUrl = new URL("https://trackapi.nutritionix.com/v2/search/item");
+    itemUrl.searchParams.set("nix_item_id", String(candidate.nix_item_id));
+    const itemResponse = await fetch(itemUrl, { headers: nutritionixHeaders(), cache: "no-store" });
+    if (!itemResponse.ok) return null;
+    const itemPayload: unknown = await itemResponse.json();
+    if (!itemPayload || typeof itemPayload !== "object" || !Array.isArray((itemPayload as { foods?: unknown }).foods)) return null;
+    const item = (itemPayload as { foods: unknown[] }).foods[0];
+    return item && typeof item === "object" && !Array.isArray(item) ? { ...(item as Record<string, unknown>), _source: "restaurant" } : null;
+  }));
+  return items.filter((item): item is Record<string, unknown> => item !== null);
+}
+
 async function findProductByBarcode(barcode: string): Promise<unknown> {
   const url = new URL(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json`);
   url.searchParams.set("fields", fields);
@@ -109,12 +144,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const [openFoodFactsProducts, foodDataCentralProducts] = await Promise.all([
+    const [openFoodFactsProducts, foodDataCentralProducts, restaurantProducts] = await Promise.all([
       searchOpenFoodFacts(query).then(productsFromSearchResponse).catch(() => []),
       searchFoodDataCentral(query).catch(() => []),
+      searchRestaurantMenus(query).catch(() => []),
     ]);
-    if (!openFoodFactsProducts?.length && !foodDataCentralProducts.length) return response({ products: [] });
-    return response({ products: [...(openFoodFactsProducts || []), ...foodDataCentralProducts] });
+    if (!openFoodFactsProducts?.length && !foodDataCentralProducts.length && !restaurantProducts.length) return response({ products: [] });
+    return response({ products: [...restaurantProducts, ...(openFoodFactsProducts || []), ...foodDataCentralProducts] });
   } catch {
     return response({ error: "Online food search is temporarily unavailable." }, 503);
   }

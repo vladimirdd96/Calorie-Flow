@@ -13,6 +13,8 @@ const serverEnvSchema = publicEnvSchema.extend({
   SUPABASE_URL: optionalUrl,
   SUPABASE_PUBLISHABLE_KEY: optionalTrimmedString,
   FDC_API_KEY: optionalTrimmedString,
+  NUTRITIONIX_APP_ID: optionalTrimmedString,
+  NUTRITIONIX_APP_KEY: optionalTrimmedString,
 });
 
 export const publicEnv = publicEnvSchema.parse({
@@ -26,6 +28,8 @@ export const serverEnv = serverEnvSchema.parse({
   SUPABASE_URL: process.env.SUPABASE_URL,
   SUPABASE_PUBLISHABLE_KEY: process.env.SUPABASE_PUBLISHABLE_KEY,
   FDC_API_KEY: process.env.FDC_API_KEY,
+  NUTRITIONIX_APP_ID: process.env.NUTRITIONIX_APP_ID,
+  NUTRITIONIX_APP_KEY: process.env.NUTRITIONIX_APP_KEY,
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
