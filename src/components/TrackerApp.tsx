@@ -24,6 +24,8 @@ import {
   MessageCircle,
   MoreHorizontal,
   ArrowRightLeft,
+  BookOpen,
+  CalendarPlus,
   ListChecks,
   Package,
   Pencil,
@@ -96,6 +98,7 @@ import {
 import { findByBarcode, searchOpenFoodFacts } from "@/lib/openfoodfacts";
 import { hydrationTotal, setWaterAmount } from "@/lib/hydration";
 import { activeFast, fastingProgress, fastingWindowHours } from "@/lib/fasting";
+import { groceryItemsForPlan, recipeMeal } from "@/lib/planning";
 import { coachMealActionSchema, coachMealChoiceSchema, labelAnalysisSchema, mealPhotoAnalysisSchema } from "@/lib/schemas";
 import { getSupabase, type CloudUser, type SocialAuthProvider } from "@/lib/supabase";
 import type {
@@ -113,6 +116,7 @@ import type {
   Micronutrients,
   Nutrition,
   Profile,
+  Recipe,
   ServingUnit,
   Sex,
   WeightEntry,
@@ -122,7 +126,7 @@ import type {
 import { measurementSystems, weightTrackingStatuses } from "@/lib/types";
 import type { BackupData } from "@/lib/db";
 
-type Tab = "today" | "search" | "coach" | "insights" | "profile";
+type Tab = "today" | "search" | "coach" | "plan" | "insights" | "profile";
 type ProfileSection = "profile" | "customize";
 type AddView = "start" | "search" | "scan" | "label" | "camera" | "photo" | "manual" | "barcode-not-found";
 type SyncState = "local" | "syncing" | "synced" | "offline" | "error";
@@ -2258,11 +2262,58 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, onLogCoachMeal,
   );
 }
 
+function RecipeComposer({ onCreate }: { onCreate: (recipe: Recipe) => void }) {
+  const [name, setName] = useState("");
+  const [ingredients, setIngredients] = useState("");
+  const [servings, setServings] = useState("2");
+  const [nutrition, setNutrition] = useState({ calories: "400", protein: "25", carbs: "45", fat: "12", fiber: "8", sugar: "6" });
+  const setNutrient = (key: keyof typeof nutrition, value: string) => setNutrition((current) => ({ ...current, [key]: value }));
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const values = Object.fromEntries(Object.entries(nutrition).map(([key, value]) => [key, Number(value)])) as Record<keyof typeof nutrition, number>;
+    const ingredientNames = ingredients.split(/\n|,/).map((item) => item.trim()).filter(Boolean);
+    if (!name.trim() || !Number.isFinite(Number(servings)) || Number(servings) <= 0 || ingredientNames.length === 0 || Object.values(values).some((value) => !Number.isFinite(value) || value < 0)) return;
+    const now = new Date().toISOString();
+    onCreate({ id: `recipe-${crypto.randomUUID()}`, name: name.trim(), servings: Number(servings), ingredients: ingredientNames.map((item) => ({ id: `ingredient-${crypto.randomUUID()}`, name: item })), nutritionPerServing: values, createdAt: now, updatedAt: now });
+    setName(""); setIngredients(""); setServings("2"); setNutrition({ calories: "400", protein: "25", carbs: "45", fat: "12", fiber: "8", sugar: "6" });
+  };
+  return <form className="recipe-composer" onSubmit={submit}>
+    <div className="form-grid two"><label className="span-two"><span>Recipe name</span><input required value={name} maxLength={240} onChange={(event) => setName(event.target.value)} placeholder="e.g. Weeknight lentil bowl" /></label><label><span>Servings</span><input required type="number" min="0.5" max="100" step="0.5" value={servings} onChange={(event) => setServings(event.target.value)} /></label><label><span>Ingredients</span><textarea required value={ingredients} maxLength={5000} onChange={(event) => setIngredients(event.target.value)} placeholder="One ingredient per line" /></label></div>
+    <div className="recipe-nutrition"><span className="eyebrow">Per serving</span><div className="form-grid three">{(["calories", "protein", "carbs", "fat", "fiber", "sugar"] as const).map((key) => <label key={key}><span>{key === "fiber" ? "Fibre" : key[0].toUpperCase() + key.slice(1)}</span><input required type="number" min="0" step="0.1" value={nutrition[key]} onChange={(event) => setNutrient(key, event.target.value)} /></label>)}</div></div>
+    <button className="primary-button" type="submit"><BookOpen size={17} />Save recipe</button>
+  </form>;
+}
+
+function PlanView({ profile, onSave, onLog }: { profile: Profile; onSave: (profile: Profile) => void; onLog: (meal: Meal) => Promise<void> }) {
+  const recipes = profile.recipes || [];
+  const entries = (profile.mealPlanEntries || []).filter((entry) => recipes.some((recipe) => recipe.id === entry.recipeId)).sort((a, b) => a.date.localeCompare(b.date));
+  const [recipeId, setRecipeId] = useState("");
+  const [date, setDate] = useState(localDateKey());
+  const [mealType, setMealType] = useState<MealType>("dinner");
+  const addRecipe = (recipe: Recipe) => onSave({ ...profile, recipes: [...recipes, recipe] });
+  const addPlanEntry = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!recipeId) return;
+    onSave({ ...profile, mealPlanEntries: [...(profile.mealPlanEntries || []), { id: `plan-${crypto.randomUUID()}`, recipeId, date, mealType }] });
+  };
+  const removeEntry = (id: string) => onSave({ ...profile, mealPlanEntries: (profile.mealPlanEntries || []).filter((entry) => entry.id !== id) });
+  const plannedRecipes = entries.map((entry) => recipes.find((recipe) => recipe.id === entry.recipeId)).filter((recipe): recipe is Recipe => Boolean(recipe));
+  const groceries = groceryItemsForPlan(plannedRecipes);
+  return <main className="page plan-page">
+    <header className="page-header"><span className="eyebrow">Make tomorrow easier</span><h1>Recipes & plan</h1><p>Keep your recipes private, place them on a day, and turn the ingredients into a calm shopping list.</p></header>
+    <details className="recipe-create card"><summary><span><BookOpen size={18} /><strong>Save a recipe</strong><small>Store the portions and nutrition you use.</small></span><ChevronDown size={17} /></summary><RecipeComposer onCreate={addRecipe} /></details>
+    <section className="recipe-library" aria-labelledby="recipe-library-heading"><div className="section-heading"><div><span className="eyebrow">Your library</span><h2 id="recipe-library-heading">Saved recipes</h2></div><span className="subtle">{recipes.length} saved</span></div>{recipes.length ? <div className="recipe-list">{recipes.map((recipe) => <article className="recipe-card card" key={recipe.id}><div><strong>{recipe.name}</strong><small>{recipe.servings} servings · {Math.round(recipe.nutritionPerServing.protein)}g protein</small></div><div className="recipe-card-actions"><button className="text-button" type="button" onClick={() => void onLog(recipeMeal(recipe, localDateKey(), "dinner"))}>Log now</button><button className="icon-button subtle-button" type="button" aria-label={`Remove ${recipe.name}`} onClick={() => onSave({ ...profile, recipes: recipes.filter((item) => item.id !== recipe.id), mealPlanEntries: entries.filter((entry) => entry.recipeId !== recipe.id) })}><Trash2 size={15} /></button></div></article>)}</div> : <div className="recipe-empty card"><BookOpen size={25} /><strong>Your regular meals belong here.</strong><p>Save one recipe and it can be logged or planned without rebuilding it.</p></div>}</section>
+    {recipes.length > 0 && <section className="planning-workspace" aria-labelledby="plan-heading"><div className="section-heading"><div><span className="eyebrow">Lightweight planning</span><h2 id="plan-heading">Add a meal to your plan</h2></div></div><form className="plan-entry-form card" onSubmit={addPlanEntry}><label><span>Recipe</span><ThemedSelect ariaLabel="Recipe to plan" value={recipeId} onChange={setRecipeId} options={[{ value: "", label: "Choose a recipe" }, ...recipes.map((recipe) => ({ value: recipe.id, label: recipe.name }))]} /></label><div className="form-grid two"><label><span>Date</span><input required type="date" min={localDateKey()} value={date} onChange={(event) => setDate(event.target.value)} /></label><label><span>Meal</span><ThemedSelect ariaLabel="Planned meal" value={mealType} onChange={(value) => setMealType(value as MealType)} options={(Object.keys(mealLabels) as MealType[]).map((type) => ({ value: type, label: mealLabels[type] }))} /></label></div><button className="primary-button" type="submit" disabled={!recipeId}><CalendarPlus size={17} />Add to plan</button></form>{entries.length > 0 && <div className="planned-list">{entries.map((entry) => { const recipe = recipes.find((item) => item.id === entry.recipeId); return recipe ? <div className="planned-entry card" key={entry.id}><span><strong>{recipe.name}</strong><small>{new Date(`${entry.date}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} · {mealLabels[entry.mealType]}</small></span><button className="icon-button subtle-button" type="button" aria-label={`Remove ${recipe.name} from plan`} onClick={() => removeEntry(entry.id)}><X size={16} /></button></div> : null; })}</div>}</section>}
+    <section className="planned-groceries card" aria-labelledby="planned-groceries-heading"><div className="section-heading compact"><div><span className="eyebrow">From your plan</span><h2 id="planned-groceries-heading">Shopping list</h2></div><ListChecks size={18} /></div>{groceries.length ? <ul>{groceries.map((item) => <li key={item}>{item}</li>)}</ul> : <p>Add a recipe to a date and its ingredients will appear here. Your existing Coach grocery lists remain available in Coach.</p>}</section>
+  </main>;
+}
+
 function BottomNav({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => void }) {
   const items: Array<{ tab: Tab; label: string; icon: React.ReactNode }> = [
     { tab: "today", label: "Today", icon: <Home /> },
     { tab: "search", label: "Foods", icon: <Search /> },
     { tab: "coach", label: "Coach", icon: <MessageCircle /> },
+    { tab: "plan", label: "Plan", icon: <CalendarPlus /> },
     { tab: "insights", label: "Insights", icon: <BarChart3 /> },
     { tab: "profile", label: "Profile", icon: <UserRound /> },
   ];
@@ -2723,6 +2774,7 @@ export function TrackerApp() {
         {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={(mealType) => openAdd("start", mealType)} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} onEdit={setEditingMeal} onOpenDetails={setDetailMeal} onDropMeal={dropMeal} onDuplicate={setDuplicateMealDraft} onMove={setMoveMealDraft} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} onDismissHomeScreenPrompt={() => setShowHomeScreenPrompt(false)} onOpenCalendar={() => setCalendarOpen(true)} onSaveProfile={(next) => void saveProfile(next)} />}
         {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={openAdd} />}
         {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} chatTextSize={chatTextSize} onLogCoachMeal={logCoachMeal} onOpenAccount={() => setTab("profile")} onOpenAdd={openAdd} />}
+        {tab === "plan" && <PlanView profile={profile} onSave={(next) => void saveProfile(next)} onLog={saveNewMeal} />}
         {tab === "insights" && <InsightsView meals={meals} profile={profile} onSave={saveProfile} weightTrackingEnabled={weightTrackingEnabled} />}
       {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onRestartOnboarding={restartOnboarding} onExport={exportBackup} onImport={restoreBackup} user={auth.user} syncState={syncState} onSignOut={signOut} theme={theme} onThemeChange={changeTheme} chatTextSize={chatTextSize} onChatTextSizeChange={changeChatTextSize} weightTracking={profile.weightTracking} />}
       </div>

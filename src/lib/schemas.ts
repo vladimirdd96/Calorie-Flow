@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { CoachChat, CoachMealAction, CoachMealChoice, CoachMessage, DailyTargets, FastingRecord, Food, LabelAnalysis, Meal, MealPhotoAnalysis, Nutrition, Profile, WaterEntry, WeightEntry } from "./types";
+import type { CoachChat, CoachMealAction, CoachMealChoice, CoachMessage, DailyTargets, FastingRecord, Food, LabelAnalysis, Meal, MealPhotoAnalysis, MealPlanEntry, Nutrition, Profile, Recipe, WaterEntry, WeightEntry } from "./types";
 
 const finiteNonNegative = z.number().finite().min(0);
 const positiveFinite = z.number().finite().positive();
@@ -17,6 +17,7 @@ const localDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const weightEntrySchema = z.object({ date: localDateSchema, weightKg: z.number().finite().min(20).max(500) }).strict() satisfies z.ZodType<WeightEntry>;
 const waterEntrySchema = z.object({ date: localDateSchema, amountMl: z.number().finite().int().min(1).max(20_000) }).strict() satisfies z.ZodType<WaterEntry>;
 const fastingRecordSchema = z.object({ id: z.string().trim().min(1).max(240), startedAt: z.string().datetime({ offset: true }), endedAt: z.string().datetime({ offset: true }).optional() }).strict() satisfies z.ZodType<FastingRecord>;
+const mealPlanEntrySchema = z.object({ id: z.string().trim().min(1).max(240), recipeId: z.string().trim().min(1).max(240), date: localDateSchema, mealType: z.enum(["breakfast", "lunch", "dinner", "snack"]) }).strict() satisfies z.ZodType<MealPlanEntry>;
 const dailyTargetsSchema = z.object({ calories: positiveFinite.max(20_000), protein: finiteNonNegative.max(2_000), carbs: finiteNonNegative.max(2_000), fat: finiteNonNegative.max(2_000), fiber: finiteNonNegative.max(2_000) }).strict() satisfies z.ZodType<DailyTargets>;
 
 export const nutritionSchema = z.object({
@@ -34,6 +35,8 @@ export const nutritionSchema = z.object({
     vitaminKMcg: finiteNonNegative, vitaminB12Mcg: finiteNonNegative, folateMcg: finiteNonNegative,
   }).strict().optional(),
 }).strict() satisfies z.ZodType<Nutrition>;
+
+const recipeSchema = z.object({ id: z.string().trim().min(1).max(240), name: z.string().trim().min(1).max(240), servings: positiveFinite.max(100), ingredients: z.array(z.object({ id: z.string().trim().min(1).max(240), name: z.string().trim().min(1).max(240) }).strict()).max(100), nutritionPerServing: nutritionSchema, createdAt: z.string().datetime({ offset: true }), updatedAt: z.string().datetime({ offset: true }) }).strict() satisfies z.ZodType<Recipe>;
 
 export const foodSchema = z.object({
   id: z.string().trim().min(1).max(240),
@@ -95,6 +98,8 @@ export const profileSchema = z.object({
   waterEntries: z.array(waterEntrySchema).max(10_000).optional(),
   fastingGoalHours: z.union([z.literal(12), z.literal(14), z.literal(16)]).optional(),
   fastingRecords: z.array(fastingRecordSchema).max(10_000).optional(),
+  recipes: z.array(recipeSchema).max(10_000).optional(),
+  mealPlanEntries: z.array(mealPlanEntrySchema).max(100_000).optional(),
 }).strict() satisfies z.ZodType<Profile>;
 
 export const coachMessageSchema = z.object({

@@ -114,6 +114,8 @@ export type Profile = {
   waterEntries?: WaterEntry[];
   fastingGoalHours?: 12 | 14 | 16;
   fastingRecords?: FastingRecord[];
+  recipes?: Recipe[];
+  mealPlanEntries?: MealPlanEntry[];
 };
 
 export type WeightEntry = {
@@ -130,6 +132,28 @@ export type FastingRecord = {
   id: string;
   startedAt: string;
   endedAt?: string;
+};
+
+export type RecipeIngredient = {
+  id: string;
+  name: string;
+};
+
+export type Recipe = {
+  id: string;
+  name: string;
+  servings: number;
+  ingredients: RecipeIngredient[];
+  nutritionPerServing: Nutrition;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MealPlanEntry = {
+  id: string;
+  recipeId: string;
+  date: string;
+  mealType: MealType;
 };
 
 export type LabelAnalysis = {
