@@ -23,6 +23,13 @@ export const nutritionSchema = z.object({
   fat: finiteNonNegative,
   fiber: finiteNonNegative,
   sugar: finiteNonNegative,
+  micronutrients: z.object({
+    sodiumMg: finiteNonNegative, cholesterolMg: finiteNonNegative, saturatedFatG: finiteNonNegative,
+    potassiumMg: finiteNonNegative, calciumMg: finiteNonNegative, ironMg: finiteNonNegative,
+    magnesiumMg: finiteNonNegative, zincMg: finiteNonNegative, vitaminAMcg: finiteNonNegative,
+    vitaminCMg: finiteNonNegative, vitaminDMcg: finiteNonNegative, vitaminEMg: finiteNonNegative,
+    vitaminKMcg: finiteNonNegative, vitaminB12Mcg: finiteNonNegative, folateMcg: finiteNonNegative,
+  }).strict().optional(),
 }).strict() satisfies z.ZodType<Nutrition>;
 
 export const foodSchema = z.object({

@@ -39,6 +39,23 @@ function mapNutrition(product: OffProduct): Nutrition {
   const n = product.nutriments || {};
   const kilocalories = numberValue(n["energy-kcal_100g"]);
   const kilojoules = numberValue(n.energy_100g);
+  const micronutrients = {
+    sodiumMg: numberValue(n.sodium_100g) * 1000,
+    cholesterolMg: numberValue(n.cholesterol_100g),
+    saturatedFatG: numberValue(n["saturated-fat_100g"]),
+    potassiumMg: numberValue(n.potassium_100g),
+    calciumMg: numberValue(n.calcium_100g),
+    ironMg: numberValue(n.iron_100g),
+    magnesiumMg: numberValue(n.magnesium_100g),
+    zincMg: numberValue(n.zinc_100g),
+    vitaminAMcg: numberValue(n["vitamin-a_100g"]),
+    vitaminCMg: numberValue(n["vitamin-c_100g"]),
+    vitaminDMcg: numberValue(n["vitamin-d_100g"]),
+    vitaminEMg: numberValue(n["vitamin-e_100g"]),
+    vitaminKMcg: numberValue(n["vitamin-k_100g"]),
+    vitaminB12Mcg: numberValue(n["vitamin-b12_100g"]),
+    folateMcg: numberValue(n.folates_100g),
+  };
   return {
     calories: Math.round(kilocalories || kilojoules / 4.184 || 0),
     protein: numberValue(n.proteins_100g),
@@ -46,11 +63,19 @@ function mapNutrition(product: OffProduct): Nutrition {
     fat: numberValue(n.fat_100g),
     fiber: numberValue(n.fiber_100g),
     sugar: numberValue(n.sugars_100g),
+    micronutrients: Object.values(micronutrients).some(Boolean) ? micronutrients : undefined,
   };
 }
 
 function mapFdcNutrition(product: FdcProduct): Nutrition {
   const nutrients = new Map((product.foodNutrients || []).map((nutrient) => [nutrient.nutrientId, numberValue(nutrient.value)]));
+  const micronutrients = {
+    sodiumMg: nutrients.get(1093) || 0, cholesterolMg: nutrients.get(1253) || 0, saturatedFatG: nutrients.get(1258) || 0,
+    potassiumMg: nutrients.get(1092) || 0, calciumMg: nutrients.get(1087) || 0, ironMg: nutrients.get(1089) || 0,
+    magnesiumMg: nutrients.get(1090) || 0, zincMg: nutrients.get(1095) || 0, vitaminAMcg: nutrients.get(1106) || 0,
+    vitaminCMg: nutrients.get(1162) || 0, vitaminDMcg: nutrients.get(1114) || 0, vitaminEMg: nutrients.get(1109) || 0,
+    vitaminKMcg: nutrients.get(1185) || 0, vitaminB12Mcg: nutrients.get(1178) || 0, folateMcg: nutrients.get(1177) || 0,
+  };
   return {
     calories: Math.round(nutrients.get(1008) || 0),
     protein: nutrients.get(1003) || 0,
@@ -58,6 +83,7 @@ function mapFdcNutrition(product: FdcProduct): Nutrition {
     fat: nutrients.get(1004) || 0,
     fiber: nutrients.get(1079) || 0,
     sugar: nutrients.get(2000) || 0,
+    micronutrients: Object.values(micronutrients).some(Boolean) ? micronutrients : undefined,
   };
 }
 

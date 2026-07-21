@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateCalories, calculateMacroTargets, gramsFor, scaleNutrition, suggestedMealType } from "./nutrition";
+import { calculateCalories, calculateMacroTargets, gramsFor, scaleNutrition, sumNutrition, suggestedMealType } from "./nutrition";
 import type { Food } from "./types";
 
 const food: Food = {
@@ -21,6 +21,13 @@ describe("nutrition calculations", () => {
       fiber: 2.4,
       sugar: 1.2,
     });
+  });
+
+  it("scales and sums micronutrients with the meal portion", () => {
+    const nutrition = { ...food.nutrientsPer100, micronutrients: { sodiumMg: 100, cholesterolMg: 20, saturatedFatG: 1, potassiumMg: 200, calciumMg: 50, ironMg: 2, magnesiumMg: 10, zincMg: 1, vitaminAMcg: 10, vitaminCMg: 20, vitaminDMcg: 1, vitaminEMg: 2, vitaminKMcg: 3, vitaminB12Mcg: 0.5, folateMcg: 8 } };
+    const portion = scaleNutrition(nutrition, 60);
+    expect(portion.micronutrients?.sodiumMg).toBe(60);
+    expect(sumNutrition([portion, portion]).micronutrients?.calciumMg).toBe(60);
   });
 
   it("converts contextual portions to grams", () => {

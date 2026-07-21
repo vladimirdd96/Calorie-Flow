@@ -104,6 +104,7 @@ import type {
   Meal,
   MealPhotoAnalysis,
   MealType,
+  Micronutrients,
   Nutrition,
   Profile,
   ServingUnit,
@@ -457,7 +458,45 @@ function FoodAvatar({ food, name }: { food?: Food; name?: string }) {
   return <div className="food-avatar fallback">{(name || food?.name || "F").slice(0, 1).toUpperCase()}</div>;
 }
 
-function MealRow({ meal, onDelete, onEdit, onDuplicate, onMove, onDragStart, onDragOver, onDrop, dropPosition, hideCalories }: { meal: Meal; onDelete: () => void; onEdit: () => void; onDuplicate: () => void; onMove: () => void; onDragStart: (meal: Meal, event: React.DragEvent<HTMLDivElement>) => void; onDragOver: (event: React.DragEvent<HTMLDivElement>) => void; onDrop: (event: React.DragEvent<HTMLDivElement>) => void; dropPosition?: "before" | "after"; hideCalories: boolean }) {
+const micronutrientLabels: Array<{ key: keyof Micronutrients; label: string; unit: string }> = [
+  { key: "sodiumMg", label: "Sodium", unit: "mg" },
+  { key: "potassiumMg", label: "Potassium", unit: "mg" },
+  { key: "calciumMg", label: "Calcium", unit: "mg" },
+  { key: "ironMg", label: "Iron", unit: "mg" },
+  { key: "magnesiumMg", label: "Magnesium", unit: "mg" },
+  { key: "zincMg", label: "Zinc", unit: "mg" },
+  { key: "cholesterolMg", label: "Cholesterol", unit: "mg" },
+  { key: "saturatedFatG", label: "Saturated fat", unit: "g" },
+  { key: "vitaminAMcg", label: "Vitamin A", unit: "mcg" },
+  { key: "vitaminCMg", label: "Vitamin C", unit: "mg" },
+  { key: "vitaminDMcg", label: "Vitamin D", unit: "mcg" },
+  { key: "vitaminEMg", label: "Vitamin E", unit: "mg" },
+  { key: "vitaminKMcg", label: "Vitamin K", unit: "mcg" },
+  { key: "vitaminB12Mcg", label: "Vitamin B12", unit: "mcg" },
+  { key: "folateMcg", label: "Folate", unit: "mcg" },
+];
+
+function NutritionDetails({ meal, hideCalories, onClose }: { meal: Meal; hideCalories: boolean; onClose?: () => void }) {
+  const nutrition = meal.nutrition;
+  const micros = nutrition.micronutrients;
+  return <div className="nutrition-details">
+    <div className="sheet-header"><div><span className="eyebrow">Nutrition details</span><h2>{meal.name}</h2></div><span /></div>
+    <div className="nutrition-detail-meta"><span>{meal.amount} {formatUnit(meal.unit, meal.amount)} · {meal.grams} g</span>{meal.estimated && <span className="estimate-pill">Estimated</span>}</div>
+    <section className="detail-section" aria-labelledby="macro-detail-heading"><div className="detail-section-heading"><h3 id="macro-detail-heading">Macros</h3><span>for this portion</span></div><div className="detail-grid macro-detail-grid">{!hideCalories && <div><span>Calories</span><strong>{Math.round(nutrition.calories)} <small>kcal</small></strong></div>}<div><span>Protein</span><strong>{round(nutrition.protein)} <small>g</small></strong></div><div><span>Carbs</span><strong>{round(nutrition.carbs)} <small>g</small></strong></div><div><span>Fat</span><strong>{round(nutrition.fat)} <small>g</small></strong></div><div><span>Fibre</span><strong>{round(nutrition.fiber)} <small>g</small></strong></div><div><span>Sugar</span><strong>{round(nutrition.sugar)} <small>g</small></strong></div></div></section>
+    <section className="detail-section" aria-labelledby="micro-detail-heading"><div className="detail-section-heading"><h3 id="micro-detail-heading">Micronutrients</h3><span>{micros ? "label or catalogue data" : "not available for this entry"}</span></div>{micros ? <div className="detail-grid micro-detail-grid">{micronutrientLabels.map(({ key, label, unit }) => <div key={key}><span>{label}</span><strong>{round(micros[key], 2)} <small>{unit}</small></strong></div>)}</div> : <p className="detail-empty">Micronutrients are shown when the food source provides them. You can still use the macros above for this entry.</p>}</section>
+    <div className="detail-footnote"><Info size={15} /> Values are estimates unless verified on the food label.</div>
+    {onClose && <div className="sheet-actions"><button type="button" className="secondary-button" onClick={onClose}>Close</button></div>}
+  </div>;
+}
+
+function MicronutrientSummary({ nutrition }: { nutrition: Nutrition }) {
+  const micros = nutrition.micronutrients;
+  if (!micros) return null;
+  const highlights = micronutrientLabels.slice(0, 4);
+  return <section className="micro-summary card" aria-labelledby="micro-summary-heading"><div className="section-heading compact"><div><span className="eyebrow">More than macros</span><h2 id="micro-summary-heading">Micronutrients</h2></div><span className="subtle">tap a meal for details</span></div><div className="micro-summary-grid">{highlights.map(({ key, label, unit }) => <div key={key}><span>{label}</span><strong>{round(micros[key], 1)} <small>{unit}</small></strong></div>)}</div><p>Daily totals from foods with available label or catalogue data.</p></section>;
+}
+
+function MealRow({ meal, onDelete, onEdit, onDuplicate, onMove, onDetails, onDragStart, onDragOver, onDrop, dropPosition, hideCalories }: { meal: Meal; onDelete: () => void; onEdit: () => void; onDuplicate: () => void; onMove: () => void; onDetails: () => void; onDragStart: (meal: Meal, event: React.DragEvent<HTMLDivElement>) => void; onDragOver: (event: React.DragEvent<HTMLDivElement>) => void; onDrop: (event: React.DragEvent<HTMLDivElement>) => void; dropPosition?: "before" | "after"; hideCalories: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLSpanElement>(null);
   useEffect(() => {
@@ -476,10 +515,10 @@ function MealRow({ meal, onDelete, onEdit, onDuplicate, onMove, onDragStart, onD
     <div className={`meal-row ${dropPosition ? `drop-${dropPosition}` : ""}`} draggable onDragStart={(event) => onDragStart(meal, event)} onDragOver={onDragOver} onDrop={onDrop} title="Drag this meal to reorder it or move it to another meal section" aria-label={`Drag ${meal.name} to reorder it or move it to another meal section`}>
       <span className="meal-drag-handle" aria-hidden="true"><GripVertical size={17} /></span>
       <div className="meal-icon"><Utensils size={17} /></div>
-      <div className="meal-copy">
+      <button type="button" className="meal-detail-trigger" onClick={onDetails} aria-label={`View nutrition details for ${meal.name}`}><div className="meal-copy">
         <strong>{meal.name}</strong>
         <span>{meal.amount} {formatUnit(meal.unit, meal.amount)} · P {meal.nutrition.protein} · C {meal.nutrition.carbs} · F {meal.nutrition.fat}</span>
-      </div>
+      </div></button>
       {!hideCalories && <strong className="meal-kcal"><span>{Math.round(meal.nutrition.calories)}</span><small>kcal</small></strong>}
       <span ref={menuRef} className="meal-actions"><button type="button" className="meal-menu-trigger" onClick={() => setMenuOpen((open) => !open)} aria-label={`Options for ${meal.name}`} aria-expanded={menuOpen}><MoreHorizontal size={18} /></button>{menuOpen && <span className="meal-action-menu" role="menu"><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onMove(); }}><ArrowRightLeft size={14} />Move</button><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onEdit(); }}><Pencil size={14} />Edit</button><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onDuplicate(); }}><Copy size={14} />Duplicate</button><button type="button" role="menuitem" className="danger" onClick={() => { setMenuOpen(false); onDelete(); }}><Trash2 size={14} />Delete</button></span>}</span>
     </div>
@@ -547,6 +586,7 @@ function TodayView({
   onOpenCoach,
   onDelete,
   onEdit,
+  onOpenDetails,
   onDropMeal,
   onDuplicate,
   onMove,
@@ -563,6 +603,7 @@ function TodayView({
   onOpenCoach: () => void;
   onDelete: (id: string) => void;
   onEdit: (meal: Meal) => void;
+  onOpenDetails: (meal: Meal) => void;
   onDropMeal: (meal: Meal, mealType: MealType, targetMealId?: string, insertAfter?: boolean) => void;
   onDuplicate: (meal: Meal) => void;
   onMove: (meal: Meal) => void;
@@ -607,6 +648,8 @@ function TodayView({
         </div>
       </section>
 
+      <MicronutrientSummary nutrition={total} />
+
       <button className="coach-check-in" onClick={onOpenCoach}>
         <span className="action-icon mint"><MessageCircle size={19} /></span>
         <span><strong>Ask Coach about today</strong><small>Get guidance with your diary in context</small></span>
@@ -619,7 +662,7 @@ function TodayView({
           <div className="meal-group" key={type}>
             <div className="meal-group-title"><span>{mealLabels[type]}</span>{!profile.hideCalories && <span>{Math.round(sumNutrition(groupMeals.map((meal) => meal.nutrition)).calories)} kcal</span>}</div>
             <div className={`meal-list card ${dropTarget === type ? "drop-target" : ""}`} onDragOver={(event) => { event.preventDefault(); setDropTarget(type); }} onDragLeave={() => setDropTarget(undefined)} onDrop={(event) => { event.preventDefault(); const mealId = event.dataTransfer.getData("text/meal-id"); const meal = meals.find((candidate) => candidate.id === mealId); if (meal) onDropMeal(meal, type); setDropTarget(undefined); }}>
-              {groupMeals.map((meal) => <MealRow key={meal.id} meal={meal} hideCalories={profile.hideCalories} dropPosition={dropTarget === `${type}:${meal.id}:before` ? "before" : dropTarget === `${type}:${meal.id}:after` ? "after" : undefined} onDelete={() => onDelete(meal.id)} onEdit={() => onEdit(meal)} onDuplicate={() => onDuplicate(meal)} onMove={() => onMove(meal)} onDragStart={(draggedMeal, event) => { event.dataTransfer.setData("text/meal-id", draggedMeal.id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); setDropTarget(`${type}:${meal.id}:${event.clientY < rect.top + rect.height / 2 ? "before" : "after"}`); }} onDrop={(event) => { event.preventDefault(); event.stopPropagation(); const mealId = event.dataTransfer.getData("text/meal-id"); const draggedMeal = meals.find((candidate) => candidate.id === mealId); if (draggedMeal) { const rect = event.currentTarget.getBoundingClientRect(); onDropMeal(draggedMeal, type, meal.id, event.clientY >= rect.top + rect.height / 2); } setDropTarget(undefined); }} />)}
+              {groupMeals.map((meal) => <MealRow key={meal.id} meal={meal} hideCalories={profile.hideCalories} dropPosition={dropTarget === `${type}:${meal.id}:before` ? "before" : dropTarget === `${type}:${meal.id}:after` ? "after" : undefined} onDelete={() => onDelete(meal.id)} onEdit={() => onEdit(meal)} onDetails={() => onOpenDetails(meal)} onDuplicate={() => onDuplicate(meal)} onMove={() => onMove(meal)} onDragStart={(draggedMeal, event) => { event.dataTransfer.setData("text/meal-id", draggedMeal.id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); setDropTarget(`${type}:${meal.id}:${event.clientY < rect.top + rect.height / 2 ? "before" : "after"}`); }} onDrop={(event) => { event.preventDefault(); event.stopPropagation(); const mealId = event.dataTransfer.getData("text/meal-id"); const draggedMeal = meals.find((candidate) => candidate.id === mealId); if (draggedMeal) { const rect = event.currentTarget.getBoundingClientRect(); onDropMeal(draggedMeal, type, meal.id, event.clientY >= rect.top + rect.height / 2); } setDropTarget(undefined); }} />)}
               <MealAddRow mealType={type} onAdd={onAdd} />
             </div>
           </div>
@@ -1524,7 +1567,7 @@ function ManualFood({ initialBarcode, notice, onSave, onClose, hideCalories }: {
   const submit = (event: FormEvent) => {
     event.preventDefault();
     const calories = hideCalories ? round(nutrition.protein * 4 + nutrition.carbs * 4 + nutrition.fat * 9, 0) : nutrition.calories;
-    const values = [...Object.values(nutrition), calories, servingGrams];
+    const values = [nutrition.protein, nutrition.carbs, nutrition.fat, nutrition.fiber, nutrition.sugar, calories, servingGrams];
     if (!name.trim() || values.some((value) => !Number.isFinite(value) || value < 0) || servingGrams <= 0) {
       setError("Add a food name and use zero or positive nutrition values with a serving above zero.");
       return;
@@ -2243,6 +2286,7 @@ export function TrackerApp() {
   const [initialAddView, setInitialAddView] = useState<AddView>("start");
   const [directFood, setDirectFood] = useState<Food>();
   const [editingMeal, setEditingMeal] = useState<Meal>();
+  const [detailMeal, setDetailMeal] = useState<Meal>();
   const [duplicateMealDraft, setDuplicateMealDraft] = useState<Meal>();
   const [moveMealDraft, setMoveMealDraft] = useState<Meal>();
   const [initialMealType, setInitialMealType] = useState<MealType>();
@@ -2578,12 +2622,12 @@ export function TrackerApp() {
   if (startupError) return <main className="app-loading load-error" role="alert"><Database size={30} /><h1>Diary unavailable</h1><p>{startupError}</p><button className="primary-button" onClick={() => { setStartupError(""); void refresh().catch(() => setStartupError("Your private diary could not be opened. Your data has not been reset.")); }}>Try again</button></main>;
   if (!ready || !auth.ready) return <div className="app-loading" role="status" aria-label="Opening your private diary"><BrandMark large /><i /></div>;
   if (auth.passwordRecovery || !auth.user) return <AuthGateway key={auth.passwordRecovery ? "recovery" : "sign-in"} configured={auth.configured} passwordRecovery={auth.passwordRecovery} onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} />;
-  const modalOpen = adding || !!editingMeal || !!duplicateMealDraft || !!moveMealDraft || calendarOpen || !profile.onboardingDone || measurementPromptOpen || weightPromptOpen;
+  const modalOpen = adding || !!editingMeal || !!detailMeal || !!duplicateMealDraft || !!moveMealDraft || calendarOpen || !profile.onboardingDone || measurementPromptOpen || weightPromptOpen;
   return (
     <div className="app-shell">
       <div className="ambient one" /><div className="ambient two" />
       <div className="content-shell" inert={modalOpen} aria-hidden={modalOpen || undefined}>
-        {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={(mealType) => openAdd("start", mealType)} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} onEdit={setEditingMeal} onDropMeal={dropMeal} onDuplicate={setDuplicateMealDraft} onMove={setMoveMealDraft} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} onDismissHomeScreenPrompt={() => setShowHomeScreenPrompt(false)} onOpenCalendar={() => setCalendarOpen(true)} />}
+        {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={(mealType) => openAdd("start", mealType)} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} onEdit={setEditingMeal} onOpenDetails={setDetailMeal} onDropMeal={dropMeal} onDuplicate={setDuplicateMealDraft} onMove={setMoveMealDraft} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} onDismissHomeScreenPrompt={() => setShowHomeScreenPrompt(false)} onOpenCalendar={() => setCalendarOpen(true)} />}
         {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={openAdd} />}
         {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} chatTextSize={chatTextSize} onLogCoachMeal={logCoachMeal} onOpenAccount={() => setTab("profile")} onOpenAdd={openAdd} />}
         {tab === "insights" && <InsightsView meals={meals} profile={profile} onSave={saveProfile} weightTrackingEnabled={weightTrackingEnabled} />}
@@ -2592,6 +2636,7 @@ export function TrackerApp() {
       <div inert={modalOpen} aria-hidden={modalOpen || undefined}><BottomNav tab={tab} onChange={(nextTab) => { window.scrollTo(0, 0); setTab(nextTab); }} /></div>
       {adding && profile.onboardingDone && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); setInitialMealType(undefined); }} wide>{directFood ? <PortionSheet food={directFood} initialMealType={initialMealType} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} initialMealType={initialMealType} onLog={logMeal} onMealPhoto={addPhotoMeal} onSaveFood={saveFood} />}</Sheet>}
       {calendarOpen && <Sheet onClose={() => setCalendarOpen(false)} wide label="Calendar"><CalendarSheet dateKey={dateKey} meals={meals} profile={profile} onDateChange={setDateKey} onClose={() => setCalendarOpen(false)} /></Sheet>}
+      {detailMeal && <Sheet onClose={() => setDetailMeal(undefined)} wide label={`Nutrition details for ${detailMeal.name}`}><NutritionDetails meal={detailMeal} hideCalories={profile.hideCalories} /></Sheet>}
       {editingMeal && <Sheet onClose={() => setEditingMeal(undefined)} label="Edit meal"><MealEditor meal={editingMeal} hideCalories={profile.hideCalories} onSave={(meal) => editingMeal.id.startsWith("photo-") ? saveNewMeal(meal) : saveEditedMeal(meal)} onClose={() => setEditingMeal(undefined)} /></Sheet>}
       {duplicateMealDraft && <Sheet onClose={() => setDuplicateMealDraft(undefined)} label="Duplicate meal" className="duplicate-meal-dialog"><DuplicateMealSheet meal={duplicateMealDraft} onDuplicate={(mealType) => void duplicateMeal(duplicateMealDraft, mealType)} onClose={() => setDuplicateMealDraft(undefined)} /></Sheet>}
       {moveMealDraft && <Sheet onClose={() => setMoveMealDraft(undefined)} label="Move meal" className="duplicate-meal-dialog"><MoveMealSheet meal={moveMealDraft} onMove={(mealType) => { void dropMeal(moveMealDraft, mealType); setMoveMealDraft(undefined); }} onClose={() => setMoveMealDraft(undefined)} /></Sheet>}

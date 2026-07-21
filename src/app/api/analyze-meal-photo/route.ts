@@ -13,6 +13,7 @@ const responseSchema = {
     grams: { type: "number" },
     nutrition: { type: "object", additionalProperties: false, properties: {
       calories: { type: "number" }, protein: { type: "number" }, carbs: { type: "number" }, fat: { type: "number" }, fiber: { type: "number" }, sugar: { type: "number" },
+      micronutrients: { type: "object", additionalProperties: false, properties: { sodiumMg: { type: "number" }, cholesterolMg: { type: "number" }, saturatedFatG: { type: "number" }, potassiumMg: { type: "number" }, calciumMg: { type: "number" }, ironMg: { type: "number" }, magnesiumMg: { type: "number" }, zincMg: { type: "number" }, vitaminAMcg: { type: "number" }, vitaminCMg: { type: "number" }, vitaminDMcg: { type: "number" }, vitaminEMg: { type: "number" }, vitaminKMcg: { type: "number" }, vitaminB12Mcg: { type: "number" }, folateMcg: { type: "number" } }, required: ["sodiumMg", "cholesterolMg", "saturatedFatG", "potassiumMg", "calciumMg", "ironMg", "magnesiumMg", "zincMg", "vitaminAMcg", "vitaminCMg", "vitaminDMcg", "vitaminEMg", "vitaminKMcg", "vitaminB12Mcg", "folateMcg"] },
     }, required: ["calories", "protein", "carbs", "fat", "fiber", "sugar"] },
     components: { type: "array", items: { type: "string" }, maxItems: 20 }, confidence: { type: "string", enum: ["low", "medium", "high"] },
   }, required: ["name", "mealType", "amount", "unit", "grams", "nutrition", "components", "confidence"],

@@ -190,6 +190,8 @@ p { color: var(--muted); line-height: 1.55; }
 .meal-row + .meal-row { border-top: 1px solid var(--border); }
 .meal-icon { width: 35px; height: 35px; display: grid; place-items: center; border-radius: 12px; color: var(--mint); background: rgba(125,255,213,.08); }
 .meal-copy { min-width: 0; display: grid; gap: 4px; }
+.meal-detail-trigger { min-width: 0; display: block; padding: 0; color: inherit; background: transparent; border: 0; text-align: left; }
+.meal-detail-trigger:focus-visible { outline: 2px solid var(--mint); outline-offset: 4px; border-radius: 5px; }
 .meal-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
 .meal-copy span { color: var(--muted); font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .meal-kcal { display: inline-flex; align-items: baseline; gap: 4px; font-size: 14px; white-space: nowrap; }
@@ -212,6 +214,28 @@ p { color: var(--muted); line-height: 1.55; }
 .meal-editor-form label { display: grid; gap: 7px; color: var(--muted); font-size: 11px; font-weight: 800; }
 .meal-editor-form input, .meal-editor-form select { width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid var(--border); border-radius: 11px; color: var(--text); background-color: var(--panel); font: inherit; }
 .meal-editor-form select { cursor: pointer; padding-right: 42px; }
+.micro-summary { margin-top: 14px; padding: 18px 19px; }
+.micro-summary .section-heading { margin-bottom: 13px; }
+.micro-summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.micro-summary-grid > div { display: grid; gap: 4px; padding: 10px 8px; border-radius: 11px; background: var(--control-surface-strong); }
+.micro-summary-grid span, .micro-summary p { color: var(--muted); font-size: 10px; }
+.micro-summary-grid strong { font-size: 13px; }
+.micro-summary-grid small, .detail-grid small { color: var(--muted); font-size: 9px; font-weight: 700; }
+.micro-summary p { margin: 13px 0 0; }
+.nutrition-details { width: min(100%, 620px); margin: 0 auto; padding: 24px; }
+.nutrition-detail-meta { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 11px; }
+.estimate-pill { padding: 4px 7px; border-radius: 999px; color: var(--amber); background: color-mix(in oklch, var(--amber) 12%, transparent); font-size: 9px; font-weight: 800; }
+.detail-section { margin-top: 24px; }
+.detail-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.detail-section-heading h3 { margin: 0; font-size: 14px; }
+.detail-section-heading span { color: var(--muted); font-size: 10px; }
+.detail-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.detail-grid > div { display: grid; gap: 5px; padding: 11px; border: 1px solid var(--border); border-radius: 11px; background: var(--control-surface-strong); }
+.detail-grid span { color: var(--muted); font-size: 10px; }
+.detail-grid strong { font-size: 14px; }
+.macro-detail-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.detail-empty { margin: 0; padding: 15px; border: 1px dashed var(--border-strong); border-radius: 11px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.detail-footnote { display: flex; align-items: center; gap: 7px; margin-top: 22px; padding-top: 13px; border-top: 1px solid var(--border); color: var(--muted-2); font-size: 10px; }
 .editor-nutrition { display: grid; gap: 9px; padding: 13px; border: 1px solid var(--border); border-radius: 13px; background: rgba(125,255,213,.035); }
 .editor-nutrition > div { display: flex; flex-wrap: wrap; gap: 12px 18px; color: var(--muted); font-size: 11px; }
 .editor-nutrition strong { color: var(--text); margin-left: 4px; }
@@ -896,6 +920,9 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 }
 
 @media (max-width: 520px) {
+  .micro-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nutrition-details { padding: 22px 18px; }
+  .detail-grid, .macro-detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .unit-choice-grid { grid-template-columns: 1fr; }
 }
 

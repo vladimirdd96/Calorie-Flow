@@ -5,6 +5,27 @@ export type Nutrition = {
   fat: number;
   fiber: number;
   sugar: number;
+  /** Optional for backwards compatibility with meals logged before micronutrients were added. */
+  micronutrients?: Micronutrients;
+};
+
+/** Vitamins and minerals normalized to the units shown in the detail view. */
+export type Micronutrients = {
+  sodiumMg: number;
+  cholesterolMg: number;
+  saturatedFatG: number;
+  potassiumMg: number;
+  calciumMg: number;
+  ironMg: number;
+  magnesiumMg: number;
+  zincMg: number;
+  vitaminAMcg: number;
+  vitaminCMg: number;
+  vitaminDMcg: number;
+  vitaminEMg: number;
+  vitaminKMcg: number;
+  vitaminB12Mcg: number;
+  folateMcg: number;
 };
 
 export type FoodSource = "seed" | "open-food-facts" | "food-data-central" | "ai-label" | "custom";

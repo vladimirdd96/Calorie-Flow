@@ -1,4 +1,4 @@
-import type { ActivityLevel, DietPreset, Food, MealType, Nutrition, Profile, ServingUnit } from "./types";
+import type { ActivityLevel, DietPreset, Food, MealType, Micronutrients, Nutrition, Profile, ServingUnit } from "./types";
 
 export const EMPTY_NUTRITION: Nutrition = {
   calories: 0,
@@ -7,6 +7,12 @@ export const EMPTY_NUTRITION: Nutrition = {
   fat: 0,
   fiber: 0,
   sugar: 0,
+};
+
+export const EMPTY_MICRONUTRIENTS: Micronutrients = {
+  sodiumMg: 0, cholesterolMg: 0, saturatedFatG: 0, potassiumMg: 0, calciumMg: 0,
+  ironMg: 0, magnesiumMg: 0, zincMg: 0, vitaminAMcg: 0, vitaminCMg: 0,
+  vitaminDMcg: 0, vitaminEMg: 0, vitaminKMcg: 0, vitaminB12Mcg: 0, folateMcg: 0,
 };
 
 export const activityMultipliers: Record<ActivityLevel, number> = {
@@ -23,7 +29,7 @@ export function round(value: number, digits = 1) {
 }
 
 export function sumNutrition(items: Nutrition[]): Nutrition {
-  return items.reduce(
+  const total = items.reduce(
     (total, item) => ({
       calories: total.calories + item.calories,
       protein: total.protein + item.protein,
@@ -34,11 +40,16 @@ export function sumNutrition(items: Nutrition[]): Nutrition {
     }),
     { ...EMPTY_NUTRITION },
   );
+  const micronutrients = items.filter((item) => item.micronutrients).reduce((sum, item) => {
+    const micros = item.micronutrients || EMPTY_MICRONUTRIENTS;
+    return Object.fromEntries(Object.keys(EMPTY_MICRONUTRIENTS).map((key) => [key, sum[key as keyof Micronutrients] + micros[key as keyof Micronutrients]])) as Micronutrients;
+  }, { ...EMPTY_MICRONUTRIENTS });
+  return items.some((item) => item.micronutrients) ? { ...total, micronutrients } : total;
 }
 
 export function scaleNutrition(per100: Nutrition, grams: number): Nutrition {
   const ratio = Math.max(0, grams) / 100;
-  return {
+  const scaled: Nutrition = {
     calories: round(per100.calories * ratio, 0),
     protein: round(per100.protein * ratio),
     carbs: round(per100.carbs * ratio),
@@ -46,6 +57,10 @@ export function scaleNutrition(per100: Nutrition, grams: number): Nutrition {
     fiber: round(per100.fiber * ratio),
     sugar: round(per100.sugar * ratio),
   };
+  if (per100.micronutrients) {
+    scaled.micronutrients = Object.fromEntries(Object.keys(per100.micronutrients).map((key) => [key, round(per100.micronutrients![key as keyof Micronutrients] * ratio, 2)])) as Micronutrients;
+  }
+  return scaled;
 }
 
 export function gramsFor(food: Food, amount: number, unit: ServingUnit): number {

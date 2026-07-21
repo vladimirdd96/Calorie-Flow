@@ -22,6 +22,9 @@ const schema = {
         fat: { type: "number" },
         fiber: { type: "number" },
         sugar: { type: "number" },
+        micronutrients: { type: "object", additionalProperties: false, properties: {
+          sodiumMg: { type: "number" }, cholesterolMg: { type: "number" }, saturatedFatG: { type: "number" }, potassiumMg: { type: "number" }, calciumMg: { type: "number" }, ironMg: { type: "number" }, magnesiumMg: { type: "number" }, zincMg: { type: "number" }, vitaminAMcg: { type: "number" }, vitaminCMg: { type: "number" }, vitaminDMcg: { type: "number" }, vitaminEMg: { type: "number" }, vitaminKMcg: { type: "number" }, vitaminB12Mcg: { type: "number" }, folateMcg: { type: "number" },
+        }, required: ["sodiumMg", "cholesterolMg", "saturatedFatG", "potassiumMg", "calciumMg", "ironMg", "magnesiumMg", "zincMg", "vitaminAMcg", "vitaminCMg", "vitaminDMcg", "vitaminEMg", "vitaminKMcg", "vitaminB12Mcg", "folateMcg"] },
       },
       required: ["calories", "protein", "carbs", "fat", "fiber", "sugar"],
     },
@@ -102,7 +105,7 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: "system",
-          content: "Read one or more photos of the same food package. They may show a nutrition label, barcode, front of pack, ingredients, serving information, or package size. Extract package nutrition accurately and combine facts across images. Normalize all nutrients to 100 g or 100 ml. If the label only gives a serving, calculate per 100 from the visible serving weight. Use 0 only when the label explicitly indicates zero; otherwise return 0 and add a short follow-up question naming the missing value. Never guess product weight, serving weight, or package weight. Calories are kcal. Keep questions concise and ask only facts needed to log the consumed amount.",
+          content: "Read one or more photos of the same food package. They may show a nutrition label, barcode, front of pack, ingredients, serving information, or package size. Extract package nutrition accurately and combine facts across images, including sodium, saturated fat, cholesterol, potassium, calcium, iron, magnesium, zinc, and vitamins when visible. Normalize all nutrients to 100 g or 100 ml. If the label only gives a serving, calculate per 100 from the visible serving weight. Use 0 only when the label explicitly indicates zero; otherwise return 0 and add a short follow-up question naming the missing value. Never guess product weight, serving weight, or package weight. Calories are kcal. Keep questions concise and ask only facts needed to log the consumed amount.",
         },
         {
           role: "user",
