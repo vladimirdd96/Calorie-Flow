@@ -37,6 +37,7 @@ import {
   Sparkles,
   Moon,
   Sun,
+  Timer,
   Trash2,
   Upload,
   UserRound,
@@ -94,6 +95,7 @@ import {
 } from "@/lib/nutrition";
 import { findByBarcode, searchOpenFoodFacts } from "@/lib/openfoodfacts";
 import { hydrationTotal, setWaterAmount } from "@/lib/hydration";
+import { activeFast, fastingProgress, fastingWindowHours } from "@/lib/fasting";
 import { coachMealActionSchema, coachMealChoiceSchema, labelAnalysisSchema, mealPhotoAnalysisSchema } from "@/lib/schemas";
 import { getSupabase, type CloudUser, type SocialAuthProvider } from "@/lib/supabase";
 import type {
@@ -321,6 +323,8 @@ const DEFAULT_PROFILE: Profile = {
   weightEntries: [],
   waterEntries: [],
   waterTargetMl: 2000,
+  fastingGoalHours: 16,
+  fastingRecords: [],
 };
 
 const kgToLb = (kg: number) => kg * 2.2046226218;
@@ -595,6 +599,21 @@ function WaterTracker({ profile, dateKey, onSave }: { profile: Profile; dateKey:
   </section>;
 }
 
+function FastingTracker({ profile, onSave }: { profile: Profile; onSave: (profile: Profile) => void }) {
+  const [now, setNow] = useState(() => new Date().toISOString());
+  useEffect(() => { const timer = window.setInterval(() => setNow(new Date().toISOString()), 60_000); return () => window.clearInterval(timer); }, []);
+  const goal = profile.fastingGoalHours || 16;
+  const active = activeFast(profile.fastingRecords);
+  const progress = active ? fastingProgress(active.startedAt, now, goal) : 0;
+  const elapsed = active ? fastingWindowHours(active.startedAt, now) : 0;
+  const start = () => onSave({ ...profile, fastingRecords: [...(profile.fastingRecords || []), { id: `fast-${crypto.randomUUID()}`, startedAt: new Date().toISOString() }] });
+  const stop = () => onSave({ ...profile, fastingRecords: (profile.fastingRecords || []).map((record) => record.id === active?.id ? { ...record, endedAt: new Date().toISOString() } : record) });
+  return <section className="fasting-tracker card" aria-labelledby="fasting-heading">
+    <div className="section-heading compact"><div><span className="eyebrow">Optional rhythm</span><h2 id="fasting-heading">Fasting</h2></div><Timer size={18} aria-hidden="true" /></div>
+    {active ? <><div className="fasting-status"><strong>{elapsed.toFixed(1)}h</strong><span>of {goal}h fast</span></div><div className="water-progress" role="progressbar" aria-label="Fasting goal progress" aria-valuemin={0} aria-valuemax={goal} aria-valuenow={elapsed}><i style={{ width: `${progress * 100}%` }} /></div><p>Started {new Date(active.startedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}. End whenever you’re ready.</p><button type="button" className="secondary-button full" onClick={stop}>End fast</button></> : <><p>Track an eating window only when it serves you. Nothing changes in your food diary.</p><div className="segmented three" role="group" aria-label="Fasting goal">{([12, 14, 16] as const).map((hours) => <button key={hours} type="button" aria-pressed={goal === hours} className={goal === hours ? "active" : ""} onClick={() => onSave({ ...profile, fastingGoalHours: hours })}>{hours}: {24 - hours}</button>)}</div><button type="button" className="secondary-button full" onClick={start}><Timer size={17} />Start {goal}h fast</button></>}
+  </section>;
+}
+
 function TodayView({
   profile,
   meals,
@@ -671,6 +690,8 @@ function TodayView({
       </section>
 
       <WaterTracker profile={profile} dateKey={dateKey} onSave={onSaveProfile} />
+
+      <FastingTracker profile={profile} onSave={onSaveProfile} />
 
       <MicronutrientSummary nutrition={total} />
 

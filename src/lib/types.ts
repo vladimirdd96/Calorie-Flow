@@ -112,6 +112,8 @@ export type Profile = {
   carbDisplay?: "total" | "net";
   waterTargetMl?: number;
   waterEntries?: WaterEntry[];
+  fastingGoalHours?: 12 | 14 | 16;
+  fastingRecords?: FastingRecord[];
 };
 
 export type WeightEntry = {
@@ -122,6 +124,12 @@ export type WeightEntry = {
 export type WaterEntry = {
   date: string;
   amountMl: number;
+};
+
+export type FastingRecord = {
+  id: string;
+  startedAt: string;
+  endedAt?: string;
 };
 
 export type LabelAnalysis = {
