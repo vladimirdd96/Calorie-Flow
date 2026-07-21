@@ -1279,6 +1279,7 @@ function BarcodeScanner({ onResult, onClose }: { onResult: (code: string) => voi
         }
       });
       controlsRef.current = controls;
+      requestContinuousFocus(videoRef.current?.srcObject);
       setCameraLive(true);
     } catch (caught) {
       setError(cameraError(caught));
@@ -1301,6 +1302,17 @@ function BarcodeScanner({ onResult, onClose }: { onResult: (code: string) => voi
       <form className="manual-barcode" onSubmit={(event) => { event.preventDefault(); if (manual.trim()) onResult(manual.trim()); }}><label><span>Or enter the number</span><input value={manual} inputMode="numeric" onChange={(event) => setManual(event.target.value)} placeholder="e.g. 3800123456789" /></label><button className="secondary-button" type="submit">Look up</button></form>
     </div>
   );
+}
+
+function requestContinuousFocus(source: MediaProvider | null | undefined) {
+  if (!(source instanceof MediaStream)) return;
+  const track = source.getVideoTracks()[0];
+  if (!track?.getCapabilities || !track.applyConstraints) return;
+  const capabilities = track.getCapabilities() as MediaTrackCapabilities & { focusMode?: string[] };
+  if (!capabilities.focusMode?.includes("continuous")) return;
+  void track.applyConstraints({ advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet] }).catch(() => {
+    // Autofocus is optional and unsupported on some browsers/cameras.
+  });
 }
 
 async function imageToDataUrl(file: File) {
@@ -1425,6 +1437,7 @@ function LabelReader({ onFood, onClose, initialFiles = [], initialAction }: { on
         video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
       });
       streamRef.current = stream;
+      requestContinuousFocus(stream);
       setCameraStream(stream);
       setCameraLive(true);
     } catch (caught) {
@@ -1457,7 +1470,7 @@ function LabelReader({ onFood, onClose, initialFiles = [], initialAction }: { on
     <div className="label-reader">
       <div className="sheet-header"><button className="icon-button ghost" onClick={onClose} aria-label="Back to add food options"><ArrowLeft /></button><div><span className="eyebrow">AI assist</span><h2>Read nutrition label</h2></div><span /></div>
       {cameraLive ? <div className="label-camera-live"><div className="camera-frame live"><video ref={videoRef} muted playsInline autoPlay /><div className="scan-corners" /></div><button className="primary-button full" onClick={capture} disabled={loading}><Camera size={18} />Capture label</button><button className="text-button camera-cancel" onClick={stopCamera}>Cancel camera</button></div> : <div className={`label-dropzone ${previews.length ? "has-preview" : ""}`}>
-        {previews.length ? <div className="package-previews">{previews.map((preview) => <img key={preview} src={preview} alt="Selected package detail" />)}</div> : <><span className="action-icon blue"><Camera /></span><strong>Add the package details</strong><small>Label, barcode, and package size work best together</small></>}
+        {previews.length ? <div className={`package-previews count-${previews.length}`}>{previews.map((preview) => <img key={preview} src={preview} alt="Selected package detail" />)}</div> : <><span className="action-icon blue"><Camera /></span><strong>Add the package details</strong><small>Label, barcode, and package size work best together</small></>}
         {loading && <span className="analyzing"><i /><strong>Reading the package…</strong></span>}
       </div>}
       {!cameraLive && <div className="label-camera-actions"><button className="primary-button" onClick={startCamera} disabled={starting}><Camera size={18} />{starting ? "Opening camera…" : "Open rear camera"}</button><button className="secondary-button" onClick={() => inputRef.current?.click()}><Upload size={18} />Choose photo</button></div>}

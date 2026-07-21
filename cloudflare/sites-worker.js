@@ -187,6 +187,18 @@ function extractVisionText(response) {
   return visionText(response.response) || visionText(response.output_text) || visionText(response.result);
 }
 
+function labelRequestPayload(images, strict = true) {
+  return {
+    messages: [
+      { role: "system", content: "Read one or more photos of the same food package. They may show a nutrition label, barcode, front of pack, ingredients, serving information, or package size. Extract package nutrition accurately and combine facts across images. Normalize all nutrients to 100 g or 100 ml. If the label only gives a serving, calculate per 100 from the visible serving weight. Use 0 only when the label explicitly indicates zero; otherwise return 0 and ask a short follow-up question naming the missing value. Never guess product weight, serving weight, or package weight. Calories are kcal." },
+      { role: "user", content: [{ type: "text", text: "Identify this food package and return the structured result. A barcode alone is useful: return it even if other nutrition details are unavailable." }, ...images.map((image) => ({ type: "image_url", image_url: { url: image } }))] },
+    ],
+    ...(strict ? { response_format: { type: "json_schema", json_schema: { name: "nutrition_label", strict: true, schema: nutritionSchema } } } : { response_format: { type: "json_object" } }),
+    max_completion_tokens: 700,
+    temperature: 0,
+  };
+}
+
 function parseEmbeddedJson(text) {
   const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
   try { return JSON.parse(cleaned); } catch {
@@ -517,18 +529,13 @@ async function analyzeLabel(request, env) {
       return json({ error: "Add one to three package photos, each under 10 MB." }, 400);
     }
 
-    const responseBody = await env.AI.run("@cf/moonshotai/kimi-k2.6", {
-      messages: [
-        { role: "system", content: "Read one or more photos of the same food package. They may show a nutrition label, barcode, front of pack, ingredients, serving information, or package size. Extract package nutrition accurately and combine facts across images. Normalize all nutrients to 100 g or 100 ml. If the label only gives a serving, calculate per 100 from the visible serving weight. Use 0 only when the label explicitly indicates zero; otherwise return 0 and ask a short follow-up question naming the missing value. Never guess product weight, serving weight, or package weight. Calories are kcal." },
-        { role: "user", content: [{ type: "text", text: "Identify this food package and return the structured result. A barcode alone is useful: return it even if other nutrition details are unavailable." }, ...images.map((image) => ({ type: "image_url", image_url: { url: image } }))] },
-      ],
-      response_format: { type: "json_schema", json_schema: { name: "nutrition_label", strict: true, schema: nutritionSchema } },
-      max_completion_tokens: 700,
-      temperature: 0,
-    });
-    const outputText = extractVisionText(responseBody);
-    if (!outputText) return json({ error: "No label data was returned." }, 502);
-    const parsed = parseLabelAnalysis(JSON.parse(outputText));
+    let outputText = "";
+    try { outputText = extractVisionText(await env.AI.run("@cf/moonshotai/kimi-k2.6", labelRequestPayload(images))); } catch { /* Retry below without strict schema support. */ }
+    let parsed = outputText ? parseLabelAnalysis(parseEmbeddedJson(outputText)) : null;
+    if (!parsed) {
+      try { outputText = extractVisionText(await env.AI.run("@cf/moonshotai/kimi-k2.6", labelRequestPayload(images, false))); } catch { outputText = ""; }
+      parsed = outputText ? parseLabelAnalysis(parseEmbeddedJson(outputText)) : null;
+    }
     if (!parsed) return json({ error: "The label service returned invalid nutrition data." }, 502);
     return json(parsed);
   } catch {

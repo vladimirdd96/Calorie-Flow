@@ -43,17 +43,41 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function extractOutputText(response: unknown) {
   if (!isRecord(response)) return undefined;
+  const contentText = (value: unknown): string | undefined => {
+    if (typeof value === "string") return value;
+    if (!Array.isArray(value)) return undefined;
+    const text = value.map((part) => {
+      if (typeof part === "string") return part;
+      if (!isRecord(part)) return "";
+      return typeof part.text === "string" ? part.text : typeof part.content === "string" ? part.content : "";
+    }).join("").trim();
+    return text || undefined;
+  };
   if (Array.isArray(response.choices)) {
     const choice = response.choices[0];
     if (isRecord(choice)) {
-      if (isRecord(choice.message) && typeof choice.message.content === "string") return choice.message.content;
+      if (isRecord(choice.message)) {
+        const content = contentText(choice.message.content);
+        if (content) return content;
+      }
       if (typeof choice.text === "string") return choice.text;
     }
   }
   for (const key of ["response", "output_text", "result"] as const) {
-    if (typeof response[key] === "string") return response[key];
+    const content = contentText(response[key]);
+    if (content) return content;
   }
   return undefined;
+}
+
+function parseJson(text: string) {
+  const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+  try { return JSON.parse(cleaned); } catch {
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+    if (start < 0 || end <= start) return undefined;
+    try { return JSON.parse(cleaned.slice(start, end + 1)); } catch { return undefined; }
+  }
 }
 
 function isImageData(value: unknown): value is string {
@@ -74,7 +98,7 @@ export async function POST(request: NextRequest) {
     }
 
     const ai = await getWorkersAi();
-    const responseBody = await ai.run(workersAiModels.label, {
+    const requestPayload = {
       messages: [
         {
           role: "system",
@@ -91,14 +115,12 @@ export async function POST(request: NextRequest) {
       response_format: { type: "json_schema", json_schema: { name: "nutrition_label", strict: true, schema } },
       max_completion_tokens: 700,
       temperature: 0,
-    });
-    const outputText = extractOutputText(responseBody);
-    if (!outputText) return NextResponse.json({ error: "No label data was returned." }, { status: 502 });
-    let parsed;
-    try {
-      parsed = labelAnalysisSchema.safeParse(JSON.parse(outputText));
-    } catch {
-      parsed = { success: false } as const;
+    };
+    let outputText = extractOutputText(await ai.run(workersAiModels.label, requestPayload));
+    let parsed = outputText ? labelAnalysisSchema.safeParse(parseJson(outputText)) : { success: false } as const;
+    if (!parsed.success) {
+      outputText = extractOutputText(await ai.run(workersAiModels.label, { ...requestPayload, response_format: { type: "json_object" } }));
+      parsed = outputText ? labelAnalysisSchema.safeParse(parseJson(outputText)) : { success: false } as const;
     }
     if (!parsed.success) return NextResponse.json({ error: "The label service returned invalid nutrition data." }, { status: 502 });
     return NextResponse.json(parsed.data);
