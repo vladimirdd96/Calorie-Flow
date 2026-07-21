@@ -102,6 +102,7 @@ import { activeFast, fastingProgress, fastingWindowHours } from "@/lib/fasting";
 import { groceryItemsForPlan, recipeMeal } from "@/lib/planning";
 import { mealsCsv } from "@/lib/reports";
 import { normalizeVoiceFoodQuery } from "@/lib/voice";
+import { recentLogDates } from "@/lib/logging";
 import { coachMealActionSchema, coachMealChoiceSchema, labelAnalysisSchema, mealPhotoAnalysisSchema } from "@/lib/schemas";
 import { getSupabase, type CloudUser, type SocialAuthProvider } from "@/lib/supabase";
 import type {
@@ -131,7 +132,7 @@ import type { BackupData } from "@/lib/db";
 
 type Tab = "today" | "search" | "coach" | "plan" | "insights" | "profile";
 type ProfileSection = "profile" | "customize";
-type AddView = "start" | "search" | "scan" | "label" | "camera" | "photo" | "manual" | "barcode-not-found";
+type AddView = "start" | "search" | "scan" | "label" | "camera" | "photo" | "manual" | "quick" | "barcode-not-found";
 type SyncState = "local" | "syncing" | "synced" | "offline" | "error";
 type AuthMode = "sign-in" | "register" | "forgot-password" | "update-password";
 type CoachSection = "chat" | "groceries";
@@ -535,7 +536,7 @@ function MealRow({ meal, onDelete, onEdit, onDuplicate, onMove, onDetails, onDra
       <div className="meal-icon"><Utensils size={17} /></div>
       <button type="button" className="meal-detail-trigger" onClick={onDetails} aria-label={`View nutrition details for ${meal.name}`}><div className="meal-copy">
         <strong>{meal.name}</strong>
-        <span>{meal.amount} {formatUnit(meal.unit, meal.amount)} · P {meal.nutrition.protein} · C {meal.nutrition.carbs} · F {meal.nutrition.fat}</span>
+        <span>{meal.amount} {formatUnit(meal.unit, meal.amount)} · {new Date(meal.createdAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} · P {meal.nutrition.protein} · C {meal.nutrition.carbs} · F {meal.nutrition.fat}</span>
       </div></button>
       {!hideCalories && <strong className="meal-kcal"><span>{Math.round(meal.nutrition.calories)}</span><small>kcal</small></strong>}
       <span ref={menuRef} className="meal-actions"><button type="button" className="meal-menu-trigger" onClick={() => setMenuOpen((open) => !open)} aria-label={`Options for ${meal.name}`} aria-expanded={menuOpen}><MoreHorizontal size={18} /></button>{menuOpen && <span className="meal-action-menu" role="menu"><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onMove(); }}><ArrowRightLeft size={14} />Move</button><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onEdit(); }}><Pencil size={14} />Edit</button><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onDuplicate(); }}><Copy size={14} />Duplicate</button><button type="button" role="menuitem" className="danger" onClick={() => { setMenuOpen(false); onDelete(); }}><Trash2 size={14} />Delete</button></span>}</span>
@@ -1711,26 +1712,18 @@ function PortionSheet({ food, questions, initialMealType, onLog, onClose, hideCa
   const [amount, setAmount] = useState(initialUnit === "g" ? 100 : 1);
   const [mealType, setMealType] = useState<MealType>(() => initialMealType || suggestedMealType());
   const [loggedDate, setLoggedDate] = useState(localDateKey());
+  const [additionalDatesOpen, setAdditionalDatesOpen] = useState(false);
+  const [loggedDates, setLoggedDates] = useState<string[]>([localDateKey()]);
   const grams = gramsFor(food, amount, unit);
   const nutrition = scaleNutrition(food.nutrientsPer100, grams);
   const log = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(grams) || grams <= 0) return;
-    onLog({
-    id: crypto.randomUUID(),
-    foodId: food.id,
-    name: food.name,
-    brand: food.brand,
-    mealType,
-    amount,
-    unit,
-    grams,
-    nutrition,
-    createdAt: new Date().toISOString(),
-    loggedDate,
-    source: food.source,
-    estimated: food.source === "ai-label" || !food.verified,
-    }, { ...food, lastUsedAt: new Date().toISOString() });
+    const dates = additionalDatesOpen ? loggedDates : [loggedDate];
+    dates.forEach((date) => onLog({
+      id: crypto.randomUUID(), foodId: food.id, name: food.name, brand: food.brand, mealType, amount, unit, grams, nutrition,
+      createdAt: new Date().toISOString(), loggedDate: date, source: food.source, estimated: food.source === "ai-label" || !food.verified,
+    }, { ...food, lastUsedAt: new Date().toISOString() }));
   };
   return (
     <form className="portion-sheet" onSubmit={log}>
@@ -1744,10 +1737,17 @@ function PortionSheet({ food, questions, initialMealType, onLog, onClose, hideCa
       <div className="portion-action-area">
         <div className="field-block"><span id="meal-type-label">Add to</span><div className="segmented four" role="group" aria-labelledby="meal-type-label">{(Object.keys(mealLabels) as MealType[]).map((type) => <button type="button" key={type} aria-pressed={mealType === type} className={mealType === type ? "active" : ""} onClick={() => setMealType(type)}>{mealLabels[type]}</button>)}</div></div>
       <label className="meal-date-field"><span>Meal date <small>Usually today</small></span><input type="date" value={loggedDate} max={localDateKey()} onChange={(event) => setLoggedDate(event.target.value || localDateKey())} /></label>
-      <div className="portion-submit"><button className="primary-button full" type="submit"><Plus size={18} />{hideCalories ? "Log food" : `Log ${nutrition.calories} kcal`}</button><p className="form-footnote">{grams} g total · {food.source === "open-food-facts" ? "Open Food Facts" : food.source === "food-data-central" ? "USDA FoodData Central" : food.source === "ai-label" ? "AI-extracted—check the package" : food.source === "custom" ? "Your custom food" : "Generic reference value"}</p></div>
+      <div className="multi-date-log"><button type="button" className="text-button" aria-expanded={additionalDatesOpen} onClick={() => setAdditionalDatesOpen((open) => !open)}>{additionalDatesOpen ? "Log one day instead" : "Log this on multiple days"}</button>{additionalDatesOpen && <div className="multi-date-options" role="group" aria-label="Days to log this food">{recentLogDates().map((date) => <button type="button" key={date} className={loggedDates.includes(date) ? "active" : ""} aria-pressed={loggedDates.includes(date)} onClick={() => setLoggedDates((current) => current.includes(date) ? current.filter((item) => item !== date) : [...current, date])}>{dayLabel(date)}</button>)}</div>}</div>
+      <div className="portion-submit"><button className="primary-button full" type="submit" disabled={additionalDatesOpen && loggedDates.length === 0}><Plus size={18} />{hideCalories ? "Log food" : `Log ${nutrition.calories} kcal`}</button><p className="form-footnote">{grams} g total · {food.source === "open-food-facts" ? "Open Food Facts" : food.source === "food-data-central" ? "USDA FoodData Central" : food.source === "ai-label" ? "AI-extracted—check the package" : food.source === "custom" ? "Your custom food" : "Generic reference value"}</p></div>
       </div>
     </form>
   );
+}
+
+function QuickMacroSheet({ onLog, onClose, hideCalories }: { onLog: (meal: Meal, food: Food) => void; onClose: () => void; hideCalories: boolean }) {
+  const [name, setName] = useState("Quick macros"); const [mealType, setMealType] = useState<MealType>(suggestedMealType()); const [date, setDate] = useState(localDateKey()); const [values, setValues] = useState({ protein: "0", carbs: "0", fat: "0", fiber: "0", sugar: "0" });
+  const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const nutrients = { protein: Number(values.protein), carbs: Number(values.carbs), fat: Number(values.fat), fiber: Number(values.fiber), sugar: Number(values.sugar) }; if (!name.trim() || Object.values(nutrients).some((value) => !Number.isFinite(value) || value < 0)) return; const nutrition: Nutrition = { ...nutrients, calories: round(nutrients.protein * 4 + nutrients.carbs * 4 + nutrients.fat * 9, 0) }; const food: Food = { id: `quick-${crypto.randomUUID()}`, name: name.trim(), servingGrams: 100, nutrientsPer100: nutrition, source: "custom" }; onLog({ id: crypto.randomUUID(), foodId: food.id, name: food.name, mealType, amount: 1, unit: "serving", grams: 100, nutrition, createdAt: new Date().toISOString(), loggedDate: date, source: "custom" }, food); };
+  return <form className="sheet-form" onSubmit={submit}><div className="sheet-header"><button type="button" className="icon-button ghost" onClick={onClose} aria-label="Back to add food options"><ArrowLeft /></button><div><span className="eyebrow">Fast entry</span><h2>Quick macros</h2></div><span /></div><label><span>Name</span><input value={name} maxLength={120} onChange={(event) => setName(event.target.value)} /></label><div className="form-grid three">{(["protein", "carbs", "fat", "fiber", "sugar"] as const).map((key) => <label key={key}><span>{key === "fiber" ? "Fibre" : key[0].toUpperCase() + key.slice(1)} g</span><input type="number" min="0" step="0.1" value={values[key]} onChange={(event) => setValues((current) => ({ ...current, [key]: event.target.value }))} /></label>)}</div>{!hideCalories && <p className="form-footnote">Calories are calculated from the macros you enter.</p>}<div className="form-grid two"><label><span>Meal</span><ThemedSelect ariaLabel="Quick macro meal" value={mealType} onChange={(value) => setMealType(value as MealType)} options={(Object.keys(mealLabels) as MealType[]).map((type) => ({ value: type, label: mealLabels[type] }))} /></label><label><span>Date</span><input type="date" max={localDateKey()} value={date} onChange={(event) => setDate(event.target.value)} /></label></div><button className="primary-button full" type="submit"><Plus size={18} />Log macros</button></form>;
 }
 
 function AddFoodSheet({ foods, initialView = "start", initialMealType, onLog, onMealPhoto, onSaveFood, hideCalories }: { foods: Food[]; initialView?: AddView; initialMealType?: MealType; onLog: (meal: Meal, food: Food) => void; onMealPhoto: (analysis: MealPhotoAnalysis) => void; onSaveFood: (food: Food) => Promise<void>; hideCalories: boolean }) {
@@ -1900,6 +1900,7 @@ function AddFoodSheet({ foods, initialView = "start", initialMealType, onLog, on
   if (view === "photo") return <MealPhotoReader onMeal={onMealPhoto} onClose={() => changeView("start")} />;
   if (view === "label") return <LabelReader initialFiles={pendingImages} onFood={(food, followUps) => { void handleLabelFood(food, followUps); }} onClose={() => { setPendingImages([]); changeView("start"); }} />;
   if (view === "manual") return <ManualFood initialBarcode={unknownBarcode} notice={manualNotice} hideCalories={hideCalories} onSave={(food) => void saveAndPick(food)} onClose={() => changeView("start")} />;
+  if (view === "quick") return <QuickMacroSheet hideCalories={hideCalories} onLog={onLog} onClose={() => changeView("start")} />;
   if (view === "barcode-not-found") return <div className="barcode-not-found"><div className="sheet-header"><button className="icon-button ghost" onClick={() => changeView("scan")} aria-label="Back to barcode scanner"><ArrowLeft /></button><div><span className="eyebrow">Barcode not found</span><h2>Let’s add this food</h2></div><span /></div><div className="barcode-not-found-copy"><span className="action-icon amber"><Package /></span><div><strong>No saved product matched {unknownBarcode}</strong><p>Use the package label to check the nutrition, or enter it yourself. We’ll save it for next time.</p></div></div><div className="barcode-not-found-actions"><button className="primary-button full" type="button" onClick={() => { setPendingImages([]); changeView("label"); }}><Camera size={18} />Scan nutrition label</button><button className="secondary-button full" type="button" onClick={() => changeView("manual")}><Pencil size={18} />Add by hand</button></div></div>;
   if (view === "search") return (
     <div>
@@ -1916,7 +1917,7 @@ function AddFoodSheet({ foods, initialView = "start", initialMealType, onLog, on
   return (
     <div className="coach-intake" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); addImages(event.dataTransfer.files); }}>
       <div className="sheet-header"><span /><div><span className="eyebrow">Log with Coach</span><h2>Add food or get help</h2></div><span /></div>
-      <div className="intake-actions"><button onClick={() => changeView("scan")}><ScanLine size={17} />Barcode</button><button onClick={() => { setPendingImages([]); changeView("camera"); }}><Camera size={17} />Take photo</button><button onClick={() => imageInputRef.current?.click()}><Upload size={17} />Add photos</button><button type="button" onClick={startVoiceSearch} disabled={listening}><Mic size={17} />{listening ? "Listening…" : "Voice"}</button></div>
+      <div className="intake-actions"><button onClick={() => changeView("scan")}><ScanLine size={17} />Barcode</button><button onClick={() => { setPendingImages([]); changeView("camera"); }}><Camera size={17} />Take photo</button><button onClick={() => imageInputRef.current?.click()}><Upload size={17} />Add photos</button><button type="button" onClick={startVoiceSearch} disabled={listening}><Mic size={17} />{listening ? "Listening…" : "Voice"}</button><button type="button" onClick={() => changeView("quick")}><Plus size={17} />Quick macros</button></div>
       <input ref={imageInputRef} className="visually-hidden-file" type="file" accept="image/*" capture="environment" multiple onChange={(event) => addImages(event.target.files || undefined)} />
       <label className="intake-input-label" htmlFor="coach-intake">Search a food or ask Coach</label>
       <form className="intake-composer" onSubmit={sendIntake}><input id="coach-intake" autoFocus value={intakeDraft} onChange={(event) => setIntakeDraft(event.target.value)} placeholder="Food or question" /><button type="submit" disabled={!intakeDraft.trim() || askingCoach} aria-label="Send to Coach">{askingCoach ? <span className="coach-loader" /> : <Send />}</button></form>

@@ -452,6 +452,10 @@ p { color: var(--muted); line-height: 1.55; }
 .plan-entry-form { display: grid; gap: 14px; }
 .plan-entry-form > label { display: grid; gap: 7px; font-size: 12px; color: var(--muted); }
 .planned-groceries ul { display: grid; gap: 7px; margin: 0; padding-left: 20px; color: var(--text); font-size: 13px; }
+.multi-date-log { display: grid; gap: 8px; }
+.multi-date-options { display: flex; flex-wrap: wrap; gap: 7px; }
+.multi-date-options button { padding: 8px 10px; border: 1px solid var(--border); border-radius: 99px; background: var(--control-surface); color: var(--muted); font-size: 11px; }
+.multi-date-options button.active { color: var(--bg); background: var(--mint); border-color: var(--mint); }
 .display-subsection { display: grid; gap: 10px; margin-top: 26px; padding-top: 24px; border-top: 1px solid var(--border); }
 .display-subsection-heading { display: grid; gap: 5px; }
 .display-subsection-heading h3 { margin: 0; font-size: 17px; line-height: 1.15; letter-spacing: -.02em; }
