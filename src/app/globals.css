@@ -782,8 +782,12 @@ p { color: var(--muted); line-height: 1.55; }
 .nutrition-preview span { color: var(--muted); font-size: 9px; }
 .nutrition-preview strong { font-size: 11px; }
 .portion-action-area { display: grid; gap: 16px; }
-.meal-date-field { display: grid; gap: 7px; color: var(--muted); font-size: 11px; font-weight: 800; }
-.meal-date-field input { min-height: 44px; padding: 0 12px; border: 1px solid var(--border); border-radius: 11px; color: var(--text); background: var(--panel); font: inherit; }
+.meal-date-field { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: var(--muted); font-size: 11px; font-weight: 800; }
+.meal-date-field > span { display: flex; align-items: baseline; gap: 6px; }
+.meal-date-field > span small { color: var(--muted-2); font-size: 10px; font-weight: 600; }
+.meal-date-field input { width: auto; min-height: 34px; padding: 0; border: 1px solid transparent; border-radius: 8px; color: var(--muted); background: transparent; font: inherit; font-size: 11px; font-weight: 700; text-align: right; }
+.meal-date-field input:hover { color: var(--text); border-color: var(--border); }
+.meal-date-field input:focus-visible { color: var(--text); border-color: var(--border-strong); outline-offset: 1px; }
 .portion-submit { display: grid; gap: 10px; padding-top: 2px; }
 .portion-submit .form-footnote { padding-bottom: 2px; }
 .onboarding-overlay { position: fixed; inset: 0; z-index: 80; overflow: auto; padding: max(16px, env(safe-area-inset-top)) 14px max(16px, env(safe-area-inset-bottom)); background: rgba(3,9,7,.92); backdrop-filter: blur(18px); }
