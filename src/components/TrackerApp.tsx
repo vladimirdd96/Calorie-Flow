@@ -1762,6 +1762,7 @@ export function TrackerApp() {
     syncIdentityRef.current = identity;
     let active = true;
     const synchronize = async () => {
+      const mutationAtStart = syncMutationRef.current;
       const owner = await getSetting<string>("dataOwner");
       const userId = user.id;
       if (active) setSyncState("syncing");
@@ -1799,10 +1800,12 @@ export function TrackerApp() {
         shouldPush = true;
       }
       if (shouldPush) {
+        if (mutationAtStart !== syncMutationRef.current) return;
         const mutationAtPush = syncMutationRef.current;
         await pushCloudSnapshot(userId, next);
         if (mutationAtPush === syncMutationRef.current) await setSetting(`cloudDirty:${userId}`, false);
       }
+      if (mutationAtStart !== syncMutationRef.current) return;
       await replaceLocalSnapshot(next);
       await setSetting("dataOwner", identity);
       if (active) { cloudWriteFailedRef.current = false; await refresh(); setSyncState("synced"); }
@@ -1875,6 +1878,8 @@ export function TrackerApp() {
     };
     await put("meals", meal);
     setMeals((current) => [...current, meal]);
+    setDateKey(action.loggedDate);
+    setTab("today");
     setToast(`${meal.name} logged`);
     syncWrite((userId) => upsertCloudMeal(userId, meal));
   };
