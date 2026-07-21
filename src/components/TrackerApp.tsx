@@ -698,7 +698,7 @@ function TodayView({
           </div>
         </div>
         <div className="macro-card card">
-          <button type="button" className="macro-expand-trigger" aria-expanded={macrosExpanded} aria-controls="daily-nutrition-breakdown" onClick={() => setMacrosExpanded((expanded) => !expanded)}><span><span className="eyebrow">Today</span><strong>Macros</strong></span><span className="macro-expand-hint">{macrosExpanded ? "Hide details" : "Show all nutrients"}<ChevronDown size={17} aria-hidden="true" /></span></button>
+          <button type="button" className="macro-expand-trigger" aria-expanded={macrosExpanded} aria-controls="daily-nutrition-breakdown" onClick={() => setMacrosExpanded((expanded) => !expanded)}><span><span className="eyebrow">Today</span><strong>Macros</strong></span><span className="macro-expand-hint"><span>{macrosExpanded ? "Hide details" : "View all nutrients"}</span><ChevronDown size={17} aria-hidden="true" /></span></button>
           <MacroBar label="Protein" value={total.protein} target={targets.protein} color="var(--protein)" />
           <MacroBar label={profile.carbDisplay === "net" ? "Net carbs" : "Carbs"} value={carbs} target={targets.carbs} color="var(--carbs)" />
           <MacroBar label="Fat" value={total.fat} target={targets.fat} color="var(--fat)" />

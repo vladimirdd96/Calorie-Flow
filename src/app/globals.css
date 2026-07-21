@@ -160,7 +160,8 @@ p { color: var(--muted); line-height: 1.55; }
 .macro-expand-trigger > span:first-child { display: grid; gap: 5px; }
 .macro-expand-trigger strong { font-size: 20px; letter-spacing: -.035em; }
 .macro-expand-trigger:focus-visible { outline: 2px solid var(--mint); outline-offset: 6px; border-radius: 6px; }
-.macro-expand-hint { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); font-size: 10px; font-weight: 800; }
+.macro-expand-hint { display: inline-flex; align-items: center; gap: 5px; padding: 7px 9px 7px 10px; border: 1px solid var(--border-strong); border-radius: 999px; color: var(--mint-strong); background: color-mix(in oklch, var(--mint) 8%, transparent); font-size: 10px; font-weight: 800; white-space: nowrap; transition: background .18s ease, border-color .18s ease, color .18s ease; }
+.macro-expand-trigger:hover .macro-expand-hint, .macro-expand-trigger:focus-visible .macro-expand-hint { border-color: var(--mint); background: color-mix(in oklch, var(--mint) 15%, transparent); color: var(--text); }
 .macro-expand-hint svg { transition: transform .2s ease; }
 .macro-expand-trigger[aria-expanded="true"] .macro-expand-hint svg { transform: rotate(180deg); }
 .macro-breakdown { margin-top: 24px; padding-top: 1px; border-top: 1px solid var(--border); }
