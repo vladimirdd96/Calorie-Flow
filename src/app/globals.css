@@ -746,7 +746,8 @@ p { color: var(--muted); line-height: 1.55; }
 .portion-submit { display: grid; gap: 10px; padding-top: 2px; }
 .portion-submit .form-footnote { padding-bottom: 2px; }
 .onboarding-overlay { position: fixed; inset: 0; z-index: 80; overflow: auto; padding: max(16px, env(safe-area-inset-top)) 14px max(16px, env(safe-area-inset-bottom)); background: rgba(3,9,7,.92); backdrop-filter: blur(18px); }
-.onboarding-card { width: min(100%, 620px); margin: 0 auto; padding: 24px 18px; border-radius: 29px; background: linear-gradient(160deg, rgba(21,38,33,.97), rgba(9,19,16,.99)); border: 1px solid var(--border); box-shadow: var(--shadow); }
+.onboarding-card { position: relative; width: min(100%, 620px); margin: 0 auto; padding: 24px 18px; border-radius: 29px; background: linear-gradient(160deg, rgba(21,38,33,.97), rgba(9,19,16,.99)); border: 1px solid var(--border); box-shadow: var(--shadow); }
+.onboarding-close { position: absolute; top: 14px; right: 14px; z-index: 1; }
 .onboarding-intro { text-align: center; margin-bottom: 5px; }
 .onboarding-intro .brand-mark { margin: 0 auto 20px; }
 .onboarding-intro .eyebrow { margin-bottom: 9px; }

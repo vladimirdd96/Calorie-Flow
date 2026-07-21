@@ -1056,11 +1056,12 @@ function Sheet({ children, onClose, wide = false, label = "Sheet", className = "
   return <div className="sheet-backdrop" onPointerDown={dismissOnBackdrop}><section ref={surfaceRef} className={`sheet ${wide ? "wide" : ""} ${className}`.trim()} style={{ transform: dragOffset ? `translateY(${dragOffset}px)` : undefined, transition: dragOffset ? "none" : "transform .2s ease" }} role="dialog" aria-modal="true" aria-label={label} tabIndex={-1}><button className="sheet-handle" type="button" aria-label="Drag down to close" onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} /><button className="sheet-close icon-button ghost" type="button" aria-label="Close" onClick={onClose}><X size={18} /></button>{children}</section></div>;
 }
 
-function OnboardingDialog({ profile, onSave }: { profile: Profile; onSave: (profile: Profile) => void }) {
+function OnboardingDialog({ profile, onSave, onCancel }: { profile: Profile; onSave: (profile: Profile) => void; onCancel?: () => void }) {
   const surfaceRef = useModalFocus();
   return (
     <div className="onboarding-overlay">
       <section ref={surfaceRef} className="onboarding-card" role="dialog" aria-modal="true" aria-label="Set up nutrition targets" tabIndex={-1}>
+        {onCancel && <button className="onboarding-close icon-button ghost" type="button" aria-label="Cancel setup" onClick={onCancel}><X size={18} /></button>}
         <TargetEditor profile={profile} onSave={onSave} onboarding />
       </section>
     </div>
@@ -2002,6 +2003,7 @@ export function TrackerApp() {
   const [ready, setReady] = useState(false);
   const [startupError, setStartupError] = useState("");
   const [profile, setProfile] = useState(DEFAULT_PROFILE);
+  const [onboardingOrigin, setOnboardingOrigin] = useState<Profile>();
   const [foods, setFoods] = useState<Food[]>([]);
   const [meals, setMeals] = useState<Meal[]>([]);
   const [tab, setTab] = useState<Tab>("today");
@@ -2160,6 +2162,20 @@ export function TrackerApp() {
   const saveProfile = async (next: Profile) => {
     setProfile(next); await setSetting("profile", next); setToast("Profile saved");
     syncWrite((userId) => upsertCloudProfile(userId, next));
+  };
+  const restartOnboarding = () => {
+    setOnboardingOrigin(profile);
+    void saveProfile({ ...profile, onboardingDone: false });
+  };
+  const finishOnboarding = (next: Profile) => {
+    setOnboardingOrigin(undefined);
+    void saveProfile(next);
+  };
+  const cancelOnboarding = () => {
+    if (!onboardingOrigin) return;
+    const previousProfile = onboardingOrigin;
+    setOnboardingOrigin(undefined);
+    void saveProfile(previousProfile);
   };
   const logMeal = async (meal: Meal, food: Food) => {
     const loggedDate = meal.loggedDate || dateKey;
@@ -2333,14 +2349,14 @@ export function TrackerApp() {
         {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={openAdd} />}
         {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} chatTextSize={chatTextSize} onLogCoachMeal={logCoachMeal} onOpenAccount={() => setTab("profile")} onOpenAdd={openAdd} />}
         {tab === "insights" && <InsightsView meals={meals} profile={profile} onSave={saveProfile} weightTrackingEnabled={weightTrackingEnabled} />}
-      {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onRestartOnboarding={() => void saveProfile({ ...profile, onboardingDone: false })} onExport={exportBackup} onImport={restoreBackup} user={auth.user} syncState={syncState} onSignOut={signOut} theme={theme} onThemeChange={changeTheme} chatTextSize={chatTextSize} onChatTextSizeChange={changeChatTextSize} weightTracking={profile.weightTracking} />}
+      {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onRestartOnboarding={restartOnboarding} onExport={exportBackup} onImport={restoreBackup} user={auth.user} syncState={syncState} onSignOut={signOut} theme={theme} onThemeChange={changeTheme} chatTextSize={chatTextSize} onChatTextSizeChange={changeChatTextSize} weightTracking={profile.weightTracking} />}
       </div>
       <div inert={modalOpen} aria-hidden={modalOpen || undefined}><BottomNav tab={tab} onChange={(nextTab) => { window.scrollTo(0, 0); setTab(nextTab); }} /></div>
       {adding && profile.onboardingDone && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); }} wide>{directFood ? <PortionSheet food={directFood} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} onClose={() => setAdding(false)} onLog={logMeal} onMealPhoto={addPhotoMeal} />}</Sheet>}
       {calendarOpen && <Sheet onClose={() => setCalendarOpen(false)} wide label="Calendar"><CalendarSheet dateKey={dateKey} meals={meals} profile={profile} onDateChange={setDateKey} onClose={() => setCalendarOpen(false)} /></Sheet>}
       {editingMeal && <Sheet onClose={() => setEditingMeal(undefined)}><MealEditor meal={editingMeal} hideCalories={profile.hideCalories} onSave={(meal) => editingMeal.id.startsWith("photo-") ? saveNewMeal(meal) : saveEditedMeal(meal)} onClose={() => setEditingMeal(undefined)} /></Sheet>}
       {duplicateMealDraft && <Sheet onClose={() => setDuplicateMealDraft(undefined)} label="Duplicate meal" className="duplicate-meal-dialog"><DuplicateMealSheet meal={duplicateMealDraft} onDuplicate={(mealType) => void duplicateMeal(duplicateMealDraft, mealType)} onClose={() => setDuplicateMealDraft(undefined)} /></Sheet>}
-      {!profile.onboardingDone && <OnboardingDialog profile={profile} onSave={saveProfile} />}
+      {!profile.onboardingDone && <OnboardingDialog profile={profile} onSave={finishOnboarding} onCancel={onboardingOrigin ? cancelOnboarding : undefined} />}
       {weightPromptOpen && <WeightTrackingPrompt onEnable={enableWeightTracking} onDisable={disableWeightTracking} onDefer={deferWeightTracking} />}
       {undoMeal && <div className="toast undo-toast" role="status"><span>Meal removed</span><button type="button" onClick={undoDeleteMeal}>Undo</button></div>}
       {toast && <div className="toast"><Check size={17} />{toast}</div>}
