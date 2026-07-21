@@ -88,7 +88,7 @@ input, select {
   padding: 0 14px;
 }
 input::placeholder { color: var(--muted-2); }
-select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 18px) 21px, calc(100% - 13px) 21px; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }
+select { appearance: none; cursor: pointer; padding-right: 40px; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 21px) 50%, calc(100% - 14px) 50%; background-size: 7px 7px, 7px 7px; background-repeat: no-repeat; }
 label { display: grid; gap: 8px; color: var(--muted); font-size: 13px; font-weight: 700; }
 label > span small, .field-block > span small { color: var(--muted-2); font-weight: 500; }
 h1, h2, h3, p { margin-top: 0; }
@@ -555,7 +555,7 @@ p { color: var(--muted); line-height: 1.55; }
 .grocery-intro p { margin: 0; font-size: 11px; }
 .grocery-list-toolbar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; }
 .grocery-list-toolbar label { color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
-.grocery-list-toolbar select { min-width: 0; min-height: 42px; padding: 0 10px; }
+.grocery-list-toolbar select { min-width: 0; min-height: 42px; padding: 0 40px 0 10px; }
 .grocery-list-toolbar .secondary-button { min-height: 42px; padding: 0 11px; font-size: 11px; }
 .grocery-modal-copy { margin: -3px 2px 16px; color: var(--muted); font-size: 12px; }
 .grocery-list-choices, .grocery-manage-list { display: grid; gap: 8px; margin-bottom: 18px; }
@@ -765,7 +765,7 @@ p { color: var(--muted); line-height: 1.55; }
 
 /* The light theme is intentionally paper-like: static information sits on the page,
    while only actions, editing, and transient guidance receive a surface. */
-input, select { background: var(--panel); }
+input, select { background-color: var(--panel); }
 .secondary-button, .icon-button { background: var(--panel); }
 .secondary-button { border-color: var(--border); }
 .feature-actions button, .add-grid button, .preset-grid button, .display-preference,
