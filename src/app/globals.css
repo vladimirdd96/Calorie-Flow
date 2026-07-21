@@ -738,6 +738,7 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
   .feature-actions button { min-height: 144px; padding: 20px; }
   .feature-actions button:first-child { padding-left: 24px; }
   .summary-strip { max-width: 600px; }
+  .summary-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 760px; }
   .chart-card { padding: 24px; }
   .magic-link-form { grid-template-columns: 1fr auto; align-items: end; }
   .bottom-nav { bottom: 16px; }
