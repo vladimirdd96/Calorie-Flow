@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Database,
   Download,
+  Droplets,
   Cloud,
   GripVertical,
   Home,
@@ -92,6 +93,7 @@ import {
   suggestedMealType,
 } from "@/lib/nutrition";
 import { findByBarcode, searchOpenFoodFacts } from "@/lib/openfoodfacts";
+import { hydrationTotal, setWaterAmount } from "@/lib/hydration";
 import { coachMealActionSchema, coachMealChoiceSchema, labelAnalysisSchema, mealPhotoAnalysisSchema } from "@/lib/schemas";
 import { getSupabase, type CloudUser, type SocialAuthProvider } from "@/lib/supabase";
 import type {
@@ -317,6 +319,8 @@ const DEFAULT_PROFILE: Profile = {
   hideCalories: false,
   onboardingDone: false,
   weightEntries: [],
+  waterEntries: [],
+  waterTargetMl: 2000,
 };
 
 const kgToLb = (kg: number) => kg * 2.2046226218;
@@ -580,6 +584,17 @@ function MealAddRow({ mealType, onAdd }: { mealType: MealType; onAdd: (mealType:
   return <button type="button" className="meal-add-row" onClick={() => onAdd(mealType)}><span className="meal-add-icon"><Plus size={17} /></span><span>Add food to {mealLabels[mealType]}</span></button>;
 }
 
+function WaterTracker({ profile, dateKey, onSave }: { profile: Profile; dateKey: string; onSave: (profile: Profile) => void }) {
+  const total = hydrationTotal(profile.waterEntries, dateKey);
+  const target = profile.waterTargetMl || 2000;
+  const setTotal = (amountMl: number) => onSave({ ...profile, waterEntries: setWaterAmount(profile.waterEntries, dateKey, amountMl) });
+  return <section className="water-tracker card" aria-labelledby="water-heading">
+    <div className="section-heading compact"><div><span className="eyebrow">Healthy habit</span><h2 id="water-heading">Water</h2></div><span className="water-total">{total.toLocaleString()} / {target.toLocaleString()} ml</span></div>
+    <div className="water-progress" role="progressbar" aria-label="Water logged today" aria-valuemin={0} aria-valuemax={target} aria-valuenow={total}><i style={{ width: `${Math.min(100, total / target * 100)}%` }} /></div>
+    <div className="water-actions"><button type="button" className="icon-button subtle-button" onClick={() => setTotal(Math.max(0, total - 250))} aria-label="Remove 250 millilitres of water">−</button><button type="button" className="secondary-button" onClick={() => setTotal(total + 250)}><Droplets size={16} />Add 250 ml</button><button type="button" className="text-button" onClick={() => setTotal(total + 500)}>+500 ml</button></div>
+  </section>;
+}
+
 function TodayView({
   profile,
   meals,
@@ -597,6 +612,7 @@ function TodayView({
   showHomeScreenPrompt,
   onDismissHomeScreenPrompt,
   onOpenCalendar,
+  onSaveProfile,
 }: {
   profile: Profile;
   meals: Meal[];
@@ -614,6 +630,7 @@ function TodayView({
   showHomeScreenPrompt: boolean;
   onDismissHomeScreenPrompt: () => void;
   onOpenCalendar: () => void;
+  onSaveProfile: (profile: Profile) => void;
 }) {
   const [dropTarget, setDropTarget] = useState<string>();
   const total = useMemo(() => sumNutrition(meals.map((meal) => meal.nutrition)), [meals]);
@@ -652,6 +669,8 @@ function TodayView({
           <div className="target-note"><Info size={15} /> Targets are guides, not exact medical limits.</div>
         </div>
       </section>
+
+      <WaterTracker profile={profile} dateKey={dateKey} onSave={onSaveProfile} />
 
       <MicronutrientSummary nutrition={total} />
 
@@ -2680,7 +2699,7 @@ export function TrackerApp() {
     <div className="app-shell">
       <div className="ambient one" /><div className="ambient two" />
       <div className="content-shell" inert={modalOpen} aria-hidden={modalOpen || undefined}>
-        {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={(mealType) => openAdd("start", mealType)} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} onEdit={setEditingMeal} onOpenDetails={setDetailMeal} onDropMeal={dropMeal} onDuplicate={setDuplicateMealDraft} onMove={setMoveMealDraft} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} onDismissHomeScreenPrompt={() => setShowHomeScreenPrompt(false)} onOpenCalendar={() => setCalendarOpen(true)} />}
+        {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={(mealType) => openAdd("start", mealType)} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} onEdit={setEditingMeal} onOpenDetails={setDetailMeal} onDropMeal={dropMeal} onDuplicate={setDuplicateMealDraft} onMove={setMoveMealDraft} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} onDismissHomeScreenPrompt={() => setShowHomeScreenPrompt(false)} onOpenCalendar={() => setCalendarOpen(true)} onSaveProfile={(next) => void saveProfile(next)} />}
         {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={openAdd} />}
         {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} chatTextSize={chatTextSize} onLogCoachMeal={logCoachMeal} onOpenAccount={() => setTab("profile")} onOpenAdd={openAdd} />}
         {tab === "insights" && <InsightsView meals={meals} profile={profile} onSave={saveProfile} weightTrackingEnabled={weightTrackingEnabled} />}

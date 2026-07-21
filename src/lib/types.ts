@@ -110,11 +110,18 @@ export type Profile = {
   weightTracking?: WeightTrackingStatus;
   dailyTargets?: Partial<Record<Weekday, DailyTargets>>;
   carbDisplay?: "total" | "net";
+  waterTargetMl?: number;
+  waterEntries?: WaterEntry[];
 };
 
 export type WeightEntry = {
   date: string;
   weightKg: number;
+};
+
+export type WaterEntry = {
+  date: string;
+  amountMl: number;
 };
 
 export type LabelAnalysis = {

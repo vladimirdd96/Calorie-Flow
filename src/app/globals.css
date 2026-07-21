@@ -421,6 +421,12 @@ p { color: var(--muted); line-height: 1.55; }
 .daily-target-preferences { display: grid; gap: 12px; }
 .weekday-target-editor { display: grid; gap: 14px; padding: 14px; border: 1px solid var(--border); border-radius: 16px; background: var(--control-surface); }
 .weekday-target-editor > label { display: grid; gap: 7px; font-size: 12px; color: var(--muted); }
+.water-tracker { display: grid; gap: 12px; }
+.water-total { color: var(--muted); font-size: 12px; font-weight: 700; }
+.water-progress { height: 8px; overflow: hidden; border-radius: 99px; background: var(--track); }
+.water-progress > i { display: block; height: 100%; border-radius: inherit; background: var(--mint); transition: width .2s ease; }
+.water-actions { display: flex; align-items: center; gap: 8px; }
+.water-actions .secondary-button { flex: 1; justify-content: center; }
 .display-subsection { display: grid; gap: 10px; margin-top: 26px; padding-top: 24px; border-top: 1px solid var(--border); }
 .display-subsection-heading { display: grid; gap: 5px; }
 .display-subsection-heading h3 { margin: 0; font-size: 17px; line-height: 1.15; letter-spacing: -.02em; }
