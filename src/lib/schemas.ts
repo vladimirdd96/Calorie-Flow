@@ -67,7 +67,7 @@ export const profileSchema = z.object({
   weightKg: z.number().finite().min(35).max(300),
   activity: z.enum(["sedentary", "light", "moderate", "active", "very-active"]),
   goalMode: z.enum(["lose", "maintain", "gain"]),
-  dietPreset: z.enum(["balanced", "high-protein", "keto", "high-protein-keto", "low-fat"]),
+  dietPreset: z.enum(["balanced", "high-protein", "keto", "high-protein-keto", "low-fat", "custom"]),
   calorieTarget: positiveFinite.max(20_000),
   proteinTarget: finiteNonNegative.max(2_000),
   carbsTarget: finiteNonNegative.max(2_000),

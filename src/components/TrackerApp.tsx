@@ -289,6 +289,7 @@ const dietMeta: Record<DietPreset, { label: string; description: string }> = {
   keto: { label: "Keto", description: "25 g carbs, higher fat" },
   "high-protein-keto": { label: "Protein keto", description: "30 g carbs, more protein" },
   "low-fat": { label: "Low fat", description: "20% calories from fat" },
+  custom: { label: "Custom", description: "Set your own daily split" },
 };
 
 function dayLabel(dateKey: string) {
@@ -696,17 +697,31 @@ function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: { meals
 
 function TargetEditor({ profile, onSave, onCancel, onboarding = false }: { profile: Profile; onSave: (profile: Profile) => void; onCancel?: () => void; onboarding?: boolean }) {
   const [draft, setDraft] = useState(profile);
+  const [editingPreset, setEditingPreset] = useState<DietPreset | null>(profile.dietPreset === "custom" ? "custom" : null);
   const calculatedCalories = calculateCalories(draft);
-  const calculatedMacros = calculateMacroTargets(calculatedCalories, draft.weightKg, draft.dietPreset);
+  const calculatedMacros = draft.dietPreset === "custom"
+    ? { protein: draft.proteinTarget, carbs: draft.carbsTarget, fat: draft.fatTarget }
+    : calculateMacroTargets(calculatedCalories, draft.weightKg, draft.dietPreset);
   const update = <K extends keyof Profile>(key: K, value: Profile[K]) => setDraft((current) => ({ ...current, [key]: value }));
+  const selectPreset = (preset: DietPreset) => {
+    const macros = preset === "custom" ? { protein: draft.proteinTarget, carbs: draft.carbsTarget, fat: draft.fatTarget } : calculateMacroTargets(calculatedCalories, draft.weightKg, preset);
+    setDraft((current) => ({ ...current, dietPreset: preset, proteinTarget: macros.protein, carbsTarget: macros.carbs, fatTarget: macros.fat }));
+    setEditingPreset(preset === "custom" ? "custom" : null);
+  };
+  const editPreset = (preset: DietPreset) => {
+    selectPreset(preset);
+    setEditingPreset(preset);
+  };
+  const updateMacro = (key: "proteinTarget" | "carbsTarget" | "fatTarget", value: string) => update(key, Math.max(0, Number(value)));
+  const savedMacros = editingPreset ? { protein: draft.proteinTarget, carbs: draft.carbsTarget, fat: draft.fatTarget } : calculatedMacros;
   const save = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     onSave({
     ...draft,
     calorieTarget: calculatedCalories,
-    proteinTarget: calculatedMacros.protein,
-    carbsTarget: calculatedMacros.carbs,
-    fatTarget: calculatedMacros.fat,
+    proteinTarget: savedMacros.protein,
+    carbsTarget: savedMacros.carbs,
+    fatTarget: savedMacros.fat,
     onboardingDone: true,
     });
   };
@@ -721,10 +736,13 @@ function TargetEditor({ profile, onSave, onCancel, onboarding = false }: { profi
       </div>
       <label><span>Daily movement</span><select value={draft.activity} onChange={(event) => update("activity", event.target.value as ActivityLevel)}><option value="sedentary">Mostly seated</option><option value="light">Light · 1–2 workouts/week</option><option value="moderate">Moderate · 2–4 workouts/week</option><option value="active">Active · 5–6 workouts/week</option><option value="very-active">Very active · physical work/training</option></select></label>
       <div className="field-block"><span id="goal-label">Goal</span><div className="segmented three" role="group" aria-labelledby="goal-label"><button type="button" aria-pressed={draft.goalMode === "lose"} className={draft.goalMode === "lose" ? "active" : ""} onClick={() => update("goalMode", "lose" as GoalMode)}>Lose</button><button type="button" aria-pressed={draft.goalMode === "maintain"} className={draft.goalMode === "maintain" ? "active" : ""} onClick={() => update("goalMode", "maintain" as GoalMode)}>Maintain</button><button type="button" aria-pressed={draft.goalMode === "gain"} className={draft.goalMode === "gain" ? "active" : ""} onClick={() => update("goalMode", "gain" as GoalMode)}>Gain</button></div></div>
-      <div className="field-block"><span id="nutrition-style-label">Nutrition style <small>optional</small></span><div className="preset-grid" role="group" aria-labelledby="nutrition-style-label">{(Object.keys(dietMeta) as DietPreset[]).map((preset) => <button type="button" aria-pressed={draft.dietPreset === preset} key={preset} className={draft.dietPreset === preset ? "active" : ""} onClick={() => update("dietPreset", preset)}><strong>{dietMeta[preset].label}</strong><small>{dietMeta[preset].description}</small>{draft.dietPreset === preset && <Check size={17} />}</button>)}</div></div>
+      <div className="field-block"><span id="nutrition-style-label">Nutrition style <small>optional</small></span><div className="preset-grid" role="group" aria-labelledby="nutrition-style-label">{(Object.keys(dietMeta) as DietPreset[]).map((preset) => {
+        const macros = editingPreset === preset ? { protein: draft.proteinTarget, carbs: draft.carbsTarget, fat: draft.fatTarget } : preset === draft.dietPreset ? calculatedMacros : preset === "custom" ? { protein: draft.proteinTarget, carbs: draft.carbsTarget, fat: draft.fatTarget } : calculateMacroTargets(calculatedCalories, draft.weightKg, preset);
+        return <div className={`preset-option${draft.dietPreset === preset ? " active" : ""}`} key={preset}><button type="button" aria-pressed={draft.dietPreset === preset} className="preset-select" onClick={() => selectPreset(preset)}><strong>{dietMeta[preset].label}</strong><small>{dietMeta[preset].description}</small><span className="preset-macros">P {macros.protein} · C {macros.carbs} · F {macros.fat} g</span>{draft.dietPreset === preset && <Check size={17} />}</button>{preset !== "custom" && <button type="button" className="preset-edit" aria-label={`Edit ${dietMeta[preset].label} nutrition`} onClick={() => editPreset(preset)}><Pencil size={14} /></button>}</div>;
+      })}</div></div>
       <div className="calculated-target card">
         {!draft.hideCalories && <div><span>Starting target</span><strong>{calculatedCalories.toLocaleString()} <small>kcal</small></strong></div>}
-        <div className="target-macros"><span>P <strong>{calculatedMacros.protein} g</strong></span><span>C <strong>{calculatedMacros.carbs} g</strong></span><span>F <strong>{calculatedMacros.fat} g</strong></span></div>
+        {editingPreset ? <div className="macro-edit-grid"><label><span>Protein</span><div className="input-suffix"><input required min="0" type="number" inputMode="decimal" value={draft.proteinTarget} onChange={(event) => updateMacro("proteinTarget", event.target.value)} /><span>g</span></div></label><label><span>Carbs</span><div className="input-suffix"><input required min="0" type="number" inputMode="decimal" value={draft.carbsTarget} onChange={(event) => updateMacro("carbsTarget", event.target.value)} /><span>g</span></div></label><label><span>Fat</span><div className="input-suffix"><input required min="0" type="number" inputMode="decimal" value={draft.fatTarget} onChange={(event) => updateMacro("fatTarget", event.target.value)} /><span>g</span></div></label></div> : <div className="target-macros"><span>P <strong>{calculatedMacros.protein} g</strong></span><span>C <strong>{calculatedMacros.carbs} g</strong></span><span>F <strong>{calculatedMacros.fat} g</strong></span></div>}
       </div>
       {onboarding ? <button className="primary-button full" type="submit">Start tracking<ChevronRight size={18} /></button> : <div className="target-editor-actions"><button className="secondary-button" type="button" onClick={onCancel}>Cancel</button><button className="primary-button" type="submit">Save adjustments<ChevronRight size={18} /></button></div>}
       <p className="form-footnote">Calculated with Mifflin–St Jeor. Treat the result as a starting estimate and adjust from your weight trend.</p>

@@ -86,14 +86,14 @@ export function calculateCalories(profile: Pick<Profile, "sex" | "age" | "height
 }
 
 export function calculateMacroTargets(calories: number, weightKg: number, preset: DietPreset) {
-  const rules: Record<DietPreset, { proteinPerKg: number; fatPerKg?: number; carbCap?: number; fatPercent?: number }> = {
+  const rules: Record<Exclude<DietPreset, "custom">, { proteinPerKg: number; fatPerKg?: number; carbCap?: number; fatPercent?: number }> = {
     balanced: { proteinPerKg: 1.8, fatPerKg: 0.9 },
     "high-protein": { proteinPerKg: 2.2, fatPerKg: 0.8 },
     keto: { proteinPerKg: 1.8, carbCap: 25 },
     "high-protein-keto": { proteinPerKg: 2.2, carbCap: 30 },
     "low-fat": { proteinPerKg: 1.8, fatPercent: 0.2 },
   };
-  const rule = rules[preset];
+  const rule = rules[preset === "custom" ? "balanced" : preset];
   const protein = Math.round(weightKg * rule.proteinPerKg / 5) * 5;
   if (rule.carbCap) {
     const carbs = rule.carbCap;

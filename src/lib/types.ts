@@ -49,7 +49,7 @@ export type Meal = {
 export type Sex = "male" | "female";
 export type GoalMode = "lose" | "maintain" | "gain";
 export type ActivityLevel = "sedentary" | "light" | "moderate" | "active" | "very-active";
-export type DietPreset = "balanced" | "high-protein" | "keto" | "high-protein-keto" | "low-fat";
+export type DietPreset = "balanced" | "high-protein" | "keto" | "high-protein-keto" | "low-fat" | "custom";
 export const weightTrackingStatuses = { enabled: "enabled", disabled: "disabled" } as const;
 export type WeightTrackingStatus = typeof weightTrackingStatuses[keyof typeof weightTrackingStatuses];
 
