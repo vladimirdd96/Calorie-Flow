@@ -915,8 +915,8 @@ function MeasurementPreferences({ profile, onChange }: { profile: Profile; onCha
       <div className="section-heading"><div><span className="eyebrow">Measurements</span><h2>Units</h2></div></div>
       <p className="display-subsection-description">Choose how height and body weight appear throughout Calorie Flow.</p>
       <div className="segmented two" role="group" aria-label="Measurement units">
-        <button type="button" aria-pressed={measurementSystem === measurementSystems.metric} className={measurementSystem === measurementSystems.metric ? "active" : ""} onClick={() => onChange(measurementSystems.metric)}>Centimetres & kilograms</button>
-        <button type="button" aria-pressed={measurementSystem === measurementSystems.imperial} className={measurementSystem === measurementSystems.imperial ? "active" : ""} onClick={() => onChange(measurementSystems.imperial)}>Inches & pounds</button>
+        <button type="button" aria-pressed={measurementSystem === measurementSystems.metric} className={measurementSystem === measurementSystems.metric ? "active" : ""} onClick={() => onChange(measurementSystems.metric)}>Metric (cm, kg)</button>
+        <button type="button" aria-pressed={measurementSystem === measurementSystems.imperial} className={measurementSystem === measurementSystems.imperial ? "active" : ""} onClick={() => onChange(measurementSystems.imperial)}>US customary (in, lb)</button>
       </div>
     </section>
   );
@@ -1232,8 +1232,8 @@ function MeasurementPreferencePrompt({ profile, onSave }: { profile: Profile; on
         <h2>Which measurements feel natural?</h2>
         <p>Choose how Calorie Flow should show your height and body weight. Calculations stay accurate behind the scenes.</p>
         <div className="weight-prompt-actions">
-          <button className="primary-button" type="button" onClick={() => onSave({ ...profile, measurementSystem: measurementSystems.metric })}>Centimetres & kilograms<ChevronRight size={17} /></button>
-          <button className="secondary-button" type="button" onClick={() => onSave({ ...profile, measurementSystem: measurementSystems.imperial })}>Inches & pounds<ChevronRight size={17} /></button>
+          <button className="primary-button" type="button" onClick={() => onSave({ ...profile, measurementSystem: measurementSystems.metric })}>Metric (cm, kg)<ChevronRight size={17} /></button>
+          <button className="secondary-button" type="button" onClick={() => onSave({ ...profile, measurementSystem: measurementSystems.imperial })}>US customary (in, lb)<ChevronRight size={17} /></button>
         </div>
       </div>
     </Sheet>
