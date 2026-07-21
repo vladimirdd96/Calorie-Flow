@@ -473,7 +473,7 @@ function MealRow({ meal, onDelete, onEdit, onDuplicate, onMove, onDragStart, onD
     return () => { document.removeEventListener("pointerdown", dismiss); document.removeEventListener("keydown", closeOnEscape); };
   }, [menuOpen]);
   return (
-    <div className={`meal-row ${dropPosition ? `drop-${dropPosition}` : ""}`} draggable onDragStart={(event) => onDragStart(meal, event)} onDragOver={onDragOver} onDrop={onDrop} title="Drag to reorder or move to another meal">
+    <div className={`meal-row ${dropPosition ? `drop-${dropPosition}` : ""}`} draggable onDragStart={(event) => onDragStart(meal, event)} onDragOver={onDragOver} onDrop={onDrop} title="Drag this meal to reorder it or move it to another meal section" aria-label={`Drag ${meal.name} to reorder it or move it to another meal section`}>
       <span className="meal-drag-handle" aria-hidden="true"><GripVertical size={17} /></span>
       <div className="meal-icon"><Utensils size={17} /></div>
       <div className="meal-copy">
@@ -1843,18 +1843,12 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, onLogCoachMeal,
     if (!user) return;
     getCloudCoachChats(user.id).then(async (storedChats) => {
       if (!active) return;
-      let available = storedChats;
-      if (!available.length || historyAttempt === 0) {
-        const now = new Date().toISOString();
-        const chat: CoachChat = { id: crypto.randomUUID(), title: "New conversation", createdAt: now, updatedAt: now };
-        try { await saveCloudCoachChat(user.id, chat); } catch (error) {
-          if (!available.length) throw error;
-        }
-        available = [chat, ...available];
+      const now = new Date().toISOString();
+      const chat: CoachChat = { id: crypto.randomUUID(), title: "New conversation", createdAt: now, updatedAt: now };
+      try { await saveCloudCoachChat(user.id, chat); } catch (error) {
+        if (!storedChats.length) throw error;
       }
-      const chat = available[0];
-      const stored = await getCloudCoachMessages(user.id, chat.id);
-      if (active) { setChats(available); setActiveChatId(chat.id); setMessages(stored); setLoadedUserId(user.id); }
+      if (active) { setChats([chat, ...storedChats]); setActiveChatId(chat.id); setMessages([]); setLoadedUserId(user.id); }
     }).catch(() => {
       if (active) {
         const now = new Date().toISOString();
