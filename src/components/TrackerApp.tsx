@@ -179,6 +179,28 @@ function useModalFocus(onClose?: () => void) {
   return surfaceRef;
 }
 
+function useDismissibleDisclosure<T extends HTMLElement>(open: boolean, onClose: () => void) {
+  const disclosureRef = useRef<T>(null);
+  const closeRef = useRef(onClose);
+  useEffect(() => { closeRef.current = onClose; }, [onClose]);
+  useEffect(() => {
+    if (!open) return;
+    const dismissOnPointerDown = (event: PointerEvent) => {
+      if (disclosureRef.current && !disclosureRef.current.contains(event.target as Node)) closeRef.current();
+    };
+    const dismissOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeRef.current();
+    };
+    document.addEventListener("pointerdown", dismissOnPointerDown);
+    document.addEventListener("keydown", dismissOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", dismissOnPointerDown);
+      document.removeEventListener("keydown", dismissOnEscape);
+    };
+  }, [open]);
+  return disclosureRef;
+}
+
 export function hideCalorieValues(content: string) {
   return content.replace(/\b\d[\d,.]*\s*(?:-|–|—)?\s*(?:kcal|calories?)\b/gi, "energy hidden");
 }
@@ -584,11 +606,11 @@ function TargetEditor({ profile, onSave, onCancel, onboarding = false }: { profi
   );
 }
 
-function TargetSummary({ profile, onEdit }: { profile: Profile; onEdit: () => void }) {
+function TargetSummary({ profile, expanded, onEdit }: { profile: Profile; expanded: boolean; onEdit: () => void }) {
   const goalLabel = profile.goalMode === "lose" ? "Fat loss" : profile.goalMode === "gain" ? "Muscle gain" : "Maintenance";
   return (
     <section className="targets-section" aria-label="Daily nutrition targets">
-      <div className="section-heading target-summary-heading"><div><span className="eyebrow">Your baseline</span><h2>Daily targets</h2></div><button className="text-button" type="button" onClick={onEdit}><Pencil size={16} />Adjust</button></div>
+      <div className="section-heading target-summary-heading"><div><span className="eyebrow">Your baseline</span><h2>Daily targets</h2></div><button className="text-button" type="button" aria-expanded={expanded} aria-controls="target-editor" onClick={onEdit}><Pencil size={16} />Adjust</button></div>
       <div className="target-summary">
         {!profile.hideCalories && <div className="target-energy"><span>Daily energy</span><strong>{profile.calorieTarget.toLocaleString()} <small>kcal</small></strong><small>{goalLabel} · a starting point, not a rule</small></div>}
         <div className="target-macros"><span>Protein <strong>{profile.proteinTarget} g</strong></span><span>Carbs <strong>{profile.carbsTarget} g</strong></span><span>Fat <strong>{profile.fatTarget} g</strong></span></div>
@@ -739,6 +761,9 @@ function ProfileView({
 }) {
   const importRef = useRef<HTMLInputElement>(null);
   const [editingTargets, setEditingTargets] = useState(false);
+  const targetDisclosureRef = useDismissibleDisclosure<HTMLDivElement>(editingTargets, () => setEditingTargets(false));
+  const [dataToolsOpen, setDataToolsOpen] = useState(false);
+  const dataToolsRef = useDismissibleDisclosure<HTMLDetailsElement>(dataToolsOpen, () => setDataToolsOpen(false));
   const [restoreMode, setRestoreMode] = useState<"merge" | "replace">("merge");
   const [backupNotice, setBackupNotice] = useState("");
   const [exporting, setExporting] = useState(false);
@@ -776,12 +801,14 @@ function ProfileView({
     <main className="page">
       <header className="page-header"><span className="eyebrow">Your account</span><h1>Your profile</h1><p>Make Calorie Flow feel like yours, then set the targets that guide your day.</p></header>
       <ProfileIdentity key={`${profile.name}:${profile.avatarUrl || ""}`} profile={profile} user={user} onSave={onSave} />
-      <TargetSummary profile={profile} onEdit={() => setEditingTargets(true)} />
-      {editingTargets && <TargetEditor profile={profile} onSave={(next) => { onSave(next); setEditingTargets(false); }} onCancel={() => setEditingTargets(false)} />}
+      <div ref={targetDisclosureRef}>
+        <TargetSummary profile={profile} expanded={editingTargets} onEdit={() => setEditingTargets((open) => !open)} />
+        {editingTargets && <div id="target-editor"><TargetEditor profile={profile} onSave={(next) => { onSave(next); setEditingTargets(false); }} onCancel={() => setEditingTargets(false)} /></div>}
+      </div>
       <DisplayPreferences hideCalories={profile.hideCalories} onChange={(hideCalories) => onSave({ ...profile, hideCalories })} chatTextSize={chatTextSize} onChatTextSizeChange={onChatTextSizeChange} />
       <AppearancePreferences theme={theme} onChange={onThemeChange} />
       <AccountCard user={user} syncState={syncState} onSignOut={onSignOut} />
-      <details className="data-tools">
+      <details ref={dataToolsRef} className="data-tools" open={dataToolsOpen} onToggle={(event) => setDataToolsOpen(event.currentTarget.open)}>
         <summary>
           <ShieldCheck size={17} aria-hidden="true" />
           <span className="data-tools-copy"><strong>Data & privacy</strong><small>Export or restore your information</small></span>
