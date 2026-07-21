@@ -179,13 +179,17 @@ p { color: var(--muted); line-height: 1.55; }
 .duplicate-meal-copy { display: grid; gap: 5px; margin: 18px 0; }
 .duplicate-meal-copy p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .meal-editor { width: min(100%, 560px); padding: 24px; }
+.duplicate-meal-dialog { width: min(100%, 560px); }
+.duplicate-meal-dialog .meal-editor { width: 100%; padding: 24px 20px 12px; }
+.duplicate-meal-dialog .sheet-header { grid-template-columns: 1fr; min-height: auto; margin-bottom: 24px; }
+.duplicate-meal-dialog .sheet-header > div { text-align: left; }
 .meal-editor-form { display: grid; gap: 16px; }
 .meal-editor-form label { display: grid; gap: 7px; color: var(--muted); font-size: 11px; font-weight: 800; }
 .meal-editor-form input, .meal-editor-form select { width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid var(--border); border-radius: 11px; color: var(--text); background: var(--panel); font: inherit; }
 .editor-nutrition { display: grid; gap: 9px; padding: 13px; border: 1px solid var(--border); border-radius: 13px; background: rgba(125,255,213,.035); }
 .editor-nutrition > div { display: flex; flex-wrap: wrap; gap: 12px 18px; color: var(--muted); font-size: 11px; }
 .editor-nutrition strong { color: var(--text); margin-left: 4px; }
-.sheet-actions { display: flex; justify-content: flex-end; gap: 9px; }
+.sheet-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 24px; }
 .page-header { padding: 34px 2px 20px; max-width: 610px; }
 .page-header .eyebrow { margin-bottom: 9px; }
 .page-header p { margin-bottom: 0; font-size: 14px; }

@@ -394,7 +394,7 @@ function MealRow({ meal, onDelete, onEdit, onDuplicate, onDragStart, onDragOver,
 
 function DuplicateMealSheet({ meal, onDuplicate, onClose }: { meal: Meal; onDuplicate: (mealType: MealType) => void; onClose: () => void }) {
   const [mealType, setMealType] = useState<MealType>(meal.mealType);
-  return <div className="meal-editor"><div className="sheet-header"><div><span className="eyebrow">Your diary</span><h2>Duplicate meal</h2></div><button className="icon-button ghost" type="button" onClick={onClose} aria-label="Close duplicate meal dialog"><X /></button></div><div className="duplicate-meal-copy"><strong>{meal.name}</strong><p>Choose where to add a copy. The original meal stays where it is.</p></div><label className="meal-editor-form"><span>Add copy to</span><select value={mealType} onChange={(event) => setMealType(event.target.value as MealType)}>{(Object.keys(mealLabels) as MealType[]).map((type) => <option key={type} value={type}>{mealLabels[type]}</option>)}</select></label><div className="sheet-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="button" className="primary-button" onClick={() => onDuplicate(mealType)}><Copy size={17} />Duplicate</button></div></div>;
+  return <div className="meal-editor duplicate-meal-sheet"><div className="sheet-header"><div><span className="eyebrow">Your diary</span><h2>Duplicate meal</h2></div></div><div className="duplicate-meal-copy"><strong>{meal.name}</strong><p>Choose where to add a copy. The original meal stays where it is.</p></div><label className="meal-editor-form"><span>Add copy to</span><select value={mealType} onChange={(event) => setMealType(event.target.value as MealType)}>{(Object.keys(mealLabels) as MealType[]).map((type) => <option key={type} value={type}>{mealLabels[type]}</option>)}</select></label><div className="sheet-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="button" className="primary-button" onClick={() => onDuplicate(mealType)}><Copy size={17} />Duplicate</button></div></div>;
 }
 
 function MealEditor({ meal, onSave, onClose, hideCalories }: { meal: Meal; onSave: (meal: Meal) => void; onClose: () => void; hideCalories: boolean }) {
@@ -1026,7 +1026,7 @@ function ProfileView({
   );
 }
 
-function Sheet({ children, onClose, wide = false, label = "Sheet" }: { children: React.ReactNode; onClose: () => void; wide?: boolean; label?: string }) {
+function Sheet({ children, onClose, wide = false, label = "Sheet", className = "" }: { children: React.ReactNode; onClose: () => void; wide?: boolean; label?: string; className?: string }) {
   const surfaceRef = useModalFocus(onClose);
   const [dragOffset, setDragOffset] = useState(0);
   const dragRef = useRef<{ pointerId: number; startY: number } | undefined>(undefined);
@@ -1052,7 +1052,7 @@ function Sheet({ children, onClose, wide = false, label = "Sheet" }: { children:
     if (shouldClose) onClose();
     else setDragOffset(0);
   };
-  return <div className="sheet-backdrop" onPointerDown={dismissOnBackdrop}><section ref={surfaceRef} className={`sheet ${wide ? "wide" : ""}`} style={{ transform: dragOffset ? `translateY(${dragOffset}px)` : undefined, transition: dragOffset ? "none" : "transform .2s ease" }} role="dialog" aria-modal="true" aria-label={label} tabIndex={-1}><button className="sheet-handle" type="button" aria-label="Drag down to close" onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} /><button className="sheet-close icon-button ghost" type="button" aria-label="Close" onClick={onClose}><X size={18} /></button>{children}</section></div>;
+  return <div className="sheet-backdrop" onPointerDown={dismissOnBackdrop}><section ref={surfaceRef} className={`sheet ${wide ? "wide" : ""} ${className}`.trim()} style={{ transform: dragOffset ? `translateY(${dragOffset}px)` : undefined, transition: dragOffset ? "none" : "transform .2s ease" }} role="dialog" aria-modal="true" aria-label={label} tabIndex={-1}><button className="sheet-handle" type="button" aria-label="Drag down to close" onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} /><button className="sheet-close icon-button ghost" type="button" aria-label="Close" onClick={onClose}><X size={18} /></button>{children}</section></div>;
 }
 
 function OnboardingDialog({ profile, onSave }: { profile: Profile; onSave: (profile: Profile) => void }) {
@@ -2337,7 +2337,7 @@ export function TrackerApp() {
       {adding && profile.onboardingDone && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); }} wide>{directFood ? <PortionSheet food={directFood} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} onClose={() => setAdding(false)} onLog={logMeal} onMealPhoto={addPhotoMeal} />}</Sheet>}
       {calendarOpen && <Sheet onClose={() => setCalendarOpen(false)} wide label="Calendar"><CalendarSheet dateKey={dateKey} meals={meals} profile={profile} onDateChange={setDateKey} onClose={() => setCalendarOpen(false)} /></Sheet>}
       {editingMeal && <Sheet onClose={() => setEditingMeal(undefined)}><MealEditor meal={editingMeal} hideCalories={profile.hideCalories} onSave={(meal) => editingMeal.id.startsWith("photo-") ? saveNewMeal(meal) : saveEditedMeal(meal)} onClose={() => setEditingMeal(undefined)} /></Sheet>}
-      {duplicateMealDraft && <Sheet onClose={() => setDuplicateMealDraft(undefined)} label="Duplicate meal"><DuplicateMealSheet meal={duplicateMealDraft} onDuplicate={(mealType) => void duplicateMeal(duplicateMealDraft, mealType)} onClose={() => setDuplicateMealDraft(undefined)} /></Sheet>}
+      {duplicateMealDraft && <Sheet onClose={() => setDuplicateMealDraft(undefined)} label="Duplicate meal" className="duplicate-meal-dialog"><DuplicateMealSheet meal={duplicateMealDraft} onDuplicate={(mealType) => void duplicateMeal(duplicateMealDraft, mealType)} onClose={() => setDuplicateMealDraft(undefined)} /></Sheet>}
       {!profile.onboardingDone && <OnboardingDialog profile={profile} onSave={saveProfile} />}
       {weightPromptOpen && <WeightTrackingPrompt onEnable={enableWeightTracking} onDisable={disableWeightTracking} onDefer={deferWeightTracking} />}
       {undoMeal && <div className="toast undo-toast" role="status"><span>Meal removed</span><button type="button" onClick={undoDeleteMeal}>Undo</button></div>}
