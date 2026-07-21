@@ -1876,7 +1876,12 @@ export function TrackerApp() {
       source: "custom",
       estimated: action.estimated,
     };
+    // Mark the mutation before the async IndexedDB write so an initial cloud
+    // snapshot cannot replace this meal during the write window.
+    syncMutationRef.current += 1;
     await put("meals", meal);
+    const storedMeals = await getAll<Meal>("meals");
+    if (!storedMeals.some((candidate) => candidate.id === meal.id)) throw new Error("The meal was not written to the local diary.");
     setMeals((current) => [...current, meal]);
     setDateKey(action.loggedDate);
     setTab("today");
