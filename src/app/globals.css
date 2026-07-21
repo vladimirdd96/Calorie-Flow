@@ -431,17 +431,41 @@ p { color: var(--muted); line-height: 1.55; }
 .daily-target-preferences { display: grid; gap: 12px; }
 .weekday-target-editor { display: grid; gap: 14px; padding: 14px; border: 1px solid var(--border); border-radius: 16px; background: var(--control-surface); }
 .weekday-target-editor > label { display: grid; gap: 7px; font-size: 12px; color: var(--muted); }
-.water-tracker { display: grid; gap: 12px; }
-.water-total { color: var(--muted); font-size: 12px; font-weight: 700; }
-.water-progress { height: 8px; overflow: hidden; border-radius: 99px; background: var(--track); }
-.water-progress > i { display: block; height: 100%; border-radius: inherit; background: var(--mint); transition: width .2s ease; }
-.water-actions { display: flex; align-items: center; gap: 8px; }
-.water-actions .secondary-button { flex: 1; justify-content: center; }
-.fasting-tracker { display: grid; gap: 12px; }
-.fasting-tracker > p { margin: 0; font-size: 12px; }
+.daily-rhythm { display: grid; gap: 12px; margin-top: 28px; }
+.daily-rhythm-grid { display: grid; gap: 12px; }
+.rhythm-card { min-width: 0; padding: 16px; border-radius: var(--radius-md); box-shadow: none; }
+.rhythm-card-heading { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.rhythm-card-heading > div { min-width: 0; display: grid; gap: 3px; }
+.rhythm-card-heading h2 { font-size: 17px; }
+.rhythm-card-heading .eyebrow { margin: 0; font-size: 9px; }
+.rhythm-card-heading > strong { color: var(--text); font-size: 17px; letter-spacing: -.04em; white-space: nowrap; }
+.rhythm-card-heading > strong small { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: 0; }
+.rhythm-icon { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px; }
+.rhythm-icon.water { color: var(--blue); background: color-mix(in oklch, var(--blue) 12%, transparent); }
+.rhythm-icon.fasting { color: var(--amber); background: color-mix(in oklch, var(--amber) 12%, transparent); }
+.habit-progress { height: 7px; margin-top: 15px; overflow: hidden; border-radius: 99px; background: var(--track); }
+.habit-progress > i { display: block; height: 100%; border-radius: inherit; background: var(--mint); transition: width .2s ease; }
+.water-actions { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; margin-top: 14px; }
+.water-actions .icon-button { width: 44px; height: 44px; }
+.water-actions .primary-button, .water-actions .secondary-button { min-height: 44px; padding: 0 12px; font-size: 11px; }
+.fasting-tracker { padding: 0; overflow: hidden; }
+.fasting-summary { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 70px; padding: 16px; cursor: pointer; list-style: none; }
+.fasting-summary::-webkit-details-marker { display: none; }
+.fasting-summary > span:nth-child(2) { min-width: 0; display: grid; gap: 3px; }
+.fasting-summary strong { font-size: 17px; }
+.fasting-summary small { overflow: hidden; color: var(--muted); font-size: 10px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.fasting-summary > svg { color: var(--muted-2); transition: transform .2s ease; }
+.fasting-tracker[open] .fasting-summary { border-bottom: 1px solid var(--border); }
+.fasting-tracker[open] .fasting-summary > svg { color: var(--mint); transform: rotate(180deg); }
+.fasting-content { display: grid; gap: 13px; padding: 15px 16px 16px; }
+.fasting-content > p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.fasting-content .segmented button { min-height: 40px; }
+.fasting-content .secondary-button { min-height: 44px; font-size: 11px; }
 .fasting-status { display: flex; align-items: baseline; gap: 8px; }
-.fasting-status strong { font-size: 28px; letter-spacing: -.05em; }
-.fasting-status span { color: var(--muted); font-size: 12px; }
+.fasting-status strong { font-size: 24px; letter-spacing: -.05em; }
+.fasting-status span { color: var(--muted); font-size: 11px; }
+@media (min-width: 720px) { .daily-rhythm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } }
+@media (prefers-reduced-motion: reduce) { .habit-progress > i, .fasting-summary > svg { transition: none; } }
 .recipe-create { overflow: visible; }
 .recipe-create summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; list-style: none; }
 .recipe-create summary::-webkit-details-marker { display: none; }

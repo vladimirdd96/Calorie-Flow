@@ -615,25 +615,35 @@ function WaterTracker({ profile, dateKey, onSave }: { profile: Profile; dateKey:
   const total = hydrationTotal(profile.waterEntries, dateKey);
   const target = profile.waterTargetMl || 2000;
   const setTotal = (amountMl: number) => onSave({ ...profile, waterEntries: setWaterAmount(profile.waterEntries, dateKey, amountMl) });
-  return <section className="water-tracker card" aria-labelledby="water-heading">
-    <div className="section-heading compact"><div><span className="eyebrow">Healthy habit</span><h2 id="water-heading">Water</h2></div><span className="water-total">{total.toLocaleString()} / {target.toLocaleString()} ml</span></div>
-    <div className="water-progress" role="progressbar" aria-label="Water logged today" aria-valuemin={0} aria-valuemax={target} aria-valuenow={total}><i style={{ width: `${Math.min(100, total / target * 100)}%` }} /></div>
-    <div className="water-actions"><button type="button" className="icon-button subtle-button" onClick={() => setTotal(Math.max(0, total - 250))} aria-label="Remove 250 millilitres of water">−</button><button type="button" className="secondary-button" onClick={() => setTotal(total + 250)}><Droplets size={16} />Add 250 ml</button><button type="button" className="text-button" onClick={() => setTotal(total + 500)}>+500 ml</button></div>
+  return <section className="water-tracker rhythm-card card" aria-labelledby="water-heading">
+    <header className="rhythm-card-heading"><span className="rhythm-icon water"><Droplets size={18} /></span><div><span className="eyebrow">Hydration</span><h2 id="water-heading">Water</h2></div><strong>{total.toLocaleString()}<small> / {target.toLocaleString()} ml</small></strong></header>
+    <div className="habit-progress" role="progressbar" aria-label="Water logged today" aria-valuemin={0} aria-valuemax={target} aria-valuenow={total}><i style={{ width: `${Math.min(100, total / target * 100)}%` }} /></div>
+    <div className="water-actions"><button type="button" className="icon-button subtle-button" onClick={() => setTotal(Math.max(0, total - 250))} aria-label="Remove 250 millilitres of water">−</button><button type="button" className="primary-button" onClick={() => setTotal(total + 250)}><Droplets size={16} />Add 250 ml</button><button type="button" className="secondary-button" onClick={() => setTotal(total + 500)}>+500 ml</button></div>
   </section>;
 }
 
 function FastingTracker({ profile, onSave }: { profile: Profile; onSave: (profile: Profile) => void }) {
   const [now, setNow] = useState(() => new Date().toISOString());
+  const [expanded, setExpanded] = useState(Boolean(activeFast(profile.fastingRecords)));
   useEffect(() => { const timer = window.setInterval(() => setNow(new Date().toISOString()), 60_000); return () => window.clearInterval(timer); }, []);
   const goal = profile.fastingGoalHours || 16;
   const active = activeFast(profile.fastingRecords);
   const progress = active ? fastingProgress(active.startedAt, now, goal) : 0;
   const elapsed = active ? fastingWindowHours(active.startedAt, now) : 0;
-  const start = () => onSave({ ...profile, fastingRecords: [...(profile.fastingRecords || []), { id: `fast-${crypto.randomUUID()}`, startedAt: new Date().toISOString() }] });
+  const start = () => { setExpanded(true); onSave({ ...profile, fastingRecords: [...(profile.fastingRecords || []), { id: `fast-${crypto.randomUUID()}`, startedAt: new Date().toISOString() }] }); };
   const stop = () => onSave({ ...profile, fastingRecords: (profile.fastingRecords || []).map((record) => record.id === active?.id ? { ...record, endedAt: new Date().toISOString() } : record) });
-  return <section className="fasting-tracker card" aria-labelledby="fasting-heading">
-    <div className="section-heading compact"><div><span className="eyebrow">Optional rhythm</span><h2 id="fasting-heading">Fasting</h2></div><Timer size={18} aria-hidden="true" /></div>
-    {active ? <><div className="fasting-status"><strong>{elapsed.toFixed(1)}h</strong><span>of {goal}h fast</span></div><div className="water-progress" role="progressbar" aria-label="Fasting goal progress" aria-valuemin={0} aria-valuemax={goal} aria-valuenow={elapsed}><i style={{ width: `${progress * 100}%` }} /></div><p>Started {new Date(active.startedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}. End whenever you’re ready.</p><button type="button" className="secondary-button full" onClick={stop}>End fast</button></> : <><p>Track an eating window only when it serves you. Nothing changes in your food diary.</p><div className="segmented three" role="group" aria-label="Fasting goal">{([12, 14, 16] as const).map((hours) => <button key={hours} type="button" aria-pressed={goal === hours} className={goal === hours ? "active" : ""} onClick={() => onSave({ ...profile, fastingGoalHours: hours })}>{hours}: {24 - hours}</button>)}</div><button type="button" className="secondary-button full" onClick={start}><Timer size={17} />Start {goal}h fast</button></>}
+  return <details className={`fasting-tracker rhythm-card card${active ? " active" : ""}`} open={expanded} onToggle={(event) => setExpanded(event.currentTarget.open)}>
+    <summary className="fasting-summary"><span className="rhythm-icon fasting"><Timer size={18} /></span><span><span className="eyebrow">Optional rhythm</span><strong id="fasting-heading">Fasting</strong><small>{active ? `${elapsed.toFixed(1)} of ${goal} hours` : `${goal}-hour plan · start only when it serves you`}</small></span><ChevronDown size={18} aria-hidden="true" /></summary>
+    <div className="fasting-content" aria-labelledby="fasting-heading">
+      {active ? <><div className="fasting-status"><strong>{elapsed.toFixed(1)}h</strong><span>of {goal}h fast</span></div><div className="habit-progress" role="progressbar" aria-label="Fasting goal progress" aria-valuemin={0} aria-valuemax={goal} aria-valuenow={elapsed}><i style={{ width: `${progress * 100}%` }} /></div><p>Started {new Date(active.startedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}. End whenever you’re ready.</p><button type="button" className="secondary-button full" onClick={stop}>End fast</button></> : <><p>Choose a gentle goal. Fasting never changes your food diary or calorie target.</p><div className="segmented three" role="group" aria-label="Fasting goal">{([12, 14, 16] as const).map((hours) => <button key={hours} type="button" aria-pressed={goal === hours} className={goal === hours ? "active" : ""} onClick={() => onSave({ ...profile, fastingGoalHours: hours })}>{hours} h</button>)}</div><button type="button" className="secondary-button full" onClick={start}><Timer size={17} />Start {goal}h fast</button></>}
+    </div>
+  </details>;
+}
+
+function DailyRhythm({ profile, dateKey, onSave }: { profile: Profile; dateKey: string; onSave: (profile: Profile) => void }) {
+  return <section className="daily-rhythm" aria-labelledby="daily-rhythm-heading">
+    <div className="section-heading compact"><div><span className="eyebrow">Daily rhythm</span><h2 id="daily-rhythm-heading">Small habits</h2></div><span className="subtle">At your pace</span></div>
+    <div className="daily-rhythm-grid"><WaterTracker profile={profile} dateKey={dateKey} onSave={onSave} /><FastingTracker profile={profile} onSave={onSave} /></div>
   </section>;
 }
 
@@ -714,9 +724,7 @@ function TodayView({
         </div>
       </section>
 
-      <WaterTracker profile={profile} dateKey={dateKey} onSave={onSaveProfile} />
-
-      <FastingTracker profile={profile} onSave={onSaveProfile} />
+      <DailyRhythm profile={profile} dateKey={dateKey} onSave={onSaveProfile} />
 
       <MicronutrientSummary nutrition={total} />
 
