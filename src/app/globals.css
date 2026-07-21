@@ -298,7 +298,7 @@ p { color: var(--muted); line-height: 1.55; }
 .coach-check-in > svg { color: var(--muted-2); }
 .coach-check-in:hover strong, .coach-check-in:focus-visible strong { color: var(--mint); }
 .profile-form, .onboarding-form { display: grid; gap: 18px; }
-.targets-section, .display-section { margin-bottom: 34px; }
+.targets-section, .display-section, .onboarding-restart { margin-bottom: 34px; }
 .target-summary { display: grid; gap: 24px; padding: 20px 0 4px; border-top: 1px solid var(--border); }
 .target-energy { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 4px 16px; }
 .target-energy > span, .target-energy > small { color: var(--muted); font-size: 11px; }
@@ -360,6 +360,10 @@ p { color: var(--muted); line-height: 1.55; }
 .target-macros span:first-child { padding-left: 0; }
 .target-macros span + span { border-left: 1px solid var(--border); }
 .target-macros strong { color: var(--text); white-space: nowrap; }
+.onboarding-restart { display: grid; gap: 13px; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-md); background: color-mix(in oklch, var(--panel-strong) 32%, var(--panel)); }
+.onboarding-restart h2 { margin: 4px 0 0; font-size: 16px; }
+.onboarding-restart p { max-width: 48ch; margin: 5px 0 0; font-size: 11px; }
+.onboarding-restart .secondary-button { justify-self: start; min-height: 42px; padding: 0 13px; font-size: 11px; }
 .primary-button, .secondary-button { min-height: 52px; border-radius: 15px; padding: 0 18px; display: inline-flex; justify-content: center; align-items: center; gap: 8px; font-weight: 900; border: 0; }
 .primary-button { color: #05110e; background: linear-gradient(120deg, var(--mint), var(--mint-strong)); box-shadow: 0 12px 35px rgba(51,214,195,.15); }
 .primary-button.full, .secondary-button.full { width: 100%; }
@@ -437,15 +441,30 @@ p { color: var(--muted); line-height: 1.55; }
 .auth-recovery { margin-top: -8px; }
 .auth-unavailable { display: flex; align-items: flex-start; gap: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; color: var(--muted); background: rgba(125,255,213,.05); }
 
-.coach-page { --coach-message-size: 13px; width: min(100%, 820px); margin: 0 auto; }
+.coach-page { --coach-message-size: 13px; width: min(100%, 1120px); margin: 0 auto; }
 .coach-page.coach-text-compact { --coach-message-size: 12px; }
 .coach-page.coach-text-large { --coach-message-size: 15px; }
 .coach-header { min-height: 105px; display: flex; align-items: end; justify-content: space-between; gap: 16px; padding: 24px 2px 13px; }
 .coach-header h1 { margin: 6px 0 0; }
 .coach-header-actions { display: flex; align-items: center; gap: 10px; }
-.coach-chat-picker { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; }
-.coach-chat-picker label { color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
-.coach-chat-picker select { min-width: 0; flex: 1; min-height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 10px; color: var(--text); background: var(--panel); font: inherit; font-size: 11px; }
+.coach-layout { display: grid; grid-template-columns: 208px minmax(0, 1fr); gap: clamp(18px, 3vw, 38px); align-items: start; }
+.coach-history { position: sticky; top: 24px; display: grid; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 18px; background: color-mix(in oklch, var(--panel) 78%, transparent); }
+.coach-history-heading { display: flex; align-items: center; justify-content: space-between; padding: 2px 3px 4px; color: var(--text); font-size: 12px; font-weight: 800; }
+.coach-history-heading .icon-button { width: 30px; height: 30px; }
+.coach-history-list { display: grid; gap: 3px; max-height: min(52vh, 480px); overflow-y: auto; }
+.coach-history-row { display: grid; grid-template-columns: minmax(0, 1fr) 28px; align-items: center; min-height: 48px; border-radius: 11px; }
+.coach-history-row.active { background: color-mix(in oklch, var(--panel-strong) 68%, var(--panel)); }
+.coach-history-chat { min-width: 0; display: grid; gap: 3px; padding: 8px 7px 8px 9px; color: var(--muted); background: transparent; border: 0; text-align: left; }
+.coach-history-chat span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: inherit; font-size: 11px; font-weight: 750; }
+.coach-history-chat small { color: var(--muted-2); font-size: 9px; }
+.coach-history-row.active .coach-history-chat, .coach-history-chat:hover { color: var(--text); }
+.coach-history-rename { width: 28px; height: 30px; display: grid; place-items: center; color: var(--muted-2); background: transparent; border: 0; border-radius: 8px; }
+.coach-history-rename:hover, .coach-history-rename:focus-visible { color: var(--mint); background: color-mix(in oklch, var(--mint) 10%, transparent); }
+.coach-rename-form { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) 28px; gap: 4px; padding: 4px; }
+.coach-rename-form input { min-width: 0; min-height: 32px; padding: 0 7px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--control-surface); font-size: 11px; }
+.coach-rename-form button { display: grid; place-items: center; color: var(--mint); background: transparent; border: 0; }
+.coach-delete-chat { justify-self: start; padding: 4px 3px; font-size: 10px; }
+.coach-main { min-width: 0; }
 .recipe-grocery-action { display: grid; gap: 4px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
 .recipe-grocery-action strong { color: var(--muted); font-size: 10px; }
 .text-button.muted { color: var(--muted); }
@@ -507,6 +526,25 @@ p { color: var(--muted); line-height: 1.55; }
 .grocery-intro .coach-orb { width: 48px; height: 48px; margin: 0; border-radius: 16px; flex: 0 0 auto; }
 .grocery-intro h2 { font-size: 20px; margin-bottom: 4px; }
 .grocery-intro p { margin: 0; font-size: 11px; }
+.grocery-list-toolbar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.grocery-list-toolbar label { color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.grocery-list-toolbar select { min-width: 0; min-height: 42px; padding: 0 10px; }
+.grocery-list-toolbar .secondary-button { min-height: 42px; padding: 0 11px; font-size: 11px; }
+.grocery-modal-copy { margin: -3px 2px 16px; color: var(--muted); font-size: 12px; }
+.grocery-list-choices, .grocery-manage-list { display: grid; gap: 8px; margin-bottom: 18px; }
+.grocery-list-choices button, .grocery-manage-list button { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 13px; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 13px; text-align: left; }
+.grocery-list-choices button:hover, .grocery-list-choices button:focus-visible, .grocery-manage-list button.active { border-color: var(--border-strong); background: color-mix(in oklch, var(--panel-strong) 54%, var(--panel)); }
+.grocery-list-choices span, .grocery-manage-list span { display: grid; gap: 3px; min-width: 0; }
+.grocery-list-choices strong, .grocery-manage-list span { font-size: 12px; }
+.grocery-list-choices small, .grocery-manage-list small { color: var(--muted); font-size: 10px; }
+.grocery-list-create { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-bottom: 18px; }
+.grocery-list-create input { min-height: 44px; }
+.grocery-list-create .primary-button { min-height: 44px; padding: 0 13px; }
+.grocery-manage-list button svg { color: var(--mint); opacity: 0; }
+.grocery-manage-list button.active svg { opacity: 1; }
+.grocery-manage-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 14px; border-top: 1px solid var(--border); }
+.grocery-manage-actions .secondary-button { min-height: 40px; font-size: 11px; }
+.text-button.danger { color: var(--red, #ff8f8f); }
 .grocery-composer { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
 .grocery-composer input { min-height: 46px; }
 .grocery-composer button { min-width: 66px; border: 0; border-radius: 13px; color: #06110e; background: var(--mint); font-size: 12px; font-weight: 900; }
