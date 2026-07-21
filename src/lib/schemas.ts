@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { CoachChat, CoachMealAction, CoachMealChoice, CoachMessage, DailyTargets, FastingRecord, Food, LabelAnalysis, Meal, MealPhotoAnalysis, MealPlanEntry, Nutrition, Profile, Recipe, WaterEntry, WeightEntry } from "./types";
+import type { CoachChat, CoachMealAction, CoachMealChoice, CoachMessage, DailyTargets, DiaryShare, FastingRecord, Food, LabelAnalysis, Meal, MealPhotoAnalysis, MealPlanEntry, Nutrition, Profile, Recipe, WaterEntry, WeightEntry } from "./types";
 
 const finiteNonNegative = z.number().finite().min(0);
 const positiveFinite = z.number().finite().positive();
@@ -71,6 +71,20 @@ export const mealSchema = z.object({
   source: z.enum(["seed", "open-food-facts", "food-data-central", "restaurant", "ai-label", "custom"]),
   estimated: z.boolean().optional(),
 }).strict() satisfies z.ZodType<Meal>;
+
+export const diaryShareSchema = z.object({
+  id: z.string().uuid(),
+  ownerId: z.string().uuid(),
+  recipientEmail: z.string().email().max(320),
+  recipientId: z.string().uuid().optional(),
+  scope: z.literal("diary"),
+  status: z.enum(["pending", "accepted", "revoked"]),
+  createdAt: z.string().datetime({ offset: true }),
+  acceptedAt: z.string().datetime({ offset: true }).optional(),
+  revokedAt: z.string().datetime({ offset: true }).optional(),
+}).strict().superRefine((share, context) => {
+  if ((share.status === "accepted") !== Boolean(share.recipientId)) context.addIssue({ code: "custom", message: "Accepted shares require a recipient." });
+}) satisfies z.ZodType<DiaryShare>;
 
 export const profileSchema = z.object({
   name: z.string().trim().max(120),

@@ -69,6 +69,24 @@ export type Meal = {
   estimated?: boolean;
 };
 
+export const diaryShareScopes = { diary: "diary" } as const;
+export type DiaryShareScope = typeof diaryShareScopes[keyof typeof diaryShareScopes];
+export const diaryShareStatuses = { pending: "pending", accepted: "accepted", revoked: "revoked" } as const;
+export type DiaryShareStatus = typeof diaryShareStatuses[keyof typeof diaryShareStatuses];
+
+/** A private, read-only invitation to view a diary. Recipients cannot edit the owner's data. */
+export type DiaryShare = {
+  id: string;
+  ownerId: string;
+  recipientEmail: string;
+  recipientId?: string;
+  scope: DiaryShareScope;
+  status: DiaryShareStatus;
+  createdAt: string;
+  acceptedAt?: string;
+  revokedAt?: string;
+};
+
 export type Sex = "male" | "female";
 export type GoalMode = "lose" | "maintain" | "gain";
 export type ActivityLevel = "sedentary" | "light" | "moderate" | "active" | "very-active";

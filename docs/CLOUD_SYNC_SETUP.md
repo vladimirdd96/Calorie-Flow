@@ -6,7 +6,7 @@ Calorie Flow requires an account. These steps enable passwordless sign-in, cross
 
 1. Create a Supabase project.
 2. Open **SQL Editor** and run `supabase/migrations/202607180001_user_sync.sql`.
-   For existing projects, also run the newer `coach_chat_threads` and `coach_chat_realtime` migrations to enable separate saved Coach conversations and live cross-device updates.
+   For existing projects, also run the newer `coach_chat_threads`, `coach_chat_realtime`, and `private_diary_sharing` migrations. The sharing migration adds invite-only, read-only diary access; recipients must sign in with the exact invited email address before accepting.
 3. In **Authentication → URL Configuration**, set:
    - Site URL: `https://calorie-flow.vladimirdd96.workers.dev`
    - Redirect URL: `https://calorie-flow.vladimirdd96.workers.dev/**`

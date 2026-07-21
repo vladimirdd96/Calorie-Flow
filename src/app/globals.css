@@ -555,6 +555,38 @@ p { color: var(--muted); line-height: 1.55; }
 .account-user > span { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 14px; color: var(--mint); background: rgba(125,255,213,.08); }
 .account-user > div { min-width: 0; display: grid; gap: 4px; }
 .account-user small { color: var(--muted); font-size: 10px; }
+.sharing-section { margin: 0 0 34px; }
+.sharing-card { padding: 17px; display: grid; gap: 16px; border-radius: var(--radius-md); }
+.sharing-intro { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start; }
+.sharing-icon { width: 42px; height: 42px; display: grid; place-items: center; color: var(--mint); background: color-mix(in oklch, var(--mint) 10%, transparent); border-radius: 14px; }
+.sharing-intro strong { display: block; font-size: 13px; }
+.sharing-intro p, .sharing-signed-out { margin: 4px 0 0; font-size: 10px; line-height: 1.5; }
+.sharing-invite { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 9px; align-items: end; }
+.sharing-invite input { min-height: 44px; }
+.sharing-invite .secondary-button { min-height: 44px; padding: 0 13px; font-size: 11px; white-space: nowrap; }
+.sharing-notice { margin: 0; padding: 10px 11px; color: var(--mint-strong); background: color-mix(in oklch, var(--mint) 8%, transparent); border: 1px solid color-mix(in oklch, var(--mint) 25%, transparent); border-radius: 11px; font-size: 10px; line-height: 1.45; }
+.sharing-lists { display: grid; gap: 15px; padding-top: 2px; }
+.sharing-list-label { display: block; margin-bottom: 7px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.sharing-list { overflow: hidden; border: 1px solid var(--border); border-radius: 12px; }
+.sharing-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 58px; padding: 10px 12px; }
+.sharing-row + .sharing-row { border-top: 1px solid var(--border); }
+.sharing-row > div { min-width: 0; display: grid; gap: 3px; }
+.sharing-row strong, .sharing-row small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sharing-row strong { font-size: 12px; }
+.sharing-row small, .sharing-empty { color: var(--muted); font-size: 10px; }
+.sharing-empty { margin: 7px 0 0; line-height: 1.45; }
+.sharing-row .text-button { padding: 5px 0; font-size: 10px; }
+.secondary-button.compact { min-height: 34px; padding: 0 10px; font-size: 10px; }
+.shared-diary-sheet { display: grid; gap: 15px; }
+.shared-diary-sheet > p { margin: 0; font-size: 11px; }
+.shared-meal-list { overflow: hidden; }
+.shared-meal-list > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px; }
+.shared-meal-list > div + div { border-top: 1px solid var(--border); }
+.shared-meal-list > div > div { min-width: 0; display: grid; gap: 3px; }
+.shared-meal-list strong, .shared-meal-list small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shared-meal-list strong { font-size: 12px; }
+.shared-meal-list small, .shared-meal-list > div > span { color: var(--muted); font-size: 10px; }
+@media (max-width: 420px) { .sharing-invite { grid-template-columns: 1fr; } .sharing-invite .secondary-button { width: 100%; } }
 .magic-link-form { display: grid; gap: 10px; }
 .account-divider { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; }
 .account-divider::before, .account-divider::after { content: ""; height: 1px; flex: 1; background: var(--line); }

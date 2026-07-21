@@ -10,6 +10,10 @@ Supabase migrations are SQL files under `supabase/migrations/`, ordered by their
 
 The user-sync migration enables Row Level Security. Any new cloud table or operation must be scoped to `auth.uid()` and documented in `docs/CLOUD_SYNC_SETUP.md` when it changes setup requirements.
 
+## Private diary sharing
+
+`diary_shares` is an invite-only, read-only sharing table. Owners invite a normalized email address, and only the signed-in account with that address can accept through `accept_diary_share`. Accepted recipients can select the owner's meals and foods through narrowly scoped RLS policies; they cannot see profiles, modify a shared diary, or discover other users. Revoking a share removes read access immediately while retaining the owner's invitation record.
+
 ## Packaged-food catalogue
 
 Do not copy a global product catalogue into `user_foods`: it is a private, per-user sync table. The app searches Open Food Facts on demand, then persists only foods a user logs. This preserves offline access to the user's history and prevents a shared catalogue from consuming the free database tier.

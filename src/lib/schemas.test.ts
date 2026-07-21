@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { backupSchema, labelAnalysisSchema, mealSchema } from "./schemas";
+import { backupSchema, diaryShareSchema, labelAnalysisSchema, mealSchema } from "./schemas";
 
 const nutrition = { calories: 120, protein: 10, carbs: 12, fat: 4, fiber: 3, sugar: 2 };
 
@@ -58,5 +58,19 @@ describe("external data schemas", () => {
         onboardingDone: true,
       },
     })).toThrow();
+  });
+
+  it("only accepts a shared diary after it has a recipient", () => {
+    const invitation = {
+      id: "d4b47f94-9137-49aa-b5d4-e681bb1c3e17",
+      ownerId: "9b85bc95-00c2-4dbd-9df1-e2458ececf51",
+      recipientEmail: "friend@example.com",
+      scope: "diary" as const,
+      status: "accepted" as const,
+      createdAt: "2026-07-22T12:00:00.000Z",
+      acceptedAt: "2026-07-22T12:01:00.000Z",
+    };
+    expect(() => diaryShareSchema.parse(invitation)).toThrow("Accepted shares require a recipient.");
+    expect(diaryShareSchema.parse({ ...invitation, recipientId: "a9d05ff0-b060-4e0f-944f-a1cc2a2d96d9" }).status).toBe("accepted");
   });
 });

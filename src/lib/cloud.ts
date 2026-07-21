@@ -1,7 +1,8 @@
-import type { CoachChat, CoachMessage, Food, Meal, Profile } from "./types";
+import type { CoachChat, CoachMessage, DiaryShare, Food, Meal, Profile } from "./types";
 import { getSupabase } from "./supabase";
 import { z } from "zod";
-import { coachChatSchema, coachMessageSchema, foodSchema, mealSchema, profileSchema } from "./schemas";
+import { coachChatSchema, coachMessageSchema, diaryShareSchema, foodSchema, mealSchema, profileSchema } from "./schemas";
+import { prepareDiaryShareInvite } from "./diary-sharing";
 
 export type CloudSnapshot = {
   profile?: Profile;
@@ -10,6 +11,12 @@ export type CloudSnapshot = {
 };
 
 type CloudTable = "user_meals" | "user_foods";
+
+export type SharedDiarySnapshot = {
+  share: DiaryShare;
+  meals: Meal[];
+  foods: Food[];
+};
 
 function client() {
   const supabase = getSupabase();
@@ -24,6 +31,29 @@ function isCoachThreadsUnavailable(error: unknown) {
   const message = typeof record.message === "string" ? record.message : "";
   return code === "42P01" || code === "42703" || code === "PGRST204" || code === "PGRST205"
     || /coach_(?:chats|messages).*?(?:does not exist|not found|schema cache)/i.test(message);
+}
+
+function isDiarySharingUnavailable(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const record = error as Record<string, unknown>;
+  const code = record.code;
+  const message = typeof record.message === "string" ? record.message : "";
+  return code === "42P01" || code === "PGRST202" || code === "PGRST205"
+    || /diary_shares|accept_diary_share.*?(?:does not exist|not found|schema cache)/i.test(message);
+}
+
+function diaryShareFromRow(row: Record<string, unknown>) {
+  return diaryShareSchema.parse({
+    id: row.id,
+    ownerId: row.owner_id,
+    recipientEmail: row.recipient_email,
+    recipientId: row.recipient_id || undefined,
+    scope: row.scope,
+    status: row.status,
+    createdAt: row.created_at,
+    acceptedAt: row.accepted_at || undefined,
+    revokedAt: row.revoked_at || undefined,
+  });
 }
 
 async function getLegacyCoachMessages(userId: string): Promise<CoachMessage[]> {
@@ -98,6 +128,63 @@ export async function upsertCloudMeal(userId: string, meal: Meal) {
 export async function deleteCloudMeal(userId: string, mealId: string) {
   const { error } = await client().from("user_meals").delete().eq("user_id", userId).eq("id", mealId);
   if (error) throw error;
+}
+
+export async function getCloudDiaryShares(): Promise<DiaryShare[]> {
+  const { data, error } = await client()
+    .from("diary_shares")
+    .select("id,owner_id,recipient_email,recipient_id,scope,status,created_at,accepted_at,revoked_at")
+    .order("created_at", { ascending: false });
+  if (error) {
+    if (isDiarySharingUnavailable(error)) return [];
+    throw error;
+  }
+  return z.array(z.record(z.string(), z.unknown())).parse(data || []).map(diaryShareFromRow);
+}
+
+export async function inviteCloudDiaryShare(userId: string, ownerEmail: string | null | undefined, recipientEmail: string): Promise<DiaryShare> {
+  const normalizedEmail = prepareDiaryShareInvite(recipientEmail, ownerEmail);
+  const { data, error } = await client().from("diary_shares").insert({
+    owner_id: userId,
+    recipient_email: normalizedEmail,
+    scope: "diary",
+  }).select("id,owner_id,recipient_email,recipient_id,scope,status,created_at,accepted_at,revoked_at").single();
+  if (error) {
+    if (isDiarySharingUnavailable(error)) throw new Error("Diary sharing is not set up for this account yet.");
+    if (error.code === "23505") throw new Error("This person already has an invitation.");
+    throw error;
+  }
+  return diaryShareFromRow(z.record(z.string(), z.unknown()).parse(data));
+}
+
+export async function acceptCloudDiaryShare(shareId: string): Promise<DiaryShare> {
+  const { data, error } = await client().rpc("accept_diary_share", { share_id: shareId });
+  if (error) {
+    if (isDiarySharingUnavailable(error)) throw new Error("Diary sharing is not set up for this account yet.");
+    throw new Error("This invitation is unavailable.");
+  }
+  return diaryShareFromRow(z.record(z.string(), z.unknown()).parse(data));
+}
+
+export async function revokeCloudDiaryShare(userId: string, shareId: string) {
+  const { error } = await client().from("diary_shares").update({
+    status: "revoked",
+    recipient_id: null,
+    revoked_at: new Date().toISOString(),
+  }).eq("id", shareId).eq("owner_id", userId);
+  if (error) {
+    if (isDiarySharingUnavailable(error)) throw new Error("Diary sharing is not set up for this account yet.");
+    throw error;
+  }
+}
+
+export async function getSharedDiarySnapshot(share: DiaryShare): Promise<SharedDiarySnapshot> {
+  if (share.status !== "accepted") throw new Error("Accept this invitation before viewing the diary.");
+  const [meals, foods] = await Promise.all([
+    readAll("user_meals", share.ownerId, mealSchema),
+    readAll("user_foods", share.ownerId, foodSchema),
+  ]);
+  return { share, meals, foods };
 }
 
 export async function upsertCloudFood(userId: string, food: Food) {

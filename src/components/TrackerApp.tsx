@@ -69,12 +69,17 @@ import {
   deleteCloudCoachChat,
   deleteCloudMeal,
   getAllCloudCoachMessages,
+  acceptCloudDiaryShare,
   getCloudCoachChats,
+  getCloudDiaryShares,
   getCloudCoachMessages,
   getCloudSnapshot,
+  getSharedDiarySnapshot,
+  inviteCloudDiaryShare,
   mergeSnapshots,
   pushCloudSnapshot,
   replaceCloudSnapshot,
+  revokeCloudDiaryShare,
   saveCloudCoachMessage,
   saveCloudCoachChat,
   upsertCloudFood,
@@ -112,6 +117,7 @@ import type {
   CoachMealChoice,
   CoachMessage,
   DietPreset,
+  DiaryShare,
   Food,
   GoalMode,
   Meal,
@@ -1204,6 +1210,108 @@ function AccountCard({
   );
 }
 
+function DiarySharing({ user }: { user: CloudUser | null }) {
+  const [shares, setShares] = useState<DiaryShare[]>([]);
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [notice, setNotice] = useState("");
+  const [loading, setLoading] = useState(Boolean(user));
+  const [sending, setSending] = useState(false);
+  const [activeShare, setActiveShare] = useState<DiaryShare | null>(null);
+  const [sharedDiary, setSharedDiary] = useState<Awaited<ReturnType<typeof getSharedDiarySnapshot>> | null>(null);
+
+  const loadShares = useCallback(async () => {
+    if (!user) { setShares([]); setLoading(false); return; }
+    setLoading(true);
+    try {
+      setShares(await getCloudDiaryShares());
+    } catch {
+      setNotice("Couldn’t load diary sharing. Check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => { void loadShares(); });
+    return () => window.cancelAnimationFrame(frame);
+  }, [loadShares]);
+
+  const invite = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!user) return;
+    setSending(true); setNotice("");
+    try {
+      const share = await inviteCloudDiaryShare(user.id, user.email, recipientEmail);
+      setShares((current) => [share, ...current]);
+      setRecipientEmail("");
+      setNotice(`Invitation ready for ${share.recipientEmail}. They’ll need to sign in with that address to accept it.`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Couldn’t create that invitation.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const accept = async (share: DiaryShare) => {
+    setNotice("");
+    try {
+      const accepted = await acceptCloudDiaryShare(share.id);
+      setShares((current) => current.map((item) => item.id === accepted.id ? accepted : item));
+      setNotice("You can now view this shared diary. It stays read-only.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Couldn’t accept that invitation.");
+    }
+  };
+
+  const revoke = async (share: DiaryShare) => {
+    if (!user) return;
+    setNotice("");
+    try {
+      await revokeCloudDiaryShare(user.id, share.id);
+      setShares((current) => current.map((item) => item.id === share.id ? { ...item, status: "revoked", recipientId: undefined, revokedAt: new Date().toISOString() } : item));
+      setNotice("Access revoked. That diary is no longer visible to them.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Couldn’t revoke this share.");
+    }
+  };
+
+  const openSharedDiary = async (share: DiaryShare) => {
+    setActiveShare(share); setSharedDiary(null); setNotice("");
+    try {
+      setSharedDiary(await getSharedDiarySnapshot(share));
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Couldn’t open this shared diary.");
+      setActiveShare(null);
+    }
+  };
+
+  const sent = shares.filter((share) => share.ownerId === user?.id);
+  const received = shares.filter((share) => share.ownerId !== user?.id);
+  const recentMeals = sharedDiary?.meals
+    .slice()
+    .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+    .slice(0, 12) || [];
+
+  return <section className="sharing-section" aria-labelledby="diary-sharing-heading">
+    <div className="section-heading"><div><span className="eyebrow">Private accountability</span><h2 id="diary-sharing-heading">Share a read-only diary</h2></div></div>
+    <div className="sharing-card card">
+      <div className="sharing-intro"><span className="sharing-icon"><Share2 size={19} /></span><div><strong>Invite people you trust</strong><p>Only the invited email can accept. They can see meals and saved foods, never your targets, profile, Coach, or edit controls.</p></div></div>
+      {user ? <form className="sharing-invite" onSubmit={invite}>
+        <label><span>Invite by email</span><input type="email" autoComplete="email" value={recipientEmail} onChange={(event) => setRecipientEmail(event.target.value)} placeholder="friend@example.com" required /></label>
+        <button className="secondary-button" type="submit" disabled={sending}>{sending ? "Sending…" : "Create invitation"}</button>
+      </form> : <p className="sharing-signed-out">Sign in to create or receive a private diary invitation.</p>}
+      {notice && <p className="sharing-notice" role="status">{notice}</p>}
+      {user && <div className="sharing-lists">
+        <div><span className="sharing-list-label">Sent invitations</span>{loading ? <p className="sharing-empty">Loading invitations…</p> : sent.length ? <div className="sharing-list">{sent.map((share) => <div key={share.id} className="sharing-row"><div><strong>{share.recipientEmail}</strong><small>{share.status === "accepted" ? "Viewing your diary" : share.status === "pending" ? "Waiting to accept" : "Access revoked"}</small></div>{share.status !== "revoked" && <button className="text-button danger-hover" type="button" onClick={() => void revoke(share)}>Revoke</button>}</div>)}</div> : <p className="sharing-empty">No invitations sent.</p>}</div>
+        <div><span className="sharing-list-label">Shared with you</span>{loading ? <p className="sharing-empty">Loading invitations…</p> : received.length ? <div className="sharing-list">{received.map((share) => <div key={share.id} className="sharing-row"><div><strong>Private diary</strong><small>{share.status === "pending" ? `Invitation for ${share.recipientEmail}` : share.status === "accepted" ? "Read-only access" : "Access revoked"}</small></div>{share.status === "pending" ? <button className="secondary-button compact" type="button" onClick={() => void accept(share)}>Accept</button> : share.status === "accepted" ? <button className="secondary-button compact" type="button" onClick={() => void openSharedDiary(share)}>View diary</button> : null}</div>)}</div> : <p className="sharing-empty">No one has shared a diary with you.</p>}</div>
+      </div>}
+    </div>
+    {activeShare && <Sheet label="Shared diary" onClose={() => { setActiveShare(null); setSharedDiary(null); }}>
+      <div className="shared-diary-sheet"><div className="sheet-header"><div><span className="eyebrow">Read-only diary</span><h2>Shared meals</h2></div><span /></div>{sharedDiary ? <><p>Recent entries shared privately with you. You cannot edit, copy over, or expose this diary to anyone else.</p>{recentMeals.length ? <div className="card shared-meal-list">{recentMeals.map((meal) => <div key={meal.id}><div><strong>{meal.name}</strong><small>{meal.mealType} · {new Date(meal.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</small></div><span>{meal.nutrition.protein.toFixed(0)} g protein</span></div>)}</div> : <p className="sharing-empty">There are no meals in this diary yet.</p>}</> : <p className="sharing-empty">Opening shared diary…</p>}</div>
+    </Sheet>}
+  </section>;
+}
+
 function ProfileView({
   profile,
   onSave,
@@ -1305,6 +1413,7 @@ function ProfileView({
           <button className="secondary-button" type="button" onClick={onRestartOnboarding}><RotateCcw size={16} />Run setup again</button>
         </section>
         <AccountCard user={user} syncState={syncState} onSignOut={onSignOut} />
+        <DiarySharing user={user} />
       </div> : <div id="customize-panel" role="tabpanel" aria-labelledby="customize-tab" tabIndex={0}>
         <section className="customize-intro" aria-labelledby="customize-heading"><div><span className="eyebrow">Your preferences</span><h2 id="customize-heading">A calmer tracker, your way</h2><p>These choices only change how Calorie Flow feels and what it shows. Your diary stays private on this device.</p></div></section>
         <MeasurementPreferences profile={profile} onChange={(measurementSystem) => onSave({ ...profile, measurementSystem })} />
