@@ -22,6 +22,7 @@ import {
   Mail,
   Menu,
   MessageCircle,
+  Mic,
   MoreHorizontal,
   ArrowRightLeft,
   BookOpen,
@@ -100,6 +101,7 @@ import { hydrationTotal, setWaterAmount } from "@/lib/hydration";
 import { activeFast, fastingProgress, fastingWindowHours } from "@/lib/fasting";
 import { groceryItemsForPlan, recipeMeal } from "@/lib/planning";
 import { mealsCsv } from "@/lib/reports";
+import { normalizeVoiceFoodQuery } from "@/lib/voice";
 import { coachMealActionSchema, coachMealChoiceSchema, labelAnalysisSchema, mealPhotoAnalysisSchema } from "@/lib/schemas";
 import { getSupabase, type CloudUser, type SocialAuthProvider } from "@/lib/supabase";
 import type {
@@ -1762,6 +1764,7 @@ function AddFoodSheet({ foods, initialView = "start", initialMealType, onLog, on
   const [intakeDraft, setIntakeDraft] = useState("");
   const [coachReply, setCoachReply] = useState("");
   const [askingCoach, setAskingCoach] = useState(false);
+  const [listening, setListening] = useState(false);
   const [pendingImages, setPendingImages] = useState<File[]>([]);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const searchRequestRef = useRef(0);
@@ -1833,6 +1836,24 @@ function AddFoodSheet({ foods, initialView = "start", initialMealType, onLog, on
       setIntakeError(caught instanceof Error ? caught.message : "The Coach is unavailable right now.");
     } finally { setAskingCoach(false); }
   };
+  const startVoiceSearch = () => {
+    type VoiceResult = { 0?: { transcript?: string } };
+    type VoiceRecognition = { lang: string; interimResults: boolean; maxAlternatives: number; start: () => void; onresult?: (event: { results: { [index: number]: VoiceResult } }) => void; onerror?: () => void; onend?: () => void };
+    type VoiceRecognitionConstructor = new () => VoiceRecognition;
+    const browser = window as unknown as { SpeechRecognition?: VoiceRecognitionConstructor; webkitSpeechRecognition?: VoiceRecognitionConstructor };
+    const Recognition = browser.SpeechRecognition || browser.webkitSpeechRecognition;
+    if (!Recognition) { setIntakeError("Voice logging is not available in this browser. Type a food name instead."); return; }
+    const recognition = new Recognition();
+    recognition.lang = navigator.language || "en-US"; recognition.interimResults = false; recognition.maxAlternatives = 1;
+    recognition.onresult = (event) => {
+      const phrase = normalizeVoiceFoodQuery(event.results[0]?.[0]?.transcript || "");
+      if (!phrase) { setIntakeError("I didn’t catch a food name. Try again or type it instead."); return; }
+      setIntakeDraft(phrase); setQuery(phrase); changeView("search"); void runSearch(phrase);
+    };
+    recognition.onerror = () => setIntakeError("Voice logging stopped before a food name was captured. Try again or type it instead.");
+    recognition.onend = () => setListening(false);
+    setListening(true); setIntakeError(""); recognition.start();
+  };
   const addImages = (files?: FileList | File[]) => {
     if (!files?.length) return;
     setPendingImages(Array.from(files).slice(0, 3));
@@ -1895,7 +1916,7 @@ function AddFoodSheet({ foods, initialView = "start", initialMealType, onLog, on
   return (
     <div className="coach-intake" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); addImages(event.dataTransfer.files); }}>
       <div className="sheet-header"><span /><div><span className="eyebrow">Log with Coach</span><h2>Add food or get help</h2></div><span /></div>
-      <div className="intake-actions"><button onClick={() => changeView("scan")}><ScanLine size={17} />Barcode</button><button onClick={() => { setPendingImages([]); changeView("camera"); }}><Camera size={17} />Take photo</button><button onClick={() => imageInputRef.current?.click()}><Upload size={17} />Add photos</button></div>
+      <div className="intake-actions"><button onClick={() => changeView("scan")}><ScanLine size={17} />Barcode</button><button onClick={() => { setPendingImages([]); changeView("camera"); }}><Camera size={17} />Take photo</button><button onClick={() => imageInputRef.current?.click()}><Upload size={17} />Add photos</button><button type="button" onClick={startVoiceSearch} disabled={listening}><Mic size={17} />{listening ? "Listening…" : "Voice"}</button></div>
       <input ref={imageInputRef} className="visually-hidden-file" type="file" accept="image/*" capture="environment" multiple onChange={(event) => addImages(event.target.files || undefined)} />
       <label className="intake-input-label" htmlFor="coach-intake">Search a food or ask Coach</label>
       <form className="intake-composer" onSubmit={sendIntake}><input id="coach-intake" autoFocus value={intakeDraft} onChange={(event) => setIntakeDraft(event.target.value)} placeholder="Food or question" /><button type="submit" disabled={!intakeDraft.trim() || askingCoach} aria-label="Send to Coach">{askingCoach ? <span className="coach-loader" /> : <Send />}</button></form>
