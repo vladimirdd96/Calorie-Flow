@@ -22,6 +22,7 @@ import {
   Menu,
   MessageCircle,
   MoreHorizontal,
+  ArrowRightLeft,
   ListChecks,
   Package,
   Pencil,
@@ -456,7 +457,7 @@ function FoodAvatar({ food, name }: { food?: Food; name?: string }) {
   return <div className="food-avatar fallback">{(name || food?.name || "F").slice(0, 1).toUpperCase()}</div>;
 }
 
-function MealRow({ meal, onDelete, onEdit, onDuplicate, onDragStart, onDragOver, onDrop, dropPosition, hideCalories }: { meal: Meal; onDelete: () => void; onEdit: () => void; onDuplicate: () => void; onDragStart: (meal: Meal, event: React.DragEvent<HTMLDivElement>) => void; onDragOver: (event: React.DragEvent<HTMLDivElement>) => void; onDrop: (event: React.DragEvent<HTMLDivElement>) => void; dropPosition?: "before" | "after"; hideCalories: boolean }) {
+function MealRow({ meal, onDelete, onEdit, onDuplicate, onMove, onDragStart, onDragOver, onDrop, dropPosition, hideCalories }: { meal: Meal; onDelete: () => void; onEdit: () => void; onDuplicate: () => void; onMove: () => void; onDragStart: (meal: Meal, event: React.DragEvent<HTMLDivElement>) => void; onDragOver: (event: React.DragEvent<HTMLDivElement>) => void; onDrop: (event: React.DragEvent<HTMLDivElement>) => void; dropPosition?: "before" | "after"; hideCalories: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLSpanElement>(null);
   useEffect(() => {
@@ -480,9 +481,14 @@ function MealRow({ meal, onDelete, onEdit, onDuplicate, onDragStart, onDragOver,
         <span>{meal.amount} {formatUnit(meal.unit, meal.amount)} · P {meal.nutrition.protein} · C {meal.nutrition.carbs} · F {meal.nutrition.fat}</span>
       </div>
       {!hideCalories && <strong className="meal-kcal"><span>{Math.round(meal.nutrition.calories)}</span><small>kcal</small></strong>}
-      <span ref={menuRef} className="meal-actions"><button type="button" className="meal-menu-trigger" onClick={() => setMenuOpen((open) => !open)} aria-label={`Options for ${meal.name}`} aria-expanded={menuOpen}><MoreHorizontal size={18} /></button>{menuOpen && <span className="meal-action-menu" role="menu"><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onEdit(); }}><Pencil size={14} />Edit</button><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onDuplicate(); }}><Copy size={14} />Duplicate</button><button type="button" role="menuitem" className="danger" onClick={() => { setMenuOpen(false); onDelete(); }}><Trash2 size={14} />Delete</button></span>}</span>
+      <span ref={menuRef} className="meal-actions"><button type="button" className="meal-menu-trigger" onClick={() => setMenuOpen((open) => !open)} aria-label={`Options for ${meal.name}`} aria-expanded={menuOpen}><MoreHorizontal size={18} /></button>{menuOpen && <span className="meal-action-menu" role="menu"><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onMove(); }}><ArrowRightLeft size={14} />Move</button><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onEdit(); }}><Pencil size={14} />Edit</button><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onDuplicate(); }}><Copy size={14} />Duplicate</button><button type="button" role="menuitem" className="danger" onClick={() => { setMenuOpen(false); onDelete(); }}><Trash2 size={14} />Delete</button></span>}</span>
     </div>
   );
+}
+
+function MoveMealSheet({ meal, onMove, onClose }: { meal: Meal; onMove: (mealType: MealType) => void; onClose: () => void }) {
+  const [mealType, setMealType] = useState<MealType>(meal.mealType);
+  return <div className="meal-editor duplicate-meal-sheet"><div className="sheet-header"><div><span className="eyebrow">Your diary</span><h2>Move meal</h2></div></div><div className="duplicate-meal-copy"><strong>{meal.name}</strong><p>Choose a meal section. On mobile, this is the quickest way to move food.</p></div><label className="meal-editor-form"><span>Move to</span><ThemedSelect ariaLabel="Move to" value={mealType} onChange={(value) => setMealType(value as MealType)} options={(Object.keys(mealLabels) as MealType[]).map((type) => ({ value: type, label: mealLabels[type] }))} /></label><div className="sheet-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="button" className="primary-button" onClick={() => onMove(mealType)}><ArrowRightLeft size={17} />Move meal</button></div></div>;
 }
 
 function DuplicateMealSheet({ meal, onDuplicate, onClose }: { meal: Meal; onDuplicate: (mealType: MealType) => void; onClose: () => void }) {
@@ -514,16 +520,6 @@ function MealEditor({ meal, onSave, onClose, hideCalories }: { meal: Meal; onSav
   </div>;
 }
 
-function EmptyMeals({ onAdd }: { onAdd: () => void }) {
-  return (
-    <button className="empty-meals" onClick={onAdd}>
-      <span className="empty-icon"><Plus size={20} /></span>
-      <span><strong>Log your first food</strong><small>It takes a few seconds.</small></span>
-      <ChevronRight size={18} />
-    </button>
-  );
-}
-
 function HomeScreenPrompt({ onDismiss }: { onDismiss: () => void }) {
   return (
     <section className="home-screen-prompt card" aria-labelledby="home-screen-prompt-title">
@@ -538,6 +534,10 @@ function HomeScreenPrompt({ onDismiss }: { onDismiss: () => void }) {
   );
 }
 
+function MealAddRow({ mealType, onAdd }: { mealType: MealType; onAdd: (mealType: MealType) => void }) {
+  return <button type="button" className="meal-add-row" onClick={() => onAdd(mealType)}><span className="meal-add-icon"><Plus size={17} /></span><span>Add food to {mealLabels[mealType]}</span></button>;
+}
+
 function TodayView({
   profile,
   meals,
@@ -549,6 +549,7 @@ function TodayView({
   onEdit,
   onDropMeal,
   onDuplicate,
+  onMove,
   syncLabel,
   showHomeScreenPrompt,
   onDismissHomeScreenPrompt,
@@ -558,12 +559,13 @@ function TodayView({
   meals: Meal[];
   dateKey: string;
   onDateChange: (date: string) => void;
-  onAdd: () => void;
+  onAdd: (mealType?: MealType) => void;
   onOpenCoach: () => void;
   onDelete: (id: string) => void;
   onEdit: (meal: Meal) => void;
   onDropMeal: (meal: Meal, mealType: MealType, targetMealId?: string, insertAfter?: boolean) => void;
   onDuplicate: (meal: Meal) => void;
+  onMove: (meal: Meal) => void;
   syncLabel: string;
   showHomeScreenPrompt: boolean;
   onDismissHomeScreenPrompt: () => void;
@@ -612,12 +614,13 @@ function TodayView({
       </button>
 
       <section className="log-section">
-        <div className="section-heading"><div><span className="eyebrow">Daily log</span><h2>Your meals</h2></div><button className="text-button" onClick={onAdd}><Plus size={17} /> Add food</button></div>
-        {meals.length === 0 ? <EmptyMeals onAdd={onAdd} /> : grouped.map(({ type, meals: groupMeals }) => (
+        <div className="section-heading"><div><span className="eyebrow">Daily log</span><h2>Your meals</h2></div></div>
+        {grouped.map(({ type, meals: groupMeals }) => (
           <div className="meal-group" key={type}>
             <div className="meal-group-title"><span>{mealLabels[type]}</span>{!profile.hideCalories && <span>{Math.round(sumNutrition(groupMeals.map((meal) => meal.nutrition)).calories)} kcal</span>}</div>
             <div className={`meal-list card ${dropTarget === type ? "drop-target" : ""}`} onDragOver={(event) => { event.preventDefault(); setDropTarget(type); }} onDragLeave={() => setDropTarget(undefined)} onDrop={(event) => { event.preventDefault(); const mealId = event.dataTransfer.getData("text/meal-id"); const meal = meals.find((candidate) => candidate.id === mealId); if (meal) onDropMeal(meal, type); setDropTarget(undefined); }}>
-              {groupMeals.length ? groupMeals.map((meal) => <MealRow key={meal.id} meal={meal} hideCalories={profile.hideCalories} dropPosition={dropTarget === `${type}:${meal.id}:before` ? "before" : dropTarget === `${type}:${meal.id}:after` ? "after" : undefined} onDelete={() => onDelete(meal.id)} onEdit={() => onEdit(meal)} onDuplicate={() => onDuplicate(meal)} onDragStart={(draggedMeal, event) => { event.dataTransfer.setData("text/meal-id", draggedMeal.id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); setDropTarget(`${type}:${meal.id}:${event.clientY < rect.top + rect.height / 2 ? "before" : "after"}`); }} onDrop={(event) => { event.preventDefault(); event.stopPropagation(); const mealId = event.dataTransfer.getData("text/meal-id"); const draggedMeal = meals.find((candidate) => candidate.id === mealId); if (draggedMeal) { const rect = event.currentTarget.getBoundingClientRect(); onDropMeal(draggedMeal, type, meal.id, event.clientY >= rect.top + rect.height / 2); } setDropTarget(undefined); }} />) : <div className="empty-meal-drop">Drop food here</div>}
+              {groupMeals.map((meal) => <MealRow key={meal.id} meal={meal} hideCalories={profile.hideCalories} dropPosition={dropTarget === `${type}:${meal.id}:before` ? "before" : dropTarget === `${type}:${meal.id}:after` ? "after" : undefined} onDelete={() => onDelete(meal.id)} onEdit={() => onEdit(meal)} onDuplicate={() => onDuplicate(meal)} onMove={() => onMove(meal)} onDragStart={(draggedMeal, event) => { event.dataTransfer.setData("text/meal-id", draggedMeal.id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); setDropTarget(`${type}:${meal.id}:${event.clientY < rect.top + rect.height / 2 ? "before" : "after"}`); }} onDrop={(event) => { event.preventDefault(); event.stopPropagation(); const mealId = event.dataTransfer.getData("text/meal-id"); const draggedMeal = meals.find((candidate) => candidate.id === mealId); if (draggedMeal) { const rect = event.currentTarget.getBoundingClientRect(); onDropMeal(draggedMeal, type, meal.id, event.clientY >= rect.top + rect.height / 2); } setDropTarget(undefined); }} />)}
+              <MealAddRow mealType={type} onAdd={onAdd} />
             </div>
           </div>
         ))}
@@ -1542,12 +1545,12 @@ function ManualFood({ initialBarcode, notice, onSave, onClose, hideCalories }: {
   );
 }
 
-function PortionSheet({ food, questions, onLog, onClose, hideCalories }: { food: Food; questions?: string[]; onLog: (meal: Meal, food: Food) => void; onClose: () => void; hideCalories: boolean }) {
+function PortionSheet({ food, questions, initialMealType, onLog, onClose, hideCalories }: { food: Food; questions?: string[]; initialMealType?: MealType; onLog: (meal: Meal, food: Food) => void; onClose: () => void; hideCalories: boolean }) {
   const units = contextualUnits(food);
   const initialUnit: ServingUnit = food.packageGrams ? "package" : food.servingGrams ? "serving" : "g";
   const [unit, setUnit] = useState<ServingUnit>(initialUnit);
   const [amount, setAmount] = useState(initialUnit === "g" ? 100 : 1);
-  const [mealType, setMealType] = useState<MealType>(() => suggestedMealType());
+  const [mealType, setMealType] = useState<MealType>(() => initialMealType || suggestedMealType());
   const [loggedDate, setLoggedDate] = useState(localDateKey());
   const grams = gramsFor(food, amount, unit);
   const nutrition = scaleNutrition(food.nutrientsPer100, grams);
@@ -1588,7 +1591,7 @@ function PortionSheet({ food, questions, onLog, onClose, hideCalories }: { food:
   );
 }
 
-function AddFoodSheet({ foods, initialView = "start", onLog, onMealPhoto, onSaveFood, hideCalories }: { foods: Food[]; initialView?: AddView; onLog: (meal: Meal, food: Food) => void; onMealPhoto: (analysis: MealPhotoAnalysis) => void; onSaveFood: (food: Food) => Promise<void>; hideCalories: boolean }) {
+function AddFoodSheet({ foods, initialView = "start", initialMealType, onLog, onMealPhoto, onSaveFood, hideCalories }: { foods: Food[]; initialView?: AddView; initialMealType?: MealType; onLog: (meal: Meal, food: Food) => void; onMealPhoto: (analysis: MealPhotoAnalysis) => void; onSaveFood: (food: Food) => Promise<void>; hideCalories: boolean }) {
   const [view, setView] = useState<AddView>(initialView);
   const [selected, setSelected] = useState<Food>();
   const [questions, setQuestions] = useState<string[]>([]);
@@ -1713,7 +1716,7 @@ function AddFoodSheet({ foods, initialView = "start", onLog, onMealPhoto, onSave
     if (labeledFood.barcode) await barcode(labeledFood.barcode, labeledFood, followUps, true);
     else await saveAndPick(labeledFood, followUps);
   };
-  if (selected) return <PortionSheet food={selected} questions={questions} hideCalories={hideCalories} onLog={onLog} onClose={() => setSelected(undefined)} />;
+  if (selected) return <PortionSheet food={selected} questions={questions} initialMealType={initialMealType} hideCalories={hideCalories} onLog={onLog} onClose={() => setSelected(undefined)} />;
   if (view === "scan") return <>{loading && <div className="global-loader"><i />Looking up product…</div>}<BarcodeScanner onResult={barcode} onClose={() => changeView("start")} /></>;
   if (view === "camera") return <LabelReader initialFiles={pendingImages} initialAction="camera" onFood={(food, followUps) => { void handleLabelFood(food, followUps); }} onClose={() => { setPendingImages([]); changeView("start"); }} />;
   if (view === "photo") return <MealPhotoReader onMeal={onMealPhoto} onClose={() => changeView("start")} />;
@@ -2241,6 +2244,8 @@ export function TrackerApp() {
   const [directFood, setDirectFood] = useState<Food>();
   const [editingMeal, setEditingMeal] = useState<Meal>();
   const [duplicateMealDraft, setDuplicateMealDraft] = useState<Meal>();
+  const [moveMealDraft, setMoveMealDraft] = useState<Meal>();
+  const [initialMealType, setInitialMealType] = useState<MealType>();
   const [toast, setToast] = useState("");
   const [syncState, setSyncState] = useState<SyncState>("local");
   const [syncAttempt, setSyncAttempt] = useState(0);
@@ -2411,7 +2416,7 @@ export function TrackerApp() {
     await Promise.all([put("meals", savedMeal), put("foods", food)]);
     setMeals((current) => [...current, savedMeal]);
     setFoods((current) => [food, ...current.filter((item) => item.id !== food.id)]);
-    setAdding(false); setDirectFood(undefined); setDateKey(loggedDate); setToast(`${food.name} logged`); setTab("today");
+    setAdding(false); setDirectFood(undefined); setInitialMealType(undefined); setDateKey(loggedDate); setToast(`${food.name} logged`); setTab("today");
     syncWrite(async (userId) => { await Promise.all([upsertCloudMeal(userId, savedMeal), upsertCloudFood(userId, food)]); });
   };
   const saveFood = async (food: Food) => {
@@ -2544,8 +2549,8 @@ export function TrackerApp() {
       ]);
     });
   };
-  const openAdd = (view: AddView = "start") => { setInitialAddView(view); setAdding(true); };
-  const selectFood = (food: Food) => { setDirectFood(food); setAdding(true); };
+  const openAdd = (view: AddView = "start", mealType?: MealType) => { setInitialAddView(view); setInitialMealType(mealType); setAdding(true); };
+  const selectFood = (food: Food) => { setInitialMealType(undefined); setDirectFood(food); setAdding(true); };
   const signOut = async () => { await auth.signOut(); };
   const changeTheme = (nextTheme: ThemeMode) => {
     setTheme(nextTheme);
@@ -2573,22 +2578,23 @@ export function TrackerApp() {
   if (startupError) return <main className="app-loading load-error" role="alert"><Database size={30} /><h1>Diary unavailable</h1><p>{startupError}</p><button className="primary-button" onClick={() => { setStartupError(""); void refresh().catch(() => setStartupError("Your private diary could not be opened. Your data has not been reset.")); }}>Try again</button></main>;
   if (!ready || !auth.ready) return <div className="app-loading" role="status" aria-label="Opening your private diary"><BrandMark large /><i /></div>;
   if (auth.passwordRecovery || !auth.user) return <AuthGateway key={auth.passwordRecovery ? "recovery" : "sign-in"} configured={auth.configured} passwordRecovery={auth.passwordRecovery} onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} />;
-  const modalOpen = adding || !!editingMeal || !!duplicateMealDraft || calendarOpen || !profile.onboardingDone || measurementPromptOpen || weightPromptOpen;
+  const modalOpen = adding || !!editingMeal || !!duplicateMealDraft || !!moveMealDraft || calendarOpen || !profile.onboardingDone || measurementPromptOpen || weightPromptOpen;
   return (
     <div className="app-shell">
       <div className="ambient one" /><div className="ambient two" />
       <div className="content-shell" inert={modalOpen} aria-hidden={modalOpen || undefined}>
-        {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={() => openAdd()} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} onEdit={setEditingMeal} onDropMeal={dropMeal} onDuplicate={setDuplicateMealDraft} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} onDismissHomeScreenPrompt={() => setShowHomeScreenPrompt(false)} onOpenCalendar={() => setCalendarOpen(true)} />}
+        {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={(mealType) => openAdd("start", mealType)} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} onEdit={setEditingMeal} onDropMeal={dropMeal} onDuplicate={setDuplicateMealDraft} onMove={setMoveMealDraft} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} onDismissHomeScreenPrompt={() => setShowHomeScreenPrompt(false)} onOpenCalendar={() => setCalendarOpen(true)} />}
         {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={openAdd} />}
         {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} chatTextSize={chatTextSize} onLogCoachMeal={logCoachMeal} onOpenAccount={() => setTab("profile")} onOpenAdd={openAdd} />}
         {tab === "insights" && <InsightsView meals={meals} profile={profile} onSave={saveProfile} weightTrackingEnabled={weightTrackingEnabled} />}
       {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onRestartOnboarding={restartOnboarding} onExport={exportBackup} onImport={restoreBackup} user={auth.user} syncState={syncState} onSignOut={signOut} theme={theme} onThemeChange={changeTheme} chatTextSize={chatTextSize} onChatTextSizeChange={changeChatTextSize} weightTracking={profile.weightTracking} />}
       </div>
       <div inert={modalOpen} aria-hidden={modalOpen || undefined}><BottomNav tab={tab} onChange={(nextTab) => { window.scrollTo(0, 0); setTab(nextTab); }} /></div>
-      {adding && profile.onboardingDone && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); }} wide>{directFood ? <PortionSheet food={directFood} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} onLog={logMeal} onMealPhoto={addPhotoMeal} onSaveFood={saveFood} />}</Sheet>}
+      {adding && profile.onboardingDone && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); setInitialMealType(undefined); }} wide>{directFood ? <PortionSheet food={directFood} initialMealType={initialMealType} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} initialMealType={initialMealType} onLog={logMeal} onMealPhoto={addPhotoMeal} onSaveFood={saveFood} />}</Sheet>}
       {calendarOpen && <Sheet onClose={() => setCalendarOpen(false)} wide label="Calendar"><CalendarSheet dateKey={dateKey} meals={meals} profile={profile} onDateChange={setDateKey} onClose={() => setCalendarOpen(false)} /></Sheet>}
       {editingMeal && <Sheet onClose={() => setEditingMeal(undefined)} label="Edit meal"><MealEditor meal={editingMeal} hideCalories={profile.hideCalories} onSave={(meal) => editingMeal.id.startsWith("photo-") ? saveNewMeal(meal) : saveEditedMeal(meal)} onClose={() => setEditingMeal(undefined)} /></Sheet>}
       {duplicateMealDraft && <Sheet onClose={() => setDuplicateMealDraft(undefined)} label="Duplicate meal" className="duplicate-meal-dialog"><DuplicateMealSheet meal={duplicateMealDraft} onDuplicate={(mealType) => void duplicateMeal(duplicateMealDraft, mealType)} onClose={() => setDuplicateMealDraft(undefined)} /></Sheet>}
+      {moveMealDraft && <Sheet onClose={() => setMoveMealDraft(undefined)} label="Move meal" className="duplicate-meal-dialog"><MoveMealSheet meal={moveMealDraft} onMove={(mealType) => { void dropMeal(moveMealDraft, mealType); setMoveMealDraft(undefined); }} onClose={() => setMoveMealDraft(undefined)} /></Sheet>}
       {!profile.onboardingDone && <OnboardingDialog profile={profile} onSave={finishOnboarding} onCancel={onboardingOrigin ? cancelOnboarding : undefined} />}
       {measurementPromptOpen && <MeasurementPreferencePrompt profile={profile} onSave={saveProfile} />}
       {weightPromptOpen && !measurementPromptOpen && <WeightTrackingPrompt onEnable={enableWeightTracking} onDisable={disableWeightTracking} onDefer={deferWeightTracking} />}

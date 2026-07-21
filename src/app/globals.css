@@ -178,9 +178,12 @@ p { color: var(--muted); line-height: 1.55; }
 .meal-group-title { display: flex; justify-content: space-between; padding: 0 4px 9px; color: var(--muted); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
 .meal-list { min-height: 58px; border-radius: var(--radius-md); overflow: visible; transition: border-color .2s ease, background .2s ease; }
 .meal-list.drop-target { border-color: var(--mint); background: rgba(125,255,213,.08); }
-.empty-meal-drop { min-height: 58px; display: grid; place-items: center; color: var(--muted-2); font-size: 11px; font-weight: 700; }
 .meal-row { position: relative; display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto auto; align-items: center; gap: 9px; padding: 14px; cursor: grab; }
 .meal-row:active { cursor: grabbing; }
+.meal-add-row { width: 100%; min-height: 55px; display: flex; align-items: center; gap: 10px; padding: 10px 14px; color: var(--muted); background: transparent; border: 0; border-top: 1px solid var(--border); font-size: 12px; font-weight: 800; text-align: left; transition: color .18s ease, background .18s ease; }
+.meal-add-row:hover, .meal-add-row:focus-visible { color: var(--mint-strong); background: color-mix(in oklch, var(--mint) 7%, transparent); }
+.meal-add-icon { width: 28px; height: 28px; display: grid; place-items: center; color: var(--mint); border: 1px dashed var(--border-strong); border-radius: 9px; }
+.meal-row[draggable="true"] { touch-action: pan-y; }
 .meal-row.drop-before { box-shadow: inset 0 3px 0 var(--mint); }
 .meal-row.drop-after { box-shadow: inset 0 -3px 0 var(--mint); }
 .meal-drag-handle { display: grid; place-items: center; color: var(--muted-2); }
