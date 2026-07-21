@@ -845,6 +845,8 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
   .coach-mobile-menu { width: 34px; height: 34px; display: grid; place-items: center; align-self: center; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 11px; }
   .coach-mobile-menu:hover, .coach-mobile-menu:focus-visible { color: var(--mint-strong); border-color: var(--border-strong); }
   .coach-mobile-backdrop { position: fixed; inset: 0; z-index: 30; display: block; padding: 0; border: 0; background: rgba(4, 10, 9, .46); }
+  .coach-new-chat { min-height: 34px; gap: 4px; padding: 0 7px; }
+  .coach-new-chat-label { display: none; }
   .coach-header h1 { max-width: 24ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 20px; }
   .coach-layout { display: flex; flex-direction: column; gap: 8px; min-height: 0; flex: 1 1 0; }
   .coach-history { position: fixed; inset: 0 auto 0 0; z-index: 40; width: min(86vw, 320px); display: grid; align-content: start; padding: max(22px, env(safe-area-inset-top)) 14px 22px; overflow-y: auto; border-radius: 0 24px 24px 0; background: var(--panel); box-shadow: 18px 0 50px rgba(0, 0, 0, .22); transform: translateX(-105%); transition: transform .22s ease; }

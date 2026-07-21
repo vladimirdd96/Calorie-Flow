@@ -1623,10 +1623,13 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, onLogCoachMeal,
     getCloudCoachChats(user.id).then(async (storedChats) => {
       if (!active) return;
       let available = storedChats;
-      if (!available.length) {
+      if (!available.length || historyAttempt === 0) {
         const now = new Date().toISOString();
         const chat: CoachChat = { id: crypto.randomUUID(), title: "New conversation", createdAt: now, updatedAt: now };
-        await saveCloudCoachChat(user.id, chat); available = [chat];
+        try { await saveCloudCoachChat(user.id, chat); } catch (error) {
+          if (!available.length) throw error;
+        }
+        available = [chat, ...available];
       }
       const chat = available[0];
       const stored = await getCloudCoachMessages(user.id, chat.id);
@@ -1767,7 +1770,7 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, onLogCoachMeal,
     if (!user) return;
     const now = new Date().toISOString();
     const chat: CoachChat = { id: crypto.randomUUID(), title: "New conversation", createdAt: now, updatedAt: now };
-    await saveCloudCoachChat(user.id, chat); setChats((current) => [chat, ...current]); setActiveChatId(chat.id); setMessages([]);
+    await saveCloudCoachChat(user.id, chat); setChats((current) => [chat, ...current]); setActiveChatId(chat.id); setMessages([]); setMobileHistoryOpen(false);
   };
   const beginRename = (chat: CoachChat) => {
     setRenamingChatId(chat.id);
@@ -1866,7 +1869,7 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, onLogCoachMeal,
   const remainingGroceries = accountGroceryItems.filter((item) => !item.checked).length;
   return (
     <main className={`page coach-page coach-text-${chatTextSize}`}>
-      <header className="coach-header">{section === "chat" && <button className="coach-mobile-menu" type="button" aria-expanded={mobileHistoryOpen} aria-controls="coach-history-drawer" aria-label={mobileHistoryOpen ? "Close previous chats" : "Open previous chats"} onClick={() => setMobileHistoryOpen((open) => !open)}>{mobileHistoryOpen ? <X size={19} /> : <Menu size={19} />}</button>}<div><span className="eyebrow">Your food companion</span><h1>{section === "chat" ? activeChat?.title || "New conversation" : "Coach"}</h1></div>{section === "chat" && <div className="coach-header-actions">{messages.length > 0 && <button className="text-button muted" onClick={() => void clear()}>Clear</button>}</div>}</header>
+      <header className="coach-header">{section === "chat" && <button className="coach-mobile-menu" type="button" aria-expanded={mobileHistoryOpen} aria-controls="coach-history-drawer" aria-label={mobileHistoryOpen ? "Close previous chats" : "Open previous chats"} onClick={() => setMobileHistoryOpen((open) => !open)}>{mobileHistoryOpen ? <X size={19} /> : <Menu size={19} />}</button>}<div><span className="eyebrow">Your food companion</span><h1>{section === "chat" ? activeChat?.title || "New conversation" : "Coach"}</h1></div>{section === "chat" && <div className="coach-header-actions"><button className="text-button coach-new-chat" onClick={() => void newChat()} aria-label="Start a new chat"><Plus size={15} /><span className="coach-new-chat-label">New chat</span></button>{messages.length > 0 && <button className="text-button muted" onClick={() => void clear()}>Clear</button>}</div>}</header>
       {section === "chat" && mobileHistoryOpen && <button className="coach-mobile-backdrop" type="button" aria-label="Close previous chats" onClick={() => setMobileHistoryOpen(false)} />}
       <div className="coach-layout">
         {section === "chat" && <aside id="coach-history-drawer" className={`coach-history ${mobileHistoryOpen ? "mobile-open" : ""}`} aria-label="Previous chats"><div className="coach-history-heading"><span className="coach-history-label">Chats</span><button className="coach-history-mobile-toggle" type="button" aria-expanded={mobileHistoryOpen} aria-label="Close previous chats" onClick={() => setMobileHistoryOpen(false)}><span>{activeChat?.title || "New conversation"}</span><Menu size={17} /></button><button className="icon-button ghost" type="button" onClick={() => void newChat()} aria-label="Start a new chat"><Plus size={16} /></button></div><div className="coach-history-list">{chats.map((chat) => <div className={`coach-history-row ${chat.id === activeChatId ? "active" : ""}`} key={chat.id}>{renamingChatId === chat.id ? <form className="coach-rename-form" onSubmit={(event) => { event.preventDefault(); void saveRename(); }}><input autoFocus value={renameDraft} onChange={(event) => setRenameDraft(event.target.value)} maxLength={120} aria-label="Chat name" /><button type="submit" aria-label="Save chat name"><Check size={14} /></button></form> : <><button className="coach-history-chat" type="button" title={chat.title} onClick={() => { void switchChat(chat.id); setMobileHistoryOpen(false); }}><span>{chat.title}</span><small>{new Date(chat.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</small></button><button className="coach-history-rename" type="button" onClick={() => beginRename(chat)} aria-label={`Rename ${chat.title}`}><Pencil size={14} /></button></>}</div>)}</div>{chats.length > 1 && <button className="text-button danger coach-delete-chat" type="button" onClick={() => void removeChat()}><Trash2 size={14} />Delete current chat</button>}</aside>}
