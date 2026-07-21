@@ -17,6 +17,31 @@ function client() {
   return supabase;
 }
 
+function isCoachThreadsUnavailable(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const record = error as Record<string, unknown>;
+  const code = record.code;
+  const message = typeof record.message === "string" ? record.message : "";
+  return code === "42P01" || code === "42703" || code === "PGRST204" || code === "PGRST205"
+    || /coach_(?:chats|messages).*?(?:does not exist|not found|schema cache)/i.test(message);
+}
+
+async function getLegacyCoachMessages(userId: string): Promise<CoachMessage[]> {
+  const { data, error } = await client()
+    .from("coach_messages")
+    .select("id,role,content,created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data || []).map((row) => coachMessageSchema.parse({
+    id: row.id,
+    chatId: `legacy-${userId}`,
+    role: row.role,
+    content: row.content,
+    createdAt: row.created_at,
+  }));
+}
+
 async function readAll<T>(table: CloudTable, userId: string, schema: z.ZodType<T>) {
   const rows: T[] = [];
   const pageSize = 500;
@@ -87,13 +112,20 @@ export async function upsertCloudFood(userId: string, food: Food) {
 
 export async function getCloudCoachChats(userId: string): Promise<CoachChat[]> {
   const { data, error } = await client().from("coach_chats").select("id,title,created_at,updated_at").eq("user_id", userId).order("updated_at", { ascending: false });
-  if (error) throw error;
+  if (error) {
+    if (!isCoachThreadsUnavailable(error)) throw error;
+    const messages = await getLegacyCoachMessages(userId);
+    if (!messages.length) return [];
+    const createdAt = messages[0].createdAt;
+    const updatedAt = messages[messages.length - 1].createdAt;
+    return [{ id: `legacy-${userId}`, title: "Past Coach conversation", createdAt, updatedAt }];
+  }
   return (data || []).map((row) => coachChatSchema.parse({ id: row.id, title: row.title, createdAt: row.created_at, updatedAt: row.updated_at }));
 }
 
 export async function saveCloudCoachChat(userId: string, chat: CoachChat) {
   const { error } = await client().from("coach_chats").upsert({ user_id: userId, id: chat.id, title: chat.title, created_at: chat.createdAt, updated_at: chat.updatedAt }, { onConflict: "user_id,id" });
-  if (error) throw error;
+  if (error && !isCoachThreadsUnavailable(error)) throw error;
 }
 
 export async function getCloudCoachMessages(userId: string, chatId: string, limit = 120): Promise<CoachMessage[]> {
@@ -103,7 +135,11 @@ export async function getCloudCoachMessages(userId: string, chatId: string, limi
     .eq("user_id", userId).eq("chat_id", chatId)
     .order("created_at", { ascending: false })
     .limit(limit);
-  if (error) throw error;
+  if (error) {
+    if (!isCoachThreadsUnavailable(error)) throw error;
+    const messages = await getLegacyCoachMessages(userId);
+    return messages.slice(-limit);
+  }
   return (data || []).reverse().map((row) => coachMessageSchema.parse({
     id: row.id,
     chatId: row.chat_id,
@@ -146,7 +182,18 @@ export async function saveCloudCoachMessage(userId: string, message: CoachMessag
     content: message.content,
     created_at: message.createdAt,
   }, { onConflict: "user_id,chat_id,id" });
-  if (error) throw error;
+  if (error) {
+    if (!isCoachThreadsUnavailable(error)) throw error;
+    const { error: legacyError } = await supabase.from("coach_messages").upsert({
+      user_id: userId,
+      id: message.id,
+      role: message.role,
+      content: message.content,
+      created_at: message.createdAt,
+    }, { onConflict: "user_id,id" });
+    if (legacyError) throw legacyError;
+    return;
+  }
   const { error: chatError } = await supabase
     .from("coach_chats")
     .update({ updated_at: message.createdAt })
@@ -159,12 +206,20 @@ export async function clearCloudCoachMessages(userId: string, chatId?: string) {
   let query = client().from("coach_messages").delete().eq("user_id", userId);
   if (chatId) query = query.eq("chat_id", chatId);
   const { error } = await query;
-  if (error) throw error;
+  if (error) {
+    if (!isCoachThreadsUnavailable(error)) throw error;
+    const { error: legacyError } = await client().from("coach_messages").delete().eq("user_id", userId);
+    if (legacyError) throw legacyError;
+  }
 }
 
 export async function deleteCloudCoachChat(userId: string, chatId: string) {
   const { error } = await client().from("coach_chats").delete().eq("user_id", userId).eq("id", chatId);
-  if (error) throw error;
+  if (error && !isCoachThreadsUnavailable(error)) throw error;
+  if (error) {
+    const { error: legacyError } = await client().from("coach_messages").delete().eq("user_id", userId);
+    if (legacyError) throw legacyError;
+  }
 }
 
 export async function pushCloudSnapshot(userId: string, snapshot: CloudSnapshot) {
