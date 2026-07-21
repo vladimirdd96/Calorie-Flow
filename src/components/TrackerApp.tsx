@@ -21,6 +21,7 @@ import {
   Mail,
   Menu,
   MessageCircle,
+  MoreHorizontal,
   ListChecks,
   Package,
   Pencil,
@@ -874,6 +875,7 @@ function AppearancePreferences({ theme, onChange }: { theme: ThemeMode; onChange
 
 function ProfileIdentity({ profile, user, onSave }: { profile: Profile; user: CloudUser | null; onSave: (profile: Profile) => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [editing, setEditing] = useState(false);
   const [name, setName] = useState(profile.name || accountDisplayName(user) || "");
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl);
   const [notice, setNotice] = useState("");
@@ -883,15 +885,25 @@ function ProfileIdentity({ profile, user, onSave }: { profile: Profile; user: Cl
 
   const save = () => {
     onSave({ ...profile, name: name.trim(), avatarUrl });
+    setEditing(false);
     setNotice("Profile saved");
+  };
+  const cancel = () => {
+    setName(profile.name || accountDisplayName(user) || "");
+    setAvatarUrl(profile.avatarUrl);
+    setEditing(false);
+    setNotice("");
+  };
+  const edit = () => {
+    setNotice("");
+    setEditing(true);
   };
   const chooseAvatar = async (file?: File) => {
     if (!file) return;
     try {
       const nextAvatar = await resizeAvatar(file);
       setAvatarUrl(nextAvatar);
-      onSave({ ...profile, name: name.trim(), avatarUrl: nextAvatar });
-      setNotice("Photo updated");
+      setNotice("");
     } catch {
       setNotice("That image could not be used. Try another photo.");
     } finally {
@@ -900,28 +912,36 @@ function ProfileIdentity({ profile, user, onSave }: { profile: Profile; user: Cl
   };
   const removeCustomAvatar = () => {
     setAvatarUrl(undefined);
-    onSave({ ...profile, name: name.trim(), avatarUrl: undefined });
-    setNotice(fallbackAvatar ? "Using your Google photo again" : "Photo removed");
+    setNotice("");
   };
 
   return (
     <section className="profile-identity" aria-labelledby="profile-identity-heading">
-      <div className="section-heading"><div><span className="eyebrow">About you</span><h2 id="profile-identity-heading">Profile</h2></div></div>
-      <div className="profile-identity-editor">
-        <button className="avatar-picker" type="button" onClick={() => fileRef.current?.click()} aria-label="Choose a profile photo">
-          {visibleAvatar ? <img src={visibleAvatar} alt="" /> : <span>{initials}</span>}
-          <i><Upload size={14} /></i>
-        </button>
-        <div className="profile-identity-fields">
-          <label><span>Display name</span><input value={name} maxLength={120} onChange={(event) => setName(event.target.value)} placeholder="Your name" /></label>
-          <small>{user ? "Your account photo is used by default. Upload a different one whenever you like." : "Add a name and photo so this diary feels like yours."}</small>
+      <div className="section-heading">
+        <div><span className="eyebrow">About you</span><h2 id="profile-identity-heading">Profile</h2></div>
+        {!editing && <button className="icon-button ghost profile-edit-button" type="button" onClick={edit} aria-label="Edit profile"><Pencil size={17} /></button>}
+      </div>
+      {editing ? <>
+        <div className="profile-identity-editor">
+          <button className="avatar-picker" type="button" onClick={() => fileRef.current?.click()} aria-label="Choose a profile photo">
+            {visibleAvatar ? <img src={visibleAvatar} alt="" /> : <span>{initials}</span>}
+            <i><Upload size={14} /></i>
+          </button>
+          <div className="profile-identity-fields">
+            <label><span>Display name</span><input autoFocus value={name} maxLength={120} onChange={(event) => setName(event.target.value)} placeholder="Your name" /></label>
+            <small>{user ? "Your account photo is used by default. Upload a different one whenever you like." : "Add a name and photo so this diary feels like yours."}</small>
+          </div>
         </div>
-      </div>
-      <input ref={fileRef} type="file" accept="image/*" hidden onChange={(event) => void chooseAvatar(event.target.files?.[0])} />
-      <div className="profile-identity-actions">
-        <button className="primary-button" type="button" onClick={save}>Save profile</button>
-        {avatarUrl && <button className="text-button muted" type="button" onClick={removeCustomAvatar}>Use default photo</button>}
-      </div>
+        <input ref={fileRef} type="file" accept="image/*" hidden onChange={(event) => void chooseAvatar(event.target.files?.[0])} />
+        <div className="profile-identity-actions">
+          <button className="secondary-button" type="button" onClick={cancel}>Cancel</button>
+          <button className="primary-button" type="button" onClick={save}>Save profile</button>
+          {avatarUrl && <button className="text-button muted" type="button" onClick={removeCustomAvatar}>Use default photo</button>}
+        </div>
+      </> : <div className="profile-identity-summary">
+        <div className="profile-avatar" aria-hidden="true">{visibleAvatar ? <img src={visibleAvatar} alt="" /> : <span>{initials}</span>}</div>
+        <div><span className="profile-identity-label">Display name</span><strong>{name || "Add your name"}</strong><small>{user ? "Your account photo is used by default." : "Add a name and photo so this diary feels like yours."}</small></div>
+      </div>}
       {notice && <p className="account-notice" role="status">{notice}</p>}
     </section>
   );
@@ -1620,6 +1640,7 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, onLogCoachMeal,
   const [chats, setChats] = useState<CoachChat[]>([]);
   const [activeChatId, setActiveChatId] = useState("");
   const [renamingChatId, setRenamingChatId] = useState<string | null>(null);
+  const [menuChatId, setMenuChatId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
   const [section, setSection] = useState<CoachSection>("chat");
@@ -1819,6 +1840,7 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, onLogCoachMeal,
     await saveCloudCoachChat(user.id, chat); setChats((current) => [chat, ...current]); setActiveChatId(chat.id); setMessages([]); setMobileHistoryOpen(false);
   };
   const beginRename = (chat: CoachChat) => {
+    setMenuChatId(null);
     setRenamingChatId(chat.id);
     setRenameDraft(chat.title);
   };
@@ -1831,13 +1853,18 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, onLogCoachMeal,
     const renamedChat = { ...chat, title: title.slice(0, 120), updatedAt: new Date().toISOString() };
     setChats((current) => current.map((candidate) => candidate.id === renamedChat.id ? renamedChat : candidate));
     setRenamingChatId(null);
+    setMenuChatId(null);
     try { await saveCloudCoachChat(user.id, renamedChat); } catch { setError("The chat was renamed here, but the new name could not be synced yet."); }
   };
-  const removeChat = async () => {
+  const removeChat = async (chatId = activeChatId) => {
     if (!user || chats.length < 2 || !window.confirm("Delete this conversation? This cannot be undone.")) return;
-    await deleteCloudCoachChat(user.id, activeChatId);
-    const remaining = chats.filter((chat) => chat.id !== activeChatId);
-    setChats(remaining); setActiveChatId(remaining[0].id); setMessages(await getCloudCoachMessages(user.id, remaining[0].id));
+    await deleteCloudCoachChat(user.id, chatId);
+    const remaining = chats.filter((chat) => chat.id !== chatId);
+    setChats(remaining); setMenuChatId(null);
+    if (chatId === activeChatId) {
+      const nextChat = remaining[0];
+      setActiveChatId(nextChat.id); setMessages(await getCloudCoachMessages(user.id, nextChat.id));
+    }
   };
   const updateGroceryLists = (updater: (current: GroceryList[]) => GroceryList[]) => {
     setGroceryLists((current) => {
@@ -1918,7 +1945,7 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, onLogCoachMeal,
       <header className="coach-header">{section === "chat" && <button className="coach-mobile-menu" type="button" aria-expanded={mobileHistoryOpen} aria-controls="coach-history-drawer" aria-label={mobileHistoryOpen ? "Close previous chats" : "Open previous chats"} onClick={() => setMobileHistoryOpen((open) => !open)}>{mobileHistoryOpen ? <X size={19} /> : <Menu size={19} />}</button>}<div><span className="eyebrow">Your food companion</span><h1>{section === "chat" ? activeChat?.title || "New conversation" : "Coach"}</h1></div>{section === "chat" && <div className="coach-header-actions"><button className="text-button coach-new-chat" onClick={() => void newChat()} aria-label="Start a new chat"><Plus size={15} /><span className="coach-new-chat-label">New chat</span></button>{messages.length > 0 && <button className="text-button muted" onClick={() => void clear()}>Clear</button>}</div>}</header>
       {section === "chat" && mobileHistoryOpen && <button className="coach-mobile-backdrop" type="button" aria-label="Close previous chats" onClick={() => setMobileHistoryOpen(false)} />}
       <div className="coach-layout">
-        {section === "chat" && <aside id="coach-history-drawer" className={`coach-history ${mobileHistoryOpen ? "mobile-open" : ""}`} aria-label="Previous chats"><div className="coach-history-heading"><span className="coach-history-label">Chats</span><button className="coach-history-mobile-toggle" type="button" aria-expanded={mobileHistoryOpen} aria-label="Close previous chats" onClick={() => setMobileHistoryOpen(false)}><span>{activeChat?.title || "New conversation"}</span><Menu size={17} /></button><button className="icon-button ghost" type="button" onClick={() => void newChat()} aria-label="Start a new chat"><Plus size={16} /></button></div><div className="coach-history-list">{chats.map((chat) => <div className={`coach-history-row ${chat.id === activeChatId ? "active" : ""}`} key={chat.id}>{renamingChatId === chat.id ? <form className="coach-rename-form" onSubmit={(event) => { event.preventDefault(); void saveRename(); }}><input autoFocus value={renameDraft} onChange={(event) => setRenameDraft(event.target.value)} maxLength={120} aria-label="Chat name" /><button type="submit" aria-label="Save chat name"><Check size={14} /></button></form> : <><button className="coach-history-chat" type="button" title={chat.title} onClick={() => { void switchChat(chat.id); setMobileHistoryOpen(false); }}><span>{chat.title}</span><small>{new Date(chat.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</small></button><button className="coach-history-rename" type="button" onClick={() => beginRename(chat)} aria-label={`Rename ${chat.title}`}><Pencil size={14} /></button></>}</div>)}</div>{chats.length > 1 && <button className="text-button danger coach-delete-chat" type="button" onClick={() => void removeChat()}><Trash2 size={14} />Delete current chat</button>}</aside>}
+        {section === "chat" && <aside id="coach-history-drawer" className={`coach-history ${mobileHistoryOpen ? "mobile-open" : ""}`} aria-label="Previous chats"><div className="coach-history-heading"><span className="coach-history-label">Chats</span><button className="coach-history-mobile-toggle" type="button" aria-expanded={mobileHistoryOpen} aria-label="Close previous chats" onClick={() => setMobileHistoryOpen(false)}><span>{activeChat?.title || "New conversation"}</span><Menu size={17} /></button><button className="icon-button ghost" type="button" onClick={() => void newChat()} aria-label="Start a new chat"><Plus size={16} /></button></div><div className="coach-history-list">{chats.map((chat) => <div className={`coach-history-row ${chat.id === activeChatId ? "active" : ""}`} key={chat.id}>{renamingChatId === chat.id ? <form className="coach-rename-form" onSubmit={(event) => { event.preventDefault(); void saveRename(); }}><input autoFocus value={renameDraft} onChange={(event) => setRenameDraft(event.target.value)} maxLength={120} aria-label="Chat name" /><button type="submit" aria-label="Save chat name"><Check size={14} /></button></form> : <><button className="coach-history-chat" type="button" title={chat.title} onClick={() => { void switchChat(chat.id); setMobileHistoryOpen(false); }}><span>{chat.title}</span><small>{new Date(chat.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</small></button><span className="coach-history-menu-wrap"><button className="coach-history-menu-trigger" type="button" aria-label={`Chat options for ${chat.title}`} aria-expanded={menuChatId === chat.id} onClick={() => setMenuChatId((current) => current === chat.id ? null : chat.id)}><MoreHorizontal size={17} /></button>{menuChatId === chat.id && <span className="coach-chat-menu" role="menu"><button type="button" role="menuitem" onClick={() => beginRename(chat)}><Pencil size={14} />Rename</button><button type="button" role="menuitem" className="danger" onClick={() => void removeChat(chat.id)}><Trash2 size={14} />Delete</button></span>}</span></>}</div>)}</div></aside>}
         <div className="coach-main">
       <div className="coach-tabs" role="tablist" aria-label="Coach workspace"><button id="coach-chat-tab" role="tab" aria-selected={section === "chat"} aria-controls="coach-chat-panel" className={section === "chat" ? "active" : ""} onClick={() => setSection("chat")}><MessageCircle size={16} />Chat</button><button id="coach-groceries-tab" role="tab" aria-selected={section === "groceries"} aria-controls="coach-groceries-panel" className={section === "groceries" ? "active" : ""} onClick={() => setSection("groceries")}><ListChecks size={16} />Groceries{remainingGroceries > 0 && <span>{remainingGroceries}</span>}</button></div>
       {section === "chat" && <>
