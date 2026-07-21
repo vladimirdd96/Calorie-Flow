@@ -914,9 +914,9 @@ function MeasurementPreferences({ profile, onChange }: { profile: Profile; onCha
     <section className="display-section">
       <div className="section-heading"><div><span className="eyebrow">Measurements</span><h2>Units</h2></div></div>
       <p className="display-subsection-description">Choose how height and body weight appear throughout Calorie Flow.</p>
-      <div className="segmented two" role="group" aria-label="Measurement units">
-        <button type="button" aria-pressed={measurementSystem === measurementSystems.metric} className={measurementSystem === measurementSystems.metric ? "active" : ""} onClick={() => onChange(measurementSystems.metric)}>Metric (cm, kg)</button>
-        <button type="button" aria-pressed={measurementSystem === measurementSystems.imperial} className={measurementSystem === measurementSystems.imperial ? "active" : ""} onClick={() => onChange(measurementSystems.imperial)}>US customary (in, lb)</button>
+      <div className="unit-choice-grid" role="group" aria-label="Measurement units">
+        <button type="button" aria-pressed={measurementSystem === measurementSystems.metric} className={`unit-choice${measurementSystem === measurementSystems.metric ? " active" : ""}`} onClick={() => onChange(measurementSystems.metric)}><span><strong>Metric</strong><small>Centimetres · kilograms</small></span>{measurementSystem === measurementSystems.metric && <Check size={18} aria-hidden="true" />}</button>
+        <button type="button" aria-pressed={measurementSystem === measurementSystems.imperial} className={`unit-choice${measurementSystem === measurementSystems.imperial ? " active" : ""}`} onClick={() => onChange(measurementSystems.imperial)}><span><strong>US customary</strong><small>Inches · pounds</small></span>{measurementSystem === measurementSystems.imperial && <Check size={18} aria-hidden="true" />}</button>
       </div>
     </section>
   );
