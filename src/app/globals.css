@@ -487,6 +487,8 @@ p { color: var(--muted); line-height: 1.55; }
 .sheet-header > div { min-width: 0; text-align: center; }
 .sheet-header h2 { margin-top: 5px; font-size: 20px; }
 .calendar-sheet { padding-bottom: 4px; }
+.calendar-sheet .sheet-header { grid-template-columns: 1fr 42px; }
+.calendar-sheet .sheet-header > div { text-align: left; }
 .calendar-intro { margin: -4px 8px 19px; font-size: 12px; text-align: center; }
 .calendar-toolbar { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; justify-items: center; margin-bottom: 14px; }
 .calendar-toolbar strong { font-size: 15px; letter-spacing: -.015em; }
