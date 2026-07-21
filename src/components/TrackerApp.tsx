@@ -1843,12 +1843,18 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, onLogCoachMeal,
     if (!user) return;
     getCloudCoachChats(user.id).then(async (storedChats) => {
       if (!active) return;
-      const now = new Date().toISOString();
-      const chat: CoachChat = { id: crypto.randomUUID(), title: "New conversation", createdAt: now, updatedAt: now };
-      try { await saveCloudCoachChat(user.id, chat); } catch (error) {
-        if (!storedChats.length) throw error;
+      let available = storedChats;
+      if (!available.length || historyAttempt === 0) {
+        const now = new Date().toISOString();
+        const chat: CoachChat = { id: crypto.randomUUID(), title: "New conversation", createdAt: now, updatedAt: now };
+        try { await saveCloudCoachChat(user.id, chat); } catch (error) {
+          if (!available.length) throw error;
+        }
+        available = [chat, ...available];
       }
-      if (active) { setChats([chat, ...storedChats]); setActiveChatId(chat.id); setMessages([]); setLoadedUserId(user.id); }
+      const chat = available[0];
+      const stored = await getCloudCoachMessages(user.id, chat.id);
+      if (active) { setChats(available); setActiveChatId(chat.id); setMessages(stored); setLoadedUserId(user.id); }
     }).catch(() => {
       if (active) {
         const now = new Date().toISOString();
