@@ -863,8 +863,9 @@ function DisplayPreferences({ hideCalories, onChange, chatTextSize, onChatTextSi
     <section className="display-section">
       <div className="section-heading"><div><span className="eyebrow">App display</span><h2>Calorie visibility</h2></div></div>
       <button className={`display-preference ${hideCalories ? "active" : ""}`} type="button" aria-pressed={hideCalories} onClick={() => onChange(!hideCalories)}><span><strong>{hideCalories ? "Calories are hidden" : "Calories are visible"}</strong><small>{hideCalories ? "Your diary and insights focus on macros and nutrients." : "Hide calorie numbers throughout the app whenever you prefer."}</small></span><span className="toggle" /></button>
-      <div className="chat-text-preference">
-        <div><strong>Coach text size</strong><small>Change message density without shrinking buttons or inputs.</small></div>
+      <div className="display-subsection">
+        <div className="display-subsection-heading"><span className="eyebrow">Coach</span><h3>Text size</h3></div>
+        <p className="display-subsection-description">Change message density without shrinking buttons or inputs.</p>
         <div className="segmented three" role="group" aria-label="Coach text size">
           <button type="button" aria-pressed={chatTextSize === chatTextSizes.compact} className={`text-size-option compact${chatTextSize === chatTextSizes.compact ? " active" : ""}`} onClick={() => onChatTextSizeChange(chatTextSizes.compact)}>Compact</button>
           <button type="button" aria-pressed={chatTextSize === chatTextSizes.comfortable} className={`text-size-option comfortable${chatTextSize === chatTextSizes.comfortable ? " active" : ""}`} onClick={() => onChatTextSizeChange(chatTextSizes.comfortable)}>Comfortable</button>
