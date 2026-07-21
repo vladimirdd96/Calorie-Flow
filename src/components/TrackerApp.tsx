@@ -1104,7 +1104,7 @@ function MealPhotoReader({ onMeal, onClose }: { onMeal: (analysis: MealPhotoAnal
   </div>;
 }
 
-function ManualFood({ initialBarcode, onSave, onClose, hideCalories }: { initialBarcode?: string; onSave: (food: Food) => void; onClose: () => void; hideCalories: boolean }) {
+function ManualFood({ initialBarcode, notice, onSave, onClose, hideCalories }: { initialBarcode?: string; notice?: string; onSave: (food: Food) => void; onClose: () => void; hideCalories: boolean }) {
   const [name, setName] = useState("");
   const [brand, setBrand] = useState("");
   const [barcode, setBarcode] = useState(initialBarcode || "");
@@ -1126,6 +1126,7 @@ function ManualFood({ initialBarcode, onSave, onClose, hideCalories }: { initial
   return (
     <form className="sheet-form manual-food-form" onSubmit={submit}>
       <div className="sheet-header"><button type="button" className="icon-button ghost" onClick={onClose} aria-label="Back to add food options"><ArrowLeft /></button><div><span className="eyebrow">Full control</span><h2>Custom food</h2></div><span /></div>
+      {notice && <div className="inline-alert" role="status"><Info size={17} /><span>{notice}</span></div>}
       <div className="form-grid two"><label className="span-two"><span>Food name</span><input autoFocus required maxLength={120} value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Homemade meatballs" /></label><label><span>Brand <small>optional</small></span><input maxLength={120} value={brand} onChange={(event) => setBrand(event.target.value)} /></label><label><span>Barcode <small>optional</small></span><input inputMode="numeric" maxLength={80} value={barcode} onChange={(event) => setBarcode(event.target.value)} /></label></div>
       <div className="nutrition-entry"><div className="entry-heading"><div><strong>Nutrition per 100 g</strong><small>{hideCalories ? "Energy is calculated quietly from macros" : "Copy the package values"}</small></div><Package size={20} /></div><div className="form-grid three">{!hideCalories && <label><span>Calories</span><input required min="0" type="number" inputMode="decimal" value={nutrition.calories} onChange={(event) => updateNutrition("calories", event.target.value)} /></label>}<label><span>Protein</span><input min="0" type="number" inputMode="decimal" step="0.1" value={nutrition.protein} onChange={(event) => updateNutrition("protein", event.target.value)} /></label><label><span>Carbs</span><input min="0" type="number" inputMode="decimal" step="0.1" value={nutrition.carbs} onChange={(event) => updateNutrition("carbs", event.target.value)} /></label><label><span>Fat</span><input min="0" type="number" inputMode="decimal" step="0.1" value={nutrition.fat} onChange={(event) => updateNutrition("fat", event.target.value)} /></label><label><span>Fibre</span><input min="0" type="number" inputMode="decimal" step="0.1" value={nutrition.fiber} onChange={(event) => updateNutrition("fiber", event.target.value)} /></label><label><span>Sugar</span><input min="0" type="number" inputMode="decimal" step="0.1" value={nutrition.sugar} onChange={(event) => updateNutrition("sugar", event.target.value)} /></label></div></div>
       <label><span>Default serving weight</span><div className="input-suffix"><input required type="number" inputMode="decimal" min="0.1" step="0.1" value={servingGrams} onChange={(event) => setServingGrams(Number(event.target.value))} /><span>g</span></div></label>
@@ -1276,10 +1277,10 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, onMealPhot
       const food = await findByBarcode(code);
       if (food) pick(food, followUps);
       else if (fallback) pick(fallback, followUps);
-      else { setUnknownBarcode(code); changeView("manual"); }
+      else { setUnknownBarcode(code); setManualNotice("No product matched this barcode. Add the name and nutrition from the package to save it on this device."); changeView("manual"); }
     } catch {
       if (fallback) pick(fallback, followUps);
-      else { setUnknownBarcode(code); setManualNotice("This barcode wasn’t found. Add the label once and it will be saved on this device."); changeView("manual"); }
+      else { setUnknownBarcode(code); setManualNotice("We couldn’t look up this barcode right now. Add the name and nutrition from the package to save it on this device."); changeView("manual"); }
     }
     finally { setLoading(false); }
   };
@@ -1288,7 +1289,7 @@ function AddFoodSheet({ foods, initialView = "start", onClose, onLog, onMealPhot
   if (view === "camera") return <LabelReader initialFiles={pendingImages} initialAction="camera" onFood={(food, followUps) => { if (food.barcode) void barcode(food.barcode, food, followUps); else pick(food, followUps); }} onClose={() => { setPendingImages([]); changeView("start"); }} />;
   if (view === "photo") return <MealPhotoReader onMeal={onMealPhoto} onClose={() => changeView("start")} />;
   if (view === "label") return <LabelReader initialFiles={pendingImages} onFood={(food, followUps) => { if (food.barcode) void barcode(food.barcode, food, followUps); else pick(food, followUps); }} onClose={() => { setPendingImages([]); changeView("start"); }} />;
-  if (view === "manual") return <><ManualFood initialBarcode={unknownBarcode} hideCalories={hideCalories} onSave={pick} onClose={() => changeView("start")} />{manualNotice && <div className="inline-alert error" role="alert"><Info size={17} />{manualNotice}</div>}</>;
+  if (view === "manual") return <ManualFood initialBarcode={unknownBarcode} notice={manualNotice} hideCalories={hideCalories} onSave={pick} onClose={() => changeView("start")} />;
   if (view === "search") return (
     <div>
       <div className="sheet-header"><button className="icon-button ghost" onClick={() => changeView("start")} aria-label="Back to add food options"><ArrowLeft /></button><div><span className="eyebrow">Food database</span><h2>Search</h2></div><button className="icon-button ghost" onClick={onClose} aria-label="Close add food"><X /></button></div>
