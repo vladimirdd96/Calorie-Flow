@@ -110,7 +110,7 @@ import type {
   WeightEntry,
   WeightTrackingStatus,
 } from "@/lib/types";
-import { weightTrackingStatuses } from "@/lib/types";
+import { measurementSystems, weightTrackingStatuses } from "@/lib/types";
 import type { BackupData } from "@/lib/db";
 
 type Tab = "today" | "search" | "coach" | "insights" | "profile";
@@ -313,6 +313,14 @@ const DEFAULT_PROFILE: Profile = {
   onboardingDone: false,
   weightEntries: [],
 };
+
+const kgToLb = (kg: number) => kg * 2.2046226218;
+const lbToKg = (lb: number) => lb / 2.2046226218;
+const cmToIn = (cm: number) => cm / 2.54;
+const inToCm = (inches: number) => inches * 2.54;
+const measurementSystemFor = (profile: Profile) => profile.measurementSystem || measurementSystems.metric;
+const weightUnitFor = (profile: Profile) => measurementSystemFor(profile) === measurementSystems.imperial ? "lb" : "kg";
+const formatWeight = (weightKg: number, profile: Profile) => `${(measurementSystemFor(profile) === measurementSystems.imperial ? kgToLb(weightKg) : weightKg).toFixed(1)} ${weightUnitFor(profile)}`;
 
 function providerAvatarUrl(user: CloudUser | null) {
   const candidate = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
@@ -738,8 +746,9 @@ function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: { meals
   const [weightPeriod, setWeightPeriod] = useState<WeightPeriod>("week");
   const entries = [...(profile.weightEntries || [])].sort((a, b) => b.date.localeCompare(a.date));
   const latestWeight = entries[0]?.weightKg ?? profile.weightKg;
+  const measurementSystem = measurementSystemFor(profile);
   const [weightDate, setWeightDate] = useState(localDateKey());
-  const [weightInput, setWeightInput] = useState(String(latestWeight));
+  const [weightInput, setWeightInput] = useState(String(measurementSystem === measurementSystems.imperial ? Math.round(kgToLb(latestWeight) * 10) / 10 : latestWeight));
   const periodEntries = entries.filter((entry) => {
     if (weightPeriod === "all") return true;
     const now = new Date();
@@ -756,7 +765,7 @@ function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: { meals
   })).values()).sort((a, b) => b.key.localeCompare(a.key));
   const saveWeight = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const weightKg = Number(weightInput);
+    const weightKg = measurementSystem === measurementSystems.imperial ? lbToKg(Number(weightInput)) : Number(weightInput);
     if (!Number.isFinite(weightKg) || weightKg < 20 || weightKg > 500) return;
     const nextEntries = [...entries.filter((entry) => entry.date !== weightDate), { date: weightDate, weightKg }].sort((a, b) => a.date.localeCompare(b.date));
     onSave({ ...profile, weightKg, weightEntries: nextEntries });
@@ -769,25 +778,25 @@ function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: { meals
         {!profile.hideCalories && <div className="card"><span>Daily average</span><strong>{Math.round(average).toLocaleString()}</strong><small>kcal on logged days</small></div>}
         <div className="card"><span>Protein average</span><strong>{Math.round(proteinAverage)} g</strong><small>target {profile.proteinTarget} g</small></div>
         {profile.hideCalories && <div className="card"><span>Fibre average</span><strong>{Math.round(loggedDays.length ? loggedDays.reduce((sum, day) => sum + day.total.fiber, 0) / loggedDays.length : 0)} g</strong><small>target {profile.fiberTarget} g</small></div>}
-        {weightTrackingEnabled && <div className="card"><span>Weight average</span><strong>{weightAverage ? `${weightAverage.toFixed(1)} kg` : "—"}</strong><small>{weightPeriod === "week" ? "this week" : weightPeriod === "month" ? "this month" : "all time"}</small></div>}
+        {weightTrackingEnabled && <div className="card"><span>Weight average</span><strong>{weightAverage ? formatWeight(weightAverage, profile) : "—"}</strong><small>{weightPeriod === "week" ? "this week" : weightPeriod === "month" ? "this month" : "all time"}</small></div>}
       </section>
       {weightTrackingEnabled && <section className="weight-section" aria-labelledby="weight-heading">
         <div className="section-heading"><div><span className="eyebrow">Optional progress log</span><h2 id="weight-heading">Body weight</h2></div><span className="subtle">{entries.length} {entries.length === 1 ? "entry" : "entries"}</span></div>
         <form className="weight-log card" onSubmit={saveWeight}>
           <div><span className="weight-log-label">Log a weigh-in</span><p>Use the same conditions when you can. Trends are more useful than any single day.</p></div>
-          <div className="weight-log-fields"><label><span>Date</span><input type="date" value={weightDate} max={localDateKey()} onChange={(event) => setWeightDate(event.target.value)} /></label><label><span>Weight</span><div className="input-suffix"><input required type="number" inputMode="decimal" min="20" max="500" step="0.1" value={weightInput} onChange={(event) => setWeightInput(event.target.value)} /><span>kg</span></div></label><button className="primary-button" type="submit"><Plus size={17} />Save weight</button></div>
+          <div className="weight-log-fields"><label><span>Date</span><input type="date" value={weightDate} max={localDateKey()} onChange={(event) => setWeightDate(event.target.value)} /></label><label><span>Weight</span><div className="input-suffix"><input required type="number" inputMode="decimal" min={measurementSystem === measurementSystems.imperial ? 44 : 20} max={measurementSystem === measurementSystems.imperial ? 1102 : 500} step="0.1" value={weightInput} onChange={(event) => setWeightInput(event.target.value)} /><span>{weightUnitFor(profile)}</span></div></label><button className="primary-button" type="submit"><Plus size={17} />Save weight</button></div>
         </form>
         <div className="weight-controls" role="group" aria-label="Weight average period">
           {(Object.entries({ week: "This week", month: "This month", all: "All time" }) as [WeightPeriod, string][]).map(([period, label]) => <button key={period} type="button" className={weightPeriod === period ? "active" : ""} aria-pressed={weightPeriod === period} onClick={() => setWeightPeriod(period)}>{label}</button>)}
         </div>
         <div className="weight-summary-strip">
-          <button className="weight-metric card" type="button" onClick={() => setWeightPeriod("week")}><span>Average</span><strong>{weightAverage ? `${weightAverage.toFixed(1)} kg` : "—"}</strong><small>{weightPeriod === "week" ? "this week" : weightPeriod === "month" ? "this month" : "all time"}</small></button>
-          <button className="weight-metric card" type="button" onClick={() => setWeightPeriod("all")}><span>Change</span><strong className={weightChange < 0 ? "weight-down" : weightChange > 0 ? "weight-up" : ""}>{periodEntries.length > 1 ? `${weightChange > 0 ? "+" : ""}${weightChange.toFixed(1)} kg` : "—"}</strong><small>oldest to latest</small></button>
+          <button className="weight-metric card" type="button" onClick={() => setWeightPeriod("week")}><span>Average</span><strong>{weightAverage ? formatWeight(weightAverage, profile) : "—"}</strong><small>{weightPeriod === "week" ? "this week" : weightPeriod === "month" ? "this month" : "all time"}</small></button>
+          <button className="weight-metric card" type="button" onClick={() => setWeightPeriod("all")}><span>Change</span><strong className={weightChange < 0 ? "weight-down" : weightChange > 0 ? "weight-up" : ""}>{periodEntries.length > 1 ? `${weightChange > 0 ? "+" : ""}${(measurementSystem === measurementSystems.imperial ? kgToLb(weightChange) : weightChange).toFixed(1)} ${weightUnitFor(profile)}` : "—"}</strong><small>oldest to latest</small></button>
         </div>
         {groupedWeights.length > 0 ? <div className="weight-history">{groupedWeights.map((group) => {
           const groupAverage = group.entries.reduce((sum, entry) => sum + entry.weightKg, 0) / group.entries.length;
           const label = weightPeriod === "week" ? `Week of ${new Date(`${group.key}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : new Date(`${group.key}-01T12:00:00`).toLocaleDateString(undefined, { month: "long", year: "numeric" });
-          return <details className="weight-history-group" key={group.key}><summary><span><strong>{label}</strong><small>{group.entries.length} {group.entries.length === 1 ? "weigh-in" : "weigh-ins"}</small></span><b>{groupAverage.toFixed(1)} kg</b></summary><div className="weight-history-entries">{group.entries.map((entry) => <div className="weight-history-entry" key={entry.date}><span>{new Date(`${entry.date}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}</span><strong>{entry.weightKg.toFixed(1)} kg</strong><button type="button" className="icon-button subtle-button" onClick={() => removeWeight(entry)} aria-label={`Remove weight logged on ${entry.date}`}><Trash2 size={14} /></button></div>)}</div></details>;
+          return <details className="weight-history-group" key={group.key}><summary><span><strong>{label}</strong><small>{group.entries.length} {group.entries.length === 1 ? "weigh-in" : "weigh-ins"}</small></span><b>{formatWeight(groupAverage, profile)}</b></summary><div className="weight-history-entries">{group.entries.map((entry) => <div className="weight-history-entry" key={entry.date}><span>{new Date(`${entry.date}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}</span><strong>{formatWeight(entry.weightKg, profile)}</strong><button type="button" className="icon-button subtle-button" onClick={() => removeWeight(entry)} aria-label={`Remove weight logged on ${entry.date}`}><Trash2 size={14} /></button></div>)}</div></details>;
         })}</div> : <div className="weight-empty card"><strong>Your weight history starts here.</strong><p>Log a weigh-in above to see daily entries and rolling averages.</p></div>}
       </section>}
       {!profile.hideCalories && <section className="chart-card card">
@@ -804,6 +813,9 @@ function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: { meals
 
 function TargetEditor({ profile, onSave, onCancel, onboarding = false }: { profile: Profile; onSave: (profile: Profile) => void; onCancel?: () => void; onboarding?: boolean }) {
   const [draft, setDraft] = useState(profile);
+  const measurementSystem = measurementSystemFor(profile);
+  const [heightInput, setHeightInput] = useState(String(measurementSystem === measurementSystems.imperial ? Math.round(cmToIn(profile.heightCm) * 10) / 10 : profile.heightCm));
+  const [weightInput, setWeightInput] = useState(String(measurementSystem === measurementSystems.imperial ? Math.round(kgToLb(profile.weightKg) * 10) / 10 : profile.weightKg));
   const [editingPreset, setEditingPreset] = useState<DietPreset | null>(profile.dietPreset === "custom" ? "custom" : null);
   const calculatedCalories = calculateCalories(draft);
   const calculatedMacros = draft.dietPreset === "custom"
@@ -820,6 +832,14 @@ function TargetEditor({ profile, onSave, onCancel, onboarding = false }: { profi
     setEditingPreset(preset);
   };
   const updateMacro = (key: "proteinTarget" | "carbsTarget" | "fatTarget", value: string) => update(key, Math.max(0, Number(value)));
+  const updateMeasurement = (kind: "height" | "weight", value: string) => {
+    if (kind === "height") setHeightInput(value);
+    else setWeightInput(value);
+    if (value.trim() === "") return;
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return;
+    update(kind === "height" ? "heightCm" : "weightKg", kind === "height" && measurementSystem === measurementSystems.imperial ? inToCm(parsed) : kind === "weight" && measurementSystem === measurementSystems.imperial ? lbToKg(parsed) : parsed);
+  };
   const savedMacros = editingPreset ? { protein: draft.proteinTarget, carbs: draft.carbsTarget, fat: draft.fatTarget } : calculatedMacros;
   const save = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -838,8 +858,8 @@ function TargetEditor({ profile, onSave, onCancel, onboarding = false }: { profi
       <div className="form-grid two">
         <label><span>Sex</span><ThemedSelect ariaLabel="Sex" value={draft.sex} onChange={(value) => update("sex", value as Sex)} options={[{ value: "male", label: "Male" }, { value: "female", label: "Female" }]} /></label>
         <label><span>Age</span><input required type="number" inputMode="numeric" min="16" max="100" value={draft.age} onChange={(event) => update("age", Number(event.target.value))} /></label>
-        <label><span>Height</span><div className="input-suffix"><input required type="number" inputMode="decimal" min="120" max="230" value={draft.heightCm} onChange={(event) => update("heightCm", Number(event.target.value))} /><span>cm</span></div></label>
-        <label><span>Weight</span><div className="input-suffix"><input required type="number" inputMode="decimal" min="35" max="300" step="0.1" value={draft.weightKg} onChange={(event) => update("weightKg", Number(event.target.value))} /><span>kg</span></div></label>
+        <label><span>Height</span><div className="input-suffix"><input required type="number" inputMode="decimal" min={measurementSystem === measurementSystems.imperial ? 47 : 120} max={measurementSystem === measurementSystems.imperial ? 91 : 230} value={heightInput} onChange={(event) => updateMeasurement("height", event.target.value)} /><span>{measurementSystem === measurementSystems.imperial ? "in" : "cm"}</span></div></label>
+        <label><span>Weight</span><div className="input-suffix"><input required type="number" inputMode="decimal" min={measurementSystem === measurementSystems.imperial ? 77 : 35} max={measurementSystem === measurementSystems.imperial ? 661 : 300} step="0.1" value={weightInput} onChange={(event) => updateMeasurement("weight", event.target.value)} /><span>{weightUnitFor(profile)}</span></div></label>
       </div>
       <label><span>Daily movement</span><ThemedSelect ariaLabel="Daily movement" value={draft.activity} onChange={(value) => update("activity", value as ActivityLevel)} options={[{ value: "sedentary", label: "Mostly seated" }, { value: "light", label: "Light · 1–2 workouts/week" }, { value: "moderate", label: "Moderate · 2–4 workouts/week" }, { value: "active", label: "Active · 5–6 workouts/week" }, { value: "very-active", label: "Very active · physical work/training" }]} /></label>
       <div className="field-block"><span id="goal-label">Goal</span><div className="segmented three" role="group" aria-labelledby="goal-label"><button type="button" aria-pressed={draft.goalMode === "lose"} className={draft.goalMode === "lose" ? "active" : ""} onClick={() => update("goalMode", "lose" as GoalMode)}>Lose</button><button type="button" aria-pressed={draft.goalMode === "maintain"} className={draft.goalMode === "maintain" ? "active" : ""} onClick={() => update("goalMode", "maintain" as GoalMode)}>Maintain</button><button type="button" aria-pressed={draft.goalMode === "gain"} className={draft.goalMode === "gain" ? "active" : ""} onClick={() => update("goalMode", "gain" as GoalMode)}>Gain</button></div></div>
@@ -1130,7 +1150,7 @@ function ProfileView({
   );
 }
 
-function Sheet({ children, onClose, wide = false, label = "Sheet", className = "" }: { children: React.ReactNode; onClose: () => void; wide?: boolean; label?: string; className?: string }) {
+function Sheet({ children, onClose, wide = false, label = "Sheet", className = "", showClose = true }: { children: React.ReactNode; onClose: () => void; wide?: boolean; label?: string; className?: string; showClose?: boolean }) {
   const surfaceRef = useModalFocus(onClose);
   const [portalReady, setPortalReady] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
@@ -1158,7 +1178,7 @@ function Sheet({ children, onClose, wide = false, label = "Sheet", className = "
     if (shouldClose) onClose();
     else setDragOffset(0);
   };
-  const overlay = <div className="sheet-backdrop" onPointerDown={dismissOnBackdrop}><section ref={surfaceRef} className={`sheet ${wide ? "wide" : ""} ${className}`.trim()} style={{ transform: dragOffset ? `translateY(${dragOffset}px)` : undefined, transition: dragOffset ? "none" : "transform .2s ease" }} role="dialog" aria-modal="true" aria-label={label} tabIndex={-1}><button className="sheet-handle" type="button" aria-label="Drag down to close" onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} /><button className="sheet-close icon-button ghost" type="button" aria-label="Close" onClick={onClose}><X size={18} /></button>{children}</section></div>;
+  const overlay = <div className="sheet-backdrop" onPointerDown={dismissOnBackdrop}><section ref={surfaceRef} className={`sheet ${wide ? "wide" : ""} ${className}`.trim()} style={{ transform: dragOffset ? `translateY(${dragOffset}px)` : undefined, transition: dragOffset ? "none" : "transform .2s ease" }} role="dialog" aria-modal="true" aria-label={label} tabIndex={-1}><button className="sheet-handle" type="button" aria-label="Drag down to close" onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} />{showClose && <button className="sheet-close icon-button ghost" type="button" aria-label="Close" onClick={onClose}><X size={18} /></button>}{children}</section></div>;
   return portalReady && typeof document !== "undefined" ? createPortal(overlay, document.body) : overlay;
 }
 
@@ -1183,6 +1203,23 @@ function WeightTrackingPrompt({ onEnable, onDisable, onDefer }: { onEnable: () =
         <h2>Want to track your weight?</h2>
         <p>Log daily kilograms and see weekly or monthly averages in Insights. Your entries stay private on this device unless you choose account sync.</p>
         <div className="weight-prompt-actions"><button className="primary-button" type="button" onClick={onEnable}>Yes, track my weight<ChevronRight size={17} /></button><button className="secondary-button" type="button" onClick={onDefer}>Not now</button><button className="text-button muted" type="button" onClick={onDisable}>No, don’t track my weight</button></div>
+      </div>
+    </Sheet>
+  );
+}
+
+function MeasurementPreferencePrompt({ profile, onSave }: { profile: Profile; onSave: (profile: Profile) => void }) {
+  return (
+    <Sheet label="Measurement preferences" wide showClose={false} onClose={() => undefined}>
+      <div className="weight-prompt">
+        <span className="action-icon blue"><Utensils /></span>
+        <span className="eyebrow">One last preference</span>
+        <h2>Which measurements feel natural?</h2>
+        <p>Choose how Calorie Flow should show your height and body weight. Calculations stay accurate behind the scenes.</p>
+        <div className="weight-prompt-actions">
+          <button className="primary-button" type="button" onClick={() => onSave({ ...profile, measurementSystem: measurementSystems.metric })}>Centimetres & kilograms<ChevronRight size={17} /></button>
+          <button className="secondary-button" type="button" onClick={() => onSave({ ...profile, measurementSystem: measurementSystems.imperial })}>Inches & pounds<ChevronRight size={17} /></button>
+        </div>
       </div>
     </Sheet>
   );
@@ -2491,6 +2528,7 @@ export function TrackerApp() {
     void setSetting(CHAT_TEXT_SIZE_SETTING, nextSize);
   };
   const weightTrackingEnabled = profile.weightTracking === weightTrackingStatuses.enabled;
+  const measurementPromptOpen = profile.onboardingDone && profile.measurementSystem === undefined;
   const weightPromptOpen = profile.onboardingDone && profile.weightTracking === undefined && weightPromptDismissedFor !== auth.user?.id;
   const enableWeightTracking = () => { setWeightPromptDismissedFor(auth.user?.id || ""); void saveProfile({ ...profile, weightTracking: weightTrackingStatuses.enabled }); };
   const disableWeightTracking = () => { void saveProfile({ ...profile, weightTracking: weightTrackingStatuses.disabled }); };
@@ -2507,7 +2545,7 @@ export function TrackerApp() {
   if (startupError) return <main className="app-loading load-error" role="alert"><Database size={30} /><h1>Diary unavailable</h1><p>{startupError}</p><button className="primary-button" onClick={() => { setStartupError(""); void refresh().catch(() => setStartupError("Your private diary could not be opened. Your data has not been reset.")); }}>Try again</button></main>;
   if (!ready || !auth.ready) return <div className="app-loading" role="status" aria-label="Opening your private diary"><BrandMark large /><i /></div>;
   if (auth.passwordRecovery || !auth.user) return <AuthGateway key={auth.passwordRecovery ? "recovery" : "sign-in"} configured={auth.configured} passwordRecovery={auth.passwordRecovery} onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} />;
-  const modalOpen = adding || !!editingMeal || !!duplicateMealDraft || calendarOpen || !profile.onboardingDone || weightPromptOpen;
+  const modalOpen = adding || !!editingMeal || !!duplicateMealDraft || calendarOpen || !profile.onboardingDone || measurementPromptOpen || weightPromptOpen;
   return (
     <div className="app-shell">
       <div className="ambient one" /><div className="ambient two" />
@@ -2524,7 +2562,8 @@ export function TrackerApp() {
       {editingMeal && <Sheet onClose={() => setEditingMeal(undefined)} label="Edit meal"><MealEditor meal={editingMeal} hideCalories={profile.hideCalories} onSave={(meal) => editingMeal.id.startsWith("photo-") ? saveNewMeal(meal) : saveEditedMeal(meal)} onClose={() => setEditingMeal(undefined)} /></Sheet>}
       {duplicateMealDraft && <Sheet onClose={() => setDuplicateMealDraft(undefined)} label="Duplicate meal" className="duplicate-meal-dialog"><DuplicateMealSheet meal={duplicateMealDraft} onDuplicate={(mealType) => void duplicateMeal(duplicateMealDraft, mealType)} onClose={() => setDuplicateMealDraft(undefined)} /></Sheet>}
       {!profile.onboardingDone && <OnboardingDialog profile={profile} onSave={finishOnboarding} onCancel={onboardingOrigin ? cancelOnboarding : undefined} />}
-      {weightPromptOpen && <WeightTrackingPrompt onEnable={enableWeightTracking} onDisable={disableWeightTracking} onDefer={deferWeightTracking} />}
+      {measurementPromptOpen && <MeasurementPreferencePrompt profile={profile} onSave={saveProfile} />}
+      {weightPromptOpen && !measurementPromptOpen && <WeightTrackingPrompt onEnable={enableWeightTracking} onDisable={disableWeightTracking} onDefer={deferWeightTracking} />}
       {undoMeal && <div className="toast undo-toast" role="status"><span>Meal removed</span><button type="button" onClick={undoDeleteMeal}>Undo</button></div>}
       {toast && <div className="toast"><Check size={17} />{toast}</div>}
     </div>

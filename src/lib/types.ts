@@ -54,6 +54,8 @@ export type ActivityLevel = "sedentary" | "light" | "moderate" | "active" | "ver
 export type DietPreset = "balanced" | "high-protein" | "keto" | "high-protein-keto" | "low-fat" | "custom";
 export const weightTrackingStatuses = { enabled: "enabled", disabled: "disabled" } as const;
 export type WeightTrackingStatus = typeof weightTrackingStatuses[keyof typeof weightTrackingStatuses];
+export const measurementSystems = { metric: "metric", imperial: "imperial" } as const;
+export type MeasurementSystem = typeof measurementSystems[keyof typeof measurementSystems];
 
 export type Profile = {
   name: string;
@@ -72,6 +74,7 @@ export type Profile = {
   fiberTarget: number;
   hideCalories: boolean;
   onboardingDone: boolean;
+  measurementSystem?: MeasurementSystem;
   weightEntries?: WeightEntry[];
   weightTracking?: WeightTrackingStatus;
 };

@@ -76,6 +76,7 @@ export const profileSchema = z.object({
   fiberTarget: finiteNonNegative.max(2_000),
   hideCalories: z.boolean(),
   onboardingDone: z.boolean(),
+  measurementSystem: z.enum(["metric", "imperial"]).optional(),
   weightEntries: z.array(weightEntrySchema).max(10_000).optional(),
   weightTracking: z.enum(["enabled", "disabled"]).optional(),
 }).strict() satisfies z.ZodType<Profile>;
