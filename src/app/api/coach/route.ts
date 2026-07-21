@@ -300,7 +300,7 @@ export async function POST(request: NextRequest) {
         tools,
         tool_choice: "auto",
         ...(image ? { chat_template_kwargs: { thinking: false } } : {}),
-        max_completion_tokens: 700,
+        max_completion_tokens: 1400,
         temperature: 0.2,
       } satisfies Record<string, unknown>;
       response = image
