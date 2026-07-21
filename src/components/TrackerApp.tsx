@@ -115,7 +115,7 @@ import type { BackupData } from "@/lib/db";
 
 type Tab = "today" | "search" | "coach" | "insights" | "profile";
 type ProfileSection = "profile" | "customize";
-type AddView = "start" | "search" | "scan" | "label" | "camera" | "photo" | "manual";
+type AddView = "start" | "search" | "scan" | "label" | "camera" | "photo" | "manual" | "barcode-not-found";
 type SyncState = "local" | "syncing" | "synced" | "offline" | "error";
 type AuthMode = "sign-in" | "register" | "forgot-password" | "update-password";
 type CoachSection = "chat" | "groceries";
@@ -1523,7 +1523,7 @@ function PortionSheet({ food, questions, onLog, onClose, hideCalories }: { food:
   );
 }
 
-function AddFoodSheet({ foods, initialView = "start", onLog, onMealPhoto, hideCalories }: { foods: Food[]; initialView?: AddView; onLog: (meal: Meal, food: Food) => void; onMealPhoto: (analysis: MealPhotoAnalysis) => void; hideCalories: boolean }) {
+function AddFoodSheet({ foods, initialView = "start", onLog, onMealPhoto, onSaveFood, hideCalories }: { foods: Food[]; initialView?: AddView; onLog: (meal: Meal, food: Food) => void; onMealPhoto: (analysis: MealPhotoAnalysis) => void; onSaveFood: (food: Food) => Promise<void>; hideCalories: boolean }) {
   const [view, setView] = useState<AddView>(initialView);
   const [selected, setSelected] = useState<Food>();
   const [questions, setQuestions] = useState<string[]>([]);
@@ -1548,7 +1548,7 @@ function AddFoodSheet({ foods, initialView = "start", onLog, onMealPhoto, hideCa
       setSearchError("");
     }
     if (nextView !== "start") setIntakeError("");
-    if (nextView !== "manual") {
+    if (nextView !== "manual" && nextView !== "barcode-not-found") {
       setUnknownBarcode("");
       setManualNotice("");
     }
@@ -1613,27 +1613,48 @@ function AddFoodSheet({ foods, initialView = "start", onLog, onMealPhoto, hideCa
     setPendingImages(Array.from(files).slice(0, 3));
     changeView("label");
   };
-  const barcode = async (code: string, fallback?: Food, followUps: string[] = []) => {
+  const saveAndPick = async (food: Food, followUps: string[] = []) => {
+    await onSaveFood(food);
+    pick(food, followUps);
+  };
+  const barcode = async (code: string, fallback?: Food, followUps: string[] = [], persistFallback = false) => {
     setLoading(true); setManualNotice("");
     const cached = foods.find((food) => food.barcode === code);
-    if (cached) { setLoading(false); pick(cached, followUps); return; }
+    if (cached) {
+      if (persistFallback && fallback) await saveAndPick(fallback, followUps);
+      else pick(cached, followUps);
+      setLoading(false);
+      return;
+    }
     try {
       const food = await findByBarcode(code);
-      if (food) pick(food, followUps);
-      else if (fallback) pick(fallback, followUps);
-      else { setUnknownBarcode(code); setManualNotice("No product matched this barcode. Add the name and nutrition from the package to save it on this device."); changeView("manual"); }
+      if (food) {
+        if (persistFallback && fallback) await saveAndPick(fallback, followUps);
+        else pick(food, followUps);
+      } else if (fallback) {
+        if (persistFallback) await saveAndPick(fallback, followUps);
+        else pick(fallback, followUps);
+      } else { setUnknownBarcode(code); setManualNotice("No product matched this barcode. You can scan its nutrition label or add the food by hand."); changeView("barcode-not-found"); }
     } catch {
-      if (fallback) pick(fallback, followUps);
-      else { setUnknownBarcode(code); setManualNotice("We couldn’t look up this barcode right now. Add the name and nutrition from the package to save it on this device."); changeView("manual"); }
+      if (fallback) {
+        if (persistFallback) await saveAndPick(fallback, followUps);
+        else pick(fallback, followUps);
+      } else { setUnknownBarcode(code); setManualNotice("We couldn’t look up this barcode right now. You can scan its nutrition label or add the food by hand."); changeView("barcode-not-found"); }
     }
     finally { setLoading(false); }
   };
+  const handleLabelFood = async (food: Food, followUps: string[]) => {
+    const labeledFood = food.barcode || !unknownBarcode ? food : { ...food, barcode: unknownBarcode };
+    if (labeledFood.barcode) await barcode(labeledFood.barcode, labeledFood, followUps, true);
+    else await saveAndPick(labeledFood, followUps);
+  };
   if (selected) return <PortionSheet food={selected} questions={questions} hideCalories={hideCalories} onLog={onLog} onClose={() => setSelected(undefined)} />;
   if (view === "scan") return <>{loading && <div className="global-loader"><i />Looking up product…</div>}<BarcodeScanner onResult={barcode} onClose={() => changeView("start")} /></>;
-  if (view === "camera") return <LabelReader initialFiles={pendingImages} initialAction="camera" onFood={(food, followUps) => { if (food.barcode) void barcode(food.barcode, food, followUps); else pick(food, followUps); }} onClose={() => { setPendingImages([]); changeView("start"); }} />;
+  if (view === "camera") return <LabelReader initialFiles={pendingImages} initialAction="camera" onFood={(food, followUps) => { void handleLabelFood(food, followUps); }} onClose={() => { setPendingImages([]); changeView("start"); }} />;
   if (view === "photo") return <MealPhotoReader onMeal={onMealPhoto} onClose={() => changeView("start")} />;
-  if (view === "label") return <LabelReader initialFiles={pendingImages} onFood={(food, followUps) => { if (food.barcode) void barcode(food.barcode, food, followUps); else pick(food, followUps); }} onClose={() => { setPendingImages([]); changeView("start"); }} />;
-  if (view === "manual") return <ManualFood initialBarcode={unknownBarcode} notice={manualNotice} hideCalories={hideCalories} onSave={pick} onClose={() => changeView("start")} />;
+  if (view === "label") return <LabelReader initialFiles={pendingImages} onFood={(food, followUps) => { void handleLabelFood(food, followUps); }} onClose={() => { setPendingImages([]); changeView("start"); }} />;
+  if (view === "manual") return <ManualFood initialBarcode={unknownBarcode} notice={manualNotice} hideCalories={hideCalories} onSave={(food) => void saveAndPick(food)} onClose={() => changeView("start")} />;
+  if (view === "barcode-not-found") return <div className="barcode-not-found"><div className="sheet-header"><button className="icon-button ghost" onClick={() => changeView("scan")} aria-label="Back to barcode scanner"><ArrowLeft /></button><div><span className="eyebrow">Barcode not found</span><h2>Let’s add this food</h2></div><span /></div><div className="barcode-not-found-copy"><span className="action-icon amber"><Package /></span><div><strong>No saved product matched {unknownBarcode}</strong><p>Use the package label to check the nutrition, or enter it yourself. We’ll save it for next time.</p></div></div><div className="barcode-not-found-actions"><button className="primary-button full" type="button" onClick={() => { setPendingImages([]); changeView("label"); }}><Camera size={18} />Scan nutrition label</button><button className="secondary-button full" type="button" onClick={() => changeView("manual")}><Pencil size={18} />Add by hand</button></div></div>;
   if (view === "search") return (
     <div>
       <div className="sheet-header"><button className="icon-button ghost" onClick={() => changeView("start")} aria-label="Back to add food options"><ArrowLeft /></button><div><span className="eyebrow">Food database</span><h2>Search</h2></div><span /></div>
@@ -2328,6 +2349,11 @@ export function TrackerApp() {
     setAdding(false); setDirectFood(undefined); setDateKey(loggedDate); setToast(`${food.name} logged`); setTab("today");
     syncWrite(async (userId) => { await Promise.all([upsertCloudMeal(userId, savedMeal), upsertCloudFood(userId, food)]); });
   };
+  const saveFood = async (food: Food) => {
+    await put("foods", food);
+    setFoods((current) => [food, ...current.filter((item) => item.id !== food.id)]);
+    syncWrite((userId) => upsertCloudFood(userId, food));
+  };
   const saveEditedMeal = async (meal: Meal) => {
     const savedMeal = { ...meal, loggedDate: meal.loggedDate || dateKey };
     await put("meals", savedMeal);
@@ -2493,7 +2519,7 @@ export function TrackerApp() {
       {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onRestartOnboarding={restartOnboarding} onExport={exportBackup} onImport={restoreBackup} user={auth.user} syncState={syncState} onSignOut={signOut} theme={theme} onThemeChange={changeTheme} chatTextSize={chatTextSize} onChatTextSizeChange={changeChatTextSize} weightTracking={profile.weightTracking} />}
       </div>
       <div inert={modalOpen} aria-hidden={modalOpen || undefined}><BottomNav tab={tab} onChange={(nextTab) => { window.scrollTo(0, 0); setTab(nextTab); }} /></div>
-      {adding && profile.onboardingDone && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); }} wide>{directFood ? <PortionSheet food={directFood} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} onLog={logMeal} onMealPhoto={addPhotoMeal} />}</Sheet>}
+      {adding && profile.onboardingDone && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); }} wide>{directFood ? <PortionSheet food={directFood} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} onLog={logMeal} onMealPhoto={addPhotoMeal} onSaveFood={saveFood} />}</Sheet>}
       {calendarOpen && <Sheet onClose={() => setCalendarOpen(false)} wide label="Calendar"><CalendarSheet dateKey={dateKey} meals={meals} profile={profile} onDateChange={setDateKey} onClose={() => setCalendarOpen(false)} /></Sheet>}
       {editingMeal && <Sheet onClose={() => setEditingMeal(undefined)} label="Edit meal"><MealEditor meal={editingMeal} hideCalories={profile.hideCalories} onSave={(meal) => editingMeal.id.startsWith("photo-") ? saveNewMeal(meal) : saveEditedMeal(meal)} onClose={() => setEditingMeal(undefined)} /></Sheet>}
       {duplicateMealDraft && <Sheet onClose={() => setDuplicateMealDraft(undefined)} label="Duplicate meal" className="duplicate-meal-dialog"><DuplicateMealSheet meal={duplicateMealDraft} onDuplicate={(mealType) => void duplicateMeal(duplicateMealDraft, mealType)} onClose={() => setDuplicateMealDraft(undefined)} /></Sheet>}
