@@ -793,7 +793,7 @@ function WeightTrackingPreference({ status, onChange }: { status?: WeightTrackin
   return (
     <section className="display-section">
       <div className="section-heading"><div><span className="eyebrow">Optional progress</span><h2>Weight tracking</h2></div></div>
-      <button className={`display-preference ${enabled ? "active" : ""}`} type="button" aria-pressed={enabled} onClick={() => onChange(enabled ? weightTrackingStatuses.disabled : weightTrackingStatuses.enabled)}><span><strong>{enabled ? "Weight tracking is on" : "Weight tracking is off"}</strong><small>{enabled ? "Show averages and daily weigh-ins in Insights." : "Add daily weigh-ins and averages to your Insights page."}</small></span><span className="toggle" /></button>
+      <button className={`display-preference ${enabled ? "active" : ""}`} type="button" aria-pressed={enabled} onClick={() => onChange(enabled ? weightTrackingStatuses.disabled : weightTrackingStatuses.enabled)}><span><strong>{enabled ? "Weight tracking is on" : "Weight tracking is off"}</strong><small>{enabled ? "Show averages and daily weigh-ins in Insights." : "Turn it on here anytime to add weight averages to Insights."}</small></span><span className="toggle" /></button>
     </section>
   );
 }
@@ -1025,15 +1025,15 @@ function OnboardingDialog({ profile, onSave }: { profile: Profile; onSave: (prof
   );
 }
 
-function WeightTrackingPrompt({ onEnable, onNotNow }: { onEnable: () => void; onNotNow: () => void }) {
+function WeightTrackingPrompt({ onEnable, onDisable }: { onEnable: () => void; onDisable: () => void }) {
   return (
-    <Sheet label="Weight tracking" wide onClose={onNotNow}>
+    <Sheet label="Weight tracking" wide onClose={onDisable}>
       <div className="weight-prompt">
         <span className="action-icon mint"><BarChart3 /></span>
         <span className="eyebrow">Optional progress log</span>
         <h2>Want to track your weight?</h2>
         <p>Log daily kilograms and see weekly or monthly averages in Insights. Your entries stay private on this device unless you choose account sync.</p>
-        <div className="weight-prompt-actions"><button className="primary-button" type="button" onClick={onEnable}>Turn on weight tracking<ChevronRight size={17} /></button><button className="secondary-button" type="button" onClick={onNotNow}>Not now</button></div>
+        <div className="weight-prompt-actions"><button className="primary-button" type="button" onClick={onEnable}>Yes, track my weight<ChevronRight size={17} /></button><button className="secondary-button" type="button" onClick={onDisable}>No, don’t track my weight</button></div>
       </div>
     </Sheet>
   );
@@ -1973,7 +1973,6 @@ export function TrackerApp() {
   const [theme, setTheme] = useState<ThemeMode>(themeModes.light);
   const [chatTextSize, setChatTextSize] = useState<ChatTextSize>(chatTextSizes.comfortable);
   const [showHomeScreenPrompt, setShowHomeScreenPrompt] = useState(false);
-  const [weightPromptDismissedFor, setWeightPromptDismissedFor] = useState<string | null>(null);
   const [undoMeal, setUndoMeal] = useState<{ meal: Meal; timerId: number }>();
   const syncIdentityRef = useRef("");
   const syncMutationRef = useRef(0);
@@ -2236,7 +2235,7 @@ export function TrackerApp() {
   };
   const openAdd = (view: AddView = "start") => { setInitialAddView(view); setAdding(true); };
   const selectFood = (food: Food) => { setDirectFood(food); setAdding(true); };
-  const signOut = async () => { setWeightPromptDismissedFor(null); await auth.signOut(); };
+  const signOut = async () => { await auth.signOut(); };
   const changeTheme = (nextTheme: ThemeMode) => {
     setTheme(nextTheme);
     void setSetting(THEME_SETTING, nextTheme);
@@ -2246,9 +2245,9 @@ export function TrackerApp() {
     void setSetting(CHAT_TEXT_SIZE_SETTING, nextSize);
   };
   const weightTrackingEnabled = profile.weightTracking === weightTrackingStatuses.enabled;
-  const weightPromptOpen = profile.onboardingDone && profile.weightTracking === undefined && weightPromptDismissedFor !== auth.user?.id;
-  const enableWeightTracking = () => { setWeightPromptDismissedFor(auth.user?.id || ""); void saveProfile({ ...profile, weightTracking: weightTrackingStatuses.enabled }); };
-  const deferWeightTracking = () => setWeightPromptDismissedFor(auth.user?.id || "");
+  const weightPromptOpen = profile.onboardingDone && profile.weightTracking === undefined;
+  const enableWeightTracking = () => { void saveProfile({ ...profile, weightTracking: weightTrackingStatuses.enabled }); };
+  const disableWeightTracking = () => { void saveProfile({ ...profile, weightTracking: weightTrackingStatuses.disabled }); };
 
   const syncLabel: Record<SyncState, string> = {
     local: "Private on this device",
@@ -2277,7 +2276,7 @@ export function TrackerApp() {
       {calendarOpen && <Sheet onClose={() => setCalendarOpen(false)} wide label="Calendar"><CalendarSheet dateKey={dateKey} meals={meals} profile={profile} onDateChange={setDateKey} onClose={() => setCalendarOpen(false)} /></Sheet>}
       {editingMeal && <Sheet onClose={() => setEditingMeal(undefined)}><MealEditor meal={editingMeal} hideCalories={profile.hideCalories} onSave={(meal) => editingMeal.id.startsWith("photo-") ? saveNewMeal(meal) : saveEditedMeal(meal)} onClose={() => setEditingMeal(undefined)} /></Sheet>}
       {!profile.onboardingDone && <OnboardingDialog profile={profile} onSave={saveProfile} />}
-      {weightPromptOpen && <WeightTrackingPrompt onEnable={enableWeightTracking} onNotNow={deferWeightTracking} />}
+      {weightPromptOpen && <WeightTrackingPrompt onEnable={enableWeightTracking} onDisable={disableWeightTracking} />}
       {undoMeal && <div className="toast undo-toast" role="status"><span>Meal removed</span><button type="button" onClick={undoDeleteMeal}>Undo</button></div>}
       {toast && <div className="toast"><Check size={17} />{toast}</div>}
     </div>
