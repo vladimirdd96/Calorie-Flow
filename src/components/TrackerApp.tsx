@@ -353,9 +353,9 @@ function FoodAvatar({ food, name }: { food?: Food; name?: string }) {
   return <div className="food-avatar fallback">{(name || food?.name || "F").slice(0, 1).toUpperCase()}</div>;
 }
 
-function MealRow({ meal, onDelete, onEdit, hideCalories }: { meal: Meal; onDelete: () => void; onEdit: () => void; hideCalories: boolean }) {
+function MealRow({ meal, onDelete, onEdit, onDragStart, hideCalories }: { meal: Meal; onDelete: () => void; onEdit: () => void; onDragStart: (meal: Meal, event: React.DragEvent<HTMLDivElement>) => void; hideCalories: boolean }) {
   return (
-    <div className="meal-row">
+    <div className="meal-row" draggable onDragStart={(event) => onDragStart(meal, event)} title="Drag to another meal">
       <div className="meal-icon"><Utensils size={17} /></div>
       <div className="meal-copy">
         <strong>{meal.name}</strong>
@@ -424,6 +424,7 @@ function TodayView({
   onOpenCoach,
   onDelete,
   onEdit,
+  onMoveMeal,
   syncLabel,
   showHomeScreenPrompt,
 }: {
@@ -435,9 +436,11 @@ function TodayView({
   onOpenCoach: () => void;
   onDelete: (id: string) => void;
   onEdit: (meal: Meal) => void;
+  onMoveMeal: (meal: Meal, mealType: MealType) => void;
   syncLabel: string;
   showHomeScreenPrompt: boolean;
 }) {
+  const [dropTarget, setDropTarget] = useState<MealType>();
   const total = useMemo(() => sumNutrition(meals.map((meal) => meal.nutrition)), [meals]);
   const remaining = Math.max(0, profile.calorieTarget - total.calories);
   const grouped = (Object.keys(mealLabels) as MealType[]).map((type) => ({ type, meals: meals.filter((meal) => meal.mealType === type) }));
@@ -481,10 +484,12 @@ function TodayView({
 
       <section className="log-section">
         <div className="section-heading"><div><span className="eyebrow">Daily log</span><h2>Your meals</h2></div><button className="text-button" onClick={onAdd}><Plus size={17} /> Add food</button></div>
-        {meals.length === 0 ? <EmptyMeals onAdd={onAdd} /> : grouped.map(({ type, meals: groupMeals }) => groupMeals.length > 0 && (
+        {meals.length === 0 ? <EmptyMeals onAdd={onAdd} /> : grouped.map(({ type, meals: groupMeals }) => (
           <div className="meal-group" key={type}>
             <div className="meal-group-title"><span>{mealLabels[type]}</span>{!profile.hideCalories && <span>{Math.round(sumNutrition(groupMeals.map((meal) => meal.nutrition)).calories)} kcal</span>}</div>
-            <div className="meal-list card">{groupMeals.map((meal) => <MealRow key={meal.id} meal={meal} hideCalories={profile.hideCalories} onDelete={() => onDelete(meal.id)} onEdit={() => onEdit(meal)} />)}</div>
+            <div className={`meal-list card ${dropTarget === type ? "drop-target" : ""}`} onDragOver={(event) => { event.preventDefault(); setDropTarget(type); }} onDragLeave={() => setDropTarget(undefined)} onDrop={(event) => { event.preventDefault(); const mealId = event.dataTransfer.getData("text/meal-id"); const meal = meals.find((candidate) => candidate.id === mealId) || groupMeals.find((candidate) => candidate.id === mealId); if (meal) onMoveMeal(meal, type); setDropTarget(undefined); }}>
+              {groupMeals.length ? groupMeals.map((meal) => <MealRow key={meal.id} meal={meal} hideCalories={profile.hideCalories} onDelete={() => onDelete(meal.id)} onEdit={() => onEdit(meal)} onDragStart={(draggedMeal, event) => { event.dataTransfer.setData("text/meal-id", draggedMeal.id); event.dataTransfer.effectAllowed = "move"; }} />) : <div className="empty-meal-drop">Drop food here</div>}
+            </div>
           </div>
         ))}
       </section>
@@ -1142,6 +1147,7 @@ function PortionSheet({ food, questions, onLog, onClose, hideCalories }: { food:
   const [unit, setUnit] = useState<ServingUnit>(initialUnit);
   const [amount, setAmount] = useState(initialUnit === "g" ? 100 : 1);
   const [mealType, setMealType] = useState<MealType>(() => suggestedMealType());
+  const [loggedDate, setLoggedDate] = useState(localDateKey());
   const grams = gramsFor(food, amount, unit);
   const nutrition = scaleNutrition(food.nutrientsPer100, grams);
   const log = (event: FormEvent<HTMLFormElement>) => {
@@ -1158,6 +1164,7 @@ function PortionSheet({ food, questions, onLog, onClose, hideCalories }: { food:
     grams,
     nutrition,
     createdAt: new Date().toISOString(),
+    loggedDate,
     source: food.source,
     estimated: food.source === "ai-label" || !food.verified,
     }, { ...food, lastUsedAt: new Date().toISOString() });
@@ -1173,6 +1180,7 @@ function PortionSheet({ food, questions, onLog, onClose, hideCalories }: { food:
       <div className="nutrition-preview"><div><span>Protein</span><strong>{nutrition.protein} g</strong></div><div><span>Carbs</span><strong>{nutrition.carbs} g</strong></div><div><span>Fat</span><strong>{nutrition.fat} g</strong></div><div><span>Fibre</span><strong>{nutrition.fiber} g</strong></div></div>
       <div className="portion-action-area">
         <div className="field-block"><span id="meal-type-label">Add to</span><div className="segmented four" role="group" aria-labelledby="meal-type-label">{(Object.keys(mealLabels) as MealType[]).map((type) => <button type="button" key={type} aria-pressed={mealType === type} className={mealType === type ? "active" : ""} onClick={() => setMealType(type)}>{mealLabels[type]}</button>)}</div></div>
+      <label className="meal-date-field"><span>Meal date</span><input type="date" value={loggedDate} max={localDateKey()} onChange={(event) => setLoggedDate(event.target.value || localDateKey())} /></label>
       <div className="portion-submit"><button className="primary-button full" type="submit"><Plus size={18} />{hideCalories ? "Log food" : `Log ${nutrition.calories} kcal`}</button><p className="form-footnote">{grams} g total · {food.source === "open-food-facts" ? "Open Food Facts" : food.source === "food-data-central" ? "USDA FoodData Central" : food.source === "ai-label" ? "AI-extracted—check the package" : food.source === "custom" ? "Your custom food" : "Generic reference value"}</p></div>
       </div>
     </form>
@@ -1843,12 +1851,13 @@ export function TrackerApp() {
     syncWrite((userId) => upsertCloudProfile(userId, next));
   };
   const logMeal = async (meal: Meal, food: Food) => {
-    const adjustedDate = dateKey === localDateKey() ? new Date() : new Date(`${dateKey}T12:00:00`);
-    const savedMeal = { ...meal, loggedDate: dateKey, createdAt: adjustedDate.toISOString() };
+    const loggedDate = meal.loggedDate || dateKey;
+    const adjustedDate = loggedDate === localDateKey() ? new Date() : new Date(`${loggedDate}T12:00:00`);
+    const savedMeal = { ...meal, loggedDate, createdAt: adjustedDate.toISOString() };
     await Promise.all([put("meals", savedMeal), put("foods", food)]);
     setMeals((current) => [...current, savedMeal]);
     setFoods((current) => [food, ...current.filter((item) => item.id !== food.id)]);
-    setAdding(false); setDirectFood(undefined); setToast(`${food.name} logged`); setTab("today");
+    setAdding(false); setDirectFood(undefined); setDateKey(loggedDate); setToast(`${food.name} logged`); setTab("today");
     syncWrite(async (userId) => { await Promise.all([upsertCloudMeal(userId, savedMeal), upsertCloudFood(userId, food)]); });
   };
   const saveEditedMeal = async (meal: Meal) => {
@@ -1857,6 +1866,11 @@ export function TrackerApp() {
     setMeals((current) => current.map((candidate) => candidate.id === savedMeal.id ? savedMeal : candidate));
     setEditingMeal(undefined); setToast("Meal updated");
     syncWrite((userId) => upsertCloudMeal(userId, savedMeal));
+  };
+  const moveMeal = async (meal: Meal, mealType: MealType) => {
+    if (meal.mealType === mealType) return;
+    await saveEditedMeal({ ...meal, mealType });
+    setToast(`Moved to ${mealLabels[mealType]}`);
   };
   const saveNewMeal = async (meal: Meal) => {
     await put("meals", meal);
@@ -1982,7 +1996,7 @@ export function TrackerApp() {
     <div className="app-shell">
       <div className="ambient one" /><div className="ambient two" />
       <div className="content-shell" inert={modalOpen} aria-hidden={modalOpen || undefined}>
-        {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={() => openAdd()} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} onEdit={setEditingMeal} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} />}
+        {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={() => openAdd()} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} onEdit={setEditingMeal} onMoveMeal={moveMeal} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} />}
         {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={openAdd} />}
         {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} chatTextSize={chatTextSize} onLogCoachMeal={logCoachMeal} onOpenAccount={() => setTab("profile")} onOpenAdd={openAdd} />}
         {tab === "insights" && <InsightsView meals={meals} profile={profile} />}
