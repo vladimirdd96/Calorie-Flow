@@ -165,7 +165,7 @@ p { color: var(--muted); line-height: 1.55; }
 .meal-list { min-height: 58px; border-radius: var(--radius-md); overflow: hidden; transition: border-color .2s ease, background .2s ease; }
 .meal-list.drop-target { border-color: var(--mint); background: rgba(125,255,213,.08); }
 .empty-meal-drop { min-height: 58px; display: grid; place-items: center; color: var(--muted-2); font-size: 11px; font-weight: 700; }
-.meal-row { position: relative; display: grid; grid-template-columns: auto auto 1fr auto auto auto; align-items: center; gap: 9px; padding: 14px; cursor: grab; }
+.meal-row { position: relative; display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto auto auto auto; align-items: center; gap: 9px; padding: 14px; cursor: grab; }
 .meal-row:active { cursor: grabbing; }
 .meal-row.drop-before { box-shadow: inset 0 3px 0 var(--mint); }
 .meal-row.drop-after { box-shadow: inset 0 -3px 0 var(--mint); }
@@ -480,8 +480,7 @@ p { color: var(--muted); line-height: 1.55; }
 .coach-history-chat span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: inherit; font-size: 11px; font-weight: 750; }
 .coach-history-chat small { color: var(--muted-2); font-size: 9px; }
 .coach-history-row.active .coach-history-chat, .coach-history-chat:hover { color: var(--text); }
-.coach-history-row:hover::after, .coach-history-row:focus-within::after { content: attr(data-title); position: absolute; left: 8px; top: calc(100% - 4px); z-index: 5; width: max-content; max-width: min(360px, calc(100vw - 32px)); padding: 8px 10px; color: var(--text); background: var(--panel-strong); border: 1px solid var(--border-strong); border-radius: 9px; box-shadow: var(--shadow); font-size: 11px; font-weight: 750; line-height: 1.35; white-space: normal; pointer-events: none; }
-.coach-history-row:has(.coach-rename-form)::after { display: none; }
+.coach-history-row:hover { background: color-mix(in oklch, var(--panel-strong) 34%, transparent); }
 .coach-history-rename { width: 28px; height: 30px; display: grid; place-items: center; color: var(--muted-2); background: transparent; border: 0; border-radius: 8px; }
 .coach-history-rename:hover, .coach-history-rename:focus-visible { color: var(--mint); background: color-mix(in oklch, var(--mint) 10%, transparent); }
 .coach-rename-form { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) 28px; gap: 4px; padding: 4px; }
