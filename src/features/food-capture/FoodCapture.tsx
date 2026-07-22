@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, BookOpen, Camera, ChevronRight, Database, Info, Mic, Package, Pencil, Plus, ScanLine, Search, Send, ShieldCheck, Upload, WifiOff } from "lucide-react";
+import { ArrowLeft, BookOpen, Camera, ChevronRight, Database, Info, Mic, Package, Pencil, Plus, ScanLine, Search, Send, ShieldCheck, Square, Upload, WifiOff } from "lucide-react";
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AddFoodView } from "@/features/food-capture/types";
 import { ClearableInput } from "@/features/shared/ClearableInput";
@@ -15,6 +15,12 @@ import { LabelReader } from "./components/LabelReader";
 import { MealPhotoReader } from "./components/MealPhotoReader";
 
 type AddView = AddFoodView;
+
+type VoiceResult = { 0?: { transcript?: string }; isFinal?: boolean };
+type VoiceResultEvent = { resultIndex?: number; results: { length: number; [index: number]: VoiceResult } };
+type VoiceRecognition = { lang: string; interimResults: boolean; continuous: boolean; maxAlternatives: number; start: () => void; stop: () => void; abort: () => void; onresult?: (event: VoiceResultEvent) => void; onerror?: (event: { error?: string }) => void; onend?: () => void };
+type VoiceRecognitionConstructor = new () => VoiceRecognition;
+type VoicePhase = "idle" | "recording" | "processing";
 
 export function hideCalorieValues(content: string) { return content.replace(/\b\d[\d,.]*\s*(?:-|–|—)?\s*(?:kcal|calories?)\b/gi, "energy hidden"); }
 export { PortionSheet } from "./components/FoodEntrySheets";
@@ -42,9 +48,14 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
   const [intakeDraft, setIntakeDraft] = useState("");
   const [coachReply, setCoachReply] = useState("");
   const [askingCoach, setAskingCoach] = useState(false);
-  const [listening, setListening] = useState(false);
+  const [voicePhase, setVoicePhase] = useState<VoicePhase>("idle");
+  const [voiceTranscript, setVoiceTranscript] = useState("");
+  const [voiceElapsed, setVoiceElapsed] = useState(0);
   const [pendingImages, setPendingImages] = useState<File[]>([]);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const voiceRecognitionRef = useRef<VoiceRecognition | undefined>(undefined);
+  const voiceTranscriptRef = useRef("");
+  const voiceStopRequestedRef = useRef(false);
   const searchRequestRef = useRef(0);
   const recent = [...foods].filter((food) => food.lastUsedAt).sort((a, b) => (b.lastUsedAt || "").localeCompare(a.lastUsedAt || "")).slice(0, 6);
   const normalizedQuery = query.trim().toLocaleLowerCase();
@@ -128,23 +139,54 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
       setIntakeError(caught instanceof Error ? caught.message : "The Coach is unavailable right now.");
     } finally { setAskingCoach(false); }
   };
+  useEffect(() => {
+    if (voicePhase !== "recording") return;
+    const startedAt = Date.now();
+    const timer = window.setInterval(() => setVoiceElapsed(Math.floor((Date.now() - startedAt) / 1000)), 250);
+    return () => window.clearInterval(timer);
+  }, [voicePhase]);
+
+  useEffect(() => () => { voiceRecognitionRef.current?.abort(); }, []);
+
+  const finishVoiceCapture = async (transcript: string) => {
+    const phrase = normalizeVoiceFoodQuery(transcript);
+    voiceRecognitionRef.current = undefined;
+    setVoicePhase("idle");
+    setVoiceElapsed(0);
+    if (!phrase) { setIntakeError("I didn’t catch a food name. Try again or type it instead."); return; }
+    setIntakeDraft(phrase); setQuery(phrase); changeView("search"); await runSearch(phrase);
+  };
+
+  const stopVoiceSearch = () => {
+    if (voicePhase !== "recording") return;
+    voiceStopRequestedRef.current = true;
+    setVoicePhase("processing");
+    voiceRecognitionRef.current?.stop();
+  };
+
   const startVoiceSearch = () => {
-    type VoiceResult = { 0?: { transcript?: string } };
-    type VoiceRecognition = { lang: string; interimResults: boolean; maxAlternatives: number; start: () => void; onresult?: (event: { results: { [index: number]: VoiceResult } }) => void; onerror?: () => void; onend?: () => void };
-    type VoiceRecognitionConstructor = new () => VoiceRecognition;
     const browser = window as unknown as { SpeechRecognition?: VoiceRecognitionConstructor; webkitSpeechRecognition?: VoiceRecognitionConstructor };
     const Recognition = browser.SpeechRecognition || browser.webkitSpeechRecognition;
     if (!Recognition) { setIntakeError("Voice logging is not available in this browser. Type a food name instead."); return; }
     const recognition = new Recognition();
-    recognition.lang = navigator.language || "en-US"; recognition.interimResults = false; recognition.maxAlternatives = 1;
+    voiceRecognitionRef.current = recognition;
+    voiceTranscriptRef.current = "";
+    voiceStopRequestedRef.current = false;
+    setVoiceTranscript(""); setVoiceElapsed(0); setVoicePhase("recording"); setIntakeError("");
+    recognition.lang = navigator.language || "en-US"; recognition.interimResults = true; recognition.continuous = true; recognition.maxAlternatives = 1;
     recognition.onresult = (event) => {
-      const phrase = normalizeVoiceFoodQuery(event.results[0]?.[0]?.transcript || "");
-      if (!phrase) { setIntakeError("I didn’t catch a food name. Try again or type it instead."); return; }
-      setIntakeDraft(phrase); setQuery(phrase); changeView("search"); void runSearch(phrase);
+      const transcript = Array.from({ length: event.results.length }, (_, index) => event.results[index]?.[0]?.transcript || "").join(" ").trim();
+      voiceTranscriptRef.current = transcript;
+      setVoiceTranscript(transcript);
     };
-    recognition.onerror = () => setIntakeError("Voice logging stopped before a food name was captured. Try again or type it instead.");
-    recognition.onend = () => setListening(false);
-    setListening(true); setIntakeError(""); recognition.start();
+    recognition.onerror = (event) => {
+      voiceRecognitionRef.current = undefined; setVoicePhase("idle"); setVoiceElapsed(0);
+      if (event.error !== "aborted") setIntakeError("Voice logging stopped before a food name was captured. Try again or type it instead.");
+    };
+    recognition.onend = () => {
+      if (voiceStopRequestedRef.current) void finishVoiceCapture(voiceTranscriptRef.current);
+    };
+    try { recognition.start(); } catch { voiceRecognitionRef.current = undefined; setVoicePhase("idle"); setIntakeError("The microphone could not start. Check your browser permission and try again."); }
   };
   const addImages = (files?: FileList | File[]) => {
     if (!files?.length) return;
@@ -209,7 +251,13 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
   return (
     <div className="coach-intake" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); addImages(event.dataTransfer.files); }}>
       <div className="sheet-header"><span /><div><span className="eyebrow">Log with Coach</span><h2>Add food or get help</h2></div><span /></div>
-      <div className="intake-actions"><button type="button" onClick={() => changeView("scan")}><ScanLine size={17} />Barcode</button><button type="button" onClick={() => imageInputRef.current?.click()}><Upload size={17} />Add photos</button><button type="button" onClick={startVoiceSearch} disabled={listening}><Mic size={17} />{listening ? "Listening…" : "Voice"}</button><button type="button" onClick={() => changeView("quick")}><Plus size={17} />Quick macros</button></div>
+      <div className="intake-actions"><button type="button" onClick={() => changeView("scan")}><ScanLine size={17} />Barcode</button><button type="button" onClick={() => imageInputRef.current?.click()}><Upload size={17} />Add photos</button><button type="button" onClick={startVoiceSearch} disabled={voicePhase !== "idle"}><Mic size={17} />Voice</button><button type="button" onClick={() => changeView("quick")}><Plus size={17} />Quick macros</button></div>
+      {voicePhase !== "idle" && <section className={`voice-capture ${voicePhase}`} aria-live="polite" aria-label="Voice food entry">
+        <div className="voice-capture-top"><span className="voice-status-dot" aria-hidden="true" /><div><strong>{voicePhase === "recording" ? "Listening" : "Making sense of that"}</strong><small>{voicePhase === "recording" ? "Say what you ate, then tap Done" : "Searching your food library…"}</small></div>{voicePhase === "recording" && <time>{String(Math.floor(voiceElapsed / 60)).padStart(2, "0")}:{String(voiceElapsed % 60).padStart(2, "0")}</time>}</div>
+        <div className={`voice-waveform ${voiceTranscript ? "has-speech" : ""}`} aria-hidden="true">{[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((bar) => <i key={bar} />)}</div>
+        <p className={`voice-transcript ${voiceTranscript ? "has-text" : ""}`}>{voiceTranscript || "Your food description will appear here"}</p>
+        {voicePhase === "recording" && <button className="voice-stop-button" type="button" onClick={stopVoiceSearch}><Square size={15} fill="currentColor" />Done</button>}
+      </section>}
       <input ref={imageInputRef} className="visually-hidden-file" type="file" accept="image/*" multiple onChange={(event) => addImages(event.target.files || undefined)} />
       <label className="intake-input-label" htmlFor="coach-intake">Search a food or ask Coach</label>
       <form className="intake-composer" onSubmit={sendIntake}><ClearableInput id="coach-intake" value={intakeDraft} onChange={(event) => setIntakeDraft(event.target.value)} onClear={() => setIntakeDraft("")} placeholder="Food or question" clearLabel="Clear Coach prompt" /><button type="submit" disabled={!intakeDraft.trim() || askingCoach} aria-label="Send to Coach">{askingCoach ? <span className="coach-loader" /> : <Send />}</button></form>
