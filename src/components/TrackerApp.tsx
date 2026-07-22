@@ -444,26 +444,35 @@ function GoogleIcon() {
   );
 }
 
-function ProgressRing({ value, target }: { value: number; target: number }) {
+function ProgressRing({ value, target, nutrition }: { value: number; target: number; nutrition: Nutrition }) {
   const progress = Math.min(1, value / Math.max(1, target));
   const circumference = 2 * Math.PI * 82;
+  const macroSegments = [
+    { label: "Protein", value: nutrition.protein * 4, color: "var(--protein)" },
+    { label: "Carbs", value: nutrition.carbs * 4, color: "var(--carbs)" },
+    { label: "Fat", value: nutrition.fat * 9, color: "var(--fat)" },
+  ];
+  const macroCalories = macroSegments.reduce((sum, segment) => sum + segment.value, 0);
+  let consumedOffset = 0;
   return (
-    <div className="progress-ring" role="progressbar" aria-label="Daily calorie progress" aria-valuemin={0} aria-valuemax={target} aria-valuenow={Math.round(value)} aria-valuetext={`${Math.round(progress * 100)} percent of daily calories`}>
+    <div className="progress-ring" role="progressbar" aria-label={`Daily calorie progress. Protein ${round(nutrition.protein)} grams, carbs ${round(nutrition.carbs)} grams, fat ${round(nutrition.fat)} grams.`} aria-valuemin={0} aria-valuemax={target} aria-valuenow={Math.round(value)} aria-valuetext={`${Math.round(progress * 100)} percent of daily calories`}>
       <svg viewBox="0 0 200 200" aria-hidden="true">
         <circle className="ring-track" cx="100" cy="100" r="82" />
-        <circle
-          className="ring-value"
-          cx="100"
-          cy="100"
-          r="82"
-          strokeDasharray={circumference}
-          strokeDashoffset={circumference * (1 - progress)}
-        />
+        {macroSegments.map((segment) => {
+          const share = macroCalories > 0 ? segment.value / macroCalories : 0;
+          const length = circumference * progress * share;
+          const offset = circumference * progress * consumedOffset;
+          consumedOffset += share;
+          return <circle key={segment.label} className="ring-segment" cx="100" cy="100" r="82" stroke={segment.color} strokeDasharray={`${length} ${circumference - length}`} strokeDashoffset={-offset} />;
+        })}
       </svg>
       <div className="ring-content">
         <span className="eyebrow">Eaten</span>
         <strong>{Math.round(value).toLocaleString()}</strong>
         <span>of {target.toLocaleString()} kcal</span>
+      </div>
+      <div className="ring-legend" aria-hidden="true">
+        {macroSegments.map((segment) => <span key={segment.label}><i style={{ background: segment.color }} />{segment.label}</span>)}
       </div>
     </div>
   );
@@ -854,18 +863,16 @@ function TodayView({
 
       <section className="hero-grid">
         <div className="hero-card card">
-          {profile.hideCalories ? <div className="nutrition-focus"><span className="eyebrow">Today’s nutrients</span><strong>Focus on your macros</strong><p>Protein, carbs, fat and fibre stay visible. Energy numbers are hidden.</p></div> : <ProgressRing value={total.calories} target={targets.calories} />}
+          {profile.hideCalories ? <div className="nutrition-focus"><span className="eyebrow">Today’s nutrients</span><strong>Focus on your macros</strong><p>Protein, carbs, fat and fibre stay visible. Energy numbers are hidden.</p></div> : <ProgressRing value={total.calories} target={targets.calories} nutrition={total} />}
           <div className="hero-stat-grid">
             {!profile.hideCalories && <div><span>Remaining</span><strong>{Math.round(remaining).toLocaleString()}</strong><small>kcal</small></div>}
             <div><span>Fibre</span><strong>{round(total.fiber, 0)}</strong><small>/ {targets.fiber} g</small></div>
           </div>
         </div>
         <div className="macro-card card">
-          <button type="button" className="macro-expand-trigger" onClick={onOpenNutritionDetails}><span><span className="eyebrow">Today</span><strong>Macros</strong></span><span className="macro-expand-hint"><span>View all nutrients</span><ChevronDown size={17} aria-hidden="true" /></span></button>
-          <MacroBar label="Protein" value={total.protein} target={targets.protein} color="var(--protein)" />
-          <MacroBar label={profile.carbDisplay === "net" ? "Net carbs" : "Carbs"} value={carbs} target={targets.carbs} color="var(--carbs)" />
-          <MacroBar label="Fat" value={total.fat} target={targets.fat} color="var(--fat)" />
-          <div className="target-note"><Info size={15} /> Targets are guides, not exact medical limits.</div>
+          <div className="section-heading compact"><div><span className="eyebrow">Daily nutrition</span><h2>Macro totals</h2></div><span className="subtle">from food & drinks</span></div>
+          <div className="macro-total-grid"><div><span>Protein</span><strong>{round(total.protein)}<small>g</small></strong></div><div><span>{profile.carbDisplay === "net" ? "Net carbs" : "Carbs"}</span><strong>{round(carbs)}<small>g</small></strong></div><div><span>Fat</span><strong>{round(total.fat)}<small>g</small></strong></div></div>
+          <button type="button" className="macro-expand-trigger" onClick={onOpenNutritionDetails}><span>See micronutrients and full breakdown</span><span className="macro-expand-hint"><span>View details</span><ChevronDown size={17} aria-hidden="true" /></span></button>
         </div>
       </section>
 

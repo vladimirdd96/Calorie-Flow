@@ -146,16 +146,24 @@ p { color: var(--muted); line-height: 1.55; }
 .progress-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
 .progress-ring circle { fill: none; stroke-width: 11; }
 .ring-track { stroke: var(--track); }
-.ring-value { stroke: var(--mint); stroke-linecap: round; transition: stroke-dashoffset .8s cubic-bezier(.2,.8,.2,1); }
+.ring-segment { stroke-linecap: butt; transition: stroke-dasharray .8s cubic-bezier(.2,.8,.2,1), stroke-dashoffset .8s cubic-bezier(.2,.8,.2,1); }
 .ring-content { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; text-align: center; }
 .ring-content strong { font-size: 43px; letter-spacing: -.055em; line-height: 1; margin: 7px 0; }
 .ring-content > span:last-child { color: var(--muted); font-size: 11px; }
+.ring-legend { position: absolute; right: 0; bottom: 5px; left: 0; display: flex; justify-content: center; gap: 10px; color: var(--muted); font-size: 9px; font-weight: 800; }
+.ring-legend span { display: inline-flex; align-items: center; gap: 4px; }
+.ring-legend i { width: 6px; height: 6px; display: inline-block; border-radius: 50%; }
 .hero-stat-grid { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border-top: 1px solid var(--border); padding-top: 14px; }
 .hero-stat-grid > div { text-align: center; display: flex; justify-content: center; align-items: baseline; gap: 5px; }
 .hero-stat-grid span { color: var(--muted); font-size: 10px; margin-right: 5px; }
 .hero-stat-grid strong { font-size: 18px; }
 .hero-stat-grid small { color: var(--muted); font-size: 10px; }
 .macro-card { padding: 21px 19px; }
+.macro-total-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 20px 0 22px; }
+.macro-total-grid > div { display: grid; gap: 5px; padding: 12px 10px; border-radius: 12px; background: var(--control-surface-strong); }
+.macro-total-grid span { color: var(--muted); font-size: 10px; }
+.macro-total-grid strong { font-size: 19px; letter-spacing: -.035em; }
+.macro-total-grid small { margin-left: 3px; color: var(--muted); font-size: 10px; font-weight: 700; }
 .macro-expand-trigger { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0; color: var(--text); background: transparent; border: 0; text-align: left; cursor: pointer; }
 .macro-expand-trigger > span:first-child { display: grid; gap: 5px; }
 .macro-expand-trigger strong { font-size: 20px; letter-spacing: -.035em; }
@@ -1137,6 +1145,7 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
   .nutrition-details { padding: 22px 18px; }
   .detail-grid, .macro-detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .unit-choice-grid { grid-template-columns: 1fr; }
+  .ring-legend { gap: 7px; font-size: 8px; }
 }
 
 /* iOS Safari zooms controls whose text is smaller than 16px on focus. Keep
