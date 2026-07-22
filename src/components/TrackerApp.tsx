@@ -686,9 +686,36 @@ function HomeScreenPrompt({ onDismiss }: { onDismiss: () => void }) {
 function SaveRecipeSheet({ meals, onSave, onClose }: { meals: Meal[]; onSave: (recipe: Recipe) => void; onClose: () => void }) {
   const [name, setName] = useState(`${mealLabels[meals[0]?.mealType || "breakfast"]} regulars`);
   const [selectedIds, setSelectedIds] = useState(() => meals.map((meal) => meal.id));
+  const [titleLoading, setTitleLoading] = useState(false);
+  const [titleError, setTitleError] = useState("");
   const selectedMeals = meals.filter((meal) => selectedIds.includes(meal.id));
   const nutrition = sumNutrition(selectedMeals.map((meal) => meal.nutrition));
   const toggle = (id: string) => setSelectedIds((current) => current.includes(id) ? current.filter((candidate) => candidate !== id) : [...current, id]);
+  const suggestTitle = async () => {
+    if (!selectedMeals.length || titleLoading) return;
+    setTitleLoading(true); setTitleError("");
+    try {
+      const token = (await getSupabase()?.auth.getSession())?.data.session?.access_token;
+      if (!token) throw new Error("Sign in to ask AI for a title.");
+      const response = await fetch("/api/coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          message: `Suggest one concise recipe title, 2 to 6 words, for a regular meal containing: ${selectedMeals.map((meal) => meal.name).join(", ")}. Return only the title, with no quotes, explanation, emoji, or grocery list.`,
+          localDate: localDateKey(),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }),
+      });
+      const body: unknown = await response.json();
+      const record = body && typeof body === "object" ? body as Record<string, unknown> : {};
+      if (!response.ok || typeof record.reply !== "string") throw new Error(typeof record.error === "string" ? record.error : "AI could not suggest a title.");
+      const suggested = record.reply.split(/\r?\n/).map((line) => line.replace(/^\s*(?:title\s*:\s*|[-*•#]\s*)/i, "").replace(/^['"`]|['"`]$/g, "").trim()).find((line) => line && !/^grocery list:?$/i.test(line));
+      if (!suggested) throw new Error("AI returned an empty title.");
+      setName(suggested.slice(0, 240));
+    } catch (error) {
+      setTitleError(error instanceof Error ? error.message : "AI could not suggest a title.");
+    } finally { setTitleLoading(false); }
+  };
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!name.trim() || selectedMeals.length === 0) return;
@@ -696,7 +723,7 @@ function SaveRecipeSheet({ meals, onSave, onClose }: { meals: Meal[]; onSave: (r
     const ingredients: RecipeIngredient[] = selectedMeals.map((meal) => ({ id: `ingredient-${crypto.randomUUID()}`, name: meal.name, foodId: meal.foodId, amount: meal.amount, unit: meal.unit, grams: meal.grams, nutrition: meal.nutrition }));
     onSave({ id: `recipe-${crypto.randomUUID()}`, name: name.trim(), servings: 1, ingredients, nutritionPerServing: nutrition, createdAt: now, updatedAt: now });
   };
-  return <div className="recipe-save-sheet"><div className="sheet-header"><div><span className="eyebrow">Save for next time</span><h2>Make this a recipe</h2></div><span /></div><form onSubmit={submit}><label className="meal-editor-form"><span>Recipe name</span><input autoFocus required value={name} maxLength={240} onChange={(event) => setName(event.target.value)} /></label><fieldset className="recipe-ingredient-picker"><legend>What belongs in it?</legend>{meals.map((meal) => <label key={meal.id}><input type="checkbox" checked={selectedIds.includes(meal.id)} onChange={() => toggle(meal.id)} /><span><strong>{meal.name}</strong><small>{Math.round(meal.nutrition.calories)} kcal</small></span></label>)}</fieldset><div className="recipe-save-summary"><span>{selectedMeals.length} item{selectedMeals.length === 1 ? "" : "s"} · {Math.round(nutrition.calories)} kcal</span><small>You can replace individual items when you log it later.</small></div><div className="sheet-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="submit" className="primary-button" disabled={!selectedMeals.length}><BookOpen size={17} />Save recipe</button></div></form></div>;
+  return <div className="recipe-save-sheet"><div className="sheet-header"><div><span className="eyebrow">Save for next time</span><h2>Make this a recipe</h2></div><span /></div><form onSubmit={submit}><div className="recipe-name-field"><label htmlFor="recipe-name"><span>Recipe name</span><input id="recipe-name" autoFocus required value={name} maxLength={240} onChange={(event) => setName(event.target.value)} /></label><button type="button" className="secondary-button recipe-title-button" onClick={() => void suggestTitle()} disabled={!selectedMeals.length || titleLoading}><Sparkles size={16} />{titleLoading ? "Suggesting…" : "Suggest with AI"}</button></div>{titleError && <div className="inline-alert" role="status"><Info size={16} />{titleError}</div>}<fieldset className="recipe-ingredient-picker"><legend>What belongs in it?</legend>{meals.map((meal) => <label key={meal.id}><input type="checkbox" checked={selectedIds.includes(meal.id)} onChange={() => toggle(meal.id)} /><span><strong>{meal.name}</strong><small>{Math.round(meal.nutrition.calories)} kcal</small></span></label>)}</fieldset><div className="recipe-save-summary"><span>{selectedMeals.length} item{selectedMeals.length === 1 ? "" : "s"} · {Math.round(nutrition.calories)} kcal</span><small>You can replace individual items when you log it later.</small></div><div className="sheet-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="submit" className="primary-button" disabled={!selectedMeals.length}><BookOpen size={17} />Save recipe</button></div></form></div>;
 }
 
 function RecipeLogSheet({ recipe, foods, onLog, onClose }: { recipe: Recipe; foods: Food[]; onLog: (meal: Meal) => Promise<void>; onClose: () => void }) {

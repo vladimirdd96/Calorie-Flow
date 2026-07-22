@@ -584,6 +584,9 @@ p { color: var(--muted); line-height: 1.55; }
 .recipe-picker-row small { color: var(--muted); font-size: 10px; }
 .recipe-picker-row svg { color: var(--mint); flex: 0 0 auto; }
 .recipe-save-sheet form, .recipe-log-sheet form { display: grid; gap: 16px; }
+.recipe-name-field { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: end; }
+.recipe-name-field label { min-width: 0; }
+.recipe-title-button { min-height: 50px; white-space: nowrap; }
 .recipe-ingredient-picker { display: grid; gap: 5px; margin: 0; padding: 0; border: 0; }
 .recipe-ingredient-picker legend { margin-bottom: 4px; color: var(--muted); font-size: 12px; font-weight: 800; }
 .recipe-ingredient-picker label { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--control-surface); }
@@ -603,6 +606,8 @@ p { color: var(--muted); line-height: 1.55; }
   .daily-log-actions .meal-reorder-hint { display: none; }
   .recipe-log-ingredient { grid-template-columns: 1fr; gap: 7px; }
   .recipe-log-ingredient > small { text-align: left; }
+  .recipe-name-field { grid-template-columns: 1fr; }
+  .recipe-title-button { width: 100%; }
 }
 .recipe-create summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; cursor: pointer; list-style: none; }
 .recipe-create summary::-webkit-details-marker { display: none; }
