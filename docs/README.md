@@ -8,6 +8,7 @@ Agent-facing, decision-dense documentation for Calorie Flow. Before code changes
 | `database.md` | IndexedDB, Supabase schema, migrations |
 | `api.md` | Next and Cloudflare API surfaces |
 | `ui-patterns.md` | Client app and accessibility conventions |
+| `requirements.md` | Durable product requirements from user requests |
 | `i18n.md` | Current copy and localization policy |
 | `CLOUD_SYNC_SETUP.md` | Deployment configuration |
 | `decisions/` | Architecture Decision Records |
