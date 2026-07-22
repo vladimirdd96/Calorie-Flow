@@ -246,9 +246,16 @@ p { color: var(--muted); line-height: 1.55; }
 .macro-detail-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .detail-empty { margin: 0; padding: 15px; border: 1px dashed var(--border-strong); border-radius: 11px; color: var(--muted); font-size: 12px; line-height: 1.5; }
 .detail-footnote { display: flex; align-items: center; gap: 7px; margin-top: 22px; padding-top: 13px; border-top: 1px solid var(--border); color: var(--muted-2); font-size: 10px; }
-.editor-nutrition { display: grid; gap: 9px; padding: 13px; border: 1px solid var(--border); border-radius: 13px; background: rgba(125,255,213,.035); }
-.editor-nutrition > div { display: flex; flex-wrap: wrap; gap: 12px 18px; color: var(--muted); font-size: 11px; }
-.editor-nutrition strong { color: var(--text); margin-left: 4px; }
+.editor-nutrition { display: grid; gap: 14px; padding: 16px; border: 1px solid var(--border); border-radius: 16px; background: color-mix(in oklch, var(--mint) 5%, var(--panel)); }
+.editor-nutrition-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.editor-nutrition-heading > div { display: grid; gap: 4px; }
+.editor-nutrition-heading small { color: var(--muted); font-size: 11px; font-weight: 500; }
+.editor-nutrition-heading > svg { color: var(--mint); }
+.editor-nutrition-fields { gap: 10px; }
+.editor-nutrition-fields label { gap: 6px; font-size: 10px; }
+.editor-nutrition-fields label > span { display: flex; justify-content: space-between; gap: 6px; }
+.editor-nutrition-fields label > span small { color: var(--muted-2); font-size: 9px; font-weight: 700; }
+.editor-nutrition-fields input { min-height: 43px; padding: 0 10px; border-radius: 11px; background: var(--panel); font-size: 15px; font-weight: 700; }
 .sheet-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 24px; }
 .page-header { padding: 34px 2px 20px; max-width: 610px; }
 .page-header .eyebrow { margin-bottom: 9px; }
@@ -1123,6 +1130,10 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
   .segmented.four button { font-size: 9px; }
   .meal-row { grid-template-columns: auto minmax(0, 1fr) auto auto; }
   .meal-row .meal-icon { display: none; }
+}
+
+@media (max-width: 520px) {
+  .editor-nutrition-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (prefers-reduced-motion: reduce) {

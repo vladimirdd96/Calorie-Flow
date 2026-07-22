@@ -577,20 +577,43 @@ function MealEditor({ meal, onSave, onClose, hideCalories }: { meal: Meal; onSav
   const [name, setName] = useState(meal.name);
   const [amount, setAmount] = useState(String(meal.amount));
   const [mealType, setMealType] = useState<MealType>(meal.mealType);
+  const [nutrition, setNutrition] = useState(() => ({
+    calories: String(Math.round(meal.nutrition.calories)),
+    protein: String(meal.nutrition.protein),
+    carbs: String(meal.nutrition.carbs),
+    fat: String(meal.nutrition.fat),
+    fiber: String(meal.nutrition.fiber),
+    sugar: String(meal.nutrition.sugar),
+  }));
   const [error, setError] = useState("");
+  const updateNutrition = (key: keyof typeof nutrition, value: string) => setNutrition((current) => ({ ...current, [key]: value }));
   const submit = (event: FormEvent) => {
     event.preventDefault();
     const nextAmount = Number(amount);
-    if (!name.trim() || !Number.isFinite(nextAmount) || nextAmount <= 0) { setError("Add a meal name and a positive amount."); return; }
-    const ratio = nextAmount / meal.amount;
-    onSave({ ...meal, name: name.trim(), amount: nextAmount, mealType, grams: round(meal.grams * ratio), nutrition: scaleNutrition(meal.nutrition, ratio * 100) });
+    const nextNutrition = Object.fromEntries(Object.entries(nutrition).map(([key, value]) => [key, Number(value)])) as Record<keyof typeof nutrition, number>;
+    if (!name.trim() || !Number.isFinite(nextAmount) || nextAmount <= 0 || Object.values(nextNutrition).some((value) => !Number.isFinite(value) || value < 0)) {
+      setError("Add a meal name, a positive amount, and zero or positive nutrition values.");
+      return;
+    }
+    const ratio = meal.amount > 0 ? nextAmount / meal.amount : 1;
+    onSave({ ...meal, name: name.trim(), amount: nextAmount, mealType, grams: round(meal.grams * ratio), nutrition: { ...meal.nutrition, ...nextNutrition, calories: Math.round(nextNutrition.calories) } });
   };
   return <div className="meal-editor">
     <div className="sheet-header"><div><span className="eyebrow">Your diary</span><h2 id="meal-editor-title">Edit meal</h2></div><span /></div>
     <form className="meal-editor-form" onSubmit={submit}>
       <label><span>Meal and additions</span><input autoFocus value={name} onChange={(event) => setName(event.target.value)} maxLength={240} /></label>
       <div className="form-grid two"><label><span>Amount</span><input type="number" min="0.1" step="0.1" value={amount} onChange={(event) => setAmount(event.target.value)} /></label><label><span>Meal</span><ThemedSelect ariaLabel="Meal" value={mealType} onChange={(value) => setMealType(value as MealType)} options={(Object.keys(mealLabels) as MealType[]).map((type) => ({ value: type, label: mealLabels[type] }))} /></label></div>
-      <div className="editor-nutrition"><span className="eyebrow">Current estimate{hideCalories ? " · energy hidden" : ""}</span><div><span>Protein <strong>{round(meal.nutrition.protein * Number(amount || 0) / meal.amount, 1)} g</strong></span><span>Carbs <strong>{round(meal.nutrition.carbs * Number(amount || 0) / meal.amount, 1)} g</strong></span><span>Fat <strong>{round(meal.nutrition.fat * Number(amount || 0) / meal.amount, 1)} g</strong></span>{!hideCalories && <span>Calories <strong>{Math.round(meal.nutrition.calories * Number(amount || 0) / meal.amount)}</strong></span>}</div></div>
+      <section className="editor-nutrition" aria-labelledby="meal-nutrition-heading">
+        <div className="editor-nutrition-heading"><div><span className="eyebrow" id="meal-nutrition-heading">Nutrition for this entry</span><small>Adjust what you actually ate.</small></div><Pencil size={17} aria-hidden="true" /></div>
+        <div className="form-grid three editor-nutrition-fields">
+          {!hideCalories && <label><span>Calories <small>kcal</small></span><input required min="0" step="1" type="number" inputMode="numeric" value={nutrition.calories} onChange={(event) => updateNutrition("calories", event.target.value)} /></label>}
+          <label><span>Protein <small>g</small></span><input min="0" step="0.1" type="number" inputMode="decimal" value={nutrition.protein} onChange={(event) => updateNutrition("protein", event.target.value)} /></label>
+          <label><span>Carbs <small>g</small></span><input min="0" step="0.1" type="number" inputMode="decimal" value={nutrition.carbs} onChange={(event) => updateNutrition("carbs", event.target.value)} /></label>
+          <label><span>Fat <small>g</small></span><input min="0" step="0.1" type="number" inputMode="decimal" value={nutrition.fat} onChange={(event) => updateNutrition("fat", event.target.value)} /></label>
+          <label><span>Fibre <small>g</small></span><input min="0" step="0.1" type="number" inputMode="decimal" value={nutrition.fiber} onChange={(event) => updateNutrition("fiber", event.target.value)} /></label>
+          <label><span>Sugar <small>g</small></span><input min="0" step="0.1" type="number" inputMode="decimal" value={nutrition.sugar} onChange={(event) => updateNutrition("sugar", event.target.value)} /></label>
+        </div>
+      </section>
       {error && <div className="inline-alert error" role="alert"><Info size={16} />{error}</div>}
       <div className="sheet-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="submit" className="primary-button"><Check size={17} />Save changes</button></div>
     </form>
