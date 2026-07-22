@@ -1117,11 +1117,12 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 @media (min-width: 760px) {
   .page { padding-left: 32px; padding-right: 32px; }
   .today-page { padding-top: 30px; }
-  .hero-grid { grid-template-columns: .9fr 1.1fr; align-items: start; }
+  .hero-grid { grid-template-columns: .9fr 1.1fr; align-items: stretch; }
   .summary-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: none; }
   .chart-card { padding: 24px; }
   .hero-card { grid-template-columns: 1fr; }
-  .macro-card { padding: 26px; }
+  .macro-card { display: flex; flex-direction: column; padding: 26px; }
+  .macro-card .macro-expand-trigger { margin-top: auto; }
   .page-header { padding-top: 70px; }
   .feature-actions { grid-template-columns: minmax(0, 1.18fr) repeat(2, minmax(0, 1fr)); gap: 12px; }
   .feature-actions button { min-height: 144px; padding: 20px; }

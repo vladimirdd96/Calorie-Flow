@@ -166,6 +166,12 @@ export type FastingRecord = {
 export type RecipeIngredient = {
   id: string;
   name: string;
+  /** When the recipe was created from the diary, keep the source food and portion for optional swaps. */
+  foodId?: string;
+  amount?: number;
+  unit?: ServingUnit;
+  grams?: number;
+  nutrition?: Nutrition;
 };
 
 export type Recipe = {
