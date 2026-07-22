@@ -219,6 +219,8 @@ p { color: var(--muted); line-height: 1.55; }
 .duplicate-meal-copy { display: grid; gap: 5px; margin: 18px 0; }
 .duplicate-meal-copy p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .meal-editor { width: 100%; max-width: 560px; margin: 0 auto; padding: 24px; }
+.meal-editor:not(.duplicate-meal-sheet) .sheet-header { grid-template-columns: 1fr; min-height: auto; align-items: start; margin-bottom: 24px; }
+.meal-editor:not(.duplicate-meal-sheet) .sheet-header > div { text-align: left; }
 .duplicate-meal-dialog { width: min(100%, 560px); }
 .duplicate-meal-dialog .meal-editor { width: 100%; padding: 24px 20px 12px; }
 .duplicate-meal-dialog .sheet-header { grid-template-columns: 1fr; min-height: auto; margin-bottom: 24px; }
