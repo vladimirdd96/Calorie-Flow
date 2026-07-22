@@ -217,6 +217,9 @@ p { color: var(--muted); line-height: 1.55; }
 .meal-add-primary:hover, .meal-add-primary:focus-visible, .meal-add-recipe:hover, .meal-add-recipe:focus-visible { color: var(--mint-strong); background: color-mix(in oklch, var(--mint) 7%, transparent); }
 .meal-add-recipe { color: var(--mint-strong); font-size: 11px; }
 .meal-add-recipe svg { color: var(--mint); }
+.meal-add-recipe-copy { display: grid; gap: 2px; min-width: 0; }
+.meal-add-recipe-copy strong { font: inherit; }
+.meal-add-recipe-copy small { color: var(--muted); font-size: 9px; font-weight: 600; line-height: 1.2; }
 .meal-add-icon { width: 28px; height: 28px; display: grid; place-items: center; color: var(--mint); border: 1px dashed var(--border-strong); border-radius: 9px; }
 .meal-row[draggable="true"] { touch-action: pan-y; }
 .meal-row.drop-before { box-shadow: inset 0 3px 0 var(--mint); }
@@ -676,8 +679,9 @@ p { color: var(--muted); line-height: 1.55; }
   /* Keep the two meal actions in one compact toolbar. Stacking them makes
      every populated meal card unnecessarily tall on a phone. */
   .meal-add-row { gap: 4px; padding: 6px 10px; }
-  .meal-add-primary, .meal-add-recipe { min-width: 0; min-height: 38px; gap: 6px; padding: 0 4px; font-size: 11px; white-space: nowrap; }
+  .meal-add-primary, .meal-add-recipe { min-width: 0; min-height: 42px; gap: 6px; padding: 0 4px; font-size: 11px; }
   .meal-add-recipe { padding-left: 4px; }
+  .meal-add-recipe-copy small { font-size: 8px; }
   .recipe-log-ingredient { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
   .recipe-log-where { grid-template-columns: minmax(0, 1fr) minmax(132px, .8fr); gap: 8px; }
   .recipe-log-total { grid-template-columns: 1fr; gap: 14px; }
@@ -688,6 +692,7 @@ p { color: var(--muted); line-height: 1.55; }
 }
 @media (max-width: 340px) {
   .meal-add-primary, .meal-add-recipe { gap: 4px; padding: 0 2px; font-size: 10px; }
+  .meal-add-recipe-copy small { display: none; }
 }
 .recipe-create summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; cursor: pointer; list-style: none; }
 .recipe-create summary::-webkit-details-marker { display: none; }
