@@ -204,10 +204,9 @@ p { color: var(--muted); line-height: 1.55; }
 .meal-row:active { cursor: grabbing; }
 .meal-row.dragging { opacity: .48; background: color-mix(in oklch, var(--mint) 8%, transparent); }
 .meal-add-row { width: 100%; min-height: 55px; display: flex; align-items: center; gap: 8px; padding: 8px 14px; color: var(--muted); background: transparent; border-top: 1px solid var(--border); font-size: 12px; font-weight: 800; text-align: left; }
-.meal-add-primary, .meal-add-recipe { min-height: 40px; display: inline-flex; align-items: center; gap: 9px; padding: 0 8px; color: inherit; background: transparent; border: 0; border-radius: 10px; font: inherit; text-align: left; transition: color .18s ease, background .18s ease; }
-.meal-add-primary { flex: 1; }
+.meal-add-primary, .meal-add-recipe { flex: 1 1 0; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 0 8px; color: inherit; background: transparent; border: 0; border-radius: 10px; font: inherit; text-align: left; transition: color .18s ease, background .18s ease; }
 .meal-add-primary:hover, .meal-add-primary:focus-visible, .meal-add-recipe:hover, .meal-add-recipe:focus-visible { color: var(--mint-strong); background: color-mix(in oklch, var(--mint) 7%, transparent); }
-.meal-add-recipe { flex: 0 0 auto; color: var(--mint-strong); font-size: 11px; }
+.meal-add-recipe { color: var(--mint-strong); font-size: 11px; }
 .meal-add-recipe svg { color: var(--mint); }
 .meal-add-icon { width: 28px; height: 28px; display: grid; place-items: center; color: var(--mint); border: 1px dashed var(--border-strong); border-radius: 9px; }
 .meal-row[draggable="true"] { touch-action: pan-y; }
