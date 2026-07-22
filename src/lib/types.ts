@@ -65,6 +65,8 @@ export type Meal = {
   position?: number;
   /** The local calendar day the user assigned when logging the meal. */
   loggedDate?: string;
+  /** Optional user-supplied meal photo, stored locally as a resized image data URL. */
+  imageUrl?: string;
   source: FoodSource;
   estimated?: boolean;
 };
