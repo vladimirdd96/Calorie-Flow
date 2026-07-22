@@ -11,4 +11,14 @@ describe("AppRuntime boundary", () => {
     expect(source.split("\n").length).toBeLessThanOrEqual(12);
     expect(source).not.toMatch(/use(?:State|Effect|Memo|Callback|Ref)\s*\(/);
   });
+
+  it("keeps product views outside the stateful app shell", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/features/app/AppShell.tsx"), "utf8");
+
+    expect(source.split("\n").length).toBeLessThanOrEqual(600);
+    expect(source).toContain('from "@/features/diary/DiaryView"');
+    expect(source).toContain('from "@/features/food-capture/FoodCapture"');
+    expect(source).toContain('from "@/features/profile/ProfileView"');
+    expect(source).not.toMatch(/function (TodayView|InsightsView|ProfileView|AddFoodSheet|CoachView|PlanView)\(/);
+  });
 });
