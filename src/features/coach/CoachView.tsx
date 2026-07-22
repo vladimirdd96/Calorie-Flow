@@ -4,7 +4,7 @@ import { Camera, Check, ChevronRight, Cloud, Info, Mail, Menu, MessageCircle, Mo
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { ThemedSelect } from "@/features/shared/ThemedSelect";
 import { Sheet } from "@/features/shared/Sheet";
-import type { AddFoodView } from "@/features/app/types";
+import type { AddFoodView } from "@/features/food-capture/types";
 import { getSetting, remove, setSetting } from "@/lib/db";
 import { clearCloudCoachMessages, deleteCloudCoachChat, getCloudCoachChats, getCloudCoachMessages, saveCloudCoachMessage, saveCloudCoachChat } from "@/lib/cloud";
 import { localDateKey, round } from "@/lib/nutrition";

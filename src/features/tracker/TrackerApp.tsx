@@ -4,9 +4,9 @@
 import { Check, Database } from "lucide-react";
 import { useMemo } from "react";
 import { AuthGateway } from "@/features/auth/AuthGateway";
-import { useAppUiState } from "@/features/app/useAppUiState";
-import { useDiaryActions } from "@/features/app/useDiaryActions";
-import { useLocalFirstData } from "@/features/app/useLocalFirstData";
+import { useTrackerUiState } from "@/features/tracker/useTrackerUiState";
+import { useTrackerActions } from "@/features/tracker/useTrackerActions";
+import { useLocalFirstData } from "@/features/tracker/useLocalFirstData";
 import { CoachView } from "@/features/coach/CoachView";
 import { CalendarSheet, DuplicateMealSheet, MealEditor, MoveMealSheet, RecipeLogSheet, TodayView } from "@/features/diary/DiaryView";
 import { DailyNutritionBreakdown, MealImageViewer, NutritionDetails } from "@/features/diary/NutritionDetails";
@@ -34,14 +34,18 @@ function BrandMark({ large = false }: { large?: boolean }) {
   return <img className={`brand-mark${large ? " large" : ""}`} src="/icon.svg" alt="" aria-hidden="true" />;
 }
 
-export function AppShell() {
+/**
+ * The single client entry point for the tracker. It coordinates feature slices;
+ * route files remain Next.js route boundaries rather than wrapper components.
+ */
+export function TrackerApp() {
   const auth = useAuth();
-  const ui = useAppUiState();
+  const ui = useTrackerUiState();
   const { tab, setTab, dateKey, setDateKey, calendarOpen, setCalendarOpen, adding, setAdding, initialAddView, setInitialAddView, directFood, setDirectFood, editingMeal, setEditingMeal, detailMeal, setDetailMeal, duplicateMealDraft, setDuplicateMealDraft, moveMealDraft, setMoveMealDraft, initialMealType, setInitialMealType, toast, setToast, showHomeScreenPrompt, setShowHomeScreenPrompt, weightPromptDismissedFor, setWeightPromptDismissedFor, undoMeal, setUndoMeal, imageMeal, setImageMeal, nutritionDetailsOpen, setNutritionDetailsOpen, recipeToLog, setRecipeToLog } = ui;
   const local = useLocalFirstData(auth, { setAdding, setInitialAddView, setShowHomeScreenPrompt, setToast });
   const { ready, startupError, setStartupError, profile, onboardingOrigin, setOnboardingOrigin, foods, setFoods, meals, setMeals, syncState, theme, setTheme, chatTextSize, setChatTextSize, refresh, syncWrite, saveProfile, markSyncMutation } = local;
   const dayMeals = useMemo(() => meals.filter((meal) => (meal.loggedDate || localDateKey(new Date(meal.createdAt))) === dateKey).sort(compareMealOrder), [meals, dateKey]);
-  const actions = useDiaryActions({ auth, profile, meals, dateKey, onboardingOrigin, undoMeal, setFoods, setMeals, setOnboardingOrigin, setUndoMeal, setAdding, setDirectFood, setInitialMealType, setInitialAddView, setDateKey, setToast, setTab, setEditingMeal, setDuplicateMealDraft, saveProfile, syncWrite, markSyncMutation, refresh });
+  const actions = useTrackerActions({ auth, profile, meals, dateKey, onboardingOrigin, undoMeal, setFoods, setMeals, setOnboardingOrigin, setUndoMeal, setAdding, setDirectFood, setInitialMealType, setInitialAddView, setDateKey, setToast, setTab, setEditingMeal, setDuplicateMealDraft, saveProfile, syncWrite, markSyncMutation, refresh });
   const { restartOnboarding, finishOnboarding, cancelOnboarding, logMeal, saveFood, saveEditedMeal, dropMeal, duplicateMeal, saveNewMeal, logCoachMeal, addPhotoMeal, deleteMeal, undoDeleteMeal, exportBackup, restoreBackup, openAdd, selectFood } = actions;
   const signOut = async () => { await auth.signOut(); };
   const changeTheme = (nextTheme: ThemeMode) => {

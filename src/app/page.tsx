@@ -1,4 +1,4 @@
-import { TrackerApp } from "@/components/TrackerApp";
+import { TrackerApp } from "@/features/tracker/TrackerApp";
 
 export const dynamic = "force-dynamic";
 

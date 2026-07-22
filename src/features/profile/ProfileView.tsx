@@ -4,7 +4,7 @@ import { BarChart3, Check, ChevronDown, ChevronRight, Download, Cloud, LogOut, P
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ThemedSelect } from "@/features/shared/ThemedSelect";
 import { Sheet } from "@/features/shared/Sheet";
-import type { AppTab } from "@/features/app/types";
+import type { AppTab } from "@/features/navigation/types";
 import { validateBackup } from "@/lib/db";
 import { acceptCloudDiaryShare, getCloudDiaryShares, getSharedDiarySnapshot, inviteCloudDiaryShare, revokeCloudDiaryShare } from "@/lib/cloud";
 import { calculateCalories, calculateMacroTargets, localDateKey, round } from "@/lib/nutrition";

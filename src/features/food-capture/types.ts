@@ -1,15 +1,4 @@
-/** App-shell navigation is intentionally small and shared by feature entry points. */
-export const appTabs = {
-  today: "today",
-  search: "search",
-  coach: "coach",
-  plan: "plan",
-  insights: "insights",
-  profile: "profile",
-} as const;
-
-export type AppTab = typeof appTabs[keyof typeof appTabs];
-
+/** Entry views owned by the food-capture flow. */
 export const addFoodViews = {
   start: "start",
   search: "search",

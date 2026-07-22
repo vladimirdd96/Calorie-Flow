@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { localDateKey } from "@/lib/nutrition";
-import type { AddFoodView, AppTab } from "@/features/app/types";
+import type { AddFoodView } from "@/features/food-capture/types";
+import type { AppTab } from "@/features/navigation/types";
 import type { Food, Meal, MealType, Recipe } from "@/lib/types";
 
 /** Ephemeral navigation and overlay state; no persistence or domain writes. */
-export function useAppUiState() {
+export function useTrackerUiState() {
   const [tab, setTab] = useState<AppTab>("today");
   const [dateKey, setDateKey] = useState(localDateKey());
   const [calendarOpen, setCalendarOpen] = useState(false);

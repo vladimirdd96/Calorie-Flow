@@ -5,7 +5,7 @@ import { exportData, getAll, getLocalSnapshot, getSetting, importData, put, remo
 import { syncAutomaticFastAfterMeal } from "@/lib/fasting";
 import { localDateKey } from "@/lib/nutrition";
 import type { BackupData } from "@/lib/db";
-import type { AddFoodView } from "@/features/app/types";
+import type { AddFoodView } from "@/features/food-capture/types";
 import type { CloudUser } from "@/lib/supabase";
 import type { CoachMealAction, Food, Meal, MealPhotoAnalysis, MealType, Profile } from "@/lib/types";
 
@@ -21,7 +21,7 @@ type Dependencies = {
   saveProfile: (profile: Profile, announce?: boolean) => Promise<void>; syncWrite: (work: (userId: string) => Promise<void>) => void; markSyncMutation: () => void; refresh: () => Promise<void>;
 };
 
-export function useDiaryActions(dependencies: Dependencies) {
+export function useTrackerActions(dependencies: Dependencies) {
   const { auth, profile, meals, dateKey, onboardingOrigin, undoMeal, setFoods, setMeals, setOnboardingOrigin, setUndoMeal, setAdding, setDirectFood, setInitialMealType, setInitialAddView, setDateKey, setToast, setTab, setEditingMeal, setDuplicateMealDraft, saveProfile, syncWrite, markSyncMutation, refresh } = dependencies;
   const restartOnboarding = () => {
     setOnboardingOrigin(profile);

@@ -2,7 +2,7 @@
 
 # UI patterns
 
-`src/components/TrackerApp.tsx` is the public client entry point. `src/features/app/AppRuntime.tsx` and `AppShell` are intentionally thin composition boundaries. `useLocalFirstData`, `useDiaryActions`, and `useAppUiState` isolate synchronization, persisted diary mutations, and ephemeral UI state while product UI lives in vertical slices under `src/features/`. Keep the daily log fast and understandable on a phone-sized viewport, with advanced tools in progressive disclosure.
+`src/app/page.tsx` is the Next.js route boundary and imports the sole client entry point, `src/features/tracker/TrackerApp.tsx`. The tracker feature owns cross-feature orchestration only: `useLocalFirstData`, `useTrackerActions`, and `useTrackerUiState` isolate synchronization, persisted diary mutations, and ephemeral UI state. Product UI remains in its vertical slice under `src/features/`; do not add pass-through components or an `app` feature folder just to re-export another component. Keep the daily log fast and understandable on a phone-sized viewport, with advanced tools in progressive disclosure.
 
 Nutrition data is health-adjacent: label estimates clearly, avoid medical claims, and preserve the user's existing entries unless they explicitly confirm a replacement. The app must remain useful offline through its signed-in local cache.
 

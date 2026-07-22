@@ -3,7 +3,7 @@
 import { ArrowLeft, Camera, Copy, ChevronRight, Database, Info, Mic, Package, Pencil, Plus, ScanLine, Search, Send, ShieldCheck, Sparkles, Upload, WifiOff } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ThemedSelect } from "@/features/shared/ThemedSelect";
-import type { AddFoodView } from "@/features/app/types";
+import type { AddFoodView } from "@/features/food-capture/types";
 import { contextualUnits, formatUnit, gramsFor, localDateKey, round, scaleNutrition, suggestedMealType } from "@/lib/nutrition";
 import { findByBarcode, searchOpenFoodFacts } from "@/lib/openfoodfacts";
 import { normalizeVoiceFoodQuery } from "@/lib/voice";

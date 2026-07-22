@@ -2,7 +2,7 @@
 
 import { BarChart3, CalendarPlus, Home, MessageCircle, Search, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
-import type { AppTab } from "@/features/app/types";
+import type { AppTab } from "@/features/navigation/types";
 
 export function BottomNav({ tab, onChange, planEnabled }: { tab: AppTab; onChange: (tab: AppTab) => void; planEnabled: boolean }) {
   const items: Array<{ tab: AppTab; label: string; icon: ReactNode }> = [

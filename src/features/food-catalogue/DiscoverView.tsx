@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element -- product thumbnails are dynamic user content. */
 
 import { BookOpen, ChevronDown, ChevronRight, ImagePlus, Mic, Package, Plus, Search } from "lucide-react";
-import type { AddFoodView } from "@/features/app/types";
+import type { AddFoodView } from "@/features/food-capture/types";
 import { repeatItems, type RepeatItem } from "@/features/recipes/repeatItems";
 import type { Food, Meal, Recipe } from "@/lib/types";
 
