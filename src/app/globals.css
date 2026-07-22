@@ -146,13 +146,17 @@ p { color: var(--muted); line-height: 1.55; }
 .progress-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
 .progress-ring circle { fill: none; stroke-width: 11; }
 .ring-track { stroke: var(--track); }
-.ring-segment { stroke-linecap: butt; transition: stroke-dasharray .8s cubic-bezier(.2,.8,.2,1), stroke-dashoffset .8s cubic-bezier(.2,.8,.2,1); }
+.ring-segment { stroke-linecap: butt; cursor: pointer; outline: none; transition: stroke-dasharray .8s cubic-bezier(.2,.8,.2,1), stroke-dashoffset .8s cubic-bezier(.2,.8,.2,1), stroke-width .18s ease, filter .18s ease; }
+.ring-segment:hover, .ring-segment:focus-visible, .ring-segment.active { stroke-width: 14; filter: brightness(1.08); }
 .ring-content { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; text-align: center; }
 .ring-content strong { font-size: 43px; letter-spacing: -.055em; line-height: 1; margin: 7px 0; }
 .ring-content > span:last-child { color: var(--muted); font-size: 11px; }
 .ring-legend { position: absolute; right: 0; bottom: 5px; left: 0; display: flex; justify-content: center; gap: 10px; color: var(--muted); font-size: 9px; font-weight: 800; }
 .ring-legend span { display: inline-flex; align-items: center; gap: 4px; }
 .ring-legend i { width: 6px; height: 6px; display: inline-block; border-radius: 50%; }
+.ring-tooltip { position: absolute; top: 7px; left: 50%; z-index: 2; display: grid; gap: 2px; min-width: 132px; padding: 8px 10px; transform: translateX(-50%); border: 1px solid var(--border-strong); border-radius: 11px; color: var(--text); background: color-mix(in oklch, var(--panel) 94%, var(--panel-strong)); box-shadow: 0 8px 18px oklch(0.25 0.025 145 / 0.12); pointer-events: none; text-align: center; }
+.ring-tooltip strong { font-size: 11px; }
+.ring-tooltip span, .ring-tooltip small { color: var(--muted); font-size: 9px; }
 .hero-stat-grid { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border-top: 1px solid var(--border); padding-top: 14px; }
 .hero-stat-grid > div { text-align: center; display: flex; justify-content: center; align-items: baseline; gap: 5px; }
 .hero-stat-grid span { color: var(--muted); font-size: 10px; margin-right: 5px; }
@@ -259,14 +263,7 @@ p { color: var(--muted); line-height: 1.55; }
 .meal-editor-form label { display: grid; gap: 7px; color: var(--muted); font-size: 11px; font-weight: 800; }
 .meal-editor-form input, .meal-editor-form select { width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid var(--border); border-radius: 11px; color: var(--text); background-color: var(--panel); font: inherit; }
 .meal-editor-form select { cursor: pointer; padding-right: 42px; }
-.micro-summary { margin-top: 14px; padding: 18px 19px; }
-.micro-summary .section-heading { margin-bottom: 13px; }
-.micro-summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-.micro-summary-grid > div { display: grid; gap: 4px; padding: 10px 8px; border-radius: 11px; background: var(--control-surface-strong); }
-.micro-summary-grid span, .micro-summary p { color: var(--muted); font-size: 10px; }
-.micro-summary-grid strong { font-size: 13px; }
-.micro-summary-grid small, .detail-grid small { color: var(--muted); font-size: 9px; font-weight: 700; }
-.micro-summary p { margin: 13px 0 0; }
+.detail-grid small { color: var(--muted); font-size: 9px; font-weight: 700; }
 .nutrition-details { width: min(100%, 620px); margin: 0 auto; padding: 24px; }
 .nutrition-detail-meta { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 11px; }
 .estimate-pill { padding: 4px 7px; border-radius: 999px; color: var(--amber); background: color-mix(in oklch, var(--amber) 12%, transparent); font-size: 9px; font-weight: 800; }
@@ -1172,7 +1169,6 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 }
 
 @media (max-width: 520px) {
-  .micro-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .nutrition-details { padding: 22px 18px; }
   .detail-grid, .macro-detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .unit-choice-grid { grid-template-columns: 1fr; }

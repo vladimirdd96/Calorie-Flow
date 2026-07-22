@@ -563,16 +563,11 @@ function NutritionDetails({ meal, hideCalories, onClose }: { meal: Meal; hideCal
   </div>;
 }
 
-function MicronutrientSummary({ nutrition }: { nutrition: Nutrition }) {
-  const micros = nutrition.micronutrients;
-  if (!micros) return null;
-  const highlights = micronutrientLabels.slice(0, 4);
-  return <section className="micro-summary card" aria-labelledby="micro-summary-heading"><div className="section-heading compact"><div><span className="eyebrow">More than macros</span><h2 id="micro-summary-heading">Micronutrients</h2></div><span className="subtle">tap a meal for details</span></div><div className="micro-summary-grid">{highlights.map(({ key, label, unit }) => <div key={key}><span>{label}</span><strong>{round(micros[key], 1)} <small>{unit}</small></strong></div>)}</div><p>Daily totals from foods with available label or catalogue data.</p></section>;
-}
-
 function DailyNutritionBreakdown({ nutrition, hideCalories }: { nutrition: Nutrition; hideCalories: boolean }) {
+  const micros = nutrition.micronutrients;
   return <div className="macro-breakdown" id="daily-nutrition-breakdown">
     <section className="detail-section" aria-labelledby="daily-macro-heading"><div className="detail-section-heading"><h3 id="daily-macro-heading">Macronutrients</h3><span>today’s total</span></div><div className="detail-grid macro-detail-grid">{!hideCalories && <div><span>Calories</span><strong>{Math.round(nutrition.calories)} <small>kcal</small></strong></div>}<div><span>Protein</span><strong>{round(nutrition.protein)} <small>g</small></strong></div><div><span>Carbs</span><strong>{round(nutrition.carbs)} <small>g</small></strong></div><div><span>Fat</span><strong>{round(nutrition.fat)} <small>g</small></strong></div><div><span>Fibre</span><strong>{round(nutrition.fiber)} <small>g</small></strong></div><div><span>Sugar</span><strong>{round(nutrition.sugar)} <small>g</small></strong></div></div></section>
+    <section className="detail-section" aria-labelledby="daily-micro-heading"><div className="detail-section-heading"><h3 id="daily-micro-heading">Micronutrients</h3><span>{micros ? "today’s total" : "not available yet"}</span></div>{micros ? <div className="detail-grid micro-detail-grid">{micronutrientLabels.map(({ key, label, unit }) => <div key={key}><span>{label}</span><strong>{round(micros[key], 2)} <small>{unit}</small></strong></div>)}</div> : <p className="detail-empty">Micronutrients appear here when your logged foods include label or catalogue data.</p>}</section>
   </div>;
 }
 
@@ -921,11 +916,9 @@ function TodayView({
         <div className="macro-card card">
           <div className="section-heading compact"><div><span className="eyebrow">Daily nutrition</span><h2>Macro totals</h2></div><span className="subtle">from food & drinks</span></div>
           <div className="macro-total-grid"><div><span>Protein</span><strong>{round(total.protein)}<small>g</small></strong></div><div><span>{profile.carbDisplay === "net" ? "Net carbs" : "Carbs"}</span><strong>{round(carbs)}<small>g</small></strong></div><div><span>Fat</span><strong>{round(total.fat)}<small>g</small></strong></div></div>
-          <button type="button" className="macro-expand-trigger" onClick={onOpenNutritionDetails}><span>See macro breakdown</span><span className="macro-expand-hint"><span>View details</span><ChevronDown size={17} aria-hidden="true" /></span></button>
+          <button type="button" className="macro-expand-trigger" onClick={onOpenNutritionDetails}><span>See full nutrition details</span><span className="macro-expand-hint"><span>View details</span><ChevronDown size={17} aria-hidden="true" /></span></button>
         </div>
       </section>
-
-      <MicronutrientSummary nutrition={total} />
 
       <section className="log-section">
         <div className="section-heading"><div><span className="eyebrow">Daily log</span><h2>Your meals</h2></div><div className="daily-log-actions"><span className="subtle meal-reorder-hint">Hold ⋮⋮ to reorder</span>{profile.recipes?.length ? <button type="button" className="text-button" onClick={() => setRecipePickerOpen(true)}><BookOpen size={15} />Use a recipe</button> : null}{meals.length > 0 && <button type="button" className="text-button" onClick={() => setRecipeSheetOpen(true)}><BookOpen size={15} />Save as recipe</button>}</div></div>
@@ -3275,7 +3268,7 @@ export function TrackerApp() {
       {calendarOpen && <Sheet onClose={() => setCalendarOpen(false)} wide label="Calendar"><CalendarSheet dateKey={dateKey} meals={meals} profile={profile} onDateChange={setDateKey} onClose={() => setCalendarOpen(false)} /></Sheet>}
       {detailMeal && <Sheet onClose={() => setDetailMeal(undefined)} wide label={`Nutrition details for ${detailMeal.name}`}><NutritionDetails meal={detailMeal} hideCalories={profile.hideCalories} /></Sheet>}
       {imageMeal && imageMeal.imageUrl && <Sheet onClose={() => setImageMeal(undefined)} wide label={`Meal photo for ${imageMeal.name}`}><MealImageViewer meal={imageMeal} /></Sheet>}
-      {nutritionDetailsOpen && <Sheet onClose={() => setNutritionDetailsOpen(false)} wide label="Today's macro details"><div className="daily-nutrition-sheet"><div className="sheet-header"><div><span className="eyebrow">Today</span><h2>Macro breakdown</h2></div><span /></div><DailyNutritionBreakdown nutrition={sumNutrition(dayMeals.map((meal) => meal.nutrition))} hideCalories={profile.hideCalories} /></div></Sheet>}
+      {nutritionDetailsOpen && <Sheet onClose={() => setNutritionDetailsOpen(false)} wide label="Today's nutrition details"><div className="daily-nutrition-sheet"><div className="sheet-header"><div><span className="eyebrow">Today</span><h2>Nutrition details</h2></div><span /></div><DailyNutritionBreakdown nutrition={sumNutrition(dayMeals.map((meal) => meal.nutrition))} hideCalories={profile.hideCalories} /></div></Sheet>}
       {editingMeal && <Sheet onClose={() => setEditingMeal(undefined)} label="Edit meal"><MealEditor meal={editingMeal} hideCalories={profile.hideCalories} onSave={(meal) => editingMeal.id.startsWith("photo-") ? saveNewMeal(meal) : saveEditedMeal(meal)} onClose={() => setEditingMeal(undefined)} /></Sheet>}
       {duplicateMealDraft && <Sheet onClose={() => setDuplicateMealDraft(undefined)} label="Duplicate meal" className="duplicate-meal-dialog"><DuplicateMealSheet meal={duplicateMealDraft} onDuplicate={(mealType) => void duplicateMeal(duplicateMealDraft, mealType)} onClose={() => setDuplicateMealDraft(undefined)} /></Sheet>}
       {moveMealDraft && <Sheet onClose={() => setMoveMealDraft(undefined)} label="Move meal" className="duplicate-meal-dialog"><MoveMealSheet meal={moveMealDraft} onMove={(mealType) => { void dropMeal(moveMealDraft, mealType); setMoveMealDraft(undefined); }} onClose={() => setMoveMealDraft(undefined)} /></Sheet>}
