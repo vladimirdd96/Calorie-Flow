@@ -36,7 +36,7 @@ export function changeDate(dateKey: string, amount: number) {
   return localDateKey(date);
 }
 
-export function ProgressRing({ value, target, nutrition }: { value: number; target: number; nutrition: Nutrition }) {
+export function ProgressRing({ value, target, nutrition, eyebrow = "Eaten", targetText, targetContext = "daily target" }: { value: number; target: number; nutrition: Nutrition; eyebrow?: string; targetText?: string; targetContext?: string }) {
   const [activeSegment, setActiveSegment] = useState<string>();
   const progress = Math.min(1, value / Math.max(1, target));
   const circumference = 2 * Math.PI * 82;
@@ -47,10 +47,37 @@ export function ProgressRing({ value, target, nutrition }: { value: number; targ
   ];
   const macroCalories = macroSegments.reduce((sum, segment) => sum + segment.value, 0);
   const selectedSegment = macroSegments.find((segment) => segment.label === activeSegment);
+  const selectedIndex = macroSegments.findIndex((segment) => segment.label === activeSegment);
+  const selectedShare = selectedSegment && macroCalories > 0 ? selectedSegment.value / macroCalories : 0;
+  const selectedStart = selectedIndex >= 0 ? macroSegments.slice(0, selectedIndex).reduce((sum, segment) => sum + (macroCalories > 0 ? segment.value / macroCalories : 0), 0) : 0;
+  const tooltipAngle = (selectedStart + selectedShare / 2) * progress * Math.PI * 2;
+  const tooltipPosition = selectedSegment ? {
+    left: `${Math.min(80, Math.max(20, 50 + Math.sin(tooltipAngle) * 35))}%`,
+    top: `${Math.max(5, 50 - Math.cos(tooltipAngle) * 35)}%`,
+  } : undefined;
+  const selectSegmentAtPointer = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - bounds.left) / bounds.width) * 200;
+    const y = ((event.clientY - bounds.top) / bounds.height) * 200;
+    const distance = Math.hypot(x - 100, y - 100);
+    if (distance < 65 || distance > 100 || progress <= 0 || macroCalories <= 0) return;
+    const clockwiseFromTop = (Math.atan2(y - 100, x - 100) + Math.PI / 2 + Math.PI * 2) % (Math.PI * 2);
+    const progressPosition = clockwiseFromTop / (Math.PI * 2);
+    if (progressPosition > progress) return;
+    let consumedShare = 0;
+    const segment = macroSegments.find((candidate) => {
+      const share = candidate.value / macroCalories;
+      const isMatch = progressPosition <= progress * (consumedShare + share);
+      consumedShare += share;
+      return isMatch;
+    });
+    if (segment) setActiveSegment(segment.label);
+  };
   let consumedOffset = 0;
   return (
-    <div className="progress-ring" role="progressbar" aria-label={`Daily calorie progress. Protein ${round(nutrition.protein)} grams, carbs ${round(nutrition.carbs)} grams, fat ${round(nutrition.fat)} grams.`} aria-valuemin={0} aria-valuemax={target} aria-valuenow={Math.round(value)} aria-valuetext={`${Math.round(progress * 100)} percent of daily calories`}>
-      <svg viewBox="0 0 200 200" role="img" aria-label="Macro calorie composition">
+    <div className="progress-ring" role="progressbar" aria-label={`${eyebrow}. Protein ${round(nutrition.protein)} grams, carbs ${round(nutrition.carbs)} grams, fat ${round(nutrition.fat)} grams.`} aria-valuemin={0} aria-valuemax={target} aria-valuenow={Math.round(value)} aria-valuetext={`${Math.round(progress * 100)} percent of ${targetContext}`}>
+      <svg viewBox="0 0 200 200" role="img" aria-label="Macro calorie composition" onPointerDown={(event) => { if (event.pointerType === "touch" || event.pointerType === "pen") { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); selectSegmentAtPointer(event); } }} onPointerMove={selectSegmentAtPointer} onPointerUp={(event) => { if (event.pointerType === "touch" || event.pointerType === "pen") event.currentTarget.releasePointerCapture?.(event.pointerId); }} onPointerCancel={(event) => { if (event.pointerType === "touch" || event.pointerType === "pen") event.currentTarget.releasePointerCapture?.(event.pointerId); }}>
         <circle className="ring-track" cx="100" cy="100" r="82" />
         {macroSegments.map((segment) => {
           const share = macroCalories > 0 ? segment.value / macroCalories : 0;
@@ -58,14 +85,14 @@ export function ProgressRing({ value, target, nutrition }: { value: number; targ
           const offset = circumference * progress * consumedOffset;
           consumedOffset += share;
           const percentOfTarget = Math.round((segment.value / Math.max(1, target)) * 100);
-          return <circle key={segment.label} className={`ring-segment${activeSegment === segment.label ? " active" : ""}`} cx="100" cy="100" r="82" stroke={segment.color} strokeDasharray={`${length} ${circumference - length}`} strokeDashoffset={-offset} tabIndex={0} role="img" aria-label={`${segment.label}: ${round(segment.grams)} grams, ${Math.round(segment.value)} calories, ${percentOfTarget}% of daily target`} onMouseEnter={() => setActiveSegment(segment.label)} onMouseLeave={() => setActiveSegment(undefined)} onFocus={() => setActiveSegment(segment.label)} onBlur={() => setActiveSegment(undefined)} />;
+          return <circle key={segment.label} className={`ring-segment${activeSegment === segment.label ? " active" : ""}`} cx="100" cy="100" r="82" stroke={segment.color} strokeDasharray={`${length} ${circumference - length}`} strokeDashoffset={-offset} tabIndex={0} role="img" aria-label={`${segment.label}: ${round(segment.grams)} grams, ${Math.round(segment.value)} calories, ${percentOfTarget}% of ${targetContext}`} onMouseEnter={() => setActiveSegment(segment.label)} onMouseLeave={() => setActiveSegment(undefined)} onFocus={() => setActiveSegment(segment.label)} onBlur={() => setActiveSegment(undefined)} />;
         })}
       </svg>
-      {selectedSegment && <div className="ring-tooltip" role="status"><strong>{selectedSegment.label}</strong><span>{round(selectedSegment.grams)} g · {Math.round(selectedSegment.value)} kcal</span><small>{Math.round((selectedSegment.value / Math.max(1, target)) * 100)}% of daily target</small></div>}
+      {selectedSegment && <div className="ring-tooltip" role="status" style={tooltipPosition}><strong>{selectedSegment.label}</strong><span>{round(selectedSegment.grams)} g · {Math.round(selectedSegment.value)} kcal</span><small>{Math.round((selectedSegment.value / Math.max(1, target)) * 100)}% of {targetContext}</small></div>}
       <div className="ring-content">
-        <span className="eyebrow">Eaten</span>
+        <span className="eyebrow">{eyebrow}</span>
         <strong>{Math.round(value).toLocaleString()}</strong>
-        <span>of {target.toLocaleString()} kcal</span>
+        <span>{targetText || `of ${target.toLocaleString()} kcal`}</span>
       </div>
       <div className="ring-legend" aria-hidden="true">
         {macroSegments.map((segment) => <span key={segment.label}><i style={{ background: segment.color }} />{segment.label}</span>)}
