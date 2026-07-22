@@ -1872,9 +1872,9 @@ function requestContinuousFocus(source: MediaProvider | null | undefined) {
   });
 }
 
-async function imageToDataUrl(file: File) {
+async function imageToDataUrl(file: File, options: { maxDimension?: number; quality?: number } = {}) {
   const image = await createImageBitmap(file);
-  const max = 1600;
+  const max = options.maxDimension || 2200;
   const scale = Math.min(1, max / Math.max(image.width, image.height));
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(image.width * scale);
@@ -1882,7 +1882,16 @@ async function imageToDataUrl(file: File) {
   const context = canvas.getContext("2d");
   context?.drawImage(image, 0, 0, canvas.width, canvas.height);
   image.close();
-  return canvas.toDataURL("image/jpeg", 0.86);
+  let quality = options.quality || 0.9;
+  let result = canvas.toDataURL("image/jpeg", quality);
+  // Keep the request below the server's 10 MB boundary even for a very
+  // detailed camera capture. Reducing JPEG quality preserves label pixels
+  // better than shrinking the image again.
+  while (result.length > 9_500_000 && quality > 0.72) {
+    quality -= 0.06;
+    result = canvas.toDataURL("image/jpeg", quality);
+  }
+  return result;
 }
 
 function LabelReader({ onFood, onClose, initialFiles = [], initialAction }: { onFood: (food: Food, questions: string[]) => void; onClose: () => void; initialFiles?: File[]; initialAction?: "camera" | "photo" }) {
@@ -1969,7 +1978,9 @@ function LabelReader({ onFood, onClose, initialFiles = [], initialAction }: { on
   const analyze = async (files?: FileList | File[]) => {
     if (!files?.length) return;
     try {
-      await analyzeImages(await Promise.all(Array.from(files).slice(0, 3).map(imageToDataUrl)));
+      // Nutrition tables are often tiny on a full package photo. Keep more
+      // pixels for the vision model than we do for ordinary meal photos.
+      await analyzeImages(await Promise.all(Array.from(files).slice(0, 3).map((file) => imageToDataUrl(file, { maxDimension: 3000, quality: 0.94 }))));
     } catch {
       setError("That photo could not be opened. Try taking a fresh picture of the nutrition table.");
     }

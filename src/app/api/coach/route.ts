@@ -243,13 +243,27 @@ async function runCoachTool(name: string, args: JsonRecord, context: ToolContext
 
 async function workersAiResponse(payload: Record<string, unknown>) {
   const response = await (await getWorkersAi()).run(workersAiModels.coach, payload);
-  if (!isRecord(response) || !Array.isArray(response.choices)) throw new Error("The Coach returned an invalid response.");
-  return response;
+  if (!isRecord(response) || !getChatChoices(response).length) throw new Error("The Coach returned an invalid response.");
+  return unwrapChatResponse(response);
+}
+
+function getChatChoices(response: JsonRecord) {
+  if (Array.isArray(response.choices)) return response.choices;
+  const nested = response.result;
+  return isRecord(nested) && Array.isArray(nested.choices) ? nested.choices : [];
+}
+
+function unwrapChatResponse(response: JsonRecord): JsonRecord {
+  const nested = response.result;
+  return isRecord(nested) && Array.isArray(nested.choices) ? nested : response;
 }
 
 function extractOutputText(response: JsonRecord) {
-  const choice = Array.isArray(response.choices) ? response.choices[0] : undefined;
-  return isRecord(choice) && isRecord(choice.message) && typeof choice.message.content === "string" ? choice.message.content : undefined;
+  const choice = getChatChoices(response)[0];
+  if (!isRecord(choice) || !isRecord(choice.message)) return undefined;
+  return typeof choice.message.content === "string" ? choice.message.content : Array.isArray(choice.message.content)
+    ? choice.message.content.map((part) => isRecord(part) && typeof part.text === "string" ? part.text : "").join("").trim() || undefined
+    : undefined;
 }
 
 function publicCoachError(error: unknown) {
@@ -306,7 +320,7 @@ export async function POST(request: NextRequest) {
       response = image
         ? await (await getWorkersAi()).run(workersAiModels.coachVision, aiPayload) as JsonRecord
         : await workersAiResponse(aiPayload);
-      const choice = Array.isArray(response.choices) ? response.choices[0] : undefined;
+      const choice = getChatChoices(response)[0];
       const assistantMessage = isRecord(choice) && isRecord(choice.message) ? choice.message : undefined;
       const calls = assistantMessage && Array.isArray(assistantMessage.tool_calls)
         ? assistantMessage.tool_calls.filter(isRecord)

@@ -69,6 +69,16 @@ function extractOutputText(response: unknown) {
   for (const key of ["response", "output_text", "result"] as const) {
     const content = contentText(response[key]);
     if (content) return content;
+    // Native bindings and the REST-compatible response have differed in
+    // whether chat completions are returned at the top level or under result.
+    const nested = response[key];
+    if (isRecord(nested) && Array.isArray(nested.choices)) {
+      const choice = nested.choices[0];
+      if (isRecord(choice) && isRecord(choice.message)) {
+        const nestedContent = contentText(choice.message.content);
+        if (nestedContent) return nestedContent;
+      }
+    }
   }
   return undefined;
 }
