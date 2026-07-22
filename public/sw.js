@@ -1,4 +1,4 @@
-const CACHE = "calorie-flow-v5";
+const CACHE = "calorie-flow-v6";
 const CORE = ["/", "/manifest.webmanifest", "/icon.svg", "/icon-32.png", "/apple-touch-icon.png", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {
