@@ -97,7 +97,10 @@ export const measurementSystems = { metric: "metric", imperial: "imperial" } as 
 export type MeasurementSystem = typeof measurementSystems[keyof typeof measurementSystems];
 export const habitFeatures = { water: "water", fasting: "fasting" } as const;
 export type HabitFeature = typeof habitFeatures[keyof typeof habitFeatures];
-export const defaultHabitFeatures = [habitFeatures.water, habitFeatures.fasting] as const;
+export const allHabitFeatures = [habitFeatures.water, habitFeatures.fasting] as const;
+export const defaultHabitFeatures = [] as const;
+export const fastingGoalHours = [12, 16, 24, 36, 48] as const;
+export type FastingGoalHours = typeof fastingGoalHours[number];
 
 export type DailyTargets = {
   calories: number;
@@ -135,7 +138,8 @@ export type Profile = {
   waterTargetMl?: number;
   waterEntries?: WaterEntry[];
   enabledHabitFeatures?: HabitFeature[];
-  fastingGoalHours?: 12 | 14 | 16;
+  planEnabled?: boolean;
+  fastingGoalHours?: FastingGoalHours;
   fastingRecords?: FastingRecord[];
   recipes?: Recipe[];
   mealPlanEntries?: MealPlanEntry[];

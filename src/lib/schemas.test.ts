@@ -79,6 +79,7 @@ describe("external data schemas", () => {
       onboardingDone: true,
     };
     expect(profileSchema.parse({ ...profile, enabledHabitFeatures: ["water"] }).enabledHabitFeatures).toEqual(["water"]);
+    expect(profileSchema.parse({ ...profile, planEnabled: false }).planEnabled).toBe(false);
     expect(() => profileSchema.parse({ ...profile, enabledHabitFeatures: ["water", "water"] })).toThrow("Habit features must not repeat");
   });
 

@@ -136,7 +136,7 @@ import type {
   WeightTrackingStatus,
   Weekday,
 } from "@/lib/types";
-import { defaultHabitFeatures, habitFeatures, measurementSystems, weightTrackingStatuses } from "@/lib/types";
+import { defaultHabitFeatures, fastingGoalHours, habitFeatures, measurementSystems, weightTrackingStatuses } from "@/lib/types";
 import type { BackupData } from "@/lib/db";
 
 type Tab = "today" | "search" | "coach" | "plan" | "insights" | "profile";
@@ -341,6 +341,7 @@ const DEFAULT_PROFILE: Profile = {
   waterEntries: [],
   waterTargetMl: 2000,
   enabledHabitFeatures: [...defaultHabitFeatures],
+  planEnabled: false,
   fastingGoalHours: 16,
   fastingRecords: [],
 };
@@ -636,7 +637,7 @@ function FastingTracker({ profile, onSave }: { profile: Profile; onSave: (profil
   return <details className={`fasting-tracker rhythm-card card${active ? " active" : ""}`} open={expanded} onToggle={(event) => setExpanded(event.currentTarget.open)}>
     <summary className="fasting-summary"><span className="rhythm-icon fasting"><Timer size={18} /></span><span><span className="eyebrow">Automatic rhythm</span><strong id="fasting-heading">Fasting</strong><small>{active ? `${elapsed.toFixed(1)} of ${goal} hours` : `${goal}-hour plan · log a meal to begin`}</small></span><ChevronDown size={18} aria-hidden="true" /></summary>
     <div className="fasting-content" aria-labelledby="fasting-heading">
-      {active ? <><div className="fasting-status"><strong>{elapsed.toFixed(1)}h</strong><span>of {goal}h fast</span></div><div className="habit-progress" role="progressbar" aria-label="Fasting goal progress" aria-valuemin={0} aria-valuemax={goal} aria-valuenow={elapsed}><i style={{ width: `${progress * 100}%` }} /></div><p>Started after your last logged meal. Logging your next meal starts a new fast automatically.</p></> : <><p>Choose a gentle goal. Fasting starts after your latest meal and never changes your food diary or calorie target.</p><div className="segmented three" role="group" aria-label="Fasting goal">{([12, 14, 16] as const).map((hours) => <button key={hours} type="button" aria-pressed={goal === hours} className={goal === hours ? "active" : ""} onClick={() => onSave({ ...profile, fastingGoalHours: hours })}>{hours} h</button>)}</div></>}
+      {active ? <><div className="fasting-status"><strong>{elapsed.toFixed(1)}h</strong><span>of {goal}h fast</span></div><div className="habit-progress" role="progressbar" aria-label="Fasting goal progress" aria-valuemin={0} aria-valuemax={goal} aria-valuenow={elapsed}><i style={{ width: `${progress * 100}%` }} /></div><p>Started after your last logged meal. Logging your next meal starts a new fast automatically.</p></> : <><p>Choose a tracking window. Fasting starts after your latest meal and never changes your food diary or calorie target.</p><div className="segmented fasting-goals" role="group" aria-label="Fasting tracking window">{fastingGoalHours.map((hours) => <button key={hours} type="button" aria-pressed={goal === hours} className={goal === hours ? "active" : ""} onClick={() => onSave({ ...profile, fastingGoalHours: hours })}>{hours} h</button>)}</div><small className="fasting-disclaimer">Tracking only, not a medical recommendation. If you have a health condition, take glucose-affecting medication, are pregnant or breastfeeding, or have a history of disordered eating, ask a clinician before fasting.</small></>}
     </div>
   </details>;
 }
@@ -1036,14 +1037,16 @@ function DisplayPreferences({ hideCalories, onChange, chatTextSize, onChatTextSi
   );
 }
 
-function HabitVisibilityPreferences({ profile, onSave }: { profile: Profile; onSave: (profile: Profile) => void }) {
+function FeatureVisibilityPreferences({ profile, onSave }: { profile: Profile; onSave: (profile: Profile) => void }) {
   const toggle = (feature: HabitFeature) => onSave({ ...profile, enabledHabitFeatures: toggleHabitFeature(profile.enabledHabitFeatures, feature) });
   const waterEnabled = isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.water);
   const fastingEnabled = isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting);
+  const planEnabled = profile.planEnabled ?? false;
   return <section className="display-section habit-visibility-preferences">
-    <div className="section-heading"><div><span className="eyebrow">Daily rhythm</span><h2>Habit cards</h2></div></div>
-    <p className="display-subsection-description">Choose which optional check-ins appear above your food diary. Turning one off keeps its history private and intact.</p>
+    <div className="section-heading"><div><span className="eyebrow">Optional features</span><h2>What appears in your flow</h2></div></div>
+    <p className="display-subsection-description">Choose which optional tools appear in Calorie Flow. Turning one off keeps its saved data private and intact.</p>
     <div className="habit-visibility-options">
+      <button className={`display-preference ${planEnabled ? "active" : ""}`} type="button" aria-pressed={planEnabled} onClick={() => onSave({ ...profile, planEnabled: !planEnabled })}><span><strong>{planEnabled ? "Plan is shown" : "Plan is hidden"}</strong><small>{planEnabled ? "Keep recipes, meal planning, and shopping lists in your navigation." : "Recipes, planning, and shopping lists stay saved until you show Plan again."}</small></span><span className="toggle" /></button>
       <button className={`display-preference ${waterEnabled ? "active" : ""}`} type="button" aria-pressed={waterEnabled} onClick={() => toggle(habitFeatures.water)}><span><strong>{waterEnabled ? "Water is shown" : "Water is hidden"}</strong><small>{waterEnabled ? "Keep hydration within easy reach on Today." : "Your logged water stays saved until you show it again."}</small></span><span className="toggle" /></button>
       <button className={`display-preference ${fastingEnabled ? "active" : ""}`} type="button" aria-pressed={fastingEnabled} onClick={() => toggle(habitFeatures.fasting)}><span><strong>{fastingEnabled ? "Fasting is shown" : "Fasting is hidden"}</strong><small>{fastingEnabled ? "Keep your optional eating-window check-in on Today." : "Your fasting history stays saved until you show it again."}</small></span><span className="toggle" /></button>
     </div>
@@ -1471,7 +1474,7 @@ function ProfileView({
         <section className="customize-intro" aria-labelledby="customize-heading"><div><span className="eyebrow">Your preferences</span><h2 id="customize-heading">A calmer tracker, your way</h2><p>These choices only change how Calorie Flow feels and what it shows. Your diary stays private on this device.</p></div></section>
         <MeasurementPreferences profile={profile} onChange={(measurementSystem) => onSave({ ...profile, measurementSystem })} />
         <DisplayPreferences hideCalories={profile.hideCalories} onChange={(hideCalories) => onSave({ ...profile, hideCalories })} chatTextSize={chatTextSize} onChatTextSizeChange={onChatTextSizeChange} />
-        <HabitVisibilityPreferences profile={profile} onSave={onSave} />
+        <FeatureVisibilityPreferences profile={profile} onSave={onSave} />
         <CarbDisplayPreference profile={profile} onSave={onSave} />
         <DailyTargetPreferences profile={profile} onSave={onSave} />
         <MealTargetPreferences profile={profile} onSave={onSave} />
@@ -2522,12 +2525,12 @@ function PlanView({ profile, onSave, onLog }: { profile: Profile; onSave: (profi
   </main>;
 }
 
-function BottomNav({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => void }) {
+function BottomNav({ tab, onChange, planEnabled }: { tab: Tab; onChange: (tab: Tab) => void; planEnabled: boolean }) {
   const items: Array<{ tab: Tab; label: string; icon: React.ReactNode }> = [
     { tab: "today", label: "Today", icon: <Home /> },
     { tab: "search", label: "Foods", icon: <Search /> },
     { tab: "coach", label: "Coach", icon: <MessageCircle /> },
-    { tab: "plan", label: "Plan", icon: <CalendarPlus /> },
+    ...(planEnabled ? [{ tab: "plan" as const, label: "Plan", icon: <CalendarPlus /> }] : []),
     { tab: "insights", label: "Insights", icon: <BarChart3 /> },
     { tab: "profile", label: "Profile", icon: <UserRound /> },
   ];
@@ -3002,11 +3005,11 @@ export function TrackerApp() {
         {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={(mealType) => openAdd("start", mealType)} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} onEdit={setEditingMeal} onOpenDetails={setDetailMeal} onDropMeal={dropMeal} onDuplicate={setDuplicateMealDraft} onMove={setMoveMealDraft} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} onDismissHomeScreenPrompt={() => setShowHomeScreenPrompt(false)} onOpenCalendar={() => setCalendarOpen(true)} onSaveProfile={(next) => void saveProfile(next)} />}
         {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={openAdd} />}
         {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} chatTextSize={chatTextSize} onLogCoachMeal={logCoachMeal} onOpenAccount={() => setTab("profile")} onOpenAdd={openAdd} />}
-        {tab === "plan" && <PlanView profile={profile} onSave={(next) => void saveProfile(next)} onLog={saveNewMeal} />}
+        {tab === "plan" && profile.planEnabled && <PlanView profile={profile} onSave={(next) => void saveProfile(next)} onLog={saveNewMeal} />}
         {tab === "insights" && <InsightsView meals={meals} profile={profile} onSave={saveProfile} weightTrackingEnabled={weightTrackingEnabled} />}
       {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onRestartOnboarding={restartOnboarding} onExport={exportBackup} onImport={restoreBackup} user={auth.user} syncState={syncState} onSignOut={signOut} theme={theme} onThemeChange={changeTheme} chatTextSize={chatTextSize} onChatTextSizeChange={changeChatTextSize} weightTracking={profile.weightTracking} />}
       </div>
-      <div inert={modalOpen} aria-hidden={modalOpen || undefined}><BottomNav tab={tab} onChange={(nextTab) => { window.scrollTo(0, 0); setTab(nextTab); }} /></div>
+      <div inert={modalOpen} aria-hidden={modalOpen || undefined}><BottomNav planEnabled={profile.planEnabled ?? false} tab={tab} onChange={(nextTab) => { window.scrollTo(0, 0); setTab(nextTab); }} /></div>
       {adding && profile.onboardingDone && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); setInitialMealType(undefined); }} wide>{directFood ? <PortionSheet food={directFood} initialMealType={initialMealType} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} initialMealType={initialMealType} onLog={logMeal} onMealPhoto={addPhotoMeal} onSaveFood={saveFood} />}</Sheet>}
       {calendarOpen && <Sheet onClose={() => setCalendarOpen(false)} wide label="Calendar"><CalendarSheet dateKey={dateKey} meals={meals} profile={profile} onDateChange={setDateKey} onClose={() => setCalendarOpen(false)} /></Sheet>}
       {detailMeal && <Sheet onClose={() => setDetailMeal(undefined)} wide label={`Nutrition details for ${detailMeal.name}`}><NutritionDetails meal={detailMeal} hideCalories={profile.hideCalories} /></Sheet>}
