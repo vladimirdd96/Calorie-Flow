@@ -534,7 +534,7 @@ function DailyNutritionBreakdown({ nutrition, hideCalories }: { nutrition: Nutri
   </div>;
 }
 
-function MealRow({ meal, onDelete, onEdit, onDuplicate, onMove, onDetails, onDragStart, onDragOver, onDrop, dropPosition, hideCalories }: { meal: Meal; onDelete: () => void; onEdit: () => void; onDuplicate: () => void; onMove: () => void; onDetails: () => void; onDragStart: (meal: Meal, event: React.DragEvent<HTMLDivElement>) => void; onDragOver: (event: React.DragEvent<HTMLDivElement>) => void; onDrop: (event: React.DragEvent<HTMLDivElement>) => void; dropPosition?: "before" | "after"; hideCalories: boolean }) {
+function MealRow({ meal, onDelete, onEdit, onDuplicate, onMove, onDetails, onDragStart, onDragOver, onDrop, onPointerDown, dropPosition, dragging, hideCalories }: { meal: Meal; onDelete: () => void; onEdit: () => void; onDuplicate: () => void; onMove: () => void; onDetails: () => void; onDragStart: (meal: Meal, event: React.DragEvent<HTMLDivElement>) => void; onDragOver: (event: React.DragEvent<HTMLDivElement>) => void; onDrop: (event: React.DragEvent<HTMLDivElement>) => void; onPointerDown: (meal: Meal, event: React.PointerEvent<HTMLButtonElement>) => void; dropPosition?: "before" | "after"; dragging?: boolean; hideCalories: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLSpanElement>(null);
   useEffect(() => {
@@ -550,8 +550,8 @@ function MealRow({ meal, onDelete, onEdit, onDuplicate, onMove, onDetails, onDra
     return () => { document.removeEventListener("pointerdown", dismiss); document.removeEventListener("keydown", closeOnEscape); };
   }, [menuOpen]);
   return (
-    <div className={`meal-row ${dropPosition ? `drop-${dropPosition}` : ""}`} draggable onDragStart={(event) => onDragStart(meal, event)} onDragOver={onDragOver} onDrop={onDrop} title="Drag this meal to reorder it or move it to another meal section" aria-label={`Drag ${meal.name} to reorder it or move it to another meal section`}>
-      <span className="meal-drag-handle" aria-hidden="true"><GripVertical size={17} /></span>
+    <div className={`meal-row ${dropPosition ? `drop-${dropPosition}` : ""}${dragging ? " dragging" : ""}`} draggable onDragStart={(event) => onDragStart(meal, event)} onDragOver={onDragOver} onDrop={onDrop} data-meal-id={meal.id} data-meal-type={meal.mealType} title="Drag this meal to reorder it or move it to another meal section" aria-label={`Drag ${meal.name} to reorder it or move it to another meal section`}>
+      <button type="button" className="meal-drag-handle" onPointerDown={(event) => onPointerDown(meal, event)} aria-label={`Hold and drag ${meal.name} to reorder it`}><GripVertical size={17} aria-hidden="true" /></button>
       <div className="meal-icon"><Utensils size={17} /></div>
       <button type="button" className="meal-detail-trigger" onClick={onDetails} aria-label={`View nutrition details for ${meal.name}`}><div className="meal-copy">
         <strong>{meal.name}</strong>
@@ -713,12 +713,85 @@ function TodayView({
   onSaveProfile: (profile: Profile) => void;
 }) {
   const [dropTarget, setDropTarget] = useState<string>();
+  const [draggingMealId, setDraggingMealId] = useState<string>();
+  const pointerDragRef = useRef<{ meal: Meal; pointerId: number; startX: number; startY: number; active: boolean; timerId?: number } | undefined>(undefined);
   const [macrosExpanded, setMacrosExpanded] = useState(false);
   const total = useMemo(() => sumNutrition(meals.map((meal) => meal.nutrition)), [meals]);
   const targets = resolveDailyTargets(profile, dateKey);
   const carbs = profile.carbDisplay === "net" ? netCarbs(total) : total.carbs;
   const remaining = Math.max(0, targets.calories - total.calories);
   const grouped = (Object.keys(mealLabels) as MealType[]).map((type) => ({ type, meals: meals.filter((meal) => meal.mealType === type) }));
+  const updatePointerDropTarget = useCallback((clientX: number, clientY: number) => {
+    const hovered = document.elementFromPoint(clientX, clientY)?.closest<HTMLElement>("[data-meal-id], [data-meal-list]");
+    if (!hovered) { setDropTarget(undefined); return; }
+    const mealId = hovered.dataset.mealId;
+    const mealType = hovered.dataset.mealType || hovered.dataset.mealList;
+    if (!mealType) { setDropTarget(undefined); return; }
+    if (!mealId) { setDropTarget(mealType); return; }
+    const rect = hovered.getBoundingClientRect();
+    setDropTarget(`${mealType}:${mealId}:${clientY < rect.top + rect.height / 2 ? "before" : "after"}`);
+  }, []);
+  const finishPointerDrag = useCallback((clientX: number, clientY: number) => {
+    const drag = pointerDragRef.current;
+    if (!drag) return;
+    if (drag.timerId) window.clearTimeout(drag.timerId);
+    pointerDragRef.current = undefined;
+    setDraggingMealId(undefined);
+    setDropTarget(undefined);
+    if (!drag.active) return;
+    const hovered = document.elementFromPoint(clientX, clientY)?.closest<HTMLElement>("[data-meal-id], [data-meal-list]");
+    const mealType = hovered?.dataset.mealType || hovered?.dataset.mealList;
+    if (!mealType) return;
+    const targetMealId = hovered?.dataset.mealId;
+    const rect = hovered?.getBoundingClientRect();
+    onDropMeal(drag.meal, mealType as MealType, targetMealId, Boolean(targetMealId && rect && clientY >= rect.top + rect.height / 2));
+  }, [onDropMeal]);
+  const cancelPointerDrag = useCallback(() => {
+    const drag = pointerDragRef.current;
+    if (drag?.timerId) window.clearTimeout(drag.timerId);
+    pointerDragRef.current = undefined;
+    setDraggingMealId(undefined);
+    setDropTarget(undefined);
+  }, []);
+  const startPointerDrag = useCallback((meal: Meal, event: React.PointerEvent<HTMLButtonElement>) => {
+    if (event.pointerType === "mouse") return;
+    event.preventDefault();
+    cancelPointerDrag();
+    const drag: { meal: Meal; pointerId: number; startX: number; startY: number; active: boolean; timerId?: number } = { meal, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, active: false };
+    drag.timerId = window.setTimeout(() => {
+      if (pointerDragRef.current?.pointerId !== drag.pointerId) return;
+      drag.active = true;
+      setDraggingMealId(meal.id);
+      updatePointerDropTarget(drag.startX, drag.startY);
+    }, 220);
+    pointerDragRef.current = drag;
+    const move = (moveEvent: PointerEvent) => {
+      const current = pointerDragRef.current;
+      if (!current || current.pointerId !== moveEvent.pointerId) return;
+      if (!current.active) {
+        const distance = Math.hypot(moveEvent.clientX - current.startX, moveEvent.clientY - current.startY);
+        if (distance > 10) cancelPointerDrag();
+        return;
+      }
+      moveEvent.preventDefault();
+      updatePointerDropTarget(moveEvent.clientX, moveEvent.clientY);
+    };
+    const end = (endEvent: PointerEvent) => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", end);
+      window.removeEventListener("pointercancel", cancel);
+      finishPointerDrag(endEvent.clientX, endEvent.clientY);
+    };
+    const cancel = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", end);
+      window.removeEventListener("pointercancel", cancel);
+      cancelPointerDrag();
+    };
+    window.addEventListener("pointermove", move, { passive: false });
+    window.addEventListener("pointerup", end);
+    window.addEventListener("pointercancel", cancel);
+  }, [cancelPointerDrag, finishPointerDrag, updatePointerDropTarget]);
   return (
     <main className="page today-page">
       <header className="topbar">
@@ -755,12 +828,12 @@ function TodayView({
       <MicronutrientSummary nutrition={total} />
 
       <section className="log-section">
-        <div className="section-heading"><div><span className="eyebrow">Daily log</span><h2>Your meals</h2></div></div>
+        <div className="section-heading"><div><span className="eyebrow">Daily log</span><h2>Your meals</h2></div><span className="subtle meal-reorder-hint">Hold ⋮⋮ to reorder</span></div>
         {grouped.map(({ type, meals: groupMeals }) => (
           <div className="meal-group" key={type}>
             <div className="meal-group-title"><span>{mealLabels[type]}</span>{!profile.hideCalories && (() => { const target = resolveMealCalorieTarget(profile, type); const calories = Math.round(sumNutrition(groupMeals.map((meal) => meal.nutrition)).calories); return <span aria-label={target ? `${calories} of ${target} calorie guide` : `${calories} calories`}>{calories}{target ? ` / ${target}` : ""} kcal</span>; })()}</div>
-            <div className={`meal-list card ${dropTarget === type ? "drop-target" : ""}`} onDragOver={(event) => { event.preventDefault(); setDropTarget(type); }} onDragLeave={() => setDropTarget(undefined)} onDrop={(event) => { event.preventDefault(); const mealId = event.dataTransfer.getData("text/meal-id"); const meal = meals.find((candidate) => candidate.id === mealId); if (meal) onDropMeal(meal, type); setDropTarget(undefined); }}>
-              {groupMeals.map((meal) => <MealRow key={meal.id} meal={meal} hideCalories={profile.hideCalories} dropPosition={dropTarget === `${type}:${meal.id}:before` ? "before" : dropTarget === `${type}:${meal.id}:after` ? "after" : undefined} onDelete={() => onDelete(meal.id)} onEdit={() => onEdit(meal)} onDetails={() => onOpenDetails(meal)} onDuplicate={() => onDuplicate(meal)} onMove={() => onMove(meal)} onDragStart={(draggedMeal, event) => { event.dataTransfer.setData("text/meal-id", draggedMeal.id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); setDropTarget(`${type}:${meal.id}:${event.clientY < rect.top + rect.height / 2 ? "before" : "after"}`); }} onDrop={(event) => { event.preventDefault(); event.stopPropagation(); const mealId = event.dataTransfer.getData("text/meal-id"); const draggedMeal = meals.find((candidate) => candidate.id === mealId); if (draggedMeal) { const rect = event.currentTarget.getBoundingClientRect(); onDropMeal(draggedMeal, type, meal.id, event.clientY >= rect.top + rect.height / 2); } setDropTarget(undefined); }} />)}
+            <div className={`meal-list card ${dropTarget === type ? "drop-target" : ""}`} data-meal-list={type} onDragOver={(event) => { event.preventDefault(); setDropTarget(type); }} onDragLeave={() => setDropTarget(undefined)} onDrop={(event) => { event.preventDefault(); const mealId = event.dataTransfer.getData("text/meal-id"); const meal = meals.find((candidate) => candidate.id === mealId); if (meal) onDropMeal(meal, type); setDropTarget(undefined); }}>
+              {groupMeals.map((meal) => <MealRow key={meal.id} meal={meal} hideCalories={profile.hideCalories} dragging={draggingMealId === meal.id} onPointerDown={startPointerDrag} dropPosition={dropTarget === `${type}:${meal.id}:before` ? "before" : dropTarget === `${type}:${meal.id}:after` ? "after" : undefined} onDelete={() => onDelete(meal.id)} onEdit={() => onEdit(meal)} onDetails={() => onOpenDetails(meal)} onDuplicate={() => onDuplicate(meal)} onMove={() => onMove(meal)} onDragStart={(draggedMeal, event) => { event.dataTransfer.setData("text/meal-id", draggedMeal.id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); setDropTarget(`${type}:${meal.id}:${event.clientY < rect.top + rect.height / 2 ? "before" : "after"}`); }} onDrop={(event) => { event.preventDefault(); event.stopPropagation(); const mealId = event.dataTransfer.getData("text/meal-id"); const draggedMeal = meals.find((candidate) => candidate.id === mealId); if (draggedMeal) { const rect = event.currentTarget.getBoundingClientRect(); onDropMeal(draggedMeal, type, meal.id, event.clientY >= rect.top + rect.height / 2); } setDropTarget(undefined); }} />)}
               <MealAddRow mealType={type} onAdd={onAdd} />
             </div>
           </div>
