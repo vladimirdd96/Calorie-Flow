@@ -59,6 +59,7 @@ describe("Sites Worker", () => {
   });
 
   it("accepts the native Workers AI response for label analysis", async () => {
+    const aiRequests = [];
     vi.stubGlobal("fetch", vi.fn(async (url) => {
       if (String(url).includes("/auth/v1/user")) return Response.json({ id: "00000000-0000-0000-0000-000000000001" });
       throw new Error(`Unexpected fetch: ${url}`);
@@ -73,16 +74,20 @@ describe("Sites Worker", () => {
         SUPABASE_URL: "https://project.supabase.co",
         SUPABASE_PUBLISHABLE_KEY: "public-key",
         AI: {
-          run: async () => ({ response: JSON.stringify({
-            productName: "Test drink", brand: "Test", barcode: null,
-            per100: { calories: 42, protein: 0, carbs: 10, fat: 0, fiber: 0, sugar: 10 },
-            servingSizeG: 330, packageSizeG: 330, confidence: "high", needsFollowUp: false, followUpQuestions: [],
-          }) }),
+          run: async (_model, input) => {
+            aiRequests.push(input);
+            return { response: JSON.stringify({
+              productName: "Test drink", brand: "Test", barcode: null,
+              per100: { calories: 42, protein: 0, carbs: 10, fat: 0, fiber: 0, sugar: 10 },
+              servingSizeG: 330, packageSizeG: 330, confidence: "high", needsFollowUp: false, followUpQuestions: [],
+            }) };
+          },
         },
       }),
     );
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({ productName: "Test drink", per100: { calories: 42 } });
+    expect(aiRequests[0].chat_template_kwargs).toEqual({ thinking: false });
   });
 
   it("analyzes a meal photo through the deployed Sites API", async () => {

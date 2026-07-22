@@ -206,6 +206,8 @@ function labelRequestPayload(images, strict = true) {
       { role: "user", content: [{ type: "text", text: "Identify this food package and return the structured result. A barcode alone is useful: return it even if other nutrition details are unavailable." }, ...images.map((image) => ({ type: "image_url", image_url: { url: image } }))] },
     ],
     ...(strict ? { response_format: { type: "json_schema", json_schema: { name: "nutrition_label", strict: true, schema: nutritionSchema } } } : { response_format: { type: "json_object" } }),
+    // Match Coach photo handling: Kimi should return the requested JSON directly.
+    chat_template_kwargs: { thinking: false },
     max_completion_tokens: 700,
     temperature: 0,
   };
