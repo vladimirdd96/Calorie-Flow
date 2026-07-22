@@ -397,6 +397,7 @@ p { color: var(--muted); line-height: 1.55; }
 .segmented { display: grid; gap: 5px; padding: 5px; border-radius: 14px; background: var(--control-surface-strong); border: 1px solid var(--border); }
 .segmented.three { grid-template-columns: repeat(3, 1fr); }
 .segmented.four { grid-template-columns: repeat(4, 1fr); }
+.segmented.fasting-goals { grid-template-columns: repeat(5, 1fr); }
 .segmented button { min-height: 44px; border-radius: 10px; background: transparent; border: 0; color: var(--muted); font-size: 11px; font-weight: 700; }
 .segmented button.active { color: var(--text); background: var(--control-surface-selected); box-shadow: inset 0 0 0 1px var(--border-strong); }
 .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -463,6 +464,7 @@ p { color: var(--muted); line-height: 1.55; }
 .fasting-content { display: grid; gap: 13px; padding: 15px 16px 16px; }
 .fasting-content > p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .fasting-content .segmented button { min-height: 40px; }
+.fasting-disclaimer { display: block; margin-top: 10px; color: var(--muted); font-size: 11px; line-height: 1.45; }
 .fasting-content .secondary-button { min-height: 44px; font-size: 11px; }
 .fasting-status { display: flex; align-items: baseline; gap: 8px; }
 .fasting-status strong { font-size: 24px; letter-spacing: -.05em; }
