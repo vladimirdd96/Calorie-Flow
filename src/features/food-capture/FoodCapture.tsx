@@ -27,7 +27,7 @@ function SearchResultGroup({ title, detail, empty, children }: { title: string; 
   return <section className="search-result-group" aria-label={title}><div className="quick-list-heading"><strong>{title}</strong><span>{detail}</span></div>{children}</section>;
 }
 
-export function AddFoodSheet({ foods, meals, recipes, initialView = "start", initialMealType, onLog, onMealPhoto, onSaveFood, onSelectRecipe, hideCalories }: { foods: Food[]; meals: Meal[]; recipes: Recipe[]; initialView?: AddView; initialMealType?: MealType; onLog: (meal: Meal, food: Food) => void; onMealPhoto: (analysis: MealPhotoAnalysis) => void; onSaveFood: (food: Food) => Promise<void>; onSelectRecipe: (recipe: Recipe) => void; hideCalories: boolean }) {
+export function AddFoodSheet({ foods, meals, recipes, initialView = "start", initialMealType, onLog, onMealPhoto, onSaveFood, onSelectRecipe, onSelectFood, selectionOnly = false, hideCalories }: { foods: Food[]; meals: Meal[]; recipes: Recipe[]; initialView?: AddView; initialMealType?: MealType; onLog: (meal: Meal, food: Food) => void; onMealPhoto: (analysis: MealPhotoAnalysis) => void; onSaveFood: (food: Food) => Promise<void>; onSelectRecipe: (recipe: Recipe) => void; onSelectFood?: (food: Food) => void; selectionOnly?: boolean; hideCalories: boolean }) {
   const [view, setView] = useState<AddView>(initialView);
   const [selected, setSelected] = useState<Food>();
   const [questions, setQuestions] = useState<string[]>([]);
@@ -73,7 +73,7 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
     }
     setView(nextView);
   };
-  const pick = (food: Food, followUps: string[] = []) => { setSearchError(""); setSelected(food); setQuestions(followUps); };
+  const pick = (food: Food, followUps: string[] = []) => { setSearchError(""); if (selectionOnly) { onSelectFood?.(food); return; } setSelected(food); setQuestions(followUps); };
   const runSearch = useCallback(async (value: string) => {
     const requestId = ++searchRequestRef.current;
     const normalized = value.trim().toLowerCase();
