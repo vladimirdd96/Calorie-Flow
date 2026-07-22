@@ -74,13 +74,16 @@ export function useAuth() {
     if (error) throw error;
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string) => {
+  const signUp = useCallback(async (email: string, password: string, name: string) => {
     const supabase = getSupabase();
     if (!supabase) throw new Error("Cloud sync is not configured yet.");
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: getAuthCallbackUrl() },
+      options: {
+        data: { full_name: name.trim() },
+        emailRedirectTo: getAuthCallbackUrl(),
+      },
     });
     if (error) throw error;
     return { needsEmailConfirmation: !data.session };
