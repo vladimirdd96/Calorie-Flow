@@ -233,12 +233,8 @@ p { color: var(--muted); line-height: 1.55; }
 .duplicate-meal-copy { display: grid; gap: 5px; margin: 18px 0; }
 .duplicate-meal-copy p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .meal-editor { width: 100%; max-width: 560px; margin: 0 auto; padding: 24px; }
-.meal-editor:not(.duplicate-meal-sheet) .sheet-header { grid-template-columns: 1fr; min-height: auto; align-items: start; margin-bottom: 24px; }
-.meal-editor:not(.duplicate-meal-sheet) .sheet-header > div { text-align: left; }
 .duplicate-meal-dialog { width: min(100%, 560px); }
 .duplicate-meal-dialog .meal-editor { width: 100%; padding: 24px 20px 12px; }
-.duplicate-meal-dialog .sheet-header { grid-template-columns: 1fr; min-height: auto; margin-bottom: 24px; }
-.duplicate-meal-dialog .sheet-header > div { text-align: left; }
 .meal-editor-form { display: grid; gap: 16px; }
 .meal-photo-editor { display: grid; gap: 10px; }
 .meal-photo-editor > div:first-child { display: grid; gap: 4px; }
@@ -275,6 +271,18 @@ p { color: var(--muted); line-height: 1.55; }
 .detail-grid > div { display: grid; gap: 5px; padding: 11px; border: 1px solid var(--border); border-radius: 11px; background: var(--control-surface-strong); }
 .detail-grid span { color: var(--muted); font-size: 10px; }
 .detail-grid strong { font-size: 14px; }
+.daily-nutrition-sheet .macro-breakdown { margin-top: 0; padding-top: 0; border-top: 0; }
+.daily-nutrition-sheet .detail-section { padding: 14px; border: 1px solid color-mix(in oklch, var(--mint) 18%, var(--border)); border-radius: 18px; background: color-mix(in oklch, var(--mint) 4%, var(--panel)); }
+.daily-nutrition-sheet .detail-section + .detail-section { margin-top: 14px; }
+.daily-nutrition-sheet .macro-detail-section { background: color-mix(in oklch, var(--mint) 7%, var(--panel)); }
+.daily-nutrition-sheet .micro-detail-section { background: color-mix(in oklch, var(--blue) 4%, var(--panel)); }
+.daily-nutrition-sheet .nutrition-detail-card { border-color: color-mix(in oklch, var(--border) 74%, var(--text)); }
+.daily-nutrition-sheet .nutrition-detail-card.calories { background: color-mix(in oklch, var(--mint) 16%, var(--panel)); }
+.daily-nutrition-sheet .nutrition-detail-card.protein { background: color-mix(in oklch, var(--protein) 13%, var(--panel)); }
+.daily-nutrition-sheet .nutrition-detail-card.carbs { background: color-mix(in oklch, var(--carbs) 13%, var(--panel)); }
+.daily-nutrition-sheet .nutrition-detail-card.fat { background: color-mix(in oklch, var(--fat) 13%, var(--panel)); }
+.daily-nutrition-sheet .nutrition-detail-card.micro { background: color-mix(in oklch, var(--blue) 7%, var(--panel)); }
+.daily-nutrition-sheet .nutrition-detail-card.is-zero strong { color: var(--muted); }
 .macro-detail-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .detail-empty { margin: 0; padding: 15px; border: 1px dashed var(--border-strong); border-radius: 11px; color: var(--muted); font-size: 12px; line-height: 1.5; }
 .detail-footnote { display: flex; align-items: center; gap: 7px; margin-top: 22px; padding-top: 13px; border-top: 1px solid var(--border); color: var(--muted-2); font-size: 10px; }
@@ -920,12 +928,11 @@ p { color: var(--muted); line-height: 1.55; }
 .sheet-handle:active { cursor: grabbing; }
 .sheet-close { position: absolute; top: 8px; right: 10px; width: 36px; height: 36px; color: var(--muted); }
 .sheet-close:hover, .sheet-close:focus-visible { color: var(--text); background: var(--panel); }
-.sheet-header { min-height: 60px; display: grid; grid-template-columns: 42px 1fr 42px; align-items: center; gap: 8px; margin-bottom: 16px; }
-.sheet-header > div { min-width: 0; text-align: center; }
-.sheet-header h2 { margin-top: 5px; font-size: 20px; }
+.sheet-header { min-height: 48px; display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px; padding-right: 42px; }
+.sheet-header > div { min-width: 0; flex: 1; text-align: left; }
+.sheet-header > span { display: none; }
+.sheet-header h2 { overflow: hidden; margin: 4px 0 0; font-size: 20px; line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
 .calendar-sheet { padding-bottom: 4px; }
-.calendar-sheet .sheet-header { grid-template-columns: 1fr 42px; }
-.calendar-sheet .sheet-header > div { text-align: left; }
 .calendar-intro { margin: -4px 8px 19px; font-size: 12px; text-align: center; }
 .calendar-toolbar { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; justify-items: center; margin-bottom: 14px; }
 .calendar-toolbar strong { font-size: 15px; letter-spacing: -.015em; }
