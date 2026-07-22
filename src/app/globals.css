@@ -1073,8 +1073,8 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 @media (max-width: 759px) {
   .coach-page { min-height: calc(100dvh - 92px); display: flex; flex-direction: column; padding-bottom: 12px; }
   .coach-header { min-height: 72px; display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: end; padding-top: 16px; padding-bottom: 10px; }
-  .coach-mobile-menu { width: 34px; height: 34px; display: grid; place-items: center; align-self: center; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 11px; }
-  .coach-mobile-menu:hover, .coach-mobile-menu:focus-visible { color: var(--mint-strong); border-color: var(--border-strong); }
+  .coach-mobile-menu { width: 34px; height: 34px; display: grid; place-items: center; align-self: center; color: var(--text); background: transparent; border: 1px solid transparent; border-radius: 11px; }
+  .coach-mobile-menu:hover, .coach-mobile-menu:focus-visible { color: var(--mint-strong); background: color-mix(in oklch, var(--mint) 8%, transparent); border-color: var(--border-strong); }
   .coach-mobile-backdrop { position: fixed; inset: 0; z-index: 30; display: block; padding: 0; border: 0; background: rgba(4, 10, 9, .46); }
   .coach-new-chat { min-height: 34px; gap: 4px; padding: 0 7px; }
   .coach-new-chat-label { display: none; }
