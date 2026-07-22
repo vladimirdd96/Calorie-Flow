@@ -82,7 +82,7 @@ export function MealEditor({ meal, onSave, onClose, hideCalories }: { meal: Meal
   return <div className="meal-editor">
     <div className="sheet-header"><div><span className="eyebrow">Your diary</span><h2 id="meal-editor-title">Edit meal</h2></div><span /></div>
     <form className="meal-editor-form" onSubmit={submit}>
-      <label><span>Meal and additions</span><input autoFocus value={name} onChange={(event) => setName(event.target.value)} maxLength={240} /></label>
+      <label><span>Meal and additions</span><input autoFocus value={name} onChange={(event) => setName(event.target.value)} maxLength={240} placeholder="e.g. Greek yoghurt and berries" /></label>
       <section className="meal-photo-editor" aria-labelledby="meal-photo-heading">
         <div><span className="eyebrow" id="meal-photo-heading">Meal photo</span><small>Optional. Stored privately with this diary entry.</small></div>
         {imageUrl ? <div className="meal-photo-preview"><img src={imageUrl} alt="Preview of this meal" /><div><strong>Photo added</strong><small>You can replace it or remove it below.</small><button type="button" className="secondary-button" onClick={() => imageInputRef.current?.click()}>Replace photo</button><button type="button" className="text-button muted" onClick={() => setImageUrl(undefined)}>Remove</button></div></div> : <button type="button" className="meal-photo-upload" onClick={() => imageInputRef.current?.click()}><span className="meal-photo-upload-icon"><ImagePlus size={19} /></span><span className="meal-photo-upload-copy"><strong>Add a meal photo</strong><small>Choose from your device</small></span><ChevronRight size={17} aria-hidden="true" /> </button>}
