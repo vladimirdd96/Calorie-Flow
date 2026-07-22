@@ -646,10 +646,10 @@ function DailyRhythm({ profile, dateKey, onSave }: { profile: Profile; dateKey: 
   const showWater = isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.water);
   const showFasting = isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting);
   if (!showWater && !showFasting) return null;
-  return <section className="daily-rhythm" aria-labelledby="daily-rhythm-heading">
-    <div className="section-heading compact"><div><span className="eyebrow">After your food log</span><h2 id="daily-rhythm-heading">Daily check-ins</h2></div><span className="subtle">Optional</span></div>
+  return <details className="daily-rhythm" aria-labelledby="daily-rhythm-heading">
+    <summary><span><span className="eyebrow">Optional, after your food log</span><strong id="daily-rhythm-heading">Daily check-ins</strong></span><span className="daily-rhythm-summary"><span>{[showWater && "Water", showFasting && "Fasting"].filter(Boolean).join(" · ")}</span><ChevronDown size={17} aria-hidden="true" /></span></summary>
     <div className="daily-rhythm-grid">{showWater && <WaterTracker profile={profile} dateKey={dateKey} onSave={onSave} />}{showFasting && <FastingTracker profile={profile} onSave={onSave} />}</div>
-  </section>;
+  </details>;
 }
 
 function TodayView({
@@ -852,6 +852,7 @@ function DiscoverView({ foods, onSelect, onAdd, hideCalories }: { foods: Food[];
 }
 
 type WeightPeriod = "week" | "month" | "all";
+type InsightsSection = "overview" | "nutrition" | "weight";
 
 function startOfWeek(date: Date) {
   const result = new Date(date);
@@ -873,6 +874,7 @@ function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: { meals
   const average = loggedDays.length ? loggedDays.reduce((sum, day) => sum + day.total.calories, 0) / loggedDays.length : 0;
   const proteinAverage = loggedDays.length ? loggedDays.reduce((sum, day) => sum + day.total.protein, 0) / loggedDays.length : 0;
   const [weightPeriod, setWeightPeriod] = useState<WeightPeriod>("week");
+  const [section, setSection] = useState<InsightsSection>("overview");
   const entries = [...(profile.weightEntries || [])].sort((a, b) => b.date.localeCompare(a.date));
   const latestWeight = entries[0]?.weightKg ?? profile.weightKg;
   const measurementSystem = measurementSystemFor(profile);
@@ -903,13 +905,21 @@ function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: { meals
   return (
     <main className="page">
       <header className="page-header"><span className="eyebrow">No judgement</span><h1>Your rhythm</h1><p>A lightweight view of patterns—not another dashboard to manage.</p></header>
-      <section className="summary-strip">
+      <div className="workspace-tabs" role="tablist" aria-label="Insights workspace">
+        <button id="insights-overview-tab" type="button" role="tab" aria-selected={section === "overview"} aria-controls="insights-overview-panel" className={section === "overview" ? "active" : ""} onClick={() => setSection("overview")}>Overview</button>
+        <button id="insights-nutrition-tab" type="button" role="tab" aria-selected={section === "nutrition"} aria-controls="insights-nutrition-panel" className={section === "nutrition" ? "active" : ""} onClick={() => setSection("nutrition")}>Nutrition</button>
+        {weightTrackingEnabled && <button id="insights-weight-tab" type="button" role="tab" aria-selected={section === "weight"} aria-controls="insights-weight-panel" className={section === "weight" ? "active" : ""} onClick={() => setSection("weight")}>Weight</button>}
+      </div>
+      {section === "overview" && <section id="insights-overview-panel" role="tabpanel" aria-labelledby="insights-overview-tab" className="workspace-panel">
+      <div className="summary-strip">
         {!profile.hideCalories && <div className="card"><span>Daily average</span><strong>{Math.round(average).toLocaleString()}</strong><small>kcal on logged days</small></div>}
         <div className="card"><span>Protein average</span><strong>{Math.round(proteinAverage)} g</strong><small>target {profile.proteinTarget} g</small></div>
         {profile.hideCalories && <div className="card"><span>Fibre average</span><strong>{Math.round(loggedDays.length ? loggedDays.reduce((sum, day) => sum + day.total.fiber, 0) / loggedDays.length : 0)} g</strong><small>target {profile.fiberTarget} g</small></div>}
         {weightTrackingEnabled && <div className="card"><span>Weight average</span><strong>{weightAverage ? formatWeight(weightAverage, profile) : "—"}</strong><small>{weightPeriod === "week" ? "this week" : weightPeriod === "month" ? "this month" : "all time"}</small></div>}
-      </section>
-      {weightTrackingEnabled && <section className="weight-section" aria-labelledby="weight-heading">
+      </div>
+      <section className="insight-card card"><span className="action-icon mint"><Sparkles /></span><div><strong>{loggedDays.length < 3 ? "Your pattern will appear here" : profile.hideCalories ? "Your nutrient rhythm is taking shape" : average > profile.calorieTarget * 1.08 ? "A little above your target" : average < profile.calorieTarget * 0.75 ? "Your logged average is low" : "You’re close to your target"}</strong><p>{loggedDays.length < 3 ? "Log a few complete days. Partial days are never treated as failure." : profile.hideCalories ? "Use the nutrition view to notice protein, fibre and meal patterns without energy numbers." : "Use the nutrition view as a guide. One unusual meal or day does not define progress."}</p></div></section>
+      </section>}
+      {section === "weight" && weightTrackingEnabled && <section id="insights-weight-panel" role="tabpanel" aria-labelledby="insights-weight-tab" className="weight-section workspace-panel">
         <div className="section-heading"><div><span className="eyebrow">Optional progress log</span><h2 id="weight-heading">Body weight</h2></div><span className="subtle">{entries.length} {entries.length === 1 ? "entry" : "entries"}</span></div>
         <form className="weight-log card" onSubmit={saveWeight}>
           <div><span className="weight-log-label">Log a weigh-in</span><p>Use the same conditions when you can. Trends are more useful than any single day.</p></div>
@@ -928,6 +938,7 @@ function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: { meals
           return <details className="weight-history-group" key={group.key}><summary><span><strong>{label}</strong><small>{group.entries.length} {group.entries.length === 1 ? "weigh-in" : "weigh-ins"}</small></span><b>{formatWeight(groupAverage, profile)}</b></summary><div className="weight-history-entries">{group.entries.map((entry) => <div className="weight-history-entry" key={entry.date}><span>{new Date(`${entry.date}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}</span><strong>{formatWeight(entry.weightKg, profile)}</strong><button type="button" className="icon-button subtle-button" onClick={() => removeWeight(entry)} aria-label={`Remove weight logged on ${entry.date}`}><Trash2 size={14} /></button></div>)}</div></details>;
         })}</div> : <div className="weight-empty card"><strong>Your weight history starts here.</strong><p>Log a weigh-in above to see daily entries and rolling averages.</p></div>}
       </section>}
+      {section === "nutrition" && <section id="insights-nutrition-panel" role="tabpanel" aria-labelledby="insights-nutrition-tab" className="workspace-panel">
       {!profile.hideCalories && <section className="chart-card card">
         <div className="section-heading compact"><div><span className="eyebrow">Last 7 days</span><h2>Calories</h2></div><span className="legend"><i /> {profile.calorieTarget.toLocaleString()} target</span></div>
         <div className="chart-area">
@@ -935,7 +946,8 @@ function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: { meals
           {days.map((day) => <div className="chart-column" key={day.key}><div className="chart-bar-wrap"><div className="chart-bar" style={{ height: `${(day.total.calories / max) * 100}%` }}><span>{day.total.calories ? Math.round(day.total.calories) : ""}</span></div></div><small>{day.label}</small></div>)}
         </div>
       </section>}
-      <section className="insight-card card"><span className="action-icon mint"><Sparkles /></span><div><strong>{loggedDays.length < 3 ? "Your pattern will appear here" : profile.hideCalories ? "Your nutrient rhythm is taking shape" : average > profile.calorieTarget * 1.08 ? "A little above your target" : average < profile.calorieTarget * 0.75 ? "Your logged average is low" : "You’re close to your target"}</strong><p>{loggedDays.length < 3 ? "Log a few complete days. Partial days are never treated as failure." : profile.hideCalories ? "Use the weekly view to notice protein, fibre and meal patterns without energy numbers." : "Use the weekly view as a guide. One unusual meal or day does not define progress."}</p></div></section>
+      {profile.hideCalories && <section className="insight-card card"><span className="action-icon mint"><Sparkles /></span><div><strong>{loggedDays.length < 3 ? "Your pattern will appear here" : "Your nutrient rhythm is taking shape"}</strong><p>{loggedDays.length < 3 ? "Log a few complete days. Partial days are never treated as failure." : "Keep logging meals to notice protein, fibre and meal patterns over time."}</p></div></section>}
+      </section>}
     </main>
   );
 }
@@ -2514,6 +2526,7 @@ function PlanView({ profile, onSave, onLog }: { profile: Profile; onSave: (profi
   const [recipeId, setRecipeId] = useState("");
   const [date, setDate] = useState(localDateKey());
   const [mealType, setMealType] = useState<MealType>("dinner");
+  const [section, setSection] = useState<"week" | "recipes" | "shopping">("week");
   const addRecipe = (recipe: Recipe) => onSave({ ...profile, recipes: [...recipes, recipe] });
   const addPlanEntry = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -2525,10 +2538,10 @@ function PlanView({ profile, onSave, onLog }: { profile: Profile; onSave: (profi
   const groceries = groceryItemsForPlan(plannedRecipes);
   return <main className="page plan-page">
     <header className="page-header"><span className="eyebrow">Make tomorrow easier</span><h1>Recipes & plan</h1><p>Keep your recipes private, place them on a day, and turn the ingredients into a calm shopping list.</p></header>
-    <details className="recipe-create card" open={recipeComposerOpen} onToggle={(event) => setRecipeComposerOpen(event.currentTarget.open)}><summary><span><BookOpen size={18} /><strong>Save a recipe</strong><small>Store the portions and nutrition you use.</small></span><ChevronDown size={17} /></summary><RecipeComposer onCreate={(recipe) => { addRecipe(recipe); setRecipeComposerOpen(false); }} /></details>
-    <section className="recipe-library" aria-labelledby="recipe-library-heading"><div className="section-heading"><div><span className="eyebrow">Your library</span><h2 id="recipe-library-heading">Saved recipes</h2></div><span className="subtle">{recipes.length} saved</span></div>{recipes.length ? <div className="recipe-list">{recipes.map((recipe) => <article className="recipe-card card" key={recipe.id}><div><strong>{recipe.name}</strong><small>{recipe.servings} servings · {Math.round(recipe.nutritionPerServing.protein)}g protein</small></div><div className="recipe-card-actions"><button className="text-button" type="button" onClick={() => void onLog(recipeMeal(recipe, localDateKey(), "dinner"))}>Log now</button><button className="icon-button subtle-button" type="button" aria-label={`Remove ${recipe.name}`} onClick={() => onSave({ ...profile, recipes: recipes.filter((item) => item.id !== recipe.id), mealPlanEntries: entries.filter((entry) => entry.recipeId !== recipe.id) })}><Trash2 size={15} /></button></div></article>)}</div> : <div className="recipe-empty card"><span className="action-icon mint"><BookOpen size={22} /></span><strong>Your regular meals belong here.</strong><p>Save one recipe and it can be logged or planned without rebuilding it.</p><button type="button" className="secondary-button" onClick={() => setRecipeComposerOpen(true)}><Plus size={16} />Save your first recipe</button></div>}</section>
-    {recipes.length > 0 && <section className="planning-workspace" aria-labelledby="plan-heading"><div className="section-heading"><div><span className="eyebrow">Lightweight planning</span><h2 id="plan-heading">Add a meal to your plan</h2></div></div><form className="plan-entry-form card" onSubmit={addPlanEntry}><label><span>Recipe</span><ThemedSelect ariaLabel="Recipe to plan" value={recipeId} onChange={setRecipeId} options={[{ value: "", label: "Choose a recipe" }, ...recipes.map((recipe) => ({ value: recipe.id, label: recipe.name }))]} /></label><div className="form-grid two"><label><span>Date</span><input required type="date" min={localDateKey()} value={date} onChange={(event) => setDate(event.target.value)} /></label><label><span>Meal</span><ThemedSelect ariaLabel="Planned meal" value={mealType} onChange={(value) => setMealType(value as MealType)} options={(Object.keys(mealLabels) as MealType[]).map((type) => ({ value: type, label: mealLabels[type] }))} /></label></div><button className="primary-button" type="submit" disabled={!recipeId}><CalendarPlus size={17} />Add to plan</button></form>{entries.length > 0 && <div className="planned-list">{entries.map((entry) => { const recipe = recipes.find((item) => item.id === entry.recipeId); return recipe ? <div className="planned-entry card" key={entry.id}><span><strong>{recipe.name}</strong><small>{new Date(`${entry.date}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} · {mealLabels[entry.mealType]}</small></span><button className="icon-button subtle-button" type="button" aria-label={`Remove ${recipe.name} from plan`} onClick={() => removeEntry(entry.id)}><X size={16} /></button></div> : null; })}</div>}</section>}
-    <section className="planned-groceries card" aria-labelledby="planned-groceries-heading"><div className="section-heading compact"><div><span className="eyebrow">From your plan</span><h2 id="planned-groceries-heading">Shopping list</h2></div><ListChecks size={18} /></div>{groceries.length ? <ul>{groceries.map((item) => <li key={item}>{item}</li>)}</ul> : <p>{recipes.length ? "Plan a recipe for a day and its ingredients will appear here." : "Plan a saved recipe and its ingredients will appear here. Your existing Coach grocery lists remain available in Coach."}</p>}</section>
+    <div className="workspace-tabs" role="tablist" aria-label="Plan workspace"><button id="plan-week-tab" type="button" role="tab" aria-selected={section === "week"} aria-controls="plan-week-panel" className={section === "week" ? "active" : ""} onClick={() => setSection("week")}>This week</button><button id="plan-recipes-tab" type="button" role="tab" aria-selected={section === "recipes"} aria-controls="plan-recipes-panel" className={section === "recipes" ? "active" : ""} onClick={() => setSection("recipes")}>Recipes <span>{recipes.length}</span></button><button id="plan-shopping-tab" type="button" role="tab" aria-selected={section === "shopping"} aria-controls="plan-shopping-panel" className={section === "shopping" ? "active" : ""} onClick={() => setSection("shopping")}>Shopping <span>{groceries.length}</span></button></div>
+    {section === "week" && <section id="plan-week-panel" role="tabpanel" aria-labelledby="plan-week-tab" className="planning-workspace workspace-panel">{recipes.length > 0 ? <><div className="section-heading"><div><span className="eyebrow">Lightweight planning</span><h2>Add a meal to your plan</h2></div></div><form className="plan-entry-form card" onSubmit={addPlanEntry}><label><span>Recipe</span><ThemedSelect ariaLabel="Recipe to plan" value={recipeId} onChange={setRecipeId} options={[{ value: "", label: "Choose a recipe" }, ...recipes.map((recipe) => ({ value: recipe.id, label: recipe.name }))]} /></label><div className="form-grid two"><label><span>Date</span><input required type="date" min={localDateKey()} value={date} onChange={(event) => setDate(event.target.value)} /></label><label><span>Meal</span><ThemedSelect ariaLabel="Planned meal" value={mealType} onChange={(value) => setMealType(value as MealType)} options={(Object.keys(mealLabels) as MealType[]).map((type) => ({ value: type, label: mealLabels[type] }))} /></label></div><button className="primary-button" type="submit" disabled={!recipeId}><CalendarPlus size={17} />Add to plan</button></form>{entries.length > 0 && <div className="planned-list">{entries.map((entry) => { const recipe = recipes.find((item) => item.id === entry.recipeId); return recipe ? <div className="planned-entry card" key={entry.id}><span><strong>{recipe.name}</strong><small>{new Date(`${entry.date}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} · {mealLabels[entry.mealType]}</small></span><button className="icon-button subtle-button" type="button" aria-label={`Remove ${recipe.name} from plan`} onClick={() => removeEntry(entry.id)}><X size={16} /></button></div> : null; })}</div>}</> : <div className="recipe-empty card"><span className="action-icon mint"><BookOpen size={22} /></span><strong>Start with a recipe.</strong><p>Save one of your regular meals, then add it to a day here.</p><button type="button" className="secondary-button" onClick={() => setSection("recipes")}><BookOpen size={16} />Open recipes</button></div>}</section>}
+    {section === "recipes" && <section id="plan-recipes-panel" role="tabpanel" aria-labelledby="plan-recipes-tab" className="workspace-panel"><details className="recipe-create card" open={recipeComposerOpen} onToggle={(event) => setRecipeComposerOpen(event.currentTarget.open)}><summary><span><BookOpen size={18} /><strong>Save a recipe</strong><small>Store the portions and nutrition you use.</small></span><ChevronDown size={17} /></summary><RecipeComposer onCreate={(recipe) => { addRecipe(recipe); setRecipeComposerOpen(false); }} /></details><section className="recipe-library" aria-labelledby="recipe-library-heading"><div className="section-heading"><div><span className="eyebrow">Your library</span><h2 id="recipe-library-heading">Saved recipes</h2></div><span className="subtle">{recipes.length} saved</span></div>{recipes.length ? <div className="recipe-list">{recipes.map((recipe) => <article className="recipe-card card" key={recipe.id}><div><strong>{recipe.name}</strong><small>{recipe.servings} servings · {Math.round(recipe.nutritionPerServing.protein)}g protein</small></div><div className="recipe-card-actions"><button className="text-button" type="button" onClick={() => void onLog(recipeMeal(recipe, localDateKey(), "dinner"))}>Log now</button><button className="icon-button subtle-button" type="button" aria-label={`Remove ${recipe.name}`} onClick={() => onSave({ ...profile, recipes: recipes.filter((item) => item.id !== recipe.id), mealPlanEntries: entries.filter((entry) => entry.recipeId !== recipe.id) })}><Trash2 size={15} /></button></div></article>)}</div> : <div className="recipe-empty card"><span className="action-icon mint"><BookOpen size={22} /></span><strong>Your regular meals belong here.</strong><p>Save one recipe and it can be logged or planned without rebuilding it.</p><button type="button" className="secondary-button" onClick={() => setRecipeComposerOpen(true)}><Plus size={16} />Save your first recipe</button></div>}</section></section>}
+    {section === "shopping" && <section id="plan-shopping-panel" role="tabpanel" aria-labelledby="plan-shopping-tab" className="planned-groceries card workspace-panel"><div className="section-heading compact"><div><span className="eyebrow">From your plan</span><h2>Shopping list</h2></div><ListChecks size={18} /></div>{groceries.length ? <ul>{groceries.map((item) => <li key={item}>{item}</li>)}</ul> : <p>{recipes.length ? "Plan a recipe for a day and its ingredients will appear here." : "Plan a saved recipe and its ingredients will appear here. Your existing Coach grocery lists remain available in Coach."}</p>}</section>}
   </main>;
 }
 
@@ -2685,6 +2698,31 @@ export function TrackerApp() {
     if (params.has("scan")) { setInitialAddView("scan"); setAdding(true); }
     else if (params.has("add")) setAdding(true);
   }, [refresh]);
+  useEffect(() => {
+    let checking = false;
+    const checkForDeploymentUpdate = async () => {
+      if (checking || document.visibilityState !== "visible") return;
+      checking = true;
+      try {
+        const response = await fetch(`/?_calorie_flow_build=${Date.now()}`, { cache: "no-store", headers: { Accept: "text/html" } });
+        if (!response.ok) return;
+        const html = await response.text();
+        const deployedBuild = html.match(/name=["']calorie-flow-build["'][^>]*content=["']([^"']+)["']/i)?.[1];
+        const currentBuild = process.env.NEXT_PUBLIC_BUILD_ID || "development";
+        if (deployedBuild && deployedBuild !== currentBuild) window.location.reload();
+      } catch {
+        // Deployment checks are best-effort and must not affect offline tracking.
+      } finally {
+        checking = false;
+      }
+    };
+    const interval = window.setInterval(() => void checkForDeploymentUpdate(), 60_000);
+    document.addEventListener("visibilitychange", checkForDeploymentUpdate);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", checkForDeploymentUpdate);
+    };
+  }, []);
   useEffect(() => { if (!toast) return; const timer = window.setTimeout(() => setToast(""), 2800); return () => window.clearTimeout(timer); }, [toast]);
   useEffect(() => {
     let active = true;

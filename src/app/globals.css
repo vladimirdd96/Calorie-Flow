@@ -436,6 +436,13 @@ p { color: var(--muted); line-height: 1.55; }
 .weekday-target-editor > label { display: grid; gap: 7px; font-size: 12px; color: var(--muted); }
 .daily-rhythm { display: grid; gap: 12px; margin-top: 28px; }
 .log-section > .daily-rhythm { margin-top: 34px; padding-top: 24px; border-top: 1px solid var(--border); }
+.daily-rhythm > summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 52px; padding: 0 2px; cursor: pointer; list-style: none; }
+.daily-rhythm > summary::-webkit-details-marker { display: none; }
+.daily-rhythm > summary > span:first-child { display: grid; gap: 4px; }
+.daily-rhythm > summary strong { font-size: 17px; letter-spacing: -.025em; }
+.daily-rhythm-summary { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 10px; font-weight: 800; white-space: nowrap; }
+.daily-rhythm-summary svg { color: var(--mint); transition: transform .2s ease; }
+.daily-rhythm[open] .daily-rhythm-summary svg { transform: rotate(180deg); }
 .daily-rhythm-grid { display: grid; gap: 12px; }
 .rhythm-card { min-width: 0; padding: 16px; border-radius: var(--radius-md); box-shadow: none; }
 .rhythm-card-heading { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; }
@@ -491,6 +498,13 @@ p { color: var(--muted); line-height: 1.55; }
 .recipe-empty p { max-width: 42ch; }
 .recipe-empty .secondary-button { justify-self: start; min-height: 40px; margin-top: 3px; }
 .planning-workspace, .recipe-library, .planned-groceries { display: grid; gap: 12px; margin-top: 28px; }
+.workspace-tabs { display: flex; gap: 4px; width: max-content; max-width: 100%; margin: 0 -2px 20px; padding: 4px; overflow-x: auto; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); scrollbar-width: none; }
+.workspace-tabs::-webkit-scrollbar { display: none; }
+.workspace-tabs button { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 0 12px; border: 0; border-radius: 10px; color: var(--muted); background: transparent; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.workspace-tabs button.active { color: var(--mint-strong); background: var(--control-surface-selected); }
+.workspace-tabs button span { display: inline-grid; min-width: 16px; height: 16px; place-items: center; padding: 0 4px; border-radius: 999px; color: var(--muted); background: var(--control-surface-strong); font-size: 9px; }
+.workspace-tabs button.active span { color: var(--mint-strong); }
+.workspace-panel { animation: fade-in .18s ease both; }
 .plan-entry-form { display: grid; gap: 14px; }
 .plan-entry-form > label { display: grid; gap: 7px; font-size: 12px; color: var(--muted); }
 .planned-groceries { padding: 18px; }
