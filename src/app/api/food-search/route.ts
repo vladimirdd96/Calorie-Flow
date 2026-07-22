@@ -71,7 +71,7 @@ async function searchFoodDataCentral(query: string): Promise<Record<string, unkn
   url.searchParams.set("api_key", serverEnv.FDC_API_KEY);
   url.searchParams.set("query", query);
   url.searchParams.set("pageSize", "25");
-  url.searchParams.set("dataType", "Branded");
+  ["Foundation", "SR Legacy", "Branded"].forEach((dataType) => url.searchParams.append("dataType", dataType));
   const upstream = await fetch(url, { headers: { "User-Agent": "Calorie Flow/1.0 (food-search)" }, cache: "no-store" });
   if (!upstream.ok) return [];
   return fdcProductsFromResponse(await upstream.json());

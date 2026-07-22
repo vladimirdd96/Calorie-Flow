@@ -1,0 +1,20 @@
+import type { Food } from "./types";
+
+type ProduceRow = [name: string, servingGrams: number, calories: number, protein: number, carbs: number, fat: number, fiber: number, sugar: number];
+
+// Generic raw produce values per 100 g. These are reference estimates; branded
+// or packaged results still come from the online catalogue when available.
+const produce: ProduceRow[] = [
+  ["Apple", 182, 52, 0.3, 13.8, 0.2, 2.4, 10.4], ["Apricot", 35, 48, 1.4, 11.1, 0.4, 2, 9.2], ["Avocado", 150, 160, 2, 8.5, 14.7, 6.7, 0.7], ["Banana", 118, 89, 1.1, 22.8, 0.3, 2.6, 12.2], ["Blackberry", 144, 43, 1.4, 9.6, 0.5, 5.3, 4.9], ["Blueberry", 148, 57, 0.7, 14.5, 0.3, 2.4, 10], ["Cantaloupe", 156, 34, 0.8, 8.2, 0.2, 0.9, 7.9], ["Cherries", 154, 63, 1.1, 16, 0.2, 2.1, 12.8], ["Coconut meat", 80, 354, 3.3, 15.2, 33.5, 9, 6.2], ["Cranberries", 100, 46, 0.5, 12.2, 0.1, 4.6, 4], ["Dates", 24, 282, 2.5, 75, 0.4, 8, 63.4], ["Dragon fruit", 200, 57, 1.1, 12.9, 0.1, 3.5, 8.5], ["Figs", 50, 74, 0.8, 19.2, 0.3, 2.9, 16.3], ["Grapefruit", 230, 42, 0.8, 10.7, 0.1, 1.6, 6.9], ["Grapes", 151, 69, 0.7, 18.1, 0.2, 0.9, 15.5], ["Guava", 55, 68, 2.6, 14.3, 1, 5.4, 8.9], ["Kiwi", 75, 61, 1.1, 14.7, 0.5, 3, 9], ["Lemon", 58, 29, 1.1, 9.3, 0.3, 2.8, 2.5], ["Lime", 67, 30, 0.7, 10.5, 0.2, 2.8, 1.7], ["Mango", 207, 60, 0.8, 15, 0.4, 1.6, 13.7], ["Nectarine", 140, 44, 1.1, 10.6, 0.3, 1.7, 8.4], ["Orange", 131, 47, 0.9, 11.8, 0.1, 2.4, 9.4], ["Papaya", 145, 43, 0.5, 10.8, 0.3, 1.7, 7.8], ["Passion fruit", 18, 97, 2.2, 23.4, 0.7, 10.4, 11.2], ["Peach", 150, 39, 0.9, 9.5, 0.3, 1.5, 8.4], ["Pear", 178, 57, 0.4, 15.2, 0.1, 3.1, 9.8], ["Pineapple", 165, 50, 0.5, 13.1, 0.1, 1.4, 9.9], ["Pomegranate arils", 174, 83, 1.7, 18.7, 1.2, 4, 13.7], ["Raspberries", 123, 52, 1.2, 11.9, 0.7, 6.5, 4.4], ["Strawberries", 152, 32, 0.7, 7.7, 0.3, 2, 4.9], ["Tangerine", 88, 53, 0.8, 13.3, 0.3, 1.8, 10.6], ["Watermelon", 280, 30, 0.6, 7.6, 0.2, 0.4, 6.2],
+  ["Artichoke", 128, 47, 3.3, 10.5, 0.2, 5.4, 1], ["Asparagus", 134, 20, 2.2, 3.9, 0.1, 2.1, 1.9], ["Beetroot", 82, 43, 1.6, 9.6, 0.2, 2.8, 6.8], ["Bell pepper", 119, 31, 1, 6, 0.3, 2.1, 4.2], ["Bok choy", 170, 13, 1.5, 2.2, 0.2, 1, 1.2], ["Broccoli", 148, 34, 2.8, 6.6, 0.4, 2.6, 1.7], ["Brussels sprouts", 88, 43, 3.4, 9, 0.3, 3.8, 2.2], ["Butternut squash", 205, 45, 1, 11.7, 0.1, 2, 2.2], ["Cabbage", 89, 25, 1.3, 5.8, 0.1, 2.5, 3.2], ["Carrot", 61, 41, 0.9, 9.6, 0.2, 2.8, 4.7], ["Cauliflower", 107, 25, 1.9, 5, 0.3, 2, 1.9], ["Celery", 40, 14, 0.7, 3, 0.2, 1.6, 1.3], ["Collard greens", 190, 32, 3, 5.4, 0.6, 4, 0.5], ["Corn", 145, 86, 3.3, 18.7, 1.4, 2, 6.3], ["Cucumber", 104, 15, 0.7, 3.6, 0.1, 0.5, 1.7], ["Eggplant", 82, 25, 1, 5.9, 0.2, 3, 3.5], ["Fennel", 234, 31, 1.2, 7.3, 0.2, 3.1, 3.9], ["Garlic", 3, 149, 6.4, 33.1, 0.5, 2.1, 1], ["Green beans", 125, 31, 1.8, 7, 0.2, 2.7, 3.3], ["Jalapeño pepper", 14, 29, 0.9, 6.5, 0.4, 2.8, 4.1], ["Kale", 67, 49, 4.3, 8.8, 0.9, 3.6, 2.3], ["Leek", 89, 61, 1.5, 14.2, 0.3, 1.8, 3.9], ["Lettuce", 47, 15, 1.4, 2.9, 0.2, 1.3, 0.8], ["Mushrooms", 70, 22, 3.1, 3.3, 0.3, 1, 2], ["Okra", 100, 33, 1.9, 7.5, 0.2, 3.2, 1.5], ["Onion", 94, 40, 1.1, 9.3, 0.1, 1.7, 4.2], ["Peas", 80, 81, 5.4, 14.5, 0.4, 5.7, 5.7], ["Potato", 173, 77, 2, 17.5, 0.1, 2.2, 0.8], ["Pumpkin", 116, 26, 1, 6.5, 0.1, 0.5, 2.8], ["Radish", 116, 16, 0.7, 3.4, 0.1, 1.6, 1.9], ["Romaine lettuce", 47, 17, 1.2, 3.3, 0.3, 2.1, 1.2], ["Rutabaga", 140, 37, 1.1, 8.6, 0.2, 2.3, 4.5], ["Spinach", 30, 23, 2.9, 3.6, 0.4, 2.2, 0.4], ["Sweet potato", 130, 86, 1.6, 20.1, 0.1, 3, 4.2], ["Swiss chard", 36, 19, 1.8, 3.7, 0.2, 1.6, 1.1], ["Tomato", 123, 18, 0.9, 3.9, 0.2, 1.2, 2.6], ["Turnip", 122, 28, 0.9, 6.4, 0.1, 1.8, 3.8], ["Zucchini", 196, 17, 1.2, 3.1, 0.3, 1, 2.5],
+];
+
+export const produceFoods: Food[] = produce.map(([name, servingGrams, calories, protein, carbs, fat, fiber, sugar]) => ({
+  id: `seed-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+  name,
+  servingGrams,
+  servingLabel: `1 serving (${servingGrams} g)`,
+  nutrientsPer100: { calories, protein, carbs, fat, fiber, sugar },
+  source: "seed",
+  verified: true,
+}));

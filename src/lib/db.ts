@@ -113,7 +113,9 @@ async function writeSnapshot(
 
 export async function initializeFoods() {
   const existing = await getAll<Food>("foods");
-  if (existing.length === 0) await Promise.all(seedFoods.map((food) => put("foods", food)));
+  const existingIds = new Set(existing.map((food) => food.id));
+  const missingSeeds = seedFoods.filter((food) => !existingIds.has(food.id));
+  if (missingSeeds.length) await Promise.all(missingSeeds.map((food) => put("foods", food)));
 }
 
 export async function put<T>(store: StoreName, value: T) {

@@ -1,4 +1,5 @@
 import type { Food } from "./types";
+import { produceFoods } from "./produce";
 
 export const seedFoods: Food[] = [
   {
@@ -76,3 +77,5 @@ export const seedFoods: Food[] = [
     source: "seed",
   },
 ];
+
+seedFoods.push(...produceFoods.filter((food) => !seedFoods.some((existing) => existing.id === food.id)));
