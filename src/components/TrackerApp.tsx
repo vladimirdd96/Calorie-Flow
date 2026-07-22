@@ -104,7 +104,7 @@ import {
 } from "@/lib/nutrition";
 import { findByBarcode, searchOpenFoodFacts } from "@/lib/openfoodfacts";
 import { hydrationTotal, setWaterAmount } from "@/lib/hydration";
-import { activeFast, fastingProgress, fastingWindowHours } from "@/lib/fasting";
+import { activeFast, fastingProgress, fastingWindowHours, syncAutomaticFastAfterMeal, syncAutomaticFasting } from "@/lib/fasting";
 import { isHabitFeatureEnabled, toggleHabitFeature } from "@/lib/habit-settings";
 import { groceryItemsForPlan, recipeMeal } from "@/lib/planning";
 import { mealsCsv } from "@/lib/reports";
@@ -633,12 +633,10 @@ function FastingTracker({ profile, onSave }: { profile: Profile; onSave: (profil
   const active = activeFast(profile.fastingRecords);
   const progress = active ? fastingProgress(active.startedAt, now, goal) : 0;
   const elapsed = active ? fastingWindowHours(active.startedAt, now) : 0;
-  const start = () => { setExpanded(true); onSave({ ...profile, fastingRecords: [...(profile.fastingRecords || []), { id: `fast-${crypto.randomUUID()}`, startedAt: new Date().toISOString() }] }); };
-  const stop = () => onSave({ ...profile, fastingRecords: (profile.fastingRecords || []).map((record) => record.id === active?.id ? { ...record, endedAt: new Date().toISOString() } : record) });
   return <details className={`fasting-tracker rhythm-card card${active ? " active" : ""}`} open={expanded} onToggle={(event) => setExpanded(event.currentTarget.open)}>
-    <summary className="fasting-summary"><span className="rhythm-icon fasting"><Timer size={18} /></span><span><span className="eyebrow">Optional rhythm</span><strong id="fasting-heading">Fasting</strong><small>{active ? `${elapsed.toFixed(1)} of ${goal} hours` : `${goal}-hour plan · start only when it serves you`}</small></span><ChevronDown size={18} aria-hidden="true" /></summary>
+    <summary className="fasting-summary"><span className="rhythm-icon fasting"><Timer size={18} /></span><span><span className="eyebrow">Automatic rhythm</span><strong id="fasting-heading">Fasting</strong><small>{active ? `${elapsed.toFixed(1)} of ${goal} hours` : `${goal}-hour plan · log a meal to begin`}</small></span><ChevronDown size={18} aria-hidden="true" /></summary>
     <div className="fasting-content" aria-labelledby="fasting-heading">
-      {active ? <><div className="fasting-status"><strong>{elapsed.toFixed(1)}h</strong><span>of {goal}h fast</span></div><div className="habit-progress" role="progressbar" aria-label="Fasting goal progress" aria-valuemin={0} aria-valuemax={goal} aria-valuenow={elapsed}><i style={{ width: `${progress * 100}%` }} /></div><p>Started {new Date(active.startedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}. End whenever you’re ready.</p><button type="button" className="secondary-button full" onClick={stop}>End fast</button></> : <><p>Choose a gentle goal. Fasting never changes your food diary or calorie target.</p><div className="segmented three" role="group" aria-label="Fasting goal">{([12, 14, 16] as const).map((hours) => <button key={hours} type="button" aria-pressed={goal === hours} className={goal === hours ? "active" : ""} onClick={() => onSave({ ...profile, fastingGoalHours: hours })}>{hours} h</button>)}</div><button type="button" className="secondary-button full" onClick={start}><Timer size={17} />Start {goal}h fast</button></>}
+      {active ? <><div className="fasting-status"><strong>{elapsed.toFixed(1)}h</strong><span>of {goal}h fast</span></div><div className="habit-progress" role="progressbar" aria-label="Fasting goal progress" aria-valuemin={0} aria-valuemax={goal} aria-valuenow={elapsed}><i style={{ width: `${progress * 100}%` }} /></div><p>Started after your last logged meal. Logging your next meal starts a new fast automatically.</p></> : <><p>Choose a gentle goal. Fasting starts after your latest meal and never changes your food diary or calorie target.</p><div className="segmented three" role="group" aria-label="Fasting goal">{([12, 14, 16] as const).map((hours) => <button key={hours} type="button" aria-pressed={goal === hours} className={goal === hours ? "active" : ""} onClick={() => onSave({ ...profile, fastingGoalHours: hours })}>{hours} h</button>)}</div></>}
     </div>
   </details>;
 }
@@ -2795,10 +2793,20 @@ export function TrackerApp() {
         setSyncState(navigator.onLine ? "error" : "offline");
       });
   };
-  const saveProfile = async (next: Profile) => {
-    setProfile(next); await setSetting("profile", next); setToast("Profile saved");
-    syncWrite((userId) => upsertCloudProfile(userId, next));
+  const saveProfile = async (next: Profile, announce = true) => {
+    const synchronized = syncAutomaticFasting(next, meals);
+    setProfile(synchronized); await setSetting("profile", synchronized); if (announce) setToast("Profile saved");
+    syncWrite((userId) => upsertCloudProfile(userId, synchronized));
   };
+  useEffect(() => {
+    if (!ready) return;
+    const synchronized = syncAutomaticFasting(profile, meals);
+    if (synchronized === profile) return;
+    const frame = window.requestAnimationFrame(() => void saveProfile(synchronized, false));
+    // saveProfile intentionally captures the current local diary for the one-time backfill.
+    return () => window.cancelAnimationFrame(frame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, meals, profile]);
   const restartOnboarding = () => {
     setOnboardingOrigin(profile);
     void saveProfile({ ...profile, onboardingDone: false });
@@ -2820,6 +2828,7 @@ export function TrackerApp() {
     await Promise.all([put("meals", savedMeal), put("foods", food)]);
     setMeals((current) => [...current, savedMeal]);
     setFoods((current) => [food, ...current.filter((item) => item.id !== food.id)]);
+    void saveProfile(syncAutomaticFastAfterMeal(profile, savedMeal), false);
     setAdding(false); setDirectFood(undefined); setInitialMealType(undefined); setDateKey(loggedDate); setToast(`${food.name} logged`); setTab("today");
     syncWrite(async (userId) => { await Promise.all([upsertCloudMeal(userId, savedMeal), upsertCloudFood(userId, food)]); });
   };
@@ -2853,6 +2862,7 @@ export function TrackerApp() {
     const copy: Meal = { ...meal, id: `duplicate-${crypto.randomUUID()}`, mealType, loggedDate: meal.loggedDate || dateKey, createdAt: new Date().toISOString(), position: destinationMeals.length };
     await put("meals", copy);
     setMeals((current) => [...current, copy]);
+    void saveProfile(syncAutomaticFastAfterMeal(profile, copy), false);
     syncWrite((userId) => upsertCloudMeal(userId, copy));
     setDuplicateMealDraft(undefined);
     setToast(`Copied to ${mealLabels[mealType]}`);
@@ -2860,6 +2870,7 @@ export function TrackerApp() {
   const saveNewMeal = async (meal: Meal) => {
     await put("meals", meal);
     setMeals((current) => [...current, meal]); setEditingMeal(undefined); setToast(`${meal.name} logged`); setTab("today");
+    void saveProfile(syncAutomaticFastAfterMeal(profile, meal), false);
     syncWrite((userId) => upsertCloudMeal(userId, meal));
   };
   const logCoachMeal = async (action: CoachMealAction) => {
@@ -2883,6 +2894,7 @@ export function TrackerApp() {
     const storedMeals = await getAll<Meal>("meals");
     if (!storedMeals.some((candidate) => candidate.id === meal.id)) throw new Error("The meal was not written to the local diary.");
     setMeals((current) => [...current, meal]);
+    void saveProfile(syncAutomaticFastAfterMeal(profile, meal), false);
     setDateKey(action.loggedDate);
     setTab("today");
     setToast(`${meal.name} logged`);
