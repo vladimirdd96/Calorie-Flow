@@ -917,8 +917,7 @@ function DiscoverView({ foods, onSelect, onAdd, hideCalories }: { foods: Food[];
   const recent = [...foods].filter((food) => food.lastUsedAt).sort((a, b) => (b.lastUsedAt || "").localeCompare(a.lastUsedAt || "")).slice(0, 8);
   const personalFoods = [...foods]
     .filter((food) => food.source !== "seed")
-    .sort((a, b) => (b.lastUsedAt || "").localeCompare(a.lastUsedAt || ""))
-    .slice(0, 8);
+    .sort((a, b) => (b.lastUsedAt || "").localeCompare(a.lastUsedAt || ""));
   const starterFoods = foods.filter((food) => food.source === "seed").slice(0, 6);
   return (
     <main className="page">
@@ -929,13 +928,13 @@ function DiscoverView({ foods, onSelect, onAdd, hideCalories }: { foods: Food[];
         <button onClick={() => onAdd("camera")}><span className="action-icon blue"><Camera /></span><strong>Read nutrition label</strong><small>Use a package photo</small></button>
         <button onClick={() => onAdd("manual")}><span className="action-icon amber"><Pencil /></span><strong>Add custom food</strong><small>Save foods you make</small></button>
       </section>
-      {personalFoods.length > 0 && <section className="discover-list">
-        <div className="section-heading"><div><span className="eyebrow">Made yours</span><h2>Your saved foods</h2></div><span className="subtle">{personalFoods.length} saved</span></div>
-        <div className="card food-list">{personalFoods.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => onSelect(food)} />)}</div>
-      </section>}
-      {recent.length > 0 && <section className="discover-list">
-        <div className="section-heading"><div><span className="eyebrow">Repeat without searching</span><h2>Recently logged</h2></div></div>
-        <div className="card food-list">{recent.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => onSelect(food)} />)}</div>
+      {(personalFoods.length > 0 || recent.length > 0) && <section className="discover-list quick-add-section">
+        <div className="section-heading"><div><span className="eyebrow">Ready when you are</span><h2>Quick add</h2></div><span className="subtle">{recent.length > 0 ? `${recent.length} recent` : `${personalFoods.length} saved`}</span></div>
+        {recent.length > 0 && <div className="quick-list-group"><div className="quick-list-heading"><span className="eyebrow">Repeat without searching</span><strong>Recently logged</strong></div><div className="card food-list">{recent.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => onSelect(food)} />)}</div></div>}
+        {personalFoods.length > 0 && <details className="saved-foods-disclosure card">
+          <summary><span className="saved-foods-copy"><span className="eyebrow">Made yours</span><strong>Your saved foods</strong><small>{personalFoods.length} saved {personalFoods.length === 1 ? "food" : "foods"}</small></span><ChevronDown size={18} aria-hidden="true" /></summary>
+          <div className="food-list saved-food-list">{personalFoods.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => onSelect(food)} />)}</div>
+        </details>}
       </section>}
       {!personalFoods.length && !recent.length && <section className="discover-list starter-section">
         <div className="starter-message"><div><span className="eyebrow">Start your shelf</span><h2>Save the foods you return to.</h2><p>Search, scan, or add a custom food once. It will be ready for a one-tap log next time.</p></div><button className="text-button" onClick={() => onAdd("manual")}><Pencil size={16} />Add custom food</button></div>
