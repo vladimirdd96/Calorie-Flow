@@ -7,6 +7,7 @@ import { hydrationTotal } from "@/lib/hydration";
 import { fastingWindowHours } from "@/lib/fasting";
 import { isHabitFeatureEnabled } from "@/lib/habit-settings";
 import { recentLogDates } from "@/lib/logging";
+import { NumericInput } from "@/features/shared/NumericInput";
 import type { Meal, MealType, Nutrition, Profile, WeightEntry } from "@/lib/types";
 import { fastingGoalHours, habitFeatures, measurementSystems } from "@/lib/types";
 
@@ -112,7 +113,7 @@ export function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: 
         <div className="section-heading"><div><span className="eyebrow">Optional progress log</span><h2 id="weight-heading">Body weight</h2></div><span className="subtle">{entries.length} {entries.length === 1 ? "entry" : "entries"}</span></div>
         <form className="weight-log card" onSubmit={saveWeight}>
           <div><span className="weight-log-label">Log a weigh-in</span><p>Use the same conditions when you can. Trends are more useful than any single day.</p></div>
-          <div className="weight-log-fields"><label><span>Date</span><input type="date" value={weightDate} max={localDateKey()} onChange={(event) => setWeightDate(event.target.value)} /></label><label><span>Weight</span><div className="input-suffix"><input required type="number" inputMode="decimal" min={measurementSystem === measurementSystems.imperial ? 44 : 20} max={measurementSystem === measurementSystems.imperial ? 1102 : 500} step="0.1" value={weightInput} onChange={(event) => setWeightInput(event.target.value)} /><span>{weightUnitFor(profile)}</span></div></label><button className="primary-button" type="submit"><Plus size={17} />Save weight</button></div>
+          <div className="weight-log-fields"><label><span>Date</span><input type="date" value={weightDate} max={localDateKey()} onChange={(event) => setWeightDate(event.target.value)} /></label><label><span>Weight</span><div className="input-suffix"><NumericInput required inputMode="decimal" min={measurementSystem === measurementSystems.imperial ? 44 : 20} max={measurementSystem === measurementSystems.imperial ? 1102 : 500} step="0.1" value={weightInput} onChange={(event) => setWeightInput(event.target.value)} /><span>{weightUnitFor(profile)}</span></div></label><button className="primary-button" type="submit"><Plus size={17} />Save weight</button></div>
         </form>
         <div className="weight-controls" role="group" aria-label="Weight average period">
           {(Object.entries({ week: "This week", month: "This month", all: "All time" }) as [WeightPeriod, string][]).map(([period, label]) => <button key={period} type="button" className={weightPeriod === period ? "active" : ""} aria-pressed={weightPeriod === period} onClick={() => setWeightPeriod(period)}>{label}</button>)}

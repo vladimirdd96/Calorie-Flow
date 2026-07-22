@@ -3,6 +3,7 @@
 import { ArrowRightLeft, Check, ChevronRight, Copy, GripVertical, ImagePlus, Info, MoreHorizontal, Pencil, Trash2, Utensils } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { ThemedSelect } from "@/features/shared/ThemedSelect";
+import { NumericInput } from "@/features/shared/NumericInput";
 import { formatUnit, round } from "@/lib/nutrition";
 import type { Meal, MealType } from "@/lib/types";
 import { mealLabels, readMealImage } from "./DiaryPrimitives";
@@ -87,16 +88,16 @@ export function MealEditor({ meal, onSave, onClose, hideCalories }: { meal: Meal
         {imageUrl ? <div className="meal-photo-preview"><img src={imageUrl} alt="Preview of this meal" /><div><strong>Photo added</strong><small>You can replace it or remove it below.</small><button type="button" className="secondary-button" onClick={() => imageInputRef.current?.click()}>Replace photo</button><button type="button" className="text-button muted" onClick={() => setImageUrl(undefined)}>Remove</button></div></div> : <button type="button" className="meal-photo-upload" onClick={() => imageInputRef.current?.click()}><span className="meal-photo-upload-icon"><ImagePlus size={19} /></span><span className="meal-photo-upload-copy"><strong>Add a meal photo</strong><small>Choose from your device</small></span><ChevronRight size={17} aria-hidden="true" /> </button>}
         <input ref={imageInputRef} type="file" accept="image/*" hidden onChange={(event) => { void chooseImage(event.target.files?.[0]); event.target.value = ""; }} />
       </section>
-      <div className="form-grid two"><label><span>Amount</span><input type="number" min="0.1" step="0.1" value={amount} onChange={(event) => setAmount(event.target.value)} /></label><label><span>Meal</span><ThemedSelect ariaLabel="Meal" value={mealType} onChange={(value) => setMealType(value as MealType)} options={(Object.keys(mealLabels) as MealType[]).map((type) => ({ value: type, label: mealLabels[type] }))} /></label></div>
+      <div className="form-grid two"><label><span>Amount</span><NumericInput min="0.1" step="0.1" value={amount} onChange={(event) => setAmount(event.target.value)} /></label><label><span>Meal</span><ThemedSelect ariaLabel="Meal" value={mealType} onChange={(value) => setMealType(value as MealType)} options={(Object.keys(mealLabels) as MealType[]).map((type) => ({ value: type, label: mealLabels[type] }))} /></label></div>
       <section className="editor-nutrition" aria-labelledby="meal-nutrition-heading">
         <div className="editor-nutrition-heading"><div><span className="eyebrow" id="meal-nutrition-heading">Nutrition for this entry</span><small>Adjust what you actually ate.</small></div><Pencil size={17} aria-hidden="true" /></div>
         <div className="form-grid three editor-nutrition-fields">
-          {!hideCalories && <label><span>Calories <small>kcal</small></span><input required min="0" step="1" type="number" inputMode="numeric" value={nutrition.calories} onChange={(event) => updateNutrition("calories", event.target.value)} /></label>}
-          <label><span>Protein <small>g</small></span><input min="0" step="0.1" type="number" inputMode="decimal" value={nutrition.protein} onChange={(event) => updateNutrition("protein", event.target.value)} /></label>
-          <label><span>Carbs <small>g</small></span><input min="0" step="0.1" type="number" inputMode="decimal" value={nutrition.carbs} onChange={(event) => updateNutrition("carbs", event.target.value)} /></label>
-          <label><span>Fat <small>g</small></span><input min="0" step="0.1" type="number" inputMode="decimal" value={nutrition.fat} onChange={(event) => updateNutrition("fat", event.target.value)} /></label>
-          <label><span>Fibre <small>g</small></span><input min="0" step="0.1" type="number" inputMode="decimal" value={nutrition.fiber} onChange={(event) => updateNutrition("fiber", event.target.value)} /></label>
-          <label><span>Sugar <small>g</small></span><input min="0" step="0.1" type="number" inputMode="decimal" value={nutrition.sugar} onChange={(event) => updateNutrition("sugar", event.target.value)} /></label>
+          {!hideCalories && <label><span>Calories <small>kcal</small></span><NumericInput required min="0" step="1" inputMode="numeric" value={nutrition.calories} onChange={(event) => updateNutrition("calories", event.target.value)} /></label>}
+          <label><span>Protein <small>g</small></span><NumericInput min="0" step="0.1" inputMode="decimal" value={nutrition.protein} onChange={(event) => updateNutrition("protein", event.target.value)} /></label>
+          <label><span>Carbs <small>g</small></span><NumericInput min="0" step="0.1" inputMode="decimal" value={nutrition.carbs} onChange={(event) => updateNutrition("carbs", event.target.value)} /></label>
+          <label><span>Fat <small>g</small></span><NumericInput min="0" step="0.1" inputMode="decimal" value={nutrition.fat} onChange={(event) => updateNutrition("fat", event.target.value)} /></label>
+          <label><span>Fibre <small>g</small></span><NumericInput min="0" step="0.1" inputMode="decimal" value={nutrition.fiber} onChange={(event) => updateNutrition("fiber", event.target.value)} /></label>
+          <label><span>Sugar <small>g</small></span><NumericInput min="0" step="0.1" inputMode="decimal" value={nutrition.sugar} onChange={(event) => updateNutrition("sugar", event.target.value)} /></label>
         </div>
       </section>
       {error && <div className="inline-alert error" role="alert"><Info size={16} />{error}</div>}
@@ -104,4 +105,3 @@ export function MealEditor({ meal, onSave, onClose, hideCalories }: { meal: Meal
     </form>
   </div>;
 }
-
