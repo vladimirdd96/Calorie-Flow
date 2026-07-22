@@ -2133,6 +2133,7 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, onLogCoachMeal,
   const [historyAttempt, setHistoryAttempt] = useState(0);
   const [chats, setChats] = useState<CoachChat[]>([]);
   const [activeChatId, setActiveChatId] = useState("");
+  const [draftChat, setDraftChat] = useState<CoachChat | null>(null);
   const [renamingChatId, setRenamingChatId] = useState<string | null>(null);
   const [menuChatId, setMenuChatId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
@@ -2199,23 +2200,21 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, onLogCoachMeal,
     if (!user) return;
     getCloudCoachChats(user.id).then(async (storedChats) => {
       if (!active) return;
-      let available = storedChats;
-      if (!available.length || historyAttempt === 0) {
+      const available = storedChats;
+      let nextDraft: CoachChat | null = null;
+      if (!available.length) {
         const now = new Date().toISOString();
-        const chat: CoachChat = { id: crypto.randomUUID(), title: "New conversation", createdAt: now, updatedAt: now };
-        try { await saveCloudCoachChat(user.id, chat); } catch (error) {
-          if (!available.length) throw error;
-        }
-        available = [chat, ...available];
+        nextDraft = { id: `draft-${crypto.randomUUID()}`, title: "New conversation", createdAt: now, updatedAt: now };
       }
-      const chat = available[0];
+      const chat = available[0] || nextDraft;
+      if (!chat) return;
       const stored = await getCloudCoachMessages(user.id, chat.id);
-      if (active) { setChats(available); setActiveChatId(chat.id); setMessages(stored); setLoadedUserId(user.id); }
+      if (active) { setChats(available); setDraftChat(nextDraft); setActiveChatId(chat.id); setMessages(stored); setLoadedUserId(user.id); }
     }).catch(() => {
       if (active) {
         const now = new Date().toISOString();
-        const fallback: CoachChat = { id: `local-${user.id}`, title: "New conversation", createdAt: now, updatedAt: now };
-        setChats([fallback]); setActiveChatId(fallback.id); setMessages([]); setLoadedUserId(user.id);
+        const fallback: CoachChat = { id: `draft-${crypto.randomUUID()}`, title: "New conversation", createdAt: now, updatedAt: now };
+        setChats([]); setDraftChat(fallback); setActiveChatId(fallback.id); setMessages([]); setLoadedUserId(user.id);
         setError("Coach history could not be loaded. You can still start a new conversation, or retry loading it.");
       }
     });
@@ -2240,7 +2239,7 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, onLogCoachMeal,
         const storedChats = await getCloudCoachChats(user.id);
         if (!active) return;
         setChats(storedChats);
-        if (activeChatId && !storedChats.some((chat) => chat.id === activeChatId)) {
+        if (activeChatId && !activeChatId.startsWith("draft-") && !storedChats.some((chat) => chat.id === activeChatId)) {
           const nextChat = storedChats[0];
           setActiveChatId(nextChat?.id || "");
           setMessages(nextChat ? await getCloudCoachMessages(user.id, nextChat.id) : []);
@@ -2268,10 +2267,13 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, onLogCoachMeal,
     if (!activeChatId) return;
     const userMessage: DisplayCoachMessage = { id: crypto.randomUUID(), chatId: activeChatId, role: "user", content, createdAt: new Date().toISOString(), ...(image ? { imageUrl: image } : {}) };
     const history = messages.slice(-12).map(({ role, content: previous }) => ({ role, content: previous }));
-    const activeChat = chats.find((chat) => chat.id === activeChatId);
+    const activeChat = chats.find((chat) => chat.id === activeChatId) || draftChat;
     if (activeChat?.title === "New conversation" && messages.length === 0) {
       const titledChat = { ...activeChat, title: titleFromQuestion(content), updatedAt: userMessage.createdAt };
-      setChats((current) => current.map((chat) => chat.id === titledChat.id ? titledChat : chat));
+      setChats((current) => current.some((chat) => chat.id === titledChat.id)
+        ? current.map((chat) => chat.id === titledChat.id ? titledChat : chat)
+        : [titledChat, ...current]);
+      setDraftChat(null);
       try { await saveCloudCoachChat(user.id, titledChat); } catch { setError("Your question was sent, but the chat title could not be saved yet."); }
     }
     setMessages((current) => [...current, userMessage]); setDraft(""); setAttachedImage(null); setError(""); setLoading(true);
@@ -2345,9 +2347,14 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, onLogCoachMeal,
   };
   const newChat = async () => {
     if (!user) return;
+    const activeChat = chats.find((chat) => chat.id === activeChatId) || draftChat;
+    if (activeChat?.title === "New conversation" && messages.length === 0) {
+      setMobileHistoryOpen(false);
+      return;
+    }
     const now = new Date().toISOString();
-    const chat: CoachChat = { id: crypto.randomUUID(), title: "New conversation", createdAt: now, updatedAt: now };
-    await saveCloudCoachChat(user.id, chat); setChats((current) => [chat, ...current]); setActiveChatId(chat.id); setMessages([]); setMobileHistoryOpen(false);
+    const chat: CoachChat = { id: `draft-${crypto.randomUUID()}`, title: "New conversation", createdAt: now, updatedAt: now };
+    setDraftChat(chat); setActiveChatId(chat.id); setMessages([]); setMobileHistoryOpen(false);
   };
   const beginRename = (chat: CoachChat) => {
     setMenuChatId(null);
@@ -2447,7 +2454,7 @@ function CoachView({ configured, user, onOpenAccount, onOpenAdd, onLogCoachMeal,
 
   const starters = [hideCalories ? "How are my nutrients today?" : "How am I doing today?", "Plan a quick dinner and make a grocery list", "What can I make with chicken and broccoli?"];
   const activeGroceryList = groceryLists.find((list) => list.id === activeGroceryListId) || groceryLists[0];
-  const activeChat = chats.find((chat) => chat.id === activeChatId);
+  const activeChat = chats.find((chat) => chat.id === activeChatId) || draftChat;
   const accountGroceryItems = loadedGroceryKey === grocerySettingKey ? activeGroceryList?.items || [] : [];
   const remainingGroceries = accountGroceryItems.filter((item) => !item.checked).length;
   return (
