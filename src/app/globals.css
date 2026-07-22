@@ -1057,7 +1057,7 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 @media (min-width: 760px) {
   .page { padding-left: 32px; padding-right: 32px; }
   .today-page { padding-top: 30px; }
-  .hero-grid { grid-template-columns: .9fr 1.1fr; align-items: stretch; }
+  .hero-grid { grid-template-columns: .9fr 1.1fr; align-items: start; }
   .hero-card { grid-template-columns: 1fr; }
   .macro-card { padding: 26px; }
   .page-header { padding-top: 70px; }

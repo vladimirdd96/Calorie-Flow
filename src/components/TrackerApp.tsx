@@ -825,7 +825,7 @@ function TodayView({
         </div>
       </section>
 
-      <MicronutrientSummary nutrition={total} />
+      {!macrosExpanded && <MicronutrientSummary nutrition={total} />}
 
       <section className="log-section">
         <div className="section-heading"><div><span className="eyebrow">Daily log</span><h2>Your meals</h2></div><span className="subtle meal-reorder-hint">Hold ⋮⋮ to reorder</span></div>
