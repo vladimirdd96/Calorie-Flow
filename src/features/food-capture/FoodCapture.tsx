@@ -1,13 +1,13 @@
 "use client";
 
-import { ArrowLeft, Camera, Database, Info, Mic, Package, Pencil, Plus, ScanLine, Search, Send, ShieldCheck, Upload, WifiOff } from "lucide-react";
-import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { ArrowLeft, BookOpen, Camera, ChevronRight, Database, Info, Mic, Package, Pencil, Plus, ScanLine, Search, Send, ShieldCheck, Upload, WifiOff } from "lucide-react";
+import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AddFoodView } from "@/features/food-capture/types";
 import { localDateKey } from "@/lib/nutrition";
 import { findByBarcode, searchOpenFoodFacts } from "@/lib/openfoodfacts";
 import { normalizeVoiceFoodQuery } from "@/lib/voice";
 import { getSupabase } from "@/lib/supabase";
-import type { Food, Meal, MealPhotoAnalysis, MealType } from "@/lib/types";
+import type { Food, Meal, MealPhotoAnalysis, MealType, Recipe } from "@/lib/types";
 import { BarcodeScanner } from "./components/BarcodeScanner";
 import { FoodRow, ManualFood, PortionSheet, QuickMacroSheet } from "./components/FoodEntrySheets";
 import { LabelReader } from "./components/LabelReader";
@@ -18,12 +18,21 @@ type AddView = AddFoodView;
 export function hideCalorieValues(content: string) { return content.replace(/\b\d[\d,.]*\s*(?:-|–|—)?\s*(?:kcal|calories?)\b/gi, "energy hidden"); }
 export { PortionSheet } from "./components/FoodEntrySheets";
 
-export function AddFoodSheet({ foods, initialView = "start", initialMealType, onLog, onMealPhoto, onSaveFood, hideCalories }: { foods: Food[]; initialView?: AddView; initialMealType?: MealType; onLog: (meal: Meal, food: Food) => void; onMealPhoto: (analysis: MealPhotoAnalysis) => void; onSaveFood: (food: Food) => Promise<void>; hideCalories: boolean }) {
+function RecipeSearchRow({ recipe, hideCalories, onSelect }: { recipe: Recipe; hideCalories: boolean; onSelect: () => void }) {
+  return <button className="food-row recipe-row" type="button" onClick={onSelect}><span className="recipe-row-icon"><BookOpen size={18} /></span><span className="food-copy"><strong>{recipe.name}</strong><small>{recipe.ingredients.length} {recipe.ingredients.length === 1 ? "food" : "foods"} · your recipe</small></span>{!hideCalories && <span className="food-calories"><strong>{Math.round(recipe.nutritionPerServing.calories)}</strong><small>kcal total</small></span>}<ChevronRight size={18} /></button>;
+}
+
+function SearchResultGroup({ title, detail, empty, children }: { title: string; detail: string; empty: boolean; children: ReactNode }) {
+  if (empty) return null;
+  return <section className="search-result-group" aria-label={title}><div className="quick-list-heading"><strong>{title}</strong><span>{detail}</span></div>{children}</section>;
+}
+
+export function AddFoodSheet({ foods, meals, recipes, initialView = "start", initialMealType, onLog, onMealPhoto, onSaveFood, onSelectRecipe, hideCalories }: { foods: Food[]; meals: Meal[]; recipes: Recipe[]; initialView?: AddView; initialMealType?: MealType; onLog: (meal: Meal, food: Food) => void; onMealPhoto: (analysis: MealPhotoAnalysis) => void; onSaveFood: (food: Food) => Promise<void>; onSelectRecipe: (recipe: Recipe) => void; hideCalories: boolean }) {
   const [view, setView] = useState<AddView>(initialView);
   const [selected, setSelected] = useState<Food>();
   const [questions, setQuestions] = useState<string[]>([]);
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Food[]>([]);
+  const [remoteResults, setRemoteResults] = useState<Food[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [intakeError, setIntakeError] = useState("");
@@ -37,6 +46,20 @@ export function AddFoodSheet({ foods, initialView = "start", initialMealType, on
   const imageInputRef = useRef<HTMLInputElement>(null);
   const searchRequestRef = useRef(0);
   const recent = [...foods].filter((food) => food.lastUsedAt).sort((a, b) => (b.lastUsedAt || "").localeCompare(a.lastUsedAt || "")).slice(0, 6);
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const diaryFoodIds = useMemo(() => new Set(meals.map((meal) => meal.foodId).filter((id): id is string => Boolean(id))), [meals]);
+  const matchingRecipes = useMemo(() => recipes.filter((recipe) => normalizedQuery && `${recipe.name} ${recipe.ingredients.map((ingredient) => ingredient.name).join(" ")}`.toLocaleLowerCase().includes(normalizedQuery)), [recipes, normalizedQuery]);
+  const matchingDiaryRecipes = useMemo(() => {
+    const savedRecipeIds = new Set(recipes.map((recipe) => recipe.id));
+    const uniqueRecipes = new Map<string, Recipe>();
+    meals.filter((meal) => meal.recipeId && !savedRecipeIds.has(meal.recipeId)).forEach((meal) => {
+      const id = meal.recipeId || meal.id;
+      if (!uniqueRecipes.has(id)) uniqueRecipes.set(id, { id, name: meal.name, servings: 1, ingredients: [], nutritionPerServing: meal.nutrition, createdAt: meal.createdAt, updatedAt: meal.createdAt });
+    });
+    return [...uniqueRecipes.values()].filter((recipe) => normalizedQuery && recipe.name.toLocaleLowerCase().includes(normalizedQuery));
+  }, [meals, normalizedQuery, recipes]);
+  const matchingPersonalFoods = useMemo(() => foods.filter((food) => normalizedQuery && food.source === "custom" && `${food.name} ${food.brand || ""} ${food.barcode || ""}`.toLocaleLowerCase().includes(normalizedQuery)), [foods, normalizedQuery]);
+  const matchingDiaryFoods = useMemo(() => foods.filter((food) => normalizedQuery && food.source !== "custom" && diaryFoodIds.has(food.id) && `${food.name} ${food.brand || ""} ${food.barcode || ""}`.toLocaleLowerCase().includes(normalizedQuery)), [foods, diaryFoodIds, normalizedQuery]);
   const changeView = (nextView: AddView) => {
     if (view === "search" && nextView !== "search") {
       searchRequestRef.current += 1;
@@ -54,21 +77,20 @@ export function AddFoodSheet({ foods, initialView = "start", initialMealType, on
   const runSearch = useCallback(async (value: string) => {
     const requestId = ++searchRequestRef.current;
     const normalized = value.trim().toLowerCase();
-    if (!normalized) { setResults([]); setSearchError(""); setLoading(false); return; }
-    const local = foods.filter((food) => `${food.name} ${food.brand || ""} ${food.barcode || ""}`.toLowerCase().includes(normalized)).slice(0, 10);
-    setResults(local); setLoading(true); setSearchError("");
+    if (!normalized) { setRemoteResults([]); setSearchError(""); setLoading(false); return; }
+    setRemoteResults([]); setLoading(true); setSearchError("");
     if (normalized.length < 2) { setLoading(false); return; }
     try {
       const remote = await searchOpenFoodFacts(value.trim());
       if (requestId !== searchRequestRef.current) return;
-      const localIds = new Set(local.map((food) => food.id));
-      setResults([...local, ...remote.filter((food) => !localIds.has(food.id))].slice(0, 25));
+      const localIds = new Set(foods.map((food) => food.id));
+      setRemoteResults(remote.filter((food) => !localIds.has(food.id)).slice(0, 25));
     } catch {
-      if (requestId === searchRequestRef.current && !local.length) setSearchError("Online food search is unavailable. You can still add a custom food.");
+      if (requestId === searchRequestRef.current && !matchingRecipes.length && !matchingDiaryRecipes.length && !matchingPersonalFoods.length && !matchingDiaryFoods.length) setSearchError("Online food search is unavailable. You can still add a custom food.");
     } finally {
       if (requestId === searchRequestRef.current) setLoading(false);
     }
-  }, [foods]);
+  }, [foods, matchingDiaryFoods.length, matchingDiaryRecipes.length, matchingPersonalFoods.length, matchingRecipes.length]);
   const search = async (event?: FormEvent) => { event?.preventDefault(); await runSearch(query); };
   useEffect(() => {
     if (view !== "search") return;
@@ -173,11 +195,11 @@ export function AddFoodSheet({ foods, initialView = "start", initialMealType, on
   if (view === "search") return (
     <div>
       <div className="sheet-header"><button className="icon-button ghost" onClick={() => changeView("start")} aria-label="Back to add food options"><ArrowLeft /></button><div><span className="eyebrow">Food database</span><h2>Search</h2></div><span /></div>
-      <form className="sheet-search" onSubmit={search}><Search size={19} /><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Food, brand or barcode" /><button type="submit">Search now</button></form>
-      {loading && <div className="search-status" role="status"><i />Searching local and packaged foods…</div>}
+      <form className="sheet-search" onSubmit={search}><Search size={19} /><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Food, recipe, brand or barcode" /><button type="submit">Search now</button></form>
+      {loading && <div className="search-status" role="status"><i />Searching your library and packaged foods…</div>}
       {searchError && <div className="inline-alert" role="alert"><WifiOff size={17} />{searchError}</div>}
-      <div className="food-list sheet-food-list">{results.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div>
-      {!loading && query && results.length === 0 && <div className="search-empty"><Database /><strong>No match yet</strong><p>Add it as a custom food and it will be ready next time.</p><button className="secondary-button" onClick={() => changeView("manual")}>Add custom food</button></div>}
+      {!!normalizedQuery && <div className="search-result-groups"><SearchResultGroup title="Your recipes" detail="Saved meals" empty={!matchingRecipes.length}><div className="food-list">{matchingRecipes.map((recipe) => <RecipeSearchRow key={recipe.id} recipe={recipe} hideCalories={hideCalories} onSelect={() => onSelectRecipe(recipe)} />)}</div></SearchResultGroup><SearchResultGroup title="Your foods" detail="Custom foods you saved" empty={!matchingPersonalFoods.length}><div className="food-list">{matchingPersonalFoods.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div></SearchResultGroup><SearchResultGroup title="Recipes from your diary" detail="Previously logged recipes" empty={!matchingDiaryRecipes.length}><div className="food-list">{matchingDiaryRecipes.map((recipe) => <RecipeSearchRow key={recipe.id} recipe={recipe} hideCalories={hideCalories} onSelect={() => onSelectRecipe(recipe)} />)}</div></SearchResultGroup><SearchResultGroup title="From your diary" detail="Foods you logged before" empty={!matchingDiaryFoods.length}><div className="food-list">{matchingDiaryFoods.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div></SearchResultGroup><SearchResultGroup title="Search results" detail="Open Food Facts" empty={!remoteResults.length && !loading}><div className="food-list">{remoteResults.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div></SearchResultGroup></div>}
+      {!loading && query && matchingRecipes.length + matchingDiaryRecipes.length + matchingPersonalFoods.length + matchingDiaryFoods.length + remoteResults.length === 0 && <div className="search-empty"><Database /><strong>No match yet</strong><p>Add it as a custom food and it will be ready next time.</p><button className="secondary-button" onClick={() => changeView("manual")}>Add custom food</button></div>}
       {!query && <div className="quick-list"><span className="eyebrow">Try something simple</span>{foods.slice(0, 6).map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div>}
       <div className="data-credit"><Database size={15} /><span>Product results by Open Food Facts · ODbL</span></div>
     </div>
