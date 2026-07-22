@@ -2649,7 +2649,7 @@ function BottomNav({ tab, onChange, planEnabled }: { tab: Tab; onChange: (tab: T
     { tab: "insights", label: "Insights", icon: <BarChart3 /> },
     { tab: "profile", label: "Profile", icon: <UserRound /> },
   ];
-  return <nav className={`bottom-nav ${planEnabled ? "" : "plan-hidden"}`} aria-label="Primary navigation">{items.map((item) => <button key={item.tab} aria-current={tab === item.tab ? "page" : undefined} className={`${tab === item.tab ? "active" : ""} ${item.tab === "coach" ? "coach-nav-item" : ""}`} onClick={() => onChange(item.tab)}>{item.icon}<span>{item.label}</span></button>)}</nav>;
+  return <nav className={`bottom-nav ${planEnabled ? "" : "plan-hidden"}`} aria-label="Primary navigation">{items.map((item) => <button key={item.tab} type="button" aria-current={tab === item.tab ? "page" : undefined} className={`${tab === item.tab ? "active" : ""} ${item.tab === "coach" ? "coach-nav-item" : ""}`} onClick={() => onChange(item.tab)}>{item.icon}<span>{item.label}</span></button>)}</nav>;
 }
 
 function AuthGateway({

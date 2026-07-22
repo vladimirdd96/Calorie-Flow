@@ -1133,8 +1133,8 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
   .app-shell { padding-bottom: 0; padding-left: 100px; }
   .content-shell { width: min(100%, 1030px); }
   .page { padding-bottom: 70px; }
-.bottom-nav { left: 14px; top: 50%; bottom: auto; transform: translateY(-50%); width: 76px; height: 520px; grid-template-columns: 1fr; grid-template-rows: repeat(6,1fr); border-radius: 26px; }
-  .bottom-nav.plan-hidden { grid-template-rows: repeat(5, 1fr); }
+  .bottom-nav { left: 14px; top: 50%; bottom: auto; transform: translateY(-50%); width: 76px; height: 520px; grid-template-columns: 1fr; grid-template-rows: repeat(6, 1fr); border-radius: 26px; }
+  .bottom-nav.plan-hidden { grid-template-columns: 1fr; grid-template-rows: repeat(5, 1fr); }
   .coach-composer-wrap { bottom: 18px; }
   .hero-grid { grid-template-columns: .82fr 1.18fr; }
   .progress-ring { width: 235px; }
