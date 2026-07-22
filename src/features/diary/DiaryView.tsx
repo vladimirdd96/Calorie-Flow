@@ -11,6 +11,7 @@ import { MealRow } from "./components/MealControls";
 
 export { DuplicateMealSheet, MealEditor, MoveMealSheet } from "./components/MealControls";
 export { RecipeLogSheet } from "./components/DiaryTools";
+export { readMealImage } from "./components/DiaryPrimitives";
 
 export function TodayView({
   profile,

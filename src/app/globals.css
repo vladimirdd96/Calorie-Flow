@@ -641,6 +641,11 @@ p { color: var(--muted); line-height: 1.55; }
 .recipe-create summary strong { font-size: 14px; }
 .recipe-create summary small { grid-column: 2; color: var(--muted); font-size: 11px; }
 .recipe-composer { display: grid; gap: 14px; margin-top: 0; padding: 18px; border-top: 1px solid var(--border); }
+.recipe-edit-sheet, .recipe-delete-sheet { display: grid; gap: 16px; }
+.recipe-edit-sheet .recipe-composer { padding: 0; border-top: 0; }
+.recipe-delete-sheet { max-width: 560px; }
+.recipe-delete-sheet p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.recipe-card-actions .danger { color: var(--red); }
 .recipe-composer textarea { min-height: 86px; resize: vertical; }
 .recipe-nutrition { display: grid; gap: 8px; }
 .recipe-list, .planned-list { display: grid; gap: 8px; }
