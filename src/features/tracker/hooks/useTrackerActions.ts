@@ -60,6 +60,14 @@ export function useTrackerActions(dependencies: Dependencies) {
     setEditingMeal(undefined); setToast("Meal updated");
     syncWrite((userId) => upsertCloudMeal(userId, savedMeal));
   };
+  const saveEditedRecipe = async (meal: Meal, recipe: Recipe) => {
+    const savedMeal = { ...meal, loggedDate: meal.loggedDate || dateKey };
+    await put("meals", savedMeal);
+    await saveProfile({ ...profile, recipes: (profile.recipes || []).map((candidate) => candidate.id === recipe.id ? recipe : candidate) }, false);
+    setMeals((current) => current.map((candidate) => candidate.id === savedMeal.id ? savedMeal : candidate));
+    setEditingMeal(undefined); setToast("Recipe updated");
+    syncWrite((userId) => upsertCloudMeal(userId, savedMeal));
+  };
   const dropMeal = async (meal: Meal, mealType: MealType, targetMealId?: string, insertAfter = false) => {
     const dayMeals = meals.filter((candidate) => (candidate.loggedDate || localDateKey(new Date(candidate.createdAt))) === dateKey).sort(compareMealOrder);
     const nextByType = new Map<MealType, Meal[]>((Object.keys(mealLabels) as MealType[]).map((type) => [type, dayMeals.filter((candidate) => candidate.mealType === type && candidate.id !== meal.id)]));
@@ -209,5 +217,5 @@ export function useTrackerActions(dependencies: Dependencies) {
   const openAdd = (view: AddFoodView = "start", mealType?: MealType) => { setInitialAddView(view); setInitialMealType(mealType); setAdding(true); };
   const selectFood = (food: Food) => { setInitialMealType(undefined); setDirectFood(food); setAdding(true); };
 
-  return { restartOnboarding, finishOnboarding, cancelOnboarding, logMeal, saveFood, saveEditedMeal, dropMeal, duplicateMeal, saveNewMeal, packageRecipe, logCoachMeal, addPhotoMeal, deleteMeal, undoDeleteMeal, exportBackup, restoreBackup, openAdd, selectFood };
+  return { restartOnboarding, finishOnboarding, cancelOnboarding, logMeal, saveFood, saveEditedMeal, saveEditedRecipe, dropMeal, duplicateMeal, saveNewMeal, packageRecipe, logCoachMeal, addPhotoMeal, deleteMeal, undoDeleteMeal, exportBackup, restoreBackup, openAdd, selectFood };
 }

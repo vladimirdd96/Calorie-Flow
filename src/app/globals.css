@@ -634,6 +634,9 @@ p { color: var(--muted); line-height: 1.55; }
 .recipe-log-ingredient { display: grid; grid-template-columns: minmax(0, 1fr) minmax(150px, .85fr); gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
 .recipe-log-ingredient:last-child { border-bottom: 0; }
 .recipe-log-ingredient select { min-height: 38px; font-size: 11px; }
+.recipe-log-ingredient-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.recipe-remove-ingredient { color: var(--danger); min-width: 38px; min-height: 38px; }
+.recipe-photo-editor { padding-top: 2px; }
 .recipe-log-ingredient > small { text-align: right; }
 .recipe-log-total { display: grid; gap: 10px; padding: 13px 14px; border: 1px solid color-mix(in oklch, var(--mint) 38%, var(--border)); border-radius: 12px; background: color-mix(in oklch, var(--mint) 8%, var(--control-surface)); }
 .recipe-log-total h3 { margin: 2px 0 0; color: var(--mint-strong); font-size: 22px; line-height: 1; }
