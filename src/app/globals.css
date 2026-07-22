@@ -631,14 +631,19 @@ p { color: var(--muted); line-height: 1.55; }
 .recipe-log-total dt { color: var(--muted); font-size: 10px; }
 .recipe-log-total dd { margin: 0; font-size: 12px; font-weight: 800; }
 @media (max-width: 560px) {
-  .meal-add-row { display: grid; gap: 2px; }
-  .meal-add-primary, .meal-add-recipe { width: 100%; }
-  .meal-add-recipe { padding-left: 45px; }
+  /* Keep the two meal actions in one compact toolbar. Stacking them makes
+     every populated meal card unnecessarily tall on a phone. */
+  .meal-add-row { gap: 4px; padding: 6px 10px; }
+  .meal-add-primary, .meal-add-recipe { min-width: 0; min-height: 38px; gap: 6px; padding: 0 4px; font-size: 11px; white-space: nowrap; }
+  .meal-add-recipe { padding-left: 4px; }
   .recipe-log-ingredient { grid-template-columns: 1fr; gap: 7px; }
   .recipe-log-ingredient > small { text-align: left; }
   .recipe-log-total dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .recipe-name-field { grid-template-columns: 1fr; }
   .recipe-title-button { width: 100%; }
+}
+@media (max-width: 340px) {
+  .meal-add-primary, .meal-add-recipe { gap: 4px; padding: 0 2px; font-size: 10px; }
 }
 .recipe-create summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; cursor: pointer; list-style: none; }
 .recipe-create summary::-webkit-details-marker { display: none; }
