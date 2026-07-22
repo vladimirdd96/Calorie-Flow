@@ -997,6 +997,8 @@ p { color: var(--muted); line-height: 1.55; }
 .sheet-header > span { display: none; }
 .sheet-header h2 { overflow: hidden; margin: 4px 0 0; font-size: 20px; line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
 .quick-macro-sheet .form-footnote { margin: 0; }
+.quick-macro-sheet .form-grid.two > label { min-width: 0; }
+.quick-macro-sheet input[type="date"] { width: 100%; min-width: 0; padding-inline: 10px; }
 .calendar-sheet { padding-bottom: 4px; }
 .calendar-intro { margin: -4px 8px 19px; font-size: 12px; text-align: center; }
 .calendar-toolbar { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; justify-items: center; margin-bottom: 14px; }
@@ -1275,6 +1277,7 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
   .detail-grid, .macro-detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .unit-choice-grid { grid-template-columns: 1fr; }
   .ring-legend { gap: 7px; font-size: 8px; }
+  .quick-macro-sheet .form-grid.two { grid-template-columns: 1fr; }
 }
 
 /* iOS Safari zooms controls whose text is smaller than 16px on focus. Keep
