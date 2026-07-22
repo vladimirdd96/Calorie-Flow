@@ -10,6 +10,8 @@ describe("photo library inputs", () => {
 
     expect(labelReader).toContain("Choose photo");
     expect(foodCapture).toContain("Add photos");
+    expect(foodCapture).not.toContain(">Take photo</button>");
+    expect(foodCapture).not.toContain('id="coach-intake" autoFocus');
     expect(`${labelReader}\n${foodCapture}`).not.toContain('capture="environment"');
   });
 });
