@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { backupSchema, diaryShareSchema, labelAnalysisSchema, mealSchema } from "./schemas";
+import { backupSchema, diaryShareSchema, labelAnalysisSchema, mealSchema, profileSchema } from "./schemas";
 
 const nutrition = { calories: 120, protein: 10, carbs: 12, fat: 4, fiber: 3, sugar: 2 };
 
@@ -58,6 +58,28 @@ describe("external data schemas", () => {
         onboardingDone: true,
       },
     })).toThrow();
+  });
+
+  it("accepts a unique saved habit selection and rejects repeated entries", () => {
+    const profile = {
+      name: "Sam",
+      sex: "male" as const,
+      age: 30,
+      heightCm: 180,
+      weightKg: 80,
+      activity: "moderate" as const,
+      goalMode: "maintain" as const,
+      dietPreset: "balanced" as const,
+      calorieTarget: 2500,
+      proteinTarget: 150,
+      carbsTarget: 300,
+      fatTarget: 70,
+      fiberTarget: 30,
+      hideCalories: false,
+      onboardingDone: true,
+    };
+    expect(profileSchema.parse({ ...profile, enabledHabitFeatures: ["water"] }).enabledHabitFeatures).toEqual(["water"]);
+    expect(() => profileSchema.parse({ ...profile, enabledHabitFeatures: ["water", "water"] })).toThrow("Habit features must not repeat");
   });
 
   it("only accepts a shared diary after it has a recipient", () => {

@@ -105,6 +105,7 @@ import {
 import { findByBarcode, searchOpenFoodFacts } from "@/lib/openfoodfacts";
 import { hydrationTotal, setWaterAmount } from "@/lib/hydration";
 import { activeFast, fastingProgress, fastingWindowHours } from "@/lib/fasting";
+import { isHabitFeatureEnabled, toggleHabitFeature } from "@/lib/habit-settings";
 import { groceryItemsForPlan, recipeMeal } from "@/lib/planning";
 import { mealsCsv } from "@/lib/reports";
 import { normalizeVoiceFoodQuery } from "@/lib/voice";
@@ -131,10 +132,11 @@ import type {
   ServingUnit,
   Sex,
   WeightEntry,
+  HabitFeature,
   WeightTrackingStatus,
   Weekday,
 } from "@/lib/types";
-import { measurementSystems, weightTrackingStatuses } from "@/lib/types";
+import { defaultHabitFeatures, habitFeatures, measurementSystems, weightTrackingStatuses } from "@/lib/types";
 import type { BackupData } from "@/lib/db";
 
 type Tab = "today" | "search" | "coach" | "plan" | "insights" | "profile";
@@ -338,6 +340,7 @@ const DEFAULT_PROFILE: Profile = {
   weightEntries: [],
   waterEntries: [],
   waterTargetMl: 2000,
+  enabledHabitFeatures: [...defaultHabitFeatures],
   fastingGoalHours: 16,
   fastingRecords: [],
 };
@@ -641,9 +644,12 @@ function FastingTracker({ profile, onSave }: { profile: Profile; onSave: (profil
 }
 
 function DailyRhythm({ profile, dateKey, onSave }: { profile: Profile; dateKey: string; onSave: (profile: Profile) => void }) {
+  const showWater = isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.water);
+  const showFasting = isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting);
+  if (!showWater && !showFasting) return null;
   return <section className="daily-rhythm" aria-labelledby="daily-rhythm-heading">
     <div className="section-heading compact"><div><span className="eyebrow">Daily rhythm</span><h2 id="daily-rhythm-heading">Small habits</h2></div><span className="subtle">At your pace</span></div>
-    <div className="daily-rhythm-grid"><WaterTracker profile={profile} dateKey={dateKey} onSave={onSave} /><FastingTracker profile={profile} onSave={onSave} /></div>
+    <div className="daily-rhythm-grid">{showWater && <WaterTracker profile={profile} dateKey={dateKey} onSave={onSave} />}{showFasting && <FastingTracker profile={profile} onSave={onSave} />}</div>
   </section>;
 }
 
@@ -1031,6 +1037,20 @@ function DisplayPreferences({ hideCalories, onChange, chatTextSize, onChatTextSi
       </div>
     </section>
   );
+}
+
+function HabitVisibilityPreferences({ profile, onSave }: { profile: Profile; onSave: (profile: Profile) => void }) {
+  const toggle = (feature: HabitFeature) => onSave({ ...profile, enabledHabitFeatures: toggleHabitFeature(profile.enabledHabitFeatures, feature) });
+  const waterEnabled = isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.water);
+  const fastingEnabled = isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting);
+  return <section className="display-section habit-visibility-preferences">
+    <div className="section-heading"><div><span className="eyebrow">Daily rhythm</span><h2>Habit cards</h2></div></div>
+    <p className="display-subsection-description">Choose which optional check-ins appear above your food diary. Turning one off keeps its history private and intact.</p>
+    <div className="habit-visibility-options">
+      <button className={`display-preference ${waterEnabled ? "active" : ""}`} type="button" aria-pressed={waterEnabled} onClick={() => toggle(habitFeatures.water)}><span><strong>{waterEnabled ? "Water is shown" : "Water is hidden"}</strong><small>{waterEnabled ? "Keep hydration within easy reach on Today." : "Your logged water stays saved until you show it again."}</small></span><span className="toggle" /></button>
+      <button className={`display-preference ${fastingEnabled ? "active" : ""}`} type="button" aria-pressed={fastingEnabled} onClick={() => toggle(habitFeatures.fasting)}><span><strong>{fastingEnabled ? "Fasting is shown" : "Fasting is hidden"}</strong><small>{fastingEnabled ? "Keep your optional eating-window check-in on Today." : "Your fasting history stays saved until you show it again."}</small></span><span className="toggle" /></button>
+    </div>
+  </section>;
 }
 
 const weekdayOptions: Array<{ value: Weekday; label: string }> = [
@@ -1454,6 +1474,7 @@ function ProfileView({
         <section className="customize-intro" aria-labelledby="customize-heading"><div><span className="eyebrow">Your preferences</span><h2 id="customize-heading">A calmer tracker, your way</h2><p>These choices only change how Calorie Flow feels and what it shows. Your diary stays private on this device.</p></div></section>
         <MeasurementPreferences profile={profile} onChange={(measurementSystem) => onSave({ ...profile, measurementSystem })} />
         <DisplayPreferences hideCalories={profile.hideCalories} onChange={(hideCalories) => onSave({ ...profile, hideCalories })} chatTextSize={chatTextSize} onChatTextSizeChange={onChatTextSizeChange} />
+        <HabitVisibilityPreferences profile={profile} onSave={onSave} />
         <CarbDisplayPreference profile={profile} onSave={onSave} />
         <DailyTargetPreferences profile={profile} onSave={onSave} />
         <MealTargetPreferences profile={profile} onSave={onSave} />
@@ -2482,6 +2503,7 @@ function RecipeComposer({ onCreate }: { onCreate: (recipe: Recipe) => void }) {
 function PlanView({ profile, onSave, onLog }: { profile: Profile; onSave: (profile: Profile) => void; onLog: (meal: Meal) => Promise<void> }) {
   const recipes = profile.recipes || [];
   const entries = (profile.mealPlanEntries || []).filter((entry) => recipes.some((recipe) => recipe.id === entry.recipeId)).sort((a, b) => a.date.localeCompare(b.date));
+  const [recipeComposerOpen, setRecipeComposerOpen] = useState(false);
   const [recipeId, setRecipeId] = useState("");
   const [date, setDate] = useState(localDateKey());
   const [mealType, setMealType] = useState<MealType>("dinner");
@@ -2496,10 +2518,10 @@ function PlanView({ profile, onSave, onLog }: { profile: Profile; onSave: (profi
   const groceries = groceryItemsForPlan(plannedRecipes);
   return <main className="page plan-page">
     <header className="page-header"><span className="eyebrow">Make tomorrow easier</span><h1>Recipes & plan</h1><p>Keep your recipes private, place them on a day, and turn the ingredients into a calm shopping list.</p></header>
-    <details className="recipe-create card"><summary><span><BookOpen size={18} /><strong>Save a recipe</strong><small>Store the portions and nutrition you use.</small></span><ChevronDown size={17} /></summary><RecipeComposer onCreate={addRecipe} /></details>
-    <section className="recipe-library" aria-labelledby="recipe-library-heading"><div className="section-heading"><div><span className="eyebrow">Your library</span><h2 id="recipe-library-heading">Saved recipes</h2></div><span className="subtle">{recipes.length} saved</span></div>{recipes.length ? <div className="recipe-list">{recipes.map((recipe) => <article className="recipe-card card" key={recipe.id}><div><strong>{recipe.name}</strong><small>{recipe.servings} servings · {Math.round(recipe.nutritionPerServing.protein)}g protein</small></div><div className="recipe-card-actions"><button className="text-button" type="button" onClick={() => void onLog(recipeMeal(recipe, localDateKey(), "dinner"))}>Log now</button><button className="icon-button subtle-button" type="button" aria-label={`Remove ${recipe.name}`} onClick={() => onSave({ ...profile, recipes: recipes.filter((item) => item.id !== recipe.id), mealPlanEntries: entries.filter((entry) => entry.recipeId !== recipe.id) })}><Trash2 size={15} /></button></div></article>)}</div> : <div className="recipe-empty card"><BookOpen size={25} /><strong>Your regular meals belong here.</strong><p>Save one recipe and it can be logged or planned without rebuilding it.</p></div>}</section>
+    <details className="recipe-create card" open={recipeComposerOpen} onToggle={(event) => setRecipeComposerOpen(event.currentTarget.open)}><summary><span><BookOpen size={18} /><strong>Save a recipe</strong><small>Store the portions and nutrition you use.</small></span><ChevronDown size={17} /></summary><RecipeComposer onCreate={(recipe) => { addRecipe(recipe); setRecipeComposerOpen(false); }} /></details>
+    <section className="recipe-library" aria-labelledby="recipe-library-heading"><div className="section-heading"><div><span className="eyebrow">Your library</span><h2 id="recipe-library-heading">Saved recipes</h2></div><span className="subtle">{recipes.length} saved</span></div>{recipes.length ? <div className="recipe-list">{recipes.map((recipe) => <article className="recipe-card card" key={recipe.id}><div><strong>{recipe.name}</strong><small>{recipe.servings} servings · {Math.round(recipe.nutritionPerServing.protein)}g protein</small></div><div className="recipe-card-actions"><button className="text-button" type="button" onClick={() => void onLog(recipeMeal(recipe, localDateKey(), "dinner"))}>Log now</button><button className="icon-button subtle-button" type="button" aria-label={`Remove ${recipe.name}`} onClick={() => onSave({ ...profile, recipes: recipes.filter((item) => item.id !== recipe.id), mealPlanEntries: entries.filter((entry) => entry.recipeId !== recipe.id) })}><Trash2 size={15} /></button></div></article>)}</div> : <div className="recipe-empty card"><span className="action-icon mint"><BookOpen size={22} /></span><strong>Your regular meals belong here.</strong><p>Save one recipe and it can be logged or planned without rebuilding it.</p><button type="button" className="secondary-button" onClick={() => setRecipeComposerOpen(true)}><Plus size={16} />Save your first recipe</button></div>}</section>
     {recipes.length > 0 && <section className="planning-workspace" aria-labelledby="plan-heading"><div className="section-heading"><div><span className="eyebrow">Lightweight planning</span><h2 id="plan-heading">Add a meal to your plan</h2></div></div><form className="plan-entry-form card" onSubmit={addPlanEntry}><label><span>Recipe</span><ThemedSelect ariaLabel="Recipe to plan" value={recipeId} onChange={setRecipeId} options={[{ value: "", label: "Choose a recipe" }, ...recipes.map((recipe) => ({ value: recipe.id, label: recipe.name }))]} /></label><div className="form-grid two"><label><span>Date</span><input required type="date" min={localDateKey()} value={date} onChange={(event) => setDate(event.target.value)} /></label><label><span>Meal</span><ThemedSelect ariaLabel="Planned meal" value={mealType} onChange={(value) => setMealType(value as MealType)} options={(Object.keys(mealLabels) as MealType[]).map((type) => ({ value: type, label: mealLabels[type] }))} /></label></div><button className="primary-button" type="submit" disabled={!recipeId}><CalendarPlus size={17} />Add to plan</button></form>{entries.length > 0 && <div className="planned-list">{entries.map((entry) => { const recipe = recipes.find((item) => item.id === entry.recipeId); return recipe ? <div className="planned-entry card" key={entry.id}><span><strong>{recipe.name}</strong><small>{new Date(`${entry.date}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} · {mealLabels[entry.mealType]}</small></span><button className="icon-button subtle-button" type="button" aria-label={`Remove ${recipe.name} from plan`} onClick={() => removeEntry(entry.id)}><X size={16} /></button></div> : null; })}</div>}</section>}
-    <section className="planned-groceries card" aria-labelledby="planned-groceries-heading"><div className="section-heading compact"><div><span className="eyebrow">From your plan</span><h2 id="planned-groceries-heading">Shopping list</h2></div><ListChecks size={18} /></div>{groceries.length ? <ul>{groceries.map((item) => <li key={item}>{item}</li>)}</ul> : <p>Add a recipe to a date and its ingredients will appear here. Your existing Coach grocery lists remain available in Coach.</p>}</section>
+    <section className="planned-groceries card" aria-labelledby="planned-groceries-heading"><div className="section-heading compact"><div><span className="eyebrow">From your plan</span><h2 id="planned-groceries-heading">Shopping list</h2></div><ListChecks size={18} /></div>{groceries.length ? <ul>{groceries.map((item) => <li key={item}>{item}</li>)}</ul> : <p>{recipes.length ? "Plan a recipe for a day and its ingredients will appear here." : "Plan a saved recipe and its ingredients will appear here. Your existing Coach grocery lists remain available in Coach."}</p>}</section>
   </main>;
 }
 

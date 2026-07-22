@@ -95,6 +95,9 @@ export const weightTrackingStatuses = { enabled: "enabled", disabled: "disabled"
 export type WeightTrackingStatus = typeof weightTrackingStatuses[keyof typeof weightTrackingStatuses];
 export const measurementSystems = { metric: "metric", imperial: "imperial" } as const;
 export type MeasurementSystem = typeof measurementSystems[keyof typeof measurementSystems];
+export const habitFeatures = { water: "water", fasting: "fasting" } as const;
+export type HabitFeature = typeof habitFeatures[keyof typeof habitFeatures];
+export const defaultHabitFeatures = [habitFeatures.water, habitFeatures.fasting] as const;
 
 export type DailyTargets = {
   calories: number;
@@ -131,6 +134,7 @@ export type Profile = {
   carbDisplay?: "total" | "net";
   waterTargetMl?: number;
   waterEntries?: WaterEntry[];
+  enabledHabitFeatures?: HabitFeature[];
   fastingGoalHours?: 12 | 14 | 16;
   fastingRecords?: FastingRecord[];
   recipes?: Recipe[];

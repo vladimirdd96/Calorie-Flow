@@ -111,6 +111,7 @@ export const profileSchema = z.object({
   carbDisplay: z.enum(["total", "net"]).optional(),
   waterTargetMl: z.number().finite().int().min(250).max(20_000).optional(),
   waterEntries: z.array(waterEntrySchema).max(10_000).optional(),
+  enabledHabitFeatures: z.array(z.enum(["water", "fasting"])).max(2).refine((features) => new Set(features).size === features.length, "Habit features must not repeat").optional(),
   fastingGoalHours: z.union([z.literal(12), z.literal(14), z.literal(16)]).optional(),
   fastingRecords: z.array(fastingRecordSchema).max(10_000).optional(),
   recipes: z.array(recipeSchema).max(10_000).optional(),
