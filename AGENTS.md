@@ -29,6 +29,10 @@ Apply these rules to every task, regardless of size.
 ## Scope and design
 
 - Do not include unrelated cleanup in a task commit; record it as a follow-up instead.
+- Use vertical feature slices. A feature's public entry module, components, hooks, contracts, and feature-only helpers belong under `src/features/<feature>/`; do not create pass-through shells or centralise product UI in tracker/route modules.
+- Apply SOLID at feature boundaries: give each module one coherent responsibility, depend on callbacks or narrow contracts instead of another feature's internals, and keep persistence/network adapters behind the feature hook or helper that owns that concern.
+- Put reusable React state/effect logic in the feature's `hooks/` folder and feature UI in `components/`. Cross-feature consumers may import a feature's documented root API or explicit contract, never its `components/`, `hooks/`, or private helpers.
+- Keep production feature modules below 500 lines. Split a growing module by responsibility before extending it; an exception requires a documented architectural decision and a focused test.
 - Validate external data at boundaries and avoid unchecked casts.
 - Prefer discriminated unions to coordinated boolean flags and define reusable status/role/event values as `as const` objects.
 - Keep feature-specific code together and give features explicit public APIs as they grow.

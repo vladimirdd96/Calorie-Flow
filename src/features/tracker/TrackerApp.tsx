@@ -4,9 +4,9 @@
 import { Check, Database } from "lucide-react";
 import { useMemo } from "react";
 import { AuthGateway } from "@/features/auth/AuthGateway";
-import { useTrackerUiState } from "@/features/tracker/useTrackerUiState";
-import { useTrackerActions } from "@/features/tracker/useTrackerActions";
-import { useLocalFirstData } from "@/features/tracker/useLocalFirstData";
+import { useTrackerUiState } from "@/features/tracker/hooks/useTrackerUiState";
+import { useTrackerActions } from "@/features/tracker/hooks/useTrackerActions";
+import { useLocalFirstData } from "@/features/tracker/hooks/useLocalFirstData";
 import { CoachView } from "@/features/coach/CoachView";
 import { CalendarSheet, DuplicateMealSheet, MealEditor, MoveMealSheet, RecipeLogSheet, TodayView } from "@/features/diary/DiaryView";
 import { DailyNutritionBreakdown, MealImageViewer, NutritionDetails } from "@/features/diary/NutritionDetails";

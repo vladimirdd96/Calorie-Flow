@@ -15,9 +15,9 @@ describe("tracker feature boundary", () => {
   it("coordinates feature slices without defining their views", () => {
     const source = readFileSync(resolve(process.cwd(), "src/features/tracker/TrackerApp.tsx"), "utf8");
 
-    expect(source).toContain('from "@/features/tracker/useTrackerUiState"');
-    expect(source).toContain('from "@/features/tracker/useLocalFirstData"');
-    expect(source).toContain('from "@/features/tracker/useTrackerActions"');
+    expect(source).toContain('from "@/features/tracker/hooks/useTrackerUiState"');
+    expect(source).toContain('from "@/features/tracker/hooks/useLocalFirstData"');
+    expect(source).toContain('from "@/features/tracker/hooks/useTrackerActions"');
     expect(source).toContain('from "@/features/diary/DiaryView"');
     expect(source).toContain('from "@/features/food-capture/FoodCapture"');
     expect(source).toContain('from "@/features/profile/ProfileView"');
