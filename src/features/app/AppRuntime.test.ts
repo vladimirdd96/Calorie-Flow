@@ -15,7 +15,10 @@ describe("AppRuntime boundary", () => {
   it("keeps product views outside the stateful app shell", () => {
     const source = readFileSync(resolve(process.cwd(), "src/features/app/AppShell.tsx"), "utf8");
 
-    expect(source.split("\n").length).toBeLessThanOrEqual(600);
+    expect(source.split("\n").length).toBeLessThanOrEqual(220);
+    expect(source).toContain('from "@/features/app/useAppUiState"');
+    expect(source).toContain('from "@/features/app/useLocalFirstData"');
+    expect(source).toContain('from "@/features/app/useDiaryActions"');
     expect(source).toContain('from "@/features/diary/DiaryView"');
     expect(source).toContain('from "@/features/food-capture/FoodCapture"');
     expect(source).toContain('from "@/features/profile/ProfileView"');
