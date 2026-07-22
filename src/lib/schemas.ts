@@ -46,7 +46,7 @@ const recipeIngredientSchema = z.object({
   nutrition: nutritionSchema.optional(),
 }).strict();
 
-const recipeSchema = z.object({ id: z.string().trim().min(1).max(240), name: z.string().trim().min(1).max(240), servings: positiveFinite.max(100), ingredients: z.array(recipeIngredientSchema).max(100), nutritionPerServing: nutritionSchema, createdAt: z.string().datetime({ offset: true }), updatedAt: z.string().datetime({ offset: true }) }).strict() satisfies z.ZodType<Recipe>;
+const recipeSchema = z.object({ id: z.string().trim().min(1).max(240), name: z.string().trim().min(1).max(240), servings: positiveFinite.max(100), ingredients: z.array(recipeIngredientSchema).max(100), nutritionPerServing: nutritionSchema, imageUrls: z.array(z.string().min(1).max(400_000)).max(8).optional(), createdAt: z.string().datetime({ offset: true }), updatedAt: z.string().datetime({ offset: true }) }).strict() satisfies z.ZodType<Recipe>;
 
 export const foodSchema = z.object({
   id: z.string().trim().min(1).max(240),

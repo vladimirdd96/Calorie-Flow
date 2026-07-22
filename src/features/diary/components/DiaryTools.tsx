@@ -1,19 +1,18 @@
 "use client";
 
-import { BookOpen, ChevronDown, Check, Droplets, Info, Plus, Share2, Sparkles, Timer, X } from "lucide-react";
+import { BookOpen, ChevronDown, Check, Droplets, ImagePlus, Info, Plus, Share2, Sparkles, Timer, X } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
-import { Sheet } from "@/features/shared/Sheet";
 import { ThemedSelect } from "@/features/shared/ThemedSelect";
-import { remove } from "@/lib/db";
 import { activeFast, fastingProgress, fastingWindowHours } from "@/lib/fasting";
 import { isHabitFeatureEnabled } from "@/lib/habit-settings";
 import { hydrationTotal, setWaterAmount } from "@/lib/hydration";
 import { localDateKey, round, sumNutrition } from "@/lib/nutrition";
 import { getSupabase } from "@/lib/supabase";
-import type { Food, Meal, MealType, Profile, Recipe, RecipeIngredient } from "@/lib/types";
+import type { Meal, MealType, Profile, Recipe, RecipeIngredient } from "@/lib/types";
 import { fastingGoalHours, habitFeatures } from "@/lib/types";
-import { canLogRecipeIngredients, recipeIngredientFood, recipeIngredientNutrition, recipeLogId, recipeNutritionForLogging } from "@/features/recipes/recipeLogging";
+import { recipeLogId } from "@/features/recipes/recipeLogging";
 import { mealLabels } from "./DiaryPrimitives";
+import { readMealImage } from "./DiaryPrimitives";
 
 export function HomeScreenPrompt({ onDismiss }: { onDismiss: () => void }) {
   return (
@@ -29,11 +28,14 @@ export function HomeScreenPrompt({ onDismiss }: { onDismiss: () => void }) {
   );
 }
 
-export function SaveRecipeSheet({ meals, onSave, onClose }: { meals: Meal[]; onSave: (recipe: Recipe) => void; onClose: () => void }) {
+export function SaveRecipeSheet({ meals, onSave, onClose }: { meals: Meal[]; onSave: (recipe: Recipe, selectedMeals: Meal[]) => Promise<void>; onClose: () => void }) {
   const [name, setName] = useState(`${mealLabels[meals[0]?.mealType || "breakfast"]} regulars`);
   const [selectedIds, setSelectedIds] = useState(() => meals.map((meal) => meal.id));
   const [titleLoading, setTitleLoading] = useState(false);
   const [titleError, setTitleError] = useState("");
+  const [imageUrls, setImageUrls] = useState<string[]>(() => [...new Set(meals.flatMap((meal) => meal.imageUrl ? [meal.imageUrl] : []))].slice(0, 8));
+  const [imageError, setImageError] = useState("");
+  const [saving, setSaving] = useState(false);
   const selectedMeals = meals.filter((meal) => selectedIds.includes(meal.id));
   const nutrition = sumNutrition(selectedMeals.map((meal) => meal.nutrition));
   const toggle = (id: string) => setSelectedIds((current) => current.includes(id) ? current.filter((candidate) => candidate !== id) : [...current, id]);
@@ -62,39 +64,36 @@ export function SaveRecipeSheet({ meals, onSave, onClose }: { meals: Meal[]; onS
       setTitleError(error instanceof Error ? error.message : "AI could not suggest a title.");
     } finally { setTitleLoading(false); }
   };
-  const submit = (event: FormEvent) => {
+  const addImages = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setImageError("");
+    try {
+      const remaining = 8 - imageUrls.length;
+      if (remaining <= 0) throw new Error("A recipe can include up to 8 photos.");
+      const images = await Promise.all([...files].slice(0, remaining).map(readMealImage));
+      setImageUrls((current) => [...current, ...images]);
+    } catch (error) { setImageError(error instanceof Error ? error.message : "The photo could not be added."); }
+  };
+  const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!name.trim() || selectedMeals.length === 0) return;
+    if (!name.trim() || selectedMeals.length === 0 || saving) return;
+    setSaving(true);
     const now = new Date().toISOString();
     const ingredients: RecipeIngredient[] = selectedMeals.map((meal) => ({ id: `ingredient-${crypto.randomUUID()}`, name: meal.name, foodId: meal.foodId, amount: meal.amount, unit: meal.unit, grams: meal.grams, nutrition: meal.nutrition }));
-    onSave({ id: `recipe-${crypto.randomUUID()}`, name: name.trim(), servings: 1, ingredients, nutritionPerServing: nutrition, createdAt: now, updatedAt: now });
+    try { await onSave({ id: `recipe-${crypto.randomUUID()}`, name: name.trim(), servings: 1, ingredients, nutritionPerServing: nutrition, imageUrls, createdAt: now, updatedAt: now }, selectedMeals); } finally { setSaving(false); }
   };
-  return <div className="recipe-save-sheet"><div className="sheet-header"><div><span className="eyebrow">Save for next time</span><h2>Make this a recipe</h2></div><span /></div><form onSubmit={submit}><div className="recipe-name-field"><label htmlFor="recipe-name"><span>Recipe name</span><input id="recipe-name" autoFocus required value={name} maxLength={240} onChange={(event) => setName(event.target.value)} /></label><button type="button" className="secondary-button recipe-title-button" onClick={() => void suggestTitle()} disabled={!selectedMeals.length || titleLoading}><Sparkles size={16} />{titleLoading ? "Suggesting…" : "Suggest with AI"}</button></div>{titleError && <div className="inline-alert" role="status"><Info size={16} />{titleError}</div>}<fieldset className="recipe-ingredient-picker"><legend>What belongs in it?</legend>{meals.map((meal) => <label key={meal.id}><input type="checkbox" checked={selectedIds.includes(meal.id)} onChange={() => toggle(meal.id)} /><span><strong>{meal.name}</strong><small>{Math.round(meal.nutrition.calories)} kcal</small></span></label>)}</fieldset><div className="recipe-save-summary"><span>{selectedMeals.length} item{selectedMeals.length === 1 ? "" : "s"} · {Math.round(nutrition.calories)} kcal</span><small>You can replace individual items when you log it later.</small></div><div className="sheet-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="submit" className="primary-button" disabled={!selectedMeals.length}><BookOpen size={17} />Save recipe</button></div></form></div>;
+  return <div className="recipe-save-sheet"><div className="sheet-header"><div><span className="eyebrow">Save for next time</span><h2>Make this a recipe</h2></div><span /></div><form onSubmit={(event) => void submit(event)}><div className="recipe-name-field"><label htmlFor="recipe-name"><span>Recipe name</span><input id="recipe-name" autoFocus required value={name} maxLength={240} onChange={(event) => setName(event.target.value)} /></label><button type="button" className="secondary-button recipe-title-button" onClick={() => void suggestTitle()} disabled={!selectedMeals.length || titleLoading}><Sparkles size={16} />{titleLoading ? "Suggesting…" : "Suggest with AI"}</button></div>{titleError && <div className="inline-alert" role="status"><Info size={16} />{titleError}</div>}<fieldset className="recipe-ingredient-picker"><legend>What belongs in it?</legend>{meals.map((meal) => <label key={meal.id}><input type="checkbox" checked={selectedIds.includes(meal.id)} onChange={() => toggle(meal.id)} /><span><strong>{meal.name}</strong><small>{Math.round(meal.nutrition.calories)} kcal</small></span></label>)}</fieldset><label className="recipe-photo-upload"><input className="visually-hidden-file" type="file" accept="image/*" multiple onChange={(event) => { void addImages(event.target.files); event.currentTarget.value = ""; }} /><span className="action-icon mint"><ImagePlus size={17} /></span><span><strong>Add recipe photos</strong><small>Optional · up to 8 photos</small></span></label>{imageUrls.length > 0 && <div className="recipe-photo-preview" aria-label={`${imageUrls.length} recipe photos`}>{imageUrls.map((url, index) => <span key={url}><img src={url} alt={`Recipe photo ${index + 1}`} /><button type="button" onClick={() => setImageUrls((current) => current.filter((candidate) => candidate !== url))} aria-label={`Remove recipe photo ${index + 1}`}><X size={14} /></button></span>)}</div>}{imageError && <div className="inline-alert" role="status"><Info size={16} />{imageError}</div>}<div className="recipe-save-summary"><span>{selectedMeals.length} item{selectedMeals.length === 1 ? "" : "s"} · {Math.round(nutrition.calories)} kcal</span><small>Saving packages these items into one recipe entry in today’s log.</small></div><div className="sheet-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="submit" className="primary-button" disabled={!selectedMeals.length || saving}><BookOpen size={17} />{saving ? "Saving…" : "Save recipe"}</button></div></form></div>;
 }
 
-export function RecipeLogSheet({ recipe, foods, onLog, onClose }: { recipe: Recipe; foods: Food[]; onLog: (meal: Meal) => Promise<void>; onClose: () => void }) {
+export function RecipeLogSheet({ recipe, onLog, onClose }: { recipe: Recipe; onLog: (meal: Meal) => Promise<void>; onClose: () => void }) {
   const [mealType, setMealType] = useState<MealType>("breakfast");
-  const [replacements, setReplacements] = useState<Record<string, string>>({});
   const logId = useRef(recipeLogId());
-  const canLogIngredients = canLogRecipeIngredients(recipe);
-  const sourceFood = (ingredient: RecipeIngredient) => recipeIngredientFood(ingredient, foods);
-  const nutrition = recipeNutritionForLogging(recipe, foods, replacements);
-  const buildMeal = (ingredient: RecipeIngredient): Meal => {
-    const food = recipeIngredientFood(ingredient, foods, replacements[ingredient.id]);
-    const grams = ingredient.grams || 100;
-    const ingredientNutrition = recipeIngredientNutrition(ingredient, foods, replacements[ingredient.id]);
-    return { id: `recipe-${crypto.randomUUID()}`, foodId: food?.id, recipeId: recipe.id, recipeLogId: logId.current, name: food?.name || ingredient.name, brand: food?.brand, mealType, amount: ingredient.amount || 1, unit: ingredient.unit || "serving", grams, nutrition: ingredientNutrition, createdAt: new Date().toISOString(), loggedDate: localDateKey(), source: food?.source || "custom" };
-  };
   const log = async (event: FormEvent) => {
     event.preventDefault();
-    if (canLogIngredients) {
-      for (const ingredient of recipe.ingredients) await onLog(buildMeal(ingredient));
-    } else {
-      await onLog({ id: `recipe-${crypto.randomUUID()}`, recipeId: recipe.id, recipeLogId: logId.current, name: recipe.name, mealType, amount: 1, unit: "serving", grams: 100, nutrition: recipe.nutritionPerServing, createdAt: new Date().toISOString(), loggedDate: localDateKey(), source: "custom" });
-    }
+    await onLog({ id: `recipe-${crypto.randomUUID()}`, recipeId: recipe.id, recipeLogId: logId.current, name: recipe.name, mealType, amount: 1, unit: "serving", grams: 100, nutrition: recipe.nutritionPerServing, imageUrl: recipe.imageUrls?.[0], createdAt: new Date().toISOString(), loggedDate: localDateKey(), source: "custom" });
     onClose();
   };
-  return <div className="recipe-log-sheet"><div className="sheet-header"><div><span className="eyebrow">Saved recipe</span><h2>{recipe.name}</h2></div><span /></div><form onSubmit={(event) => void log(event)}><p className="recipe-log-intro">{canLogIngredients ? "Review every food before adding this recipe to your daily log. Swaps update the total below." : "This recipe was saved as one nutrition entry."}</p><label className="meal-editor-form"><span>Add to</span><ThemedSelect ariaLabel="Recipe meal" value={mealType} onChange={(value) => setMealType(value as MealType)} options={(Object.keys(mealLabels) as MealType[]).map((type) => ({ value: type, label: mealLabels[type] }))} /></label>{canLogIngredients && <section className="recipe-log-ingredients" aria-labelledby="recipe-ingredients-heading"><h3 id="recipe-ingredients-heading">Foods in this recipe</h3>{recipe.ingredients.map((ingredient) => { const canSwap = Boolean(sourceFood(ingredient)); const ingredientNutrition = recipeIngredientNutrition(ingredient, foods, replacements[ingredient.id]); return <div className="recipe-log-ingredient" key={ingredient.id}><span><strong>{recipeIngredientFood(ingredient, foods, replacements[ingredient.id])?.name || ingredient.name}</strong><small>{Math.round(ingredientNutrition.calories)} kcal · P {round(ingredientNutrition.protein)}g · C {round(ingredientNutrition.carbs)}g · F {round(ingredientNutrition.fat)}g</small></span>{canSwap ? <label><span className="visually-hidden">Replace {ingredient.name}</span><ThemedSelect ariaLabel={`Replace ${ingredient.name}`} value={replacements[ingredient.id] || ingredient.foodId || ""} onChange={(value) => setReplacements((current) => ({ ...current, [ingredient.id]: value }))} options={[{ value: ingredient.foodId || "", label: "Keep this item" }, ...foods.filter((food) => food.id !== ingredient.foodId).slice(0, 40).map((food) => ({ value: food.id, label: `Swap for ${food.name}` }))]} /></label> : <small>Saved as a custom item</small>}</div>; })}</section>}<section className="recipe-log-total" aria-labelledby="recipe-total-heading"><div><span className="eyebrow">Recipe total</span><h3 id="recipe-total-heading">{Math.round(nutrition.calories)} kcal</h3></div><dl><div><dt>Protein</dt><dd>{round(nutrition.protein)}g</dd></div><div><dt>Carbs</dt><dd>{round(nutrition.carbs)}g</dd></div><div><dt>Fat</dt><dd>{round(nutrition.fat)}g</dd></div><div><dt>Fibre</dt><dd>{round(nutrition.fiber)}g</dd></div></dl></section><div className="sheet-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="submit" className="primary-button"><Check size={17} />Log recipe</button></div></form></div>;
+  return <div className="recipe-log-sheet"><div className="sheet-header"><div><span className="eyebrow">Saved recipe</span><h2>{recipe.name}</h2></div><span /></div><form onSubmit={(event) => void log(event)}><p className="recipe-log-intro">Log this meal as one recipe entry. Tap it in your daily log to see its ingredients and full nutrition.</p><label className="meal-editor-form"><span>Add to</span><ThemedSelect ariaLabel="Recipe meal" value={mealType} onChange={(value) => setMealType(value as MealType)} options={(Object.keys(mealLabels) as MealType[]).map((type) => ({ value: type, label: mealLabels[type] }))} /></label><section className="recipe-log-ingredients" aria-labelledby="recipe-ingredients-heading"><h3 id="recipe-ingredients-heading">Foods in this recipe</h3>{recipe.ingredients.map((ingredient) => <div className="recipe-log-ingredient" key={ingredient.id}><span><strong>{ingredient.name}</strong><small>{Math.round(ingredient.nutrition?.calories || 0)} kcal</small></span></div>)}</section><section className="recipe-log-total" aria-labelledby="recipe-total-heading"><div><span className="eyebrow">Recipe total</span><h3 id="recipe-total-heading">{Math.round(recipe.nutritionPerServing.calories)} kcal</h3></div><dl><div><dt>Protein</dt><dd>{round(recipe.nutritionPerServing.protein)}g</dd></div><div><dt>Carbs</dt><dd>{round(recipe.nutritionPerServing.carbs)}g</dd></div><div><dt>Fat</dt><dd>{round(recipe.nutritionPerServing.fat)}g</dd></div><div><dt>Fibre</dt><dd>{round(recipe.nutritionPerServing.fiber)}g</dd></div></dl></section><div className="sheet-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="submit" className="primary-button"><Check size={17} />Log recipe</button></div></form></div>;
 }
 
 export function MealAddRow({ mealType, meals, onAdd, onSaveRecipe }: { mealType: MealType; meals: Meal[]; onAdd: (mealType: MealType) => void; onSaveRecipe: (meals: Meal[]) => void }) {
@@ -137,4 +136,3 @@ export function DailyRhythm({ profile, dateKey, onSave }: { profile: Profile; da
     <div className="daily-rhythm-grid">{showWater && <WaterTracker profile={profile} dateKey={dateKey} onSave={onSave} />}{showFasting && <FastingTracker profile={profile} onSave={onSave} />}</div>
   </details>;
 }
-

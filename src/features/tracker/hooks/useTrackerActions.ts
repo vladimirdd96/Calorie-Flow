@@ -7,7 +7,7 @@ import { localDateKey } from "@/lib/nutrition";
 import type { BackupData } from "@/lib/db";
 import type { AddFoodView } from "@/features/food-capture/types";
 import type { CloudUser } from "@/lib/supabase";
-import type { CoachMealAction, Food, Meal, MealPhotoAnalysis, MealType, Profile } from "@/lib/types";
+import type { CoachMealAction, Food, Meal, MealPhotoAnalysis, MealType, Profile, Recipe } from "@/lib/types";
 
 const mealLabels: Record<MealType, string> = { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snack" };
 const compareMealOrder = (left: Meal, right: Meal) => (left.position ?? Number.MAX_SAFE_INTEGER) - (right.position ?? Number.MAX_SAFE_INTEGER) || left.createdAt.localeCompare(right.createdAt);
@@ -88,6 +88,31 @@ export function useTrackerActions(dependencies: Dependencies) {
     setMeals((current) => [...current, meal]); setEditingMeal(undefined); setToast(`${meal.name} logged`); setTab("today");
     void saveProfile(syncAutomaticFastAfterMeal(profile, meal), false);
     syncWrite((userId) => upsertCloudMeal(userId, meal));
+  };
+  const packageRecipe = async (recipe: Recipe, components: Meal[]) => {
+    const componentIds = new Set(components.map((meal) => meal.id));
+    const recipeMeal: Meal = {
+      id: `recipe-${crypto.randomUUID()}`,
+      recipeId: recipe.id,
+      recipeLogId: `recipe-log-${crypto.randomUUID()}`,
+      name: recipe.name,
+      mealType: components[0]?.mealType || "breakfast",
+      amount: 1,
+      unit: "serving",
+      grams: 100,
+      nutrition: recipe.nutritionPerServing,
+      imageUrl: recipe.imageUrls?.[0],
+      createdAt: new Date().toISOString(),
+      loggedDate: dateKey,
+      source: "custom",
+    };
+    await Promise.all([...components.map((meal) => remove("meals", meal.id)), put("meals", recipeMeal)]);
+    await saveProfile({ ...profile, recipes: [...(profile.recipes || []), recipe] }, false);
+    setMeals((current) => [...current.filter((meal) => !componentIds.has(meal.id)), recipeMeal]);
+    setToast(`${recipe.name} saved and packaged`);
+    syncWrite(async (userId) => {
+      await Promise.all([...components.map((meal) => deleteCloudMeal(userId, meal.id)), upsertCloudMeal(userId, recipeMeal)]);
+    });
   };
   const logCoachMeal = async (action: CoachMealAction) => {
     const meal: Meal = {
@@ -184,5 +209,5 @@ export function useTrackerActions(dependencies: Dependencies) {
   const openAdd = (view: AddFoodView = "start", mealType?: MealType) => { setInitialAddView(view); setInitialMealType(mealType); setAdding(true); };
   const selectFood = (food: Food) => { setInitialMealType(undefined); setDirectFood(food); setAdding(true); };
 
-  return { restartOnboarding, finishOnboarding, cancelOnboarding, logMeal, saveFood, saveEditedMeal, dropMeal, duplicateMeal, saveNewMeal, logCoachMeal, addPhotoMeal, deleteMeal, undoDeleteMeal, exportBackup, restoreBackup, openAdd, selectFood };
+  return { restartOnboarding, finishOnboarding, cancelOnboarding, logMeal, saveFood, saveEditedMeal, dropMeal, duplicateMeal, saveNewMeal, packageRecipe, logCoachMeal, addPhotoMeal, deleteMeal, undoDeleteMeal, exportBackup, restoreBackup, openAdd, selectFood };
 }

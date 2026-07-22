@@ -4,10 +4,10 @@ import { ChevronDown, ChevronLeft, ChevronRight, MessageCircle, ShieldCheck } fr
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Sheet } from "@/features/shared/Sheet";
 import { localDateKey, netCarbs, resolveDailyTargets, resolveMealCalorieTarget, round, sumNutrition } from "@/lib/nutrition";
-import type { Meal, MealType, Nutrition, Profile } from "@/lib/types";
+import type { Meal, MealType, Nutrition, Profile, Recipe } from "@/lib/types";
 import { BrandMark, changeDate, dayLabel, mealLabels, MiniProgressRing, ProgressRing } from "./components/DiaryPrimitives";
-import { DailyRhythm, HomeScreenPrompt, MealAddRow, RecipeLogSheet, SaveRecipeSheet } from "./components/DiaryTools";
-import { DuplicateMealSheet, MealEditor, MealRow, MoveMealSheet } from "./components/MealControls";
+import { DailyRhythm, HomeScreenPrompt, MealAddRow, SaveRecipeSheet } from "./components/DiaryTools";
+import { MealRow } from "./components/MealControls";
 
 export { DuplicateMealSheet, MealEditor, MoveMealSheet } from "./components/MealControls";
 export { RecipeLogSheet } from "./components/DiaryTools";
@@ -32,6 +32,7 @@ export function TodayView({
   onDismissHomeScreenPrompt,
   onOpenCalendar,
   onSaveProfile,
+  onSaveRecipe,
 }: {
   profile: Profile;
   meals: Meal[];
@@ -52,6 +53,7 @@ export function TodayView({
   onDismissHomeScreenPrompt: () => void;
   onOpenCalendar: () => void;
   onSaveProfile: (profile: Profile) => void;
+  onSaveRecipe: (recipe: Recipe, components: Meal[]) => Promise<void>;
 }) {
   const [recipeDraftMeals, setRecipeDraftMeals] = useState<Meal[]>();
   const [dropTarget, setDropTarget] = useState<string>();
@@ -182,7 +184,7 @@ export function TodayView({
         <span><strong>Ask Coach about today</strong><small>Get guidance with your diary in context</small></span>
         <ChevronRight size={18} />
       </button>
-      {recipeDraftMeals && <Sheet onClose={() => setRecipeDraftMeals(undefined)} label="Save meal as recipe"><SaveRecipeSheet meals={recipeDraftMeals} onSave={(recipe) => { onSaveProfile({ ...profile, recipes: [...(profile.recipes || []), recipe] }); setRecipeDraftMeals(undefined); }} onClose={() => setRecipeDraftMeals(undefined)} /></Sheet>}
+      {recipeDraftMeals && <Sheet onClose={() => setRecipeDraftMeals(undefined)} label="Save meal as recipe"><SaveRecipeSheet meals={recipeDraftMeals} onSave={async (recipe, components) => { await onSaveRecipe(recipe, components); setRecipeDraftMeals(undefined); }} onClose={() => setRecipeDraftMeals(undefined)} /></Sheet>}
     </main>
   );
 }

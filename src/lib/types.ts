@@ -184,6 +184,8 @@ export type Recipe = {
   servings: number;
   ingredients: RecipeIngredient[];
   nutritionPerServing: Nutrition;
+  /** Optional user photos, stored locally as resized image data URLs. */
+  imageUrls?: string[];
   createdAt: string;
   updatedAt: string;
 };
