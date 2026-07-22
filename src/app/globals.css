@@ -1107,7 +1107,7 @@ p { color: var(--muted); line-height: 1.55; }
 .sheet-search input:focus { outline: 0; }
 .sheet-search button { height: 40px; padding: 0 13px; color: var(--mint); background: rgba(125,255,213,.08); border: 0; border-radius: 11px; font-size: 11px; font-weight: 800; }
 .sheet-food-list { margin-top: 14px; }
-.search-result-groups { display: grid; gap: 18px; margin-top: 18px; }
+.search-result-groups { display: grid; gap: 28px; margin-top: 18px; }
 .search-result-group { display: grid; gap: 8px; }
 .search-result-group .quick-list-heading { padding: 0 4px; }
 .search-result-group .quick-list-heading strong { color: var(--text); font-size: 12px; }
