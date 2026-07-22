@@ -2,6 +2,7 @@
 
 import { ArrowLeft, Camera, WifiOff } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { ClearableInput } from "@/features/shared/ClearableInput";
 import { requestContinuousFocus } from "./captureMedia";
 
 export function BarcodeScanner({ onResult, onClose }: { onResult: (code: string) => void; onClose: () => void }) {
@@ -63,7 +64,7 @@ export function BarcodeScanner({ onResult, onClose }: { onResult: (code: string)
       </div>
       <p className="camera-hint">{cameraLive ? "Hold the barcode inside the frame" : "You’ll be asked to allow camera access."}</p>
       {error && <div className="inline-alert" role="alert"><WifiOff size={17} />{error}</div>}
-      <form className="manual-barcode" onSubmit={(event) => { event.preventDefault(); if (manual.trim()) onResult(manual.trim()); }}><label><span>Or enter the number</span><input value={manual} inputMode="numeric" onChange={(event) => setManual(event.target.value)} placeholder="e.g. 3800123456789" /></label><button className="secondary-button" type="submit">Look up</button></form>
+      <form className="manual-barcode" onSubmit={(event) => { event.preventDefault(); if (manual.trim()) onResult(manual.trim()); }}><label><span>Or enter the number</span><ClearableInput value={manual} inputMode="numeric" onChange={(event) => setManual(event.target.value)} onClear={() => setManual("")} placeholder="e.g. 3800123456789" clearLabel="Clear barcode" /></label><button className="secondary-button" type="submit">Look up</button></form>
     </div>
   );
 }

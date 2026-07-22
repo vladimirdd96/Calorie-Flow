@@ -3,6 +3,7 @@
 import { BarChart3, Check, ChevronDown, ChevronRight, Download, Cloud, LogOut, Pencil, RotateCcw, Share2, ShieldCheck, Moon, Sun, Upload, Utensils, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ThemedSelect } from "@/features/shared/ThemedSelect";
+import { ClearableInput } from "@/features/shared/ClearableInput";
 import { Sheet } from "@/features/shared/Sheet";
 import type { AppTab } from "@/features/navigation/types";
 import { validateBackup } from "@/lib/db";
@@ -155,7 +156,7 @@ function ProfileIdentity({ profile, user, onSave }: { profile: Profile; user: Cl
             <i><Upload size={14} /></i>
           </button>
           <div className="profile-identity-fields">
-            <label><span>Display name</span><input autoFocus value={name} maxLength={120} onChange={(event) => setName(event.target.value)} placeholder="Your name" /></label>
+            <label><span>Display name</span><ClearableInput autoFocus value={name} maxLength={120} onChange={(event) => setName(event.target.value)} onClear={() => setName("")} placeholder="Your name" clearLabel="Clear display name" /></label>
             <small>{user ? "Your account photo is used by default. Upload a different one whenever you like." : "Add a name and photo so this diary feels like yours."}</small>
           </div>
         </div>
@@ -292,7 +293,7 @@ function DiarySharing({ user }: { user: CloudUser | null }) {
     <div className="sharing-card card">
       <div className="sharing-intro"><span className="sharing-icon"><Share2 size={19} /></span><div><strong>Invite people you trust</strong><p>Only the invited email can accept. They can see meals and saved foods, never your targets, profile, Coach, or edit controls.</p></div></div>
       {user ? <form className="sharing-invite" onSubmit={invite}>
-        <label><span>Invite by email</span><input type="email" autoComplete="email" value={recipientEmail} onChange={(event) => setRecipientEmail(event.target.value)} placeholder="friend@example.com" required /></label>
+        <label><span>Invite by email</span><ClearableInput type="email" autoComplete="email" value={recipientEmail} onChange={(event) => setRecipientEmail(event.target.value)} onClear={() => setRecipientEmail("")} placeholder="friend@example.com" required clearLabel="Clear invite email" /></label>
         <button className="secondary-button" type="submit" disabled={sending}>{sending ? "Sending…" : "Create invitation"}</button>
       </form> : <p className="sharing-signed-out">Sign in to create or receive a private diary invitation.</p>}
       {notice && <p className="sharing-notice" role="status">{notice}</p>}
