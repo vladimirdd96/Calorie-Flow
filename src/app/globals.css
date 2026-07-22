@@ -434,6 +434,7 @@ p { color: var(--muted); line-height: 1.55; }
 .weekday-target-editor { display: grid; gap: 14px; padding: 14px; border: 1px solid var(--border); border-radius: 16px; background: var(--control-surface); }
 .weekday-target-editor > label { display: grid; gap: 7px; font-size: 12px; color: var(--muted); }
 .daily-rhythm { display: grid; gap: 12px; margin-top: 28px; }
+.log-section > .daily-rhythm { margin-top: 34px; padding-top: 24px; border-top: 1px solid var(--border); }
 .daily-rhythm-grid { display: grid; gap: 12px; }
 .rhythm-card { min-width: 0; padding: 16px; border-radius: var(--radius-md); box-shadow: none; }
 .rhythm-card-heading { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; }

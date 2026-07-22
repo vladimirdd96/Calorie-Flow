@@ -648,7 +648,7 @@ function DailyRhythm({ profile, dateKey, onSave }: { profile: Profile; dateKey: 
   const showFasting = isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting);
   if (!showWater && !showFasting) return null;
   return <section className="daily-rhythm" aria-labelledby="daily-rhythm-heading">
-    <div className="section-heading compact"><div><span className="eyebrow">Daily rhythm</span><h2 id="daily-rhythm-heading">Small habits</h2></div><span className="subtle">At your pace</span></div>
+    <div className="section-heading compact"><div><span className="eyebrow">After your food log</span><h2 id="daily-rhythm-heading">Daily check-ins</h2></div><span className="subtle">Optional</span></div>
     <div className="daily-rhythm-grid">{showWater && <WaterTracker profile={profile} dateKey={dateKey} onSave={onSave} />}{showFasting && <FastingTracker profile={profile} onSave={onSave} />}</div>
   </section>;
 }
@@ -730,15 +730,7 @@ function TodayView({
         </div>
       </section>
 
-      <DailyRhythm profile={profile} dateKey={dateKey} onSave={onSaveProfile} />
-
       <MicronutrientSummary nutrition={total} />
-
-      <button className="coach-check-in" onClick={onOpenCoach}>
-        <span className="action-icon mint"><MessageCircle size={19} /></span>
-        <span><strong>Ask Coach about today</strong><small>Get guidance with your diary in context</small></span>
-        <ChevronRight size={18} />
-      </button>
 
       <section className="log-section">
         <div className="section-heading"><div><span className="eyebrow">Daily log</span><h2>Your meals</h2></div></div>
@@ -751,7 +743,14 @@ function TodayView({
             </div>
           </div>
         ))}
+        <DailyRhythm profile={profile} dateKey={dateKey} onSave={onSaveProfile} />
       </section>
+
+      <button className="coach-check-in" onClick={onOpenCoach}>
+        <span className="action-icon mint"><MessageCircle size={19} /></span>
+        <span><strong>Ask Coach about today</strong><small>Get guidance with your diary in context</small></span>
+        <ChevronRight size={18} />
+      </button>
     </main>
   );
 }
