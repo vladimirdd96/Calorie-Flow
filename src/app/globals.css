@@ -575,6 +575,8 @@ p { color: var(--muted); line-height: 1.55; }
 .daily-log-actions { display: flex; align-items: center; gap: 12px; }
 .daily-log-actions .text-button { min-height: 32px; padding: 0 8px; }
 .recipe-save-sheet, .recipe-log-sheet { display: grid; gap: 18px; }
+.recipe-save-sheet > .sheet-header, .recipe-log-sheet > .sheet-header { display: flex; width: 100%; min-width: 0; }
+.recipe-save-sheet .sheet-header h2, .recipe-log-sheet .sheet-header h2 { max-width: none; overflow: visible; white-space: normal; font-size: clamp(24px, 5vw, 32px); line-height: 1.05; }
 .recipe-picker { display: grid; gap: 8px; }
 .recipe-picker-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 58px; padding: 10px 12px; color: var(--text); text-align: left; border: 1px solid var(--border); border-radius: 12px; background: var(--control-surface); }
 .recipe-picker-row:hover, .recipe-picker-row:focus-visible { border-color: var(--mint); background: color-mix(in oklch, var(--mint) 7%, var(--control-surface)); }
@@ -585,7 +587,7 @@ p { color: var(--muted); line-height: 1.55; }
 .recipe-ingredient-picker { display: grid; gap: 5px; margin: 0; padding: 0; border: 0; }
 .recipe-ingredient-picker legend { margin-bottom: 4px; color: var(--muted); font-size: 12px; font-weight: 800; }
 .recipe-ingredient-picker label { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--control-surface); }
-.recipe-ingredient-picker input { accent-color: var(--mint); }
+.recipe-ingredient-picker input[type="checkbox"] { flex: 0 0 18px; width: 18px; min-width: 18px; height: 18px; min-height: 18px; margin: 0; padding: 0; border: 0; border-radius: 4px; accent-color: var(--mint); }
 .recipe-ingredient-picker label > span, .recipe-log-ingredient > span { display: grid; gap: 3px; min-width: 0; }
 .recipe-ingredient-picker small, .recipe-log-ingredient small { color: var(--muted); font-size: 10px; }
 .recipe-save-summary { display: grid; gap: 4px; padding: 12px 14px; border-radius: 12px; color: var(--mint-strong); background: color-mix(in oklch, var(--mint) 8%, var(--control-surface)); font-size: 12px; font-weight: 800; }
