@@ -156,7 +156,7 @@ export function LabelReader({ onFood, onClose, initialFiles = [], initialAction 
         {loading && <span className="analyzing"><i /><strong>Reading the package…</strong></span>}
       </div>}
       {!cameraLive && <div className="label-camera-actions"><button className="primary-button" onClick={startCamera} disabled={starting}><Camera size={18} />{starting ? "Opening camera…" : "Open rear camera"}</button><button className="secondary-button" onClick={() => inputRef.current?.click()}><Upload size={18} />Choose photo</button></div>}
-      <input ref={inputRef} className="visually-hidden-file" type="file" accept="image/*" capture="environment" multiple onChange={(event) => analyze(event.target.files || undefined)} />
+      <input ref={inputRef} className="visually-hidden-file" type="file" accept="image/*" multiple onChange={(event) => analyze(event.target.files || undefined)} />
       {error && <div className="inline-alert error" role="alert"><Info size={17} /><span>{error}</span></div>}
       <div className="label-tips"><strong>For the best result</strong><ul><li>Add up to three details: nutrition table, barcode, and package size.</li><li>One photo is fine when it has everything.</li><li>You’ll confirm the amount and meal before anything is logged.</li></ul></div>
     </div>
