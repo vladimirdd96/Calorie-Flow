@@ -184,7 +184,19 @@ function extractVisionText(response) {
     const content = visionText(choice.text);
     if (content) return content;
   }
-  return visionText(response.response) || visionText(response.output_text) || visionText(response.result);
+  const direct = visionText(response.response) || visionText(response.output_text);
+  if (direct) return direct;
+  const nested = response.result;
+  if (isRecord(nested) && Array.isArray(nested.choices)) {
+    const nestedChoice = nested.choices[0];
+    if (isRecord(nestedChoice) && isRecord(nestedChoice.message)) return visionText(nestedChoice.message.content);
+  }
+  return visionText(nested);
+}
+
+function chatChoices(response) {
+  if (Array.isArray(response?.choices)) return response.choices;
+  return Array.isArray(response?.result?.choices) ? response.result.choices : [];
 }
 
 function labelRequestPayload(images, strict = true) {
@@ -446,8 +458,9 @@ function isUnrelatedRequest(message) {
 async function workersAiResponse(env, model, payload) {
   if (!env.AI?.run) throw new Error("Workers AI is not configured for this deployment.");
   const response = await env.AI.run(model, payload);
-  if (!isRecord(response) || !Array.isArray(response.choices)) throw new Error("The Coach returned an invalid response.");
-  return response;
+  const choices = Array.isArray(response?.choices) ? response.choices : response?.result?.choices;
+  if (!isRecord(response) || !Array.isArray(choices)) throw new Error("The Coach returned an invalid response.");
+  return Array.isArray(response.choices) ? response : { ...response.result };
 }
 
 async function coach(request, env) {
@@ -494,7 +507,7 @@ async function coach(request, env) {
         max_completion_tokens: 1400,
         temperature: 0.2,
       });
-      const assistantMessage = response.choices?.[0]?.message;
+      const assistantMessage = chatChoices(response)[0]?.message;
       const calls = Array.isArray(assistantMessage?.tool_calls) ? assistantMessage.tool_calls : [];
       if (!calls.length) break;
       messages.push({ role: "assistant", content: assistantMessage.content || null, tool_calls: calls });

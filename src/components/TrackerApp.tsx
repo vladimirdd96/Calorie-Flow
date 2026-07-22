@@ -17,6 +17,7 @@ import {
   GripVertical,
   Home,
   Info,
+  ImagePlus,
   LogOut,
   LockKeyhole,
   Mail,
@@ -106,7 +107,7 @@ import { findByBarcode, searchOpenFoodFacts } from "@/lib/openfoodfacts";
 import { hydrationTotal, setWaterAmount } from "@/lib/hydration";
 import { activeFast, fastingProgress, fastingWindowHours, syncAutomaticFastAfterMeal, syncAutomaticFasting } from "@/lib/fasting";
 import { isHabitFeatureEnabled, toggleHabitFeature } from "@/lib/habit-settings";
-import { groceryItemsForPlan, recipeMeal } from "@/lib/planning";
+import { groceryItemsForPlan } from "@/lib/planning";
 import { mealsCsv } from "@/lib/reports";
 import { normalizeVoiceFoodQuery } from "@/lib/voice";
 import { recentLogDates } from "@/lib/logging";
@@ -129,6 +130,7 @@ import type {
   Nutrition,
   Profile,
   Recipe,
+  RecipeIngredient,
   ServingUnit,
   Sex,
   WeightEntry,
@@ -443,26 +445,39 @@ function GoogleIcon() {
   );
 }
 
-function ProgressRing({ value, target }: { value: number; target: number }) {
+function ProgressRing({ value, target, nutrition }: { value: number; target: number; nutrition: Nutrition }) {
+  const [activeSegment, setActiveSegment] = useState<string>();
   const progress = Math.min(1, value / Math.max(1, target));
   const circumference = 2 * Math.PI * 82;
+  const macroSegments = [
+    { label: "Protein", grams: nutrition.protein, value: nutrition.protein * 4, color: "var(--protein)" },
+    { label: "Carbs", grams: nutrition.carbs, value: nutrition.carbs * 4, color: "var(--carbs)" },
+    { label: "Fat", grams: nutrition.fat, value: nutrition.fat * 9, color: "var(--fat)" },
+  ];
+  const macroCalories = macroSegments.reduce((sum, segment) => sum + segment.value, 0);
+  const selectedSegment = macroSegments.find((segment) => segment.label === activeSegment);
+  let consumedOffset = 0;
   return (
-    <div className="progress-ring" role="progressbar" aria-label="Daily calorie progress" aria-valuemin={0} aria-valuemax={target} aria-valuenow={Math.round(value)} aria-valuetext={`${Math.round(progress * 100)} percent of daily calories`}>
-      <svg viewBox="0 0 200 200" aria-hidden="true">
+    <div className="progress-ring" role="progressbar" aria-label={`Daily calorie progress. Protein ${round(nutrition.protein)} grams, carbs ${round(nutrition.carbs)} grams, fat ${round(nutrition.fat)} grams.`} aria-valuemin={0} aria-valuemax={target} aria-valuenow={Math.round(value)} aria-valuetext={`${Math.round(progress * 100)} percent of daily calories`}>
+      <svg viewBox="0 0 200 200" role="img" aria-label="Macro calorie composition">
         <circle className="ring-track" cx="100" cy="100" r="82" />
-        <circle
-          className="ring-value"
-          cx="100"
-          cy="100"
-          r="82"
-          strokeDasharray={circumference}
-          strokeDashoffset={circumference * (1 - progress)}
-        />
+        {macroSegments.map((segment) => {
+          const share = macroCalories > 0 ? segment.value / macroCalories : 0;
+          const length = circumference * progress * share;
+          const offset = circumference * progress * consumedOffset;
+          consumedOffset += share;
+          const percentOfTarget = Math.round((segment.value / Math.max(1, target)) * 100);
+          return <circle key={segment.label} className={`ring-segment${activeSegment === segment.label ? " active" : ""}`} cx="100" cy="100" r="82" stroke={segment.color} strokeDasharray={`${length} ${circumference - length}`} strokeDashoffset={-offset} tabIndex={0} role="img" aria-label={`${segment.label}: ${round(segment.grams)} grams, ${Math.round(segment.value)} calories, ${percentOfTarget}% of daily target`} onMouseEnter={() => setActiveSegment(segment.label)} onMouseLeave={() => setActiveSegment(undefined)} onFocus={() => setActiveSegment(segment.label)} onBlur={() => setActiveSegment(undefined)} />;
+        })}
       </svg>
+      {selectedSegment && <div className="ring-tooltip" role="status"><strong>{selectedSegment.label}</strong><span>{round(selectedSegment.grams)} g · {Math.round(selectedSegment.value)} kcal</span><small>{Math.round((selectedSegment.value / Math.max(1, target)) * 100)}% of daily target</small></div>}
       <div className="ring-content">
         <span className="eyebrow">Eaten</span>
         <strong>{Math.round(value).toLocaleString()}</strong>
         <span>of {target.toLocaleString()} kcal</span>
+      </div>
+      <div className="ring-legend" aria-hidden="true">
+        {macroSegments.map((segment) => <span key={segment.label}><i style={{ background: segment.color }} />{segment.label}</span>)}
       </div>
     </div>
   );
@@ -486,6 +501,35 @@ function MacroBar({ label, value, target, color }: { label: string; value: numbe
 function FoodAvatar({ food, name }: { food?: Food; name?: string }) {
   if (food?.imageUrl) return <img className="food-avatar" src={food.imageUrl} alt="" />;
   return <div className="food-avatar fallback">{(name || food?.name || "F").slice(0, 1).toUpperCase()}</div>;
+}
+
+async function readMealImage(file: File) {
+  if (!file.type.startsWith("image/")) throw new Error("Choose an image file.");
+  if (file.size > 8_000_000) throw new Error("That image is too large. Choose one under 8 MB.");
+  const source = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("The image could not be read."));
+    reader.onerror = () => reject(new Error("The image could not be read."));
+    reader.readAsDataURL(file);
+  });
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const element = new window.Image();
+    element.onload = () => resolve(element);
+    element.onerror = () => reject(new Error("The image could not be opened."));
+    element.src = source;
+  });
+  const scale = Math.min(1, 1280 / Math.max(image.naturalWidth, image.naturalHeight));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+  canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+  canvas.getContext("2d")?.drawImage(image, 0, 0, canvas.width, canvas.height);
+  const resized = canvas.toDataURL("image/jpeg", 0.82);
+  if (resized.length > 400_000) throw new Error("That image is still too large after resizing. Choose a simpler photo.");
+  return resized;
+}
+
+function MealImageViewer({ meal }: { meal: Meal }) {
+  return <div className="meal-image-viewer"><span className="eyebrow">Meal photo</span><h2>{meal.name}</h2><img src={meal.imageUrl} alt={`Photo of ${meal.name}`} /></div>;
 }
 
 const micronutrientLabels: Array<{ key: keyof Micronutrients; label: string; unit: string }> = [
@@ -519,22 +563,15 @@ function NutritionDetails({ meal, hideCalories, onClose }: { meal: Meal; hideCal
   </div>;
 }
 
-function MicronutrientSummary({ nutrition }: { nutrition: Nutrition }) {
-  const micros = nutrition.micronutrients;
-  if (!micros) return null;
-  const highlights = micronutrientLabels.slice(0, 4);
-  return <section className="micro-summary card" aria-labelledby="micro-summary-heading"><div className="section-heading compact"><div><span className="eyebrow">More than macros</span><h2 id="micro-summary-heading">Micronutrients</h2></div><span className="subtle">tap a meal for details</span></div><div className="micro-summary-grid">{highlights.map(({ key, label, unit }) => <div key={key}><span>{label}</span><strong>{round(micros[key], 1)} <small>{unit}</small></strong></div>)}</div><p>Daily totals from foods with available label or catalogue data.</p></section>;
-}
-
 function DailyNutritionBreakdown({ nutrition, hideCalories }: { nutrition: Nutrition; hideCalories: boolean }) {
   const micros = nutrition.micronutrients;
   return <div className="macro-breakdown" id="daily-nutrition-breakdown">
-    <section className="detail-section" aria-labelledby="daily-macro-heading"><div className="detail-section-heading"><h3 id="daily-macro-heading">Macronutrients</h3><span>today’s total</span></div><div className="detail-grid macro-detail-grid">{!hideCalories && <div><span>Calories</span><strong>{Math.round(nutrition.calories)} <small>kcal</small></strong></div>}<div><span>Protein</span><strong>{round(nutrition.protein)} <small>g</small></strong></div><div><span>Carbs</span><strong>{round(nutrition.carbs)} <small>g</small></strong></div><div><span>Fat</span><strong>{round(nutrition.fat)} <small>g</small></strong></div><div><span>Fibre</span><strong>{round(nutrition.fiber)} <small>g</small></strong></div><div><span>Sugar</span><strong>{round(nutrition.sugar)} <small>g</small></strong></div></div></section>
-    <section className="detail-section" aria-labelledby="daily-micro-heading"><div className="detail-section-heading"><h3 id="daily-micro-heading">Micronutrients</h3><span>{micros ? "today’s total" : "not available yet"}</span></div>{micros ? <div className="detail-grid micro-detail-grid">{micronutrientLabels.map(({ key, label, unit }) => <div key={key}><span>{label}</span><strong>{round(micros[key], 2)} <small>{unit}</small></strong></div>)}</div> : <p className="detail-empty">Micronutrients appear here when your logged foods include label or catalogue data.</p>}</section>
+    <section className="detail-section macro-detail-section" aria-labelledby="daily-macro-heading"><div className="detail-section-heading"><h3 id="daily-macro-heading">Macronutrients</h3><span>today’s total</span></div><div className="detail-grid macro-detail-grid">{!hideCalories && <div className="nutrition-detail-card calories"><span>Calories</span><strong>{Math.round(nutrition.calories)} <small>kcal</small></strong></div>}<div className="nutrition-detail-card protein"><span>Protein</span><strong>{round(nutrition.protein)} <small>g</small></strong></div><div className="nutrition-detail-card carbs"><span>Carbs</span><strong>{round(nutrition.carbs)} <small>g</small></strong></div><div className="nutrition-detail-card fat"><span>Fat</span><strong>{round(nutrition.fat)} <small>g</small></strong></div><div className="nutrition-detail-card fiber"><span>Fibre</span><strong>{round(nutrition.fiber)} <small>g</small></strong></div><div className="nutrition-detail-card sugar"><span>Sugar</span><strong>{round(nutrition.sugar)} <small>g</small></strong></div></div></section>
+    <section className="detail-section micro-detail-section" aria-labelledby="daily-micro-heading"><div className="detail-section-heading"><h3 id="daily-micro-heading">Micronutrients</h3><span>{micros ? "today’s total" : "not available yet"}</span></div>{micros ? <div className="detail-grid micro-detail-grid">{micronutrientLabels.map(({ key, label, unit }) => <div key={key} className={`nutrition-detail-card micro${micros[key] === 0 ? " is-zero" : ""}`}><span>{label}</span><strong>{round(micros[key], 2)} <small>{unit}</small></strong></div>)}</div> : <p className="detail-empty">Micronutrients appear here when your logged foods include label or catalogue data.</p>}</section>
   </div>;
 }
 
-function MealRow({ meal, onDelete, onEdit, onDuplicate, onMove, onDetails, onDragStart, onDragOver, onDrop, onPointerDown, dropPosition, dragging, hideCalories }: { meal: Meal; onDelete: () => void; onEdit: () => void; onDuplicate: () => void; onMove: () => void; onDetails: () => void; onDragStart: (meal: Meal, event: React.DragEvent<HTMLDivElement>) => void; onDragOver: (event: React.DragEvent<HTMLDivElement>) => void; onDrop: (event: React.DragEvent<HTMLDivElement>) => void; onPointerDown: (meal: Meal, event: React.PointerEvent<HTMLButtonElement>) => void; dropPosition?: "before" | "after"; dragging?: boolean; hideCalories: boolean }) {
+function MealRow({ meal, onDelete, onEdit, onDuplicate, onMove, onDetails, onOpenImage, onDragStart, onDragOver, onDrop, onPointerDown, dropPosition, dragging, hideCalories }: { meal: Meal; onDelete: () => void; onEdit: () => void; onDuplicate: () => void; onMove: () => void; onDetails: () => void; onOpenImage: () => void; onDragStart: (meal: Meal, event: React.DragEvent<HTMLDivElement>) => void; onDragOver: (event: React.DragEvent<HTMLDivElement>) => void; onDrop: (event: React.DragEvent<HTMLDivElement>) => void; onPointerDown: (meal: Meal, event: React.PointerEvent<HTMLButtonElement>) => void; dropPosition?: "before" | "after"; dragging?: boolean; hideCalories: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLSpanElement>(null);
   useEffect(() => {
@@ -552,7 +589,7 @@ function MealRow({ meal, onDelete, onEdit, onDuplicate, onMove, onDetails, onDra
   return (
     <div className={`meal-row ${dropPosition ? `drop-${dropPosition}` : ""}${dragging ? " dragging" : ""}`} draggable onDragStart={(event) => onDragStart(meal, event)} onDragOver={onDragOver} onDrop={onDrop} data-meal-id={meal.id} data-meal-type={meal.mealType} title="Drag this meal to reorder it or move it to another meal section" aria-label={`Drag ${meal.name} to reorder it or move it to another meal section`}>
       <button type="button" className="meal-drag-handle" onPointerDown={(event) => onPointerDown(meal, event)} aria-label={`Hold and drag ${meal.name} to reorder it`}><GripVertical size={17} aria-hidden="true" /></button>
-      <div className="meal-icon"><Utensils size={17} /></div>
+      {meal.imageUrl ? <button type="button" className="meal-icon meal-image-trigger" onClick={onOpenImage} aria-label={`Expand photo for ${meal.name}`}><img src={meal.imageUrl} alt="" /></button> : <div className="meal-icon"><Utensils size={17} /></div>}
       <button type="button" className="meal-detail-trigger" onClick={onDetails} aria-label={`View nutrition details for ${meal.name}`}><div className="meal-copy">
         <strong>{meal.name}</strong>
         <span>{meal.amount} {formatUnit(meal.unit, meal.amount)} · {new Date(meal.createdAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} · P {meal.nutrition.protein} · C {meal.nutrition.carbs} · F {meal.nutrition.fat}</span>
@@ -586,6 +623,8 @@ function MealEditor({ meal, onSave, onClose, hideCalories }: { meal: Meal; onSav
     sugar: String(meal.nutrition.sugar),
   }));
   const [error, setError] = useState("");
+  const [imageUrl, setImageUrl] = useState(meal.imageUrl);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const updateNutrition = (key: keyof typeof nutrition, value: string) => setNutrition((current) => ({ ...current, [key]: value }));
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -596,12 +635,22 @@ function MealEditor({ meal, onSave, onClose, hideCalories }: { meal: Meal; onSav
       return;
     }
     const ratio = meal.amount > 0 ? nextAmount / meal.amount : 1;
-    onSave({ ...meal, name: name.trim(), amount: nextAmount, mealType, grams: round(meal.grams * ratio), nutrition: { ...meal.nutrition, ...nextNutrition, calories: Math.round(nextNutrition.calories) } });
+    onSave({ ...meal, name: name.trim(), amount: nextAmount, mealType, imageUrl, grams: round(meal.grams * ratio), nutrition: { ...meal.nutrition, ...nextNutrition, calories: Math.round(nextNutrition.calories) } });
+  };
+  const chooseImage = async (file: File | undefined) => {
+    if (!file) return;
+    try { setImageUrl(await readMealImage(file)); setError(""); }
+    catch (imageError) { setError(imageError instanceof Error ? imageError.message : "The image could not be added."); }
   };
   return <div className="meal-editor">
     <div className="sheet-header"><div><span className="eyebrow">Your diary</span><h2 id="meal-editor-title">Edit meal</h2></div><span /></div>
     <form className="meal-editor-form" onSubmit={submit}>
       <label><span>Meal and additions</span><input autoFocus value={name} onChange={(event) => setName(event.target.value)} maxLength={240} /></label>
+      <section className="meal-photo-editor" aria-labelledby="meal-photo-heading">
+        <div><span className="eyebrow" id="meal-photo-heading">Meal photo</span><small>Optional. Stored privately with this diary entry.</small></div>
+        {imageUrl ? <div className="meal-photo-preview"><img src={imageUrl} alt="Preview of this meal" /><div><strong>Photo added</strong><small>You can replace it or remove it below.</small><button type="button" className="secondary-button" onClick={() => imageInputRef.current?.click()}>Replace photo</button><button type="button" className="text-button muted" onClick={() => setImageUrl(undefined)}>Remove</button></div></div> : <button type="button" className="meal-photo-upload" onClick={() => imageInputRef.current?.click()}><span className="meal-photo-upload-icon"><ImagePlus size={19} /></span><span className="meal-photo-upload-copy"><strong>Add a meal photo</strong><small>Choose from your device</small></span><ChevronRight size={17} aria-hidden="true" /> </button>}
+        <input ref={imageInputRef} type="file" accept="image/*" hidden onChange={(event) => { void chooseImage(event.target.files?.[0]); event.target.value = ""; }} />
+      </section>
       <div className="form-grid two"><label><span>Amount</span><input type="number" min="0.1" step="0.1" value={amount} onChange={(event) => setAmount(event.target.value)} /></label><label><span>Meal</span><ThemedSelect ariaLabel="Meal" value={mealType} onChange={(value) => setMealType(value as MealType)} options={(Object.keys(mealLabels) as MealType[]).map((type) => ({ value: type, label: mealLabels[type] }))} /></label></div>
       <section className="editor-nutrition" aria-labelledby="meal-nutrition-heading">
         <div className="editor-nutrition-heading"><div><span className="eyebrow" id="meal-nutrition-heading">Nutrition for this entry</span><small>Adjust what you actually ate.</small></div><Pencil size={17} aria-hidden="true" /></div>
@@ -632,6 +681,45 @@ function HomeScreenPrompt({ onDismiss }: { onDismiss: () => void }) {
       <button className="home-screen-prompt-dismiss text-button muted" type="button" onClick={onDismiss}>Not now</button>
     </section>
   );
+}
+
+function SaveRecipeSheet({ meals, onSave, onClose }: { meals: Meal[]; onSave: (recipe: Recipe) => void; onClose: () => void }) {
+  const [name, setName] = useState(`${mealLabels[meals[0]?.mealType || "breakfast"]} regulars`);
+  const [selectedIds, setSelectedIds] = useState(() => meals.map((meal) => meal.id));
+  const selectedMeals = meals.filter((meal) => selectedIds.includes(meal.id));
+  const nutrition = sumNutrition(selectedMeals.map((meal) => meal.nutrition));
+  const toggle = (id: string) => setSelectedIds((current) => current.includes(id) ? current.filter((candidate) => candidate !== id) : [...current, id]);
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    if (!name.trim() || selectedMeals.length === 0) return;
+    const now = new Date().toISOString();
+    const ingredients: RecipeIngredient[] = selectedMeals.map((meal) => ({ id: `ingredient-${crypto.randomUUID()}`, name: meal.name, foodId: meal.foodId, amount: meal.amount, unit: meal.unit, grams: meal.grams, nutrition: meal.nutrition }));
+    onSave({ id: `recipe-${crypto.randomUUID()}`, name: name.trim(), servings: 1, ingredients, nutritionPerServing: nutrition, createdAt: now, updatedAt: now });
+  };
+  return <div className="recipe-save-sheet"><div className="sheet-header"><div><span className="eyebrow">Save for next time</span><h2>Make this a recipe</h2></div><span /></div><form onSubmit={submit}><label className="meal-editor-form"><span>Recipe name</span><input autoFocus required value={name} maxLength={240} onChange={(event) => setName(event.target.value)} /></label><fieldset className="recipe-ingredient-picker"><legend>What belongs in it?</legend>{meals.map((meal) => <label key={meal.id}><input type="checkbox" checked={selectedIds.includes(meal.id)} onChange={() => toggle(meal.id)} /><span><strong>{meal.name}</strong><small>{Math.round(meal.nutrition.calories)} kcal</small></span></label>)}</fieldset><div className="recipe-save-summary"><span>{selectedMeals.length} item{selectedMeals.length === 1 ? "" : "s"} · {Math.round(nutrition.calories)} kcal</span><small>You can replace individual items when you log it later.</small></div><div className="sheet-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="submit" className="primary-button" disabled={!selectedMeals.length}><BookOpen size={17} />Save recipe</button></div></form></div>;
+}
+
+function RecipeLogSheet({ recipe, foods, onLog, onClose }: { recipe: Recipe; foods: Food[]; onLog: (meal: Meal) => Promise<void>; onClose: () => void }) {
+  const [mealType, setMealType] = useState<MealType>("breakfast");
+  const [replacements, setReplacements] = useState<Record<string, string>>({});
+  const canLogIngredients = recipe.ingredients.some((ingredient) => Boolean(ingredient.foodId || ingredient.grams || ingredient.nutrition));
+  const sourceFood = (ingredient: RecipeIngredient) => foods.find((food) => food.id === ingredient.foodId);
+  const buildMeal = (ingredient: RecipeIngredient): Meal => {
+    const food = foods.find((candidate) => candidate.id === replacements[ingredient.id]) || sourceFood(ingredient);
+    const grams = ingredient.grams || 100;
+    const nutrition = food ? scaleNutrition(food.nutrientsPer100, grams) : ingredient.nutrition || recipe.nutritionPerServing;
+    return { id: `recipe-${crypto.randomUUID()}`, foodId: food?.id, name: food?.name || ingredient.name, brand: food?.brand, mealType, amount: ingredient.amount || 1, unit: ingredient.unit || "serving", grams, nutrition, createdAt: new Date().toISOString(), loggedDate: localDateKey(), source: food?.source || "custom" };
+  };
+  const log = async (event: FormEvent) => {
+    event.preventDefault();
+    if (canLogIngredients) {
+      for (const ingredient of recipe.ingredients) await onLog(buildMeal(ingredient));
+    } else {
+      await onLog({ id: `recipe-${crypto.randomUUID()}`, name: recipe.name, mealType, amount: 1, unit: "serving", grams: 100, nutrition: recipe.nutritionPerServing, createdAt: new Date().toISOString(), loggedDate: localDateKey(), source: "custom" });
+    }
+    onClose();
+  };
+  return <div className="recipe-log-sheet"><div className="sheet-header"><div><span className="eyebrow">Saved recipe</span><h2>{recipe.name}</h2></div><span /></div><form onSubmit={(event) => void log(event)}><p className="recipe-log-intro">{canLogIngredients ? "Use the usual items, or replace any one before logging." : "This recipe was saved as one nutrition entry."}</p><label className="meal-editor-form"><span>Add to</span><ThemedSelect ariaLabel="Recipe meal" value={mealType} onChange={(value) => setMealType(value as MealType)} options={(Object.keys(mealLabels) as MealType[]).map((type) => ({ value: type, label: mealLabels[type] }))} /></label>{canLogIngredients && <div className="recipe-log-ingredients">{recipe.ingredients.map((ingredient) => { const canSwap = Boolean(sourceFood(ingredient)); return <div className="recipe-log-ingredient" key={ingredient.id}><span><strong>{sourceFood(ingredient)?.name || ingredient.name}</strong><small>{Math.round((ingredient.nutrition || recipe.nutritionPerServing).calories)} kcal</small></span>{canSwap ? <label><span className="visually-hidden">Replace {ingredient.name}</span><ThemedSelect ariaLabel={`Replace ${ingredient.name}`} value={replacements[ingredient.id] || ingredient.foodId || ""} onChange={(value) => setReplacements((current) => ({ ...current, [ingredient.id]: value }))} options={[{ value: ingredient.foodId || "", label: "Keep this item" }, ...foods.filter((food) => food.id !== ingredient.foodId).slice(0, 40).map((food) => ({ value: food.id, label: `Swap for ${food.name}` }))]} /></label> : <small>Saved as a custom item</small>}</div>; })}</div>}<div className="sheet-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="submit" className="primary-button"><Check size={17} />Log recipe</button></div></form></div>;
 }
 
 function MealAddRow({ mealType, onAdd }: { mealType: MealType; onAdd: (mealType: MealType) => void }) {
@@ -677,6 +765,7 @@ function DailyRhythm({ profile, dateKey, onSave }: { profile: Profile; dateKey: 
 
 function TodayView({
   profile,
+  foods,
   meals,
   dateKey,
   onDateChange,
@@ -685,6 +774,8 @@ function TodayView({
   onDelete,
   onEdit,
   onOpenDetails,
+  onOpenNutritionDetails,
+  onOpenImage,
   onDropMeal,
   onDuplicate,
   onMove,
@@ -693,8 +784,10 @@ function TodayView({
   onDismissHomeScreenPrompt,
   onOpenCalendar,
   onSaveProfile,
+  onLogRecipe,
 }: {
   profile: Profile;
+  foods: Food[];
   meals: Meal[];
   dateKey: string;
   onDateChange: (date: string) => void;
@@ -703,6 +796,8 @@ function TodayView({
   onDelete: (id: string) => void;
   onEdit: (meal: Meal) => void;
   onOpenDetails: (meal: Meal) => void;
+  onOpenNutritionDetails: () => void;
+  onOpenImage: (meal: Meal) => void;
   onDropMeal: (meal: Meal, mealType: MealType, targetMealId?: string, insertAfter?: boolean) => void;
   onDuplicate: (meal: Meal) => void;
   onMove: (meal: Meal) => void;
@@ -711,11 +806,14 @@ function TodayView({
   onDismissHomeScreenPrompt: () => void;
   onOpenCalendar: () => void;
   onSaveProfile: (profile: Profile) => void;
+  onLogRecipe: (meal: Meal) => Promise<void>;
 }) {
+  const [recipeSheetOpen, setRecipeSheetOpen] = useState(false);
+  const [recipePickerOpen, setRecipePickerOpen] = useState(false);
+  const [recipeToLog, setRecipeToLog] = useState<Recipe>();
   const [dropTarget, setDropTarget] = useState<string>();
   const [draggingMealId, setDraggingMealId] = useState<string>();
   const pointerDragRef = useRef<{ meal: Meal; pointerId: number; startX: number; startY: number; active: boolean; timerId?: number } | undefined>(undefined);
-  const [macrosExpanded, setMacrosExpanded] = useState(false);
   const total = useMemo(() => sumNutrition(meals.map((meal) => meal.nutrition)), [meals]);
   const targets = resolveDailyTargets(profile, dateKey);
   const carbs = profile.carbDisplay === "net" ? netCarbs(total) : total.carbs;
@@ -809,31 +907,26 @@ function TodayView({
 
       <section className="hero-grid">
         <div className="hero-card card">
-          {profile.hideCalories ? <div className="nutrition-focus"><span className="eyebrow">Today’s nutrients</span><strong>Focus on your macros</strong><p>Protein, carbs, fat and fibre stay visible. Energy numbers are hidden.</p></div> : <ProgressRing value={total.calories} target={targets.calories} />}
+          {profile.hideCalories ? <div className="nutrition-focus"><span className="eyebrow">Today’s nutrients</span><strong>Focus on your macros</strong><p>Protein, carbs, fat and fibre stay visible. Energy numbers are hidden.</p></div> : <ProgressRing value={total.calories} target={targets.calories} nutrition={total} />}
           <div className="hero-stat-grid">
             {!profile.hideCalories && <div><span>Remaining</span><strong>{Math.round(remaining).toLocaleString()}</strong><small>kcal</small></div>}
             <div><span>Fibre</span><strong>{round(total.fiber, 0)}</strong><small>/ {targets.fiber} g</small></div>
           </div>
         </div>
         <div className="macro-card card">
-          <button type="button" className="macro-expand-trigger" aria-expanded={macrosExpanded} aria-controls="daily-nutrition-breakdown" onClick={() => setMacrosExpanded((expanded) => !expanded)}><span><span className="eyebrow">Today</span><strong>Macros</strong></span><span className="macro-expand-hint"><span>{macrosExpanded ? "Hide details" : "View all nutrients"}</span><ChevronDown size={17} aria-hidden="true" /></span></button>
-          <MacroBar label="Protein" value={total.protein} target={targets.protein} color="var(--protein)" />
-          <MacroBar label={profile.carbDisplay === "net" ? "Net carbs" : "Carbs"} value={carbs} target={targets.carbs} color="var(--carbs)" />
-          <MacroBar label="Fat" value={total.fat} target={targets.fat} color="var(--fat)" />
-          <div className="target-note"><Info size={15} /> Targets are guides, not exact medical limits.</div>
-          {macrosExpanded && <DailyNutritionBreakdown nutrition={total} hideCalories={profile.hideCalories} />}
+          <div className="section-heading compact"><div><span className="eyebrow">Daily nutrition</span><h2>Macro totals</h2></div><span className="subtle">from food & drinks</span></div>
+          <div className="macro-total-grid"><div><span>Protein</span><strong>{round(total.protein)}<small>g</small></strong></div><div><span>{profile.carbDisplay === "net" ? "Net carbs" : "Carbs"}</span><strong>{round(carbs)}<small>g</small></strong></div><div><span>Fat</span><strong>{round(total.fat)}<small>g</small></strong></div></div>
+          <button type="button" className="macro-expand-trigger" onClick={onOpenNutritionDetails}><span>See full nutrition details</span><span className="macro-expand-hint"><span>View details</span><ChevronDown size={17} aria-hidden="true" /></span></button>
         </div>
       </section>
 
-      {!macrosExpanded && <MicronutrientSummary nutrition={total} />}
-
       <section className="log-section">
-        <div className="section-heading"><div><span className="eyebrow">Daily log</span><h2>Your meals</h2></div><span className="subtle meal-reorder-hint">Hold ⋮⋮ to reorder</span></div>
+        <div className="section-heading"><div><span className="eyebrow">Daily log</span><h2>Your meals</h2></div><div className="daily-log-actions"><span className="subtle meal-reorder-hint">Hold ⋮⋮ to reorder</span>{profile.recipes?.length ? <button type="button" className="text-button" onClick={() => setRecipePickerOpen(true)}><BookOpen size={15} />Use a recipe</button> : null}{meals.length > 0 && <button type="button" className="text-button" onClick={() => setRecipeSheetOpen(true)}><BookOpen size={15} />Save as recipe</button>}</div></div>
         {grouped.map(({ type, meals: groupMeals }) => (
           <div className="meal-group" key={type}>
             <div className="meal-group-title"><span>{mealLabels[type]}</span>{!profile.hideCalories && (() => { const target = resolveMealCalorieTarget(profile, type); const calories = Math.round(sumNutrition(groupMeals.map((meal) => meal.nutrition)).calories); return <span aria-label={target ? `${calories} of ${target} calorie guide` : `${calories} calories`}>{calories}{target ? ` / ${target}` : ""} kcal</span>; })()}</div>
             <div className={`meal-list card ${dropTarget === type ? "drop-target" : ""}`} data-meal-list={type} onDragOver={(event) => { event.preventDefault(); setDropTarget(type); }} onDragLeave={() => setDropTarget(undefined)} onDrop={(event) => { event.preventDefault(); const mealId = event.dataTransfer.getData("text/meal-id"); const meal = meals.find((candidate) => candidate.id === mealId); if (meal) onDropMeal(meal, type); setDropTarget(undefined); }}>
-              {groupMeals.map((meal) => <MealRow key={meal.id} meal={meal} hideCalories={profile.hideCalories} dragging={draggingMealId === meal.id} onPointerDown={startPointerDrag} dropPosition={dropTarget === `${type}:${meal.id}:before` ? "before" : dropTarget === `${type}:${meal.id}:after` ? "after" : undefined} onDelete={() => onDelete(meal.id)} onEdit={() => onEdit(meal)} onDetails={() => onOpenDetails(meal)} onDuplicate={() => onDuplicate(meal)} onMove={() => onMove(meal)} onDragStart={(draggedMeal, event) => { event.dataTransfer.setData("text/meal-id", draggedMeal.id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); setDropTarget(`${type}:${meal.id}:${event.clientY < rect.top + rect.height / 2 ? "before" : "after"}`); }} onDrop={(event) => { event.preventDefault(); event.stopPropagation(); const mealId = event.dataTransfer.getData("text/meal-id"); const draggedMeal = meals.find((candidate) => candidate.id === mealId); if (draggedMeal) { const rect = event.currentTarget.getBoundingClientRect(); onDropMeal(draggedMeal, type, meal.id, event.clientY >= rect.top + rect.height / 2); } setDropTarget(undefined); }} />)}
+              {groupMeals.map((meal) => <MealRow key={meal.id} meal={meal} hideCalories={profile.hideCalories} dragging={draggingMealId === meal.id} onPointerDown={startPointerDrag} onOpenImage={() => onOpenImage(meal)} dropPosition={dropTarget === `${type}:${meal.id}:before` ? "before" : dropTarget === `${type}:${meal.id}:after` ? "after" : undefined} onDelete={() => onDelete(meal.id)} onEdit={() => onEdit(meal)} onDetails={() => onOpenDetails(meal)} onDuplicate={() => onDuplicate(meal)} onMove={() => onMove(meal)} onDragStart={(draggedMeal, event) => { event.dataTransfer.setData("text/meal-id", draggedMeal.id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); setDropTarget(`${type}:${meal.id}:${event.clientY < rect.top + rect.height / 2 ? "before" : "after"}`); }} onDrop={(event) => { event.preventDefault(); event.stopPropagation(); const mealId = event.dataTransfer.getData("text/meal-id"); const draggedMeal = meals.find((candidate) => candidate.id === mealId); if (draggedMeal) { const rect = event.currentTarget.getBoundingClientRect(); onDropMeal(draggedMeal, type, meal.id, event.clientY >= rect.top + rect.height / 2); } setDropTarget(undefined); }} />)}
               <MealAddRow mealType={type} onAdd={onAdd} />
             </div>
           </div>
@@ -846,6 +939,9 @@ function TodayView({
         <span><strong>Ask Coach about today</strong><small>Get guidance with your diary in context</small></span>
         <ChevronRight size={18} />
       </button>
+      {recipeSheetOpen && <Sheet onClose={() => setRecipeSheetOpen(false)} label="Save meal as recipe"><SaveRecipeSheet meals={meals} onSave={(recipe) => { onSaveProfile({ ...profile, recipes: [...(profile.recipes || []), recipe] }); setRecipeSheetOpen(false); }} onClose={() => setRecipeSheetOpen(false)} /></Sheet>}
+      {recipePickerOpen && <Sheet onClose={() => setRecipePickerOpen(false)} label="Use a saved recipe"><div className="recipe-picker"><div className="sheet-header"><div><span className="eyebrow">Your library</span><h2>What are you having?</h2></div><span /></div>{profile.recipes?.map((recipe) => <button type="button" className="recipe-picker-row" key={recipe.id} onClick={() => { setRecipeToLog(recipe); setRecipePickerOpen(false); }}><span><strong>{recipe.name}</strong><small>{Math.round(recipe.nutritionPerServing.calories)} kcal · {recipe.ingredients.length} items</small></span><ChevronRight size={17} /></button>)}</div></Sheet>}
+      {recipeToLog && <Sheet onClose={() => setRecipeToLog(undefined)} label={`Log ${recipeToLog.name}`} wide><RecipeLogSheet recipe={recipeToLog} foods={foods} onLog={onLogRecipe} onClose={() => setRecipeToLog(undefined)} /></Sheet>}
     </main>
   );
 }
@@ -968,6 +1064,14 @@ function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: { meals
   const loggedDays = days.filter((day) => day.total.calories > 0);
   const average = loggedDays.length ? loggedDays.reduce((sum, day) => sum + day.total.calories, 0) / loggedDays.length : 0;
   const proteinAverage = loggedDays.length ? loggedDays.reduce((sum, day) => sum + day.total.protein, 0) / loggedDays.length : 0;
+  const averageNutrition = loggedDays.length ? sumNutrition(loggedDays.map((day) => day.total)) : sumNutrition([]);
+  const averageMeals = loggedDays.length ? meals.filter((meal) => days.some((day) => day.key === (meal.loggedDate || localDateKey(new Date(meal.createdAt))))).length / loggedDays.length : 0;
+  const mealCounts = (Object.keys(mealLabels) as MealType[]).map((type) => ({ type, count: meals.filter((meal) => meal.mealType === type && days.some((day) => day.key === (meal.loggedDate || localDateKey(new Date(meal.createdAt))))).length }));
+  const mostLoggedMeal = mealCounts.slice().sort((a, b) => b.count - a.count)[0];
+  const targetDays = profile.hideCalories ? loggedDays.filter((day) => day.total.protein >= profile.proteinTarget * .8).length : loggedDays.filter((day) => day.total.calories >= profile.calorieTarget * .8 && day.total.calories <= profile.calorieTarget * 1.1).length;
+  const waterTarget = profile.waterTargetMl || 2000;
+  const waterDays = recentLogDates().filter((date) => hydrationTotal(profile.waterEntries, date) >= waterTarget * .8).length;
+  const completedFasts = (profile.fastingRecords || []).filter((record) => record.endedAt && fastingWindowHours(record.startedAt, record.endedAt) >= (profile.fastingGoalHours || 16)).length;
   const [weightPeriod, setWeightPeriod] = useState<WeightPeriod>("week");
   const [section, setSection] = useState<InsightsSection>("overview");
   const entries = [...(profile.weightEntries || [])].sort((a, b) => b.date.localeCompare(a.date));
@@ -1007,12 +1111,17 @@ function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: { meals
       </div>
       {section === "overview" && <section id="insights-overview-panel" role="tabpanel" aria-labelledby="insights-overview-tab" className="workspace-panel">
       <div className="summary-strip">
+        <div className="card"><span>Logged days</span><strong>{loggedDays.length}<small> / 7</small></strong><small>complete enough to compare</small></div>
         {!profile.hideCalories && <div className="card"><span>Daily average</span><strong>{Math.round(average).toLocaleString()}</strong><small>kcal on logged days</small></div>}
         <div className="card"><span>Protein average</span><strong>{Math.round(proteinAverage)} g</strong><small>target {profile.proteinTarget} g</small></div>
         {profile.hideCalories && <div className="card"><span>Fibre average</span><strong>{Math.round(loggedDays.length ? loggedDays.reduce((sum, day) => sum + day.total.fiber, 0) / loggedDays.length : 0)} g</strong><small>target {profile.fiberTarget} g</small></div>}
-        {weightTrackingEnabled && <div className="card"><span>Weight average</span><strong>{weightAverage ? formatWeight(weightAverage, profile) : "—"}</strong><small>{weightPeriod === "week" ? "this week" : weightPeriod === "month" ? "this month" : "all time"}</small></div>}
       </div>
       <section className="insight-card card"><span className="action-icon mint"><Sparkles /></span><div><strong>{loggedDays.length < 3 ? "Your pattern will appear here" : profile.hideCalories ? "Your nutrient rhythm is taking shape" : average > profile.calorieTarget * 1.08 ? "A little above your target" : average < profile.calorieTarget * 0.75 ? "Your logged average is low" : "You’re close to your target"}</strong><p>{loggedDays.length < 3 ? "Log a few complete days. Partial days are never treated as failure." : profile.hideCalories ? "Use the nutrition view to notice protein, fibre and meal patterns without energy numbers." : "Use the nutrition view as a guide. One unusual meal or day does not define progress."}</p></div></section>
+      <div className="insights-grid">
+        <section className="insights-panel card"><div className="section-heading compact"><div><span className="eyebrow">Consistency</span><h2>How the week looked</h2></div><span className="subtle">{Math.round(loggedDays.length / 7 * 100)}%</span></div><div className="week-activity">{days.map((day) => <div className="week-activity-day" key={day.key}><span className={day.total.calories || day.total.protein ? "logged" : ""} aria-label={`${day.label}: ${day.total.protein ? "logged" : "not logged"}`} /><small>{day.label}</small></div>)}</div><p className="panel-note">{targetDays ? `${targetDays} of ${loggedDays.length} logged days were close to your ${profile.hideCalories ? "protein" : "daily energy"} guide.` : "Keep logging complete days to make this comparison useful."}</p></section>
+        <section className="insights-panel card"><div className="section-heading compact"><div><span className="eyebrow">Patterns</span><h2>What stands out</h2></div><Utensils size={18} /></div><div className="insight-list"><div><span>Most logged</span><strong>{mostLoggedMeal?.count ? mealLabels[mostLoggedMeal.type] : "—"}</strong></div><div><span>Meals per logged day</span><strong>{averageMeals ? averageMeals.toFixed(1) : "—"}</strong></div><div><span>Guide days</span><strong>{targetDays || "—"}</strong></div></div></section>
+      </div>
+      {(isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.water) || isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting)) && <section className="insights-panel card habit-insights"><div className="section-heading compact"><div><span className="eyebrow">Optional rhythms</span><h2>Beyond food</h2></div><span className="subtle">last 7 days</span></div><div className="habit-insight-grid">{isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.water) && <div><Droplets size={17} /><span>Water days</span><strong>{waterDays}<small> / 7</small></strong></div>}{isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting) && <div><Timer size={17} /><span>Fasts completed</span><strong>{completedFasts}</strong></div>}</div></section>}
       </section>}
       {section === "weight" && weightTrackingEnabled && <section id="insights-weight-panel" role="tabpanel" aria-labelledby="insights-weight-tab" className="weight-section workspace-panel">
         <div className="section-heading"><div><span className="eyebrow">Optional progress log</span><h2 id="weight-heading">Body weight</h2></div><span className="subtle">{entries.length} {entries.length === 1 ? "entry" : "entries"}</span></div>
@@ -1042,6 +1151,7 @@ function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: { meals
         </div>
       </section>}
       {profile.hideCalories && <section className="insight-card card"><span className="action-icon mint"><Sparkles /></span><div><strong>{loggedDays.length < 3 ? "Your pattern will appear here" : "Your nutrient rhythm is taking shape"}</strong><p>{loggedDays.length < 3 ? "Log a few complete days. Partial days are never treated as failure." : "Keep logging meals to notice protein, fibre and meal patterns over time."}</p></div></section>}
+      {loggedDays.length > 0 && <div className="insights-grid nutrition-insights-grid"><section className="insights-panel card"><div className="section-heading compact"><div><span className="eyebrow">Logged-day average</span><h2>Macros</h2></div></div><div className="insight-macro-bars"><MacroBar label="Protein" value={averageNutrition.protein} target={profile.proteinTarget} color="var(--protein)" /><MacroBar label="Carbs" value={averageNutrition.carbs} target={profile.carbsTarget} color="var(--carbs)" /><MacroBar label="Fat" value={averageNutrition.fat} target={profile.fatTarget} color="var(--fat)" /><MacroBar label="Fibre" value={averageNutrition.fiber} target={profile.fiberTarget} color="var(--mint)" /></div></section><section className="insights-panel card"><div className="section-heading compact"><div><span className="eyebrow">Meal mix</span><h2>Where you log</h2></div></div><div className="meal-mix">{mealCounts.map(({ type, count }) => <div key={type}><span>{mealLabels[type]}</span><div className="bar-track"><div className="bar-fill" style={{ width: `${Math.min(100, count / Math.max(1, meals.length) * 100)}%`, background: "var(--mint)" }} /></div><strong>{count}</strong></div>)}</div></section></div>}
       </section>}
     </main>
   );
@@ -1762,9 +1872,9 @@ function requestContinuousFocus(source: MediaProvider | null | undefined) {
   });
 }
 
-async function imageToDataUrl(file: File) {
+async function imageToDataUrl(file: File, options: { maxDimension?: number; quality?: number } = {}) {
   const image = await createImageBitmap(file);
-  const max = 1600;
+  const max = options.maxDimension || 2200;
   const scale = Math.min(1, max / Math.max(image.width, image.height));
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(image.width * scale);
@@ -1772,7 +1882,16 @@ async function imageToDataUrl(file: File) {
   const context = canvas.getContext("2d");
   context?.drawImage(image, 0, 0, canvas.width, canvas.height);
   image.close();
-  return canvas.toDataURL("image/jpeg", 0.86);
+  let quality = options.quality || 0.9;
+  let result = canvas.toDataURL("image/jpeg", quality);
+  // Keep the request below the server's 10 MB boundary even for a very
+  // detailed camera capture. Reducing JPEG quality preserves label pixels
+  // better than shrinking the image again.
+  while (result.length > 9_500_000 && quality > 0.72) {
+    quality -= 0.06;
+    result = canvas.toDataURL("image/jpeg", quality);
+  }
+  return result;
 }
 
 function LabelReader({ onFood, onClose, initialFiles = [], initialAction }: { onFood: (food: Food, questions: string[]) => void; onClose: () => void; initialFiles?: File[]; initialAction?: "camera" | "photo" }) {
@@ -1859,7 +1978,9 @@ function LabelReader({ onFood, onClose, initialFiles = [], initialAction }: { on
   const analyze = async (files?: FileList | File[]) => {
     if (!files?.length) return;
     try {
-      await analyzeImages(await Promise.all(Array.from(files).slice(0, 3).map(imageToDataUrl)));
+      // Nutrition tables are often tiny on a full package photo. Keep more
+      // pixels for the vision model than we do for ordinary meal photos.
+      await analyzeImages(await Promise.all(Array.from(files).slice(0, 3).map((file) => imageToDataUrl(file, { maxDimension: 3000, quality: 0.94 }))));
     } catch {
       setError("That photo could not be opened. Try taking a fresh picture of the nutrition table.");
     }
@@ -2614,7 +2735,7 @@ function RecipeComposer({ onCreate }: { onCreate: (recipe: Recipe) => void }) {
   </form>;
 }
 
-function PlanView({ profile, onSave, onLog }: { profile: Profile; onSave: (profile: Profile) => void; onLog: (meal: Meal) => Promise<void> }) {
+function PlanView({ profile, foods, onSave, onLog }: { profile: Profile; foods: Food[]; onSave: (profile: Profile) => void; onLog: (meal: Meal) => Promise<void> }) {
   const recipes = profile.recipes || [];
   const entries = (profile.mealPlanEntries || []).filter((entry) => recipes.some((recipe) => recipe.id === entry.recipeId)).sort((a, b) => a.date.localeCompare(b.date));
   const [recipeComposerOpen, setRecipeComposerOpen] = useState(false);
@@ -2622,6 +2743,7 @@ function PlanView({ profile, onSave, onLog }: { profile: Profile; onSave: (profi
   const [date, setDate] = useState(localDateKey());
   const [mealType, setMealType] = useState<MealType>("dinner");
   const [section, setSection] = useState<"week" | "recipes" | "shopping">("week");
+  const [loggingRecipe, setLoggingRecipe] = useState<Recipe>();
   const addRecipe = (recipe: Recipe) => onSave({ ...profile, recipes: [...recipes, recipe] });
   const addPlanEntry = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -2635,8 +2757,9 @@ function PlanView({ profile, onSave, onLog }: { profile: Profile; onSave: (profi
     <header className="page-header"><span className="eyebrow">Make tomorrow easier</span><h1>Recipes & plan</h1><p>Keep your recipes private, place them on a day, and turn the ingredients into a calm shopping list.</p></header>
     <div className="workspace-tabs" role="tablist" aria-label="Plan workspace"><button id="plan-week-tab" type="button" role="tab" aria-selected={section === "week"} aria-controls="plan-week-panel" className={section === "week" ? "active" : ""} onClick={() => setSection("week")}>This week</button><button id="plan-recipes-tab" type="button" role="tab" aria-selected={section === "recipes"} aria-controls="plan-recipes-panel" className={section === "recipes" ? "active" : ""} onClick={() => setSection("recipes")}>Recipes <span>{recipes.length}</span></button><button id="plan-shopping-tab" type="button" role="tab" aria-selected={section === "shopping"} aria-controls="plan-shopping-panel" className={section === "shopping" ? "active" : ""} onClick={() => setSection("shopping")}>Shopping <span>{groceries.length}</span></button></div>
     {section === "week" && <section id="plan-week-panel" role="tabpanel" aria-labelledby="plan-week-tab" className="planning-workspace workspace-panel">{recipes.length > 0 ? <><div className="section-heading"><div><span className="eyebrow">Lightweight planning</span><h2>Add a meal to your plan</h2></div></div><form className="plan-entry-form card" onSubmit={addPlanEntry}><label><span>Recipe</span><ThemedSelect ariaLabel="Recipe to plan" value={recipeId} onChange={setRecipeId} options={[{ value: "", label: "Choose a recipe" }, ...recipes.map((recipe) => ({ value: recipe.id, label: recipe.name }))]} /></label><div className="form-grid two"><label><span>Date</span><input required type="date" min={localDateKey()} value={date} onChange={(event) => setDate(event.target.value)} /></label><label><span>Meal</span><ThemedSelect ariaLabel="Planned meal" value={mealType} onChange={(value) => setMealType(value as MealType)} options={(Object.keys(mealLabels) as MealType[]).map((type) => ({ value: type, label: mealLabels[type] }))} /></label></div><button className="primary-button" type="submit" disabled={!recipeId}><CalendarPlus size={17} />Add to plan</button></form>{entries.length > 0 && <div className="planned-list">{entries.map((entry) => { const recipe = recipes.find((item) => item.id === entry.recipeId); return recipe ? <div className="planned-entry card" key={entry.id}><span><strong>{recipe.name}</strong><small>{new Date(`${entry.date}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} · {mealLabels[entry.mealType]}</small></span><button className="icon-button subtle-button" type="button" aria-label={`Remove ${recipe.name} from plan`} onClick={() => removeEntry(entry.id)}><X size={16} /></button></div> : null; })}</div>}</> : <div className="recipe-empty card"><span className="action-icon mint"><BookOpen size={22} /></span><strong>Start with a recipe.</strong><p>Save one of your regular meals, then add it to a day here.</p><button type="button" className="secondary-button" onClick={() => setSection("recipes")}><BookOpen size={16} />Open recipes</button></div>}</section>}
-    {section === "recipes" && <section id="plan-recipes-panel" role="tabpanel" aria-labelledby="plan-recipes-tab" className="workspace-panel"><details className="recipe-create card" open={recipeComposerOpen} onToggle={(event) => setRecipeComposerOpen(event.currentTarget.open)}><summary><span><BookOpen size={18} /><strong>Save a recipe</strong><small>Store the portions and nutrition you use.</small></span><ChevronDown size={17} /></summary><RecipeComposer onCreate={(recipe) => { addRecipe(recipe); setRecipeComposerOpen(false); }} /></details><section className="recipe-library" aria-labelledby="recipe-library-heading"><div className="section-heading"><div><span className="eyebrow">Your library</span><h2 id="recipe-library-heading">Saved recipes</h2></div><span className="subtle">{recipes.length} saved</span></div>{recipes.length ? <div className="recipe-list">{recipes.map((recipe) => <article className="recipe-card card" key={recipe.id}><div><strong>{recipe.name}</strong><small>{recipe.servings} servings · {Math.round(recipe.nutritionPerServing.protein)}g protein</small></div><div className="recipe-card-actions"><button className="text-button" type="button" onClick={() => void onLog(recipeMeal(recipe, localDateKey(), "dinner"))}>Log now</button><button className="icon-button subtle-button" type="button" aria-label={`Remove ${recipe.name}`} onClick={() => onSave({ ...profile, recipes: recipes.filter((item) => item.id !== recipe.id), mealPlanEntries: entries.filter((entry) => entry.recipeId !== recipe.id) })}><Trash2 size={15} /></button></div></article>)}</div> : <div className="recipe-empty card"><span className="action-icon mint"><BookOpen size={22} /></span><strong>Your regular meals belong here.</strong><p>Save one recipe and it can be logged or planned without rebuilding it.</p><button type="button" className="secondary-button" onClick={() => setRecipeComposerOpen(true)}><Plus size={16} />Save your first recipe</button></div>}</section></section>}
+    {section === "recipes" && <section id="plan-recipes-panel" role="tabpanel" aria-labelledby="plan-recipes-tab" className="workspace-panel"><details className="recipe-create card" open={recipeComposerOpen} onToggle={(event) => setRecipeComposerOpen(event.currentTarget.open)}><summary><span><BookOpen size={18} /><strong>Save a recipe</strong><small>Store the portions and nutrition you use.</small></span><ChevronDown size={17} /></summary><RecipeComposer onCreate={(recipe) => { addRecipe(recipe); setRecipeComposerOpen(false); }} /></details><section className="recipe-library" aria-labelledby="recipe-library-heading"><div className="section-heading"><div><span className="eyebrow">Your library</span><h2 id="recipe-library-heading">Saved recipes</h2></div><span className="subtle">{recipes.length} saved</span></div>{recipes.length ? <div className="recipe-list">{recipes.map((recipe) => <article className="recipe-card card" key={recipe.id}><div><strong>{recipe.name}</strong><small>{recipe.servings} servings · {Math.round(recipe.nutritionPerServing.protein)}g protein</small></div><div className="recipe-card-actions"><button className="text-button" type="button" onClick={() => setLoggingRecipe(recipe)}><BookOpen size={15} />Log recipe</button><button className="icon-button subtle-button" type="button" aria-label={`Remove ${recipe.name}`} onClick={() => onSave({ ...profile, recipes: recipes.filter((item) => item.id !== recipe.id), mealPlanEntries: entries.filter((entry) => entry.recipeId !== recipe.id) })}><Trash2 size={15} /></button></div></article>)}</div> : <div className="recipe-empty card"><span className="action-icon mint"><BookOpen size={22} /></span><strong>Your regular meals belong here.</strong><p>Save one recipe and it can be logged or planned without rebuilding it.</p><button type="button" className="secondary-button" onClick={() => setRecipeComposerOpen(true)}><Plus size={16} />Save your first recipe</button></div>}</section></section>}
     {section === "shopping" && <section id="plan-shopping-panel" role="tabpanel" aria-labelledby="plan-shopping-tab" className="planned-groceries card workspace-panel"><div className="section-heading compact"><div><span className="eyebrow">From your plan</span><h2>Shopping list</h2></div><ListChecks size={18} /></div>{groceries.length ? <ul>{groceries.map((item) => <li key={item}>{item}</li>)}</ul> : <p>{recipes.length ? "Plan a recipe for a day and its ingredients will appear here." : "Plan a saved recipe and its ingredients will appear here. Your existing Coach grocery lists remain available in Coach."}</p>}</section>}
+    {loggingRecipe && <Sheet onClose={() => setLoggingRecipe(undefined)} label={`Log ${loggingRecipe.name}`} wide><RecipeLogSheet recipe={loggingRecipe} foods={foods} onLog={onLog} onClose={() => setLoggingRecipe(undefined)} /></Sheet>}
   </main>;
 }
 
@@ -2774,6 +2897,8 @@ export function TrackerApp() {
   const [showHomeScreenPrompt, setShowHomeScreenPrompt] = useState(false);
   const [weightPromptDismissedFor, setWeightPromptDismissedFor] = useState<string | null>(null);
   const [undoMeal, setUndoMeal] = useState<{ meal: Meal; timerId: number }>();
+  const [imageMeal, setImageMeal] = useState<Meal>();
+  const [nutritionDetailsOpen, setNutritionDetailsOpen] = useState(false);
   const syncIdentityRef = useRef("");
   const syncMutationRef = useRef(0);
   const cloudWriteQueueRef = useRef<Promise<void>>(Promise.resolve());
@@ -3137,15 +3262,15 @@ export function TrackerApp() {
   if (startupError) return <main className="app-loading load-error" role="alert"><Database size={30} /><h1>Diary unavailable</h1><p>{startupError}</p><button className="primary-button" onClick={() => { setStartupError(""); void refresh().catch(() => setStartupError("Your private diary could not be opened. Your data has not been reset.")); }}>Try again</button></main>;
   if (!ready || !auth.ready) return <div className="app-loading" role="status" aria-label="Opening your private diary"><BrandMark large /><i /></div>;
   if (auth.passwordRecovery || !auth.user) return <AuthGateway key={auth.passwordRecovery ? "recovery" : "sign-in"} configured={auth.configured} passwordRecovery={auth.passwordRecovery} onSignIn={auth.signInWithPassword} onSignUp={auth.signUp} onSignInWithProvider={auth.signInWithProvider} onRequestPasswordReset={auth.requestPasswordReset} onUpdatePassword={auth.updatePassword} />;
-  const modalOpen = adding || !!editingMeal || !!detailMeal || !!duplicateMealDraft || !!moveMealDraft || calendarOpen || !profile.onboardingDone || measurementPromptOpen || weightPromptOpen;
+  const modalOpen = adding || !!editingMeal || !!detailMeal || !!imageMeal || !!duplicateMealDraft || !!moveMealDraft || calendarOpen || nutritionDetailsOpen || !profile.onboardingDone || measurementPromptOpen || weightPromptOpen;
   return (
     <div className="app-shell">
       <div className="ambient one" /><div className="ambient two" />
       <div className="content-shell" inert={modalOpen} aria-hidden={modalOpen || undefined}>
-        {tab === "today" && <TodayView profile={profile} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={(mealType) => openAdd("start", mealType)} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} onEdit={setEditingMeal} onOpenDetails={setDetailMeal} onDropMeal={dropMeal} onDuplicate={setDuplicateMealDraft} onMove={setMoveMealDraft} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} onDismissHomeScreenPrompt={() => setShowHomeScreenPrompt(false)} onOpenCalendar={() => setCalendarOpen(true)} onSaveProfile={(next) => void saveProfile(next)} />}
+        {tab === "today" && <TodayView profile={profile} foods={foods} meals={dayMeals} dateKey={dateKey} onDateChange={setDateKey} onAdd={(mealType) => openAdd("start", mealType)} onOpenCoach={() => setTab("coach")} onDelete={deleteMeal} onEdit={setEditingMeal} onOpenDetails={setDetailMeal} onOpenNutritionDetails={() => setNutritionDetailsOpen(true)} onOpenImage={setImageMeal} onDropMeal={dropMeal} onDuplicate={setDuplicateMealDraft} onMove={setMoveMealDraft} syncLabel={auth.user ? syncLabel[syncState] : "Private on this device"} showHomeScreenPrompt={showHomeScreenPrompt} onDismissHomeScreenPrompt={() => setShowHomeScreenPrompt(false)} onOpenCalendar={() => setCalendarOpen(true)} onSaveProfile={(next) => void saveProfile(next)} onLogRecipe={saveNewMeal} />}
         {tab === "search" && <DiscoverView foods={foods} hideCalories={profile.hideCalories} onSelect={selectFood} onAdd={openAdd} />}
         {tab === "coach" && <CoachView configured={auth.configured} user={auth.user} hideCalories={profile.hideCalories} chatTextSize={chatTextSize} onLogCoachMeal={logCoachMeal} onOpenAccount={() => setTab("profile")} onOpenAdd={openAdd} />}
-        {tab === "plan" && profile.planEnabled && <PlanView profile={profile} onSave={(next) => void saveProfile(next)} onLog={saveNewMeal} />}
+        {tab === "plan" && profile.planEnabled && <PlanView profile={profile} foods={foods} onSave={(next) => void saveProfile(next)} onLog={saveNewMeal} />}
         {tab === "insights" && <InsightsView meals={meals} profile={profile} onSave={saveProfile} weightTrackingEnabled={weightTrackingEnabled} />}
       {tab === "profile" && <ProfileView profile={profile} onSave={saveProfile} onRestartOnboarding={restartOnboarding} onExport={exportBackup} onImport={restoreBackup} user={auth.user} syncState={syncState} onSignOut={signOut} theme={theme} onThemeChange={changeTheme} chatTextSize={chatTextSize} onChatTextSizeChange={changeChatTextSize} weightTracking={profile.weightTracking} />}
       </div>
@@ -3153,6 +3278,8 @@ export function TrackerApp() {
       {adding && profile.onboardingDone && <Sheet onClose={() => { setAdding(false); setDirectFood(undefined); setInitialMealType(undefined); }} wide>{directFood ? <PortionSheet food={directFood} initialMealType={initialMealType} hideCalories={profile.hideCalories} onLog={logMeal} onClose={() => { setDirectFood(undefined); setAdding(false); }} /> : <AddFoodSheet foods={foods} hideCalories={profile.hideCalories} initialView={initialAddView} initialMealType={initialMealType} onLog={logMeal} onMealPhoto={addPhotoMeal} onSaveFood={saveFood} />}</Sheet>}
       {calendarOpen && <Sheet onClose={() => setCalendarOpen(false)} wide label="Calendar"><CalendarSheet dateKey={dateKey} meals={meals} profile={profile} onDateChange={setDateKey} onClose={() => setCalendarOpen(false)} /></Sheet>}
       {detailMeal && <Sheet onClose={() => setDetailMeal(undefined)} wide label={`Nutrition details for ${detailMeal.name}`}><NutritionDetails meal={detailMeal} hideCalories={profile.hideCalories} /></Sheet>}
+      {imageMeal && imageMeal.imageUrl && <Sheet onClose={() => setImageMeal(undefined)} wide label={`Meal photo for ${imageMeal.name}`}><MealImageViewer meal={imageMeal} /></Sheet>}
+      {nutritionDetailsOpen && <Sheet onClose={() => setNutritionDetailsOpen(false)} wide label="Today's nutrition details"><div className="daily-nutrition-sheet"><div className="sheet-header"><div><span className="eyebrow">Today</span><h2>Nutrition details</h2></div><span /></div><DailyNutritionBreakdown nutrition={sumNutrition(dayMeals.map((meal) => meal.nutrition))} hideCalories={profile.hideCalories} /></div></Sheet>}
       {editingMeal && <Sheet onClose={() => setEditingMeal(undefined)} label="Edit meal"><MealEditor meal={editingMeal} hideCalories={profile.hideCalories} onSave={(meal) => editingMeal.id.startsWith("photo-") ? saveNewMeal(meal) : saveEditedMeal(meal)} onClose={() => setEditingMeal(undefined)} /></Sheet>}
       {duplicateMealDraft && <Sheet onClose={() => setDuplicateMealDraft(undefined)} label="Duplicate meal" className="duplicate-meal-dialog"><DuplicateMealSheet meal={duplicateMealDraft} onDuplicate={(mealType) => void duplicateMeal(duplicateMealDraft, mealType)} onClose={() => setDuplicateMealDraft(undefined)} /></Sheet>}
       {moveMealDraft && <Sheet onClose={() => setMoveMealDraft(undefined)} label="Move meal" className="duplicate-meal-dialog"><MoveMealSheet meal={moveMealDraft} onMove={(mealType) => { void dropMeal(moveMealDraft, mealType); setMoveMealDraft(undefined); }} onClose={() => setMoveMealDraft(undefined)} /></Sheet>}

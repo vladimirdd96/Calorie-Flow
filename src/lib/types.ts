@@ -65,6 +65,8 @@ export type Meal = {
   position?: number;
   /** The local calendar day the user assigned when logging the meal. */
   loggedDate?: string;
+  /** Optional user-supplied meal photo, stored locally as a resized image data URL. */
+  imageUrl?: string;
   source: FoodSource;
   estimated?: boolean;
 };
@@ -164,6 +166,12 @@ export type FastingRecord = {
 export type RecipeIngredient = {
   id: string;
   name: string;
+  /** When the recipe was created from the diary, keep the source food and portion for optional swaps. */
+  foodId?: string;
+  amount?: number;
+  unit?: ServingUnit;
+  grams?: number;
+  nutrition?: Nutrition;
 };
 
 export type Recipe = {
