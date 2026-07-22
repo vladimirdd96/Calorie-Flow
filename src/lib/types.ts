@@ -53,6 +53,10 @@ export type ServingUnit = "serving" | "g" | "100g" | "package" | "piece" | "tbsp
 export type Meal = {
   id: string;
   foodId?: string;
+  /** Identifies the saved recipe this component was logged from. */
+  recipeId?: string;
+  /** Groups all component foods added in one recipe logging action. */
+  recipeLogId?: string;
   name: string;
   brand?: string;
   mealType: MealType;

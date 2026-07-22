@@ -19,6 +19,13 @@ Apply these rules to every task, regardless of size.
 - Never report a task complete while its changes exist only on a task branch or have not been pushed from `main`.
 - Once a task is complete, all relevant checks pass, and the UI has been verified when applicable, push `main` so deployment is triggered before reporting completion.
 
+## Autonomous completion
+
+- Treat an implementation request as an end-to-end commitment: investigate, implement, test, visually verify UI work, commit, and push without waiting for another prompt.
+- Do not pause after an intermediate milestone. Ask the user only when a required decision would materially change product behavior or needs authority outside this repository.
+- If a safe decision can be made from the codebase, existing documentation, and task intent, make it and record the rationale in the final handoff.
+- **No partial handoffs:** Do not send a final response for an implementation task while required work remains. The only permitted exception is a specific, external blocker that has been exhaustively checked and cannot be resolved without user authority or input. A test failure, a large remaining refactor, an intermediate extraction, or unavailable convenience tooling is not a completion condition.
+
 ## Scope and design
 
 - Do not include unrelated cleanup in a task commit; record it as a follow-up instead.
@@ -32,3 +39,7 @@ Apply these rules to every task, regardless of size.
 - Check the actual rendered result for container width, heading wrapping, control sizing, alignment, overflow, focus states, and action hierarchy. A screenshot with clipped, stacked, oversized, or misaligned controls is a failing check.
 - For dialogs and sheets, verify the first and last interactive elements, scrolling behavior, close action, keyboard focus, and the primary action at the target viewport. Fix layout defects before running the final checks.
 - Do not mark a UI task complete or push it until the visual check passes. If visual verification is unavailable, report the task as unverified rather than complete.
+
+## Local UI test sign-in
+
+- For local visual testing only, agents may use the user's designated Google account to sign in through the existing Google flow. This authorization does not cover sending email, changing account settings, granting permissions, or accessing unrelated Google services.

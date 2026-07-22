@@ -68,6 +68,8 @@ export const foodSchema = z.object({
 export const mealSchema = z.object({
   id: z.string().trim().min(1).max(240),
   foodId: z.string().trim().max(240).optional(),
+  recipeId: z.string().trim().max(240).optional(),
+  recipeLogId: z.string().trim().max(240).optional(),
   name: z.string().trim().min(1).max(240),
   brand: optionalShortText,
   mealType: z.enum(["breakfast", "lunch", "dinner", "snack"]),

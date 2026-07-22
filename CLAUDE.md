@@ -1,5 +1,7 @@
 # Agent Instructions
 
+READ AGENTS.md AS PART OF THE AGENT RULES TOO!
+
 ## Core principle
 
 Make the smallest correct change with explicit contracts and a single source of truth. Calorie Flow requires an account, while its IndexedDB cache keeps tracking fast and available offline.
