@@ -273,6 +273,26 @@ p { color: var(--muted); line-height: 1.55; }
 .meal-editor-form select { cursor: pointer; padding-right: 42px; }
 .detail-grid small { color: var(--muted); font-size: 9px; font-weight: 700; }
 .nutrition-details { width: min(100%, 620px); margin: 0 auto; padding: 24px; }
+.food-details-sheet, .food-editor { width: min(100%, 620px); margin: 0 auto; padding: 24px; }
+.food-details-identity { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 16px; border: 1px solid var(--border-strong); border-radius: 18px; background: var(--panel); }
+.food-details-identity > div { min-width: 0; display: grid; gap: 4px; }
+.food-details-identity strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; }
+.food-details-identity span, .food-details-identity small { color: var(--muted); font-size: 11px; }
+.food-details-identity small { margin-top: 2px; }
+.food-edit-trigger { color: var(--mint); }
+.food-details-context { display: flex; justify-content: space-between; gap: 10px; margin: 12px 2px 0; color: var(--muted); font-size: 11px; }
+.food-details-sheet .detail-section { margin-top: 18px; }
+.food-details-sheet .sheet-actions { margin-top: 20px; }
+.food-photo-editor { display: grid; gap: 10px; }
+.food-photo-editor > div:first-child { display: grid; gap: 4px; }
+.food-photo-editor small { color: var(--muted); font-size: 10px; }
+.food-photo-upload { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 66px; padding: 12px 14px; color: var(--text); background: var(--control-surface); border: 1px dashed var(--border-strong); border-radius: 14px; text-align: left; }
+.food-photo-upload > svg { color: var(--mint); }
+.food-photo-upload span { display: grid; gap: 4px; }
+.food-photo-upload small { color: var(--muted); font-size: 10px; }
+.food-photo-preview { display: grid; grid-template-columns: 82px auto auto; align-items: center; gap: 10px; }
+.food-photo-preview img { width: 82px; height: 82px; object-fit: cover; border-radius: 12px; border: 1px solid var(--border-strong); }
+.food-photo-preview .text-button { padding: 0; }
 .nutrition-detail-meta { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 11px; }
 .estimate-pill { padding: 4px 7px; border-radius: 999px; color: var(--amber); background: color-mix(in oklch, var(--amber) 12%, transparent); font-size: 9px; font-weight: 800; }
 .detail-section { margin-top: 24px; }
@@ -629,17 +649,23 @@ p { color: var(--muted); line-height: 1.55; }
 .recipe-save-summary { display: grid; gap: 4px; padding: 12px 14px; border-radius: 12px; color: var(--mint-strong); background: color-mix(in oklch, var(--mint) 8%, var(--control-surface)); font-size: 12px; font-weight: 800; }
 .recipe-save-summary small, .recipe-log-intro { margin: 0; color: var(--muted); font-size: 11px; font-weight: 500; line-height: 1.45; }
 .recipe-log-intro { color: var(--text); }
+.recipe-log-where { display: grid; grid-template-columns: minmax(0, 1fr) minmax(150px, .7fr); gap: 10px; }
+.recipe-log-where .meal-editor-form { gap: 6px; }
+.recipe-date-field { display: grid; gap: 6px; min-width: 0; }
+.recipe-date-field > span { color: var(--muted); font-size: 11px; font-weight: 800; }
+.recipe-date-field input { min-height: 40px; padding: 0 10px; color: var(--text); border: 1px solid var(--border); border-radius: 10px; background: var(--control-surface); font: inherit; font-size: 12px; }
+.recipe-date-field input:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
 .recipe-log-ingredients { display: grid; gap: 6px; }
 .recipe-log-ingredients h3 { margin: 0 0 3px; font-size: 13px; }
-.recipe-log-ingredient { display: grid; grid-template-columns: minmax(0, 1fr) minmax(150px, .85fr); gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.recipe-log-ingredient { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
 .recipe-log-ingredient:last-child { border-bottom: 0; }
-.recipe-log-ingredient select { min-height: 38px; font-size: 11px; }
-.recipe-log-ingredient-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
-.recipe-remove-ingredient { color: var(--danger); min-width: 38px; min-height: 38px; }
+.recipe-remove-ingredient { min-width: 36px; min-height: 36px; color: var(--danger); justify-self: end; }
 .recipe-photo-editor { padding-top: 2px; }
 .recipe-log-ingredient > small { text-align: right; }
-.recipe-log-total { display: grid; gap: 10px; padding: 13px 14px; border: 1px solid color-mix(in oklch, var(--mint) 38%, var(--border)); border-radius: 12px; background: color-mix(in oklch, var(--mint) 8%, var(--control-surface)); }
-.recipe-log-total h3 { margin: 2px 0 0; color: var(--mint-strong); font-size: 22px; line-height: 1; }
+.recipe-log-total { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, 220px); gap: 6px 18px; align-items: center; padding: 18px; border: 1px solid color-mix(in oklch, var(--mint) 38%, var(--border)); border-radius: 18px; background: color-mix(in oklch, var(--mint) 8%, var(--control-surface)); }
+.recipe-log-total-heading { display: grid; gap: 6px; align-self: start; padding-top: 6px; }
+.recipe-log-total h3 { max-width: 210px; margin: 2px 0 0; color: var(--text); font-size: 20px; line-height: 1.08; }
+.recipe-log-total .progress-ring { grid-column: 2; grid-row: 1 / span 2; width: 190px; justify-self: center; }
 .recipe-log-total dl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0; }
 .recipe-log-total dl div { display: grid; gap: 2px; }
 .recipe-log-total dt { color: var(--muted); font-size: 10px; }
@@ -652,8 +678,10 @@ p { color: var(--muted); line-height: 1.55; }
   .meal-add-row { gap: 4px; padding: 6px 10px; }
   .meal-add-primary, .meal-add-recipe { min-width: 0; min-height: 38px; gap: 6px; padding: 0 4px; font-size: 11px; white-space: nowrap; }
   .meal-add-recipe { padding-left: 4px; }
-  .recipe-log-ingredient { grid-template-columns: 1fr; gap: 7px; }
-  .recipe-log-ingredient > small { text-align: left; }
+  .recipe-log-ingredient { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+  .recipe-log-where { grid-template-columns: minmax(0, 1fr) minmax(132px, .8fr); gap: 8px; }
+  .recipe-log-total { grid-template-columns: 1fr; gap: 14px; }
+  .recipe-log-total .progress-ring { grid-column: 1; grid-row: auto; width: min(100%, 208px); justify-self: center; }
   .recipe-log-total dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .recipe-name-field { grid-template-columns: 1fr; }
   .recipe-title-button { width: 100%; }
@@ -1173,9 +1201,12 @@ p { color: var(--muted); line-height: 1.55; }
 .meal-date-field { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: var(--muted); font-size: 11px; font-weight: 800; }
 .meal-date-field > span { display: flex; align-items: baseline; gap: 6px; }
 .meal-date-field > span small { color: var(--muted-2); font-size: 10px; font-weight: 600; }
-.meal-date-field input { width: auto; min-height: 34px; padding: 0; border: 1px solid transparent; border-radius: 8px; color: var(--muted); background: transparent; font: inherit; font-size: 11px; font-weight: 700; text-align: right; }
+.meal-date-action { display: flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 8px; color: var(--mint); background: color-mix(in oklch, var(--mint) 7%, transparent); border: 1px solid color-mix(in oklch, var(--mint) 28%, var(--border)); border-radius: 10px; }
+.meal-date-action svg { flex: 0 0 auto; }
+.meal-date-field input { width: auto; min-height: 34px; padding: 0; border: 0; border-radius: 8px; color: var(--text); background: transparent; font: inherit; font-size: 11px; font-weight: 800; text-align: right; }
 .meal-date-field input:hover { color: var(--text); border-color: var(--border); }
 .meal-date-field input:focus-visible { color: var(--text); border-color: var(--border-strong); outline-offset: 1px; }
+.meal-date-action:focus-within { border-color: var(--mint); box-shadow: 0 0 0 3px color-mix(in oklch, var(--mint) 14%, transparent); }
 .portion-submit { display: grid; gap: 10px; padding-top: 2px; }
 .portion-submit .form-footnote { padding-bottom: 2px; }
 .onboarding-overlay { position: fixed; inset: 0; z-index: 80; overflow: auto; padding: max(16px, env(safe-area-inset-top)) 14px max(16px, env(safe-area-inset-bottom)); background: rgba(3,9,7,.92); backdrop-filter: blur(18px); }
