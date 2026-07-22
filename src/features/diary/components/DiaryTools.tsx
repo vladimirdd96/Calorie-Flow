@@ -119,7 +119,9 @@ export function RecipeLogSheet({ recipe, foods, meals, onSaveFood, onLog, onSave
 }
 
 export function MealAddRow({ mealType, meals, onAdd, onSaveRecipe }: { mealType: MealType; meals: Meal[]; onAdd: (mealType: MealType) => void; onSaveRecipe: (meals: Meal[]) => void }) {
-  return <div className="meal-add-row"><button type="button" className="meal-add-primary" onClick={() => onAdd(mealType)}><span className="meal-add-icon"><Plus size={17} /></span><span>Add food to {mealLabels[mealType]}</span></button>{meals.length > 0 && <button type="button" className="meal-add-recipe" onClick={() => onSaveRecipe(meals)}><BookOpen size={16} /><span>Save {mealLabels[mealType].toLowerCase()} as recipe</span></button>}</div>;
+  const foodMeals = meals.filter((meal) => !meal.recipeId);
+  const canCombine = foodMeals.length > 1;
+  return <div className="meal-add-row"><button type="button" className="meal-add-primary" onClick={() => onAdd(mealType)}><span className="meal-add-icon"><Plus size={17} /></span><span>Add food to {mealLabels[mealType]}</span></button>{canCombine && <button type="button" className="meal-add-recipe" onClick={() => onSaveRecipe(foodMeals)} aria-label={`Combine foods in ${mealLabels[mealType].toLowerCase()} into a recipe`}><BookOpen size={17} /><span className="meal-add-recipe-copy"><strong>Combine into a recipe</strong><small>Choose foods to save together</small></span></button>}</div>;
 }
 
 function WaterTracker({ profile, dateKey, onSave }: { profile: Profile; dateKey: string; onSave: (profile: Profile) => void }) {
