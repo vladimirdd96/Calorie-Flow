@@ -203,8 +203,12 @@ p { color: var(--muted); line-height: 1.55; }
 .meal-row { position: relative; display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto auto; align-items: center; gap: 9px; padding: 14px; cursor: grab; transition: background-color .18s ease, opacity .18s ease; }
 .meal-row:active { cursor: grabbing; }
 .meal-row.dragging { opacity: .48; background: color-mix(in oklch, var(--mint) 8%, transparent); }
-.meal-add-row { width: 100%; min-height: 55px; display: flex; align-items: center; gap: 10px; padding: 10px 14px; color: var(--muted); background: transparent; border: 0; border-top: 1px solid var(--border); font-size: 12px; font-weight: 800; text-align: left; transition: color .18s ease, background .18s ease; }
-.meal-add-row:hover, .meal-add-row:focus-visible { color: var(--mint-strong); background: color-mix(in oklch, var(--mint) 7%, transparent); }
+.meal-add-row { width: 100%; min-height: 55px; display: flex; align-items: center; gap: 8px; padding: 8px 14px; color: var(--muted); background: transparent; border-top: 1px solid var(--border); font-size: 12px; font-weight: 800; text-align: left; }
+.meal-add-primary, .meal-add-recipe { min-height: 40px; display: inline-flex; align-items: center; gap: 9px; padding: 0 8px; color: inherit; background: transparent; border: 0; border-radius: 10px; font: inherit; text-align: left; transition: color .18s ease, background .18s ease; }
+.meal-add-primary { flex: 1; }
+.meal-add-primary:hover, .meal-add-primary:focus-visible, .meal-add-recipe:hover, .meal-add-recipe:focus-visible { color: var(--mint-strong); background: color-mix(in oklch, var(--mint) 7%, transparent); }
+.meal-add-recipe { flex: 0 0 auto; color: var(--mint-strong); font-size: 11px; }
+.meal-add-recipe svg { color: var(--mint); }
 .meal-add-icon { width: 28px; height: 28px; display: grid; place-items: center; color: var(--mint); border: 1px dashed var(--border-strong); border-radius: 9px; }
 .meal-row[draggable="true"] { touch-action: pan-y; }
 .meal-row.drop-before { box-shadow: inset 0 3px 0 var(--mint); }
@@ -572,8 +576,6 @@ p { color: var(--muted); line-height: 1.55; }
 @media (min-width: 720px) { .daily-rhythm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } }
 @media (prefers-reduced-motion: reduce) { .habit-progress > i, .fasting-summary > svg { transition: none; } }
 .recipe-create { overflow: visible; padding: 0; }
-.daily-log-actions { display: flex; align-items: center; gap: 12px; }
-.daily-log-actions .text-button { min-height: 32px; padding: 0 8px; }
 .recipe-save-sheet, .recipe-log-sheet { display: grid; gap: 18px; }
 .recipe-save-sheet > .sheet-header, .recipe-log-sheet > .sheet-header { display: flex; width: 100%; min-width: 0; }
 .recipe-save-sheet .sheet-header h2, .recipe-log-sheet .sheet-header h2 { max-width: none; overflow: visible; white-space: normal; font-size: clamp(24px, 5vw, 32px); line-height: 1.05; }
@@ -602,8 +604,9 @@ p { color: var(--muted); line-height: 1.55; }
 .recipe-log-ingredient select { min-height: 38px; font-size: 11px; }
 .recipe-log-ingredient > small { text-align: right; }
 @media (max-width: 560px) {
-  .daily-log-actions { align-items: flex-end; flex-direction: column; gap: 3px; }
-  .daily-log-actions .meal-reorder-hint { display: none; }
+  .meal-add-row { display: grid; gap: 2px; }
+  .meal-add-primary, .meal-add-recipe { width: 100%; }
+  .meal-add-recipe { padding-left: 45px; }
   .recipe-log-ingredient { grid-template-columns: 1fr; gap: 7px; }
   .recipe-log-ingredient > small { text-align: left; }
   .recipe-name-field { grid-template-columns: 1fr; }

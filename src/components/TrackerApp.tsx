@@ -749,8 +749,8 @@ function RecipeLogSheet({ recipe, foods, onLog, onClose }: { recipe: Recipe; foo
   return <div className="recipe-log-sheet"><div className="sheet-header"><div><span className="eyebrow">Saved recipe</span><h2>{recipe.name}</h2></div><span /></div><form onSubmit={(event) => void log(event)}><p className="recipe-log-intro">{canLogIngredients ? "Use the usual items, or replace any one before logging." : "This recipe was saved as one nutrition entry."}</p><label className="meal-editor-form"><span>Add to</span><ThemedSelect ariaLabel="Recipe meal" value={mealType} onChange={(value) => setMealType(value as MealType)} options={(Object.keys(mealLabels) as MealType[]).map((type) => ({ value: type, label: mealLabels[type] }))} /></label>{canLogIngredients && <div className="recipe-log-ingredients">{recipe.ingredients.map((ingredient) => { const canSwap = Boolean(sourceFood(ingredient)); return <div className="recipe-log-ingredient" key={ingredient.id}><span><strong>{sourceFood(ingredient)?.name || ingredient.name}</strong><small>{Math.round((ingredient.nutrition || recipe.nutritionPerServing).calories)} kcal</small></span>{canSwap ? <label><span className="visually-hidden">Replace {ingredient.name}</span><ThemedSelect ariaLabel={`Replace ${ingredient.name}`} value={replacements[ingredient.id] || ingredient.foodId || ""} onChange={(value) => setReplacements((current) => ({ ...current, [ingredient.id]: value }))} options={[{ value: ingredient.foodId || "", label: "Keep this item" }, ...foods.filter((food) => food.id !== ingredient.foodId).slice(0, 40).map((food) => ({ value: food.id, label: `Swap for ${food.name}` }))]} /></label> : <small>Saved as a custom item</small>}</div>; })}</div>}<div className="sheet-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="submit" className="primary-button"><Check size={17} />Log recipe</button></div></form></div>;
 }
 
-function MealAddRow({ mealType, onAdd }: { mealType: MealType; onAdd: (mealType: MealType) => void }) {
-  return <button type="button" className="meal-add-row" onClick={() => onAdd(mealType)}><span className="meal-add-icon"><Plus size={17} /></span><span>Add food to {mealLabels[mealType]}</span></button>;
+function MealAddRow({ mealType, meals, onAdd, onSaveRecipe }: { mealType: MealType; meals: Meal[]; onAdd: (mealType: MealType) => void; onSaveRecipe: (meals: Meal[]) => void }) {
+  return <div className="meal-add-row"><button type="button" className="meal-add-primary" onClick={() => onAdd(mealType)}><span className="meal-add-icon"><Plus size={17} /></span><span>Add food to {mealLabels[mealType]}</span></button>{meals.length > 0 && <button type="button" className="meal-add-recipe" onClick={() => onSaveRecipe(meals)}><BookOpen size={16} /><span>Save {mealLabels[mealType].toLowerCase()} as recipe</span></button>}</div>;
 }
 
 function WaterTracker({ profile, dateKey, onSave }: { profile: Profile; dateKey: string; onSave: (profile: Profile) => void }) {
@@ -835,7 +835,7 @@ function TodayView({
   onSaveProfile: (profile: Profile) => void;
   onLogRecipe: (meal: Meal) => Promise<void>;
 }) {
-  const [recipeSheetOpen, setRecipeSheetOpen] = useState(false);
+  const [recipeDraftMeals, setRecipeDraftMeals] = useState<Meal[]>();
   const [recipePickerOpen, setRecipePickerOpen] = useState(false);
   const [recipeToLog, setRecipeToLog] = useState<Recipe>();
   const [dropTarget, setDropTarget] = useState<string>();
@@ -948,13 +948,13 @@ function TodayView({
       </section>
 
       <section className="log-section">
-        <div className="section-heading"><div><span className="eyebrow">Daily log</span><h2>Your meals</h2></div><div className="daily-log-actions"><span className="subtle meal-reorder-hint">Hold ⋮⋮ to reorder</span>{profile.recipes?.length ? <button type="button" className="text-button" onClick={() => setRecipePickerOpen(true)}><BookOpen size={15} />Use a recipe</button> : null}{meals.length > 0 && <button type="button" className="text-button" onClick={() => setRecipeSheetOpen(true)}><BookOpen size={15} />Save as recipe</button>}</div></div>
+        <div className="section-heading"><div><span className="eyebrow">Daily log</span><h2>Your meals</h2></div><div className="daily-log-actions"><span className="subtle meal-reorder-hint">Hold ⋮⋮ to reorder</span>{profile.recipes?.length ? <button type="button" className="text-button" onClick={() => setRecipePickerOpen(true)}><BookOpen size={15} />Use a recipe</button> : null}</div></div>
         {grouped.map(({ type, meals: groupMeals }) => (
           <div className="meal-group" key={type}>
             <div className="meal-group-title"><span>{mealLabels[type]}</span>{!profile.hideCalories && (() => { const target = resolveMealCalorieTarget(profile, type); const calories = Math.round(sumNutrition(groupMeals.map((meal) => meal.nutrition)).calories); return <span aria-label={target ? `${calories} of ${target} calorie guide` : `${calories} calories`}>{calories}{target ? ` / ${target}` : ""} kcal</span>; })()}</div>
             <div className={`meal-list card ${dropTarget === type ? "drop-target" : ""}`} data-meal-list={type} onDragOver={(event) => { event.preventDefault(); setDropTarget(type); }} onDragLeave={() => setDropTarget(undefined)} onDrop={(event) => { event.preventDefault(); const mealId = event.dataTransfer.getData("text/meal-id"); const meal = meals.find((candidate) => candidate.id === mealId); if (meal) onDropMeal(meal, type); setDropTarget(undefined); }}>
               {groupMeals.map((meal) => <MealRow key={meal.id} meal={meal} hideCalories={profile.hideCalories} dragging={draggingMealId === meal.id} onPointerDown={startPointerDrag} onOpenImage={() => onOpenImage(meal)} dropPosition={dropTarget === `${type}:${meal.id}:before` ? "before" : dropTarget === `${type}:${meal.id}:after` ? "after" : undefined} onDelete={() => onDelete(meal.id)} onEdit={() => onEdit(meal)} onDetails={() => onOpenDetails(meal)} onDuplicate={() => onDuplicate(meal)} onMove={() => onMove(meal)} onDragStart={(draggedMeal, event) => { event.dataTransfer.setData("text/meal-id", draggedMeal.id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); setDropTarget(`${type}:${meal.id}:${event.clientY < rect.top + rect.height / 2 ? "before" : "after"}`); }} onDrop={(event) => { event.preventDefault(); event.stopPropagation(); const mealId = event.dataTransfer.getData("text/meal-id"); const draggedMeal = meals.find((candidate) => candidate.id === mealId); if (draggedMeal) { const rect = event.currentTarget.getBoundingClientRect(); onDropMeal(draggedMeal, type, meal.id, event.clientY >= rect.top + rect.height / 2); } setDropTarget(undefined); }} />)}
-              <MealAddRow mealType={type} onAdd={onAdd} />
+              <MealAddRow mealType={type} meals={groupMeals} onAdd={onAdd} onSaveRecipe={setRecipeDraftMeals} />
             </div>
           </div>
         ))}
@@ -966,7 +966,7 @@ function TodayView({
         <span><strong>Ask Coach about today</strong><small>Get guidance with your diary in context</small></span>
         <ChevronRight size={18} />
       </button>
-      {recipeSheetOpen && <Sheet onClose={() => setRecipeSheetOpen(false)} label="Save meal as recipe"><SaveRecipeSheet meals={meals} onSave={(recipe) => { onSaveProfile({ ...profile, recipes: [...(profile.recipes || []), recipe] }); setRecipeSheetOpen(false); }} onClose={() => setRecipeSheetOpen(false)} /></Sheet>}
+      {recipeDraftMeals && <Sheet onClose={() => setRecipeDraftMeals(undefined)} label="Save meal as recipe"><SaveRecipeSheet meals={recipeDraftMeals} onSave={(recipe) => { onSaveProfile({ ...profile, recipes: [...(profile.recipes || []), recipe] }); setRecipeDraftMeals(undefined); }} onClose={() => setRecipeDraftMeals(undefined)} /></Sheet>}
       {recipePickerOpen && <Sheet onClose={() => setRecipePickerOpen(false)} label="Use a saved recipe"><div className="recipe-picker"><div className="sheet-header"><div><span className="eyebrow">Your library</span><h2>What are you having?</h2></div><span /></div>{profile.recipes?.map((recipe) => <button type="button" className="recipe-picker-row" key={recipe.id} onClick={() => { setRecipeToLog(recipe); setRecipePickerOpen(false); }}><span><strong>{recipe.name}</strong><small>{Math.round(recipe.nutritionPerServing.calories)} kcal · {recipe.ingredients.length} items</small></span><ChevronRight size={17} /></button>)}</div></Sheet>}
       {recipeToLog && <Sheet onClose={() => setRecipeToLog(undefined)} label={`Log ${recipeToLog.name}`} wide><RecipeLogSheet recipe={recipeToLog} foods={foods} onLog={onLogRecipe} onClose={() => setRecipeToLog(undefined)} /></Sheet>}
     </main>
