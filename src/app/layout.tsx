@@ -27,6 +27,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="calorie-flow-build" content={process.env.NEXT_PUBLIC_BUILD_ID || "development"} />
+      </head>
       <body>{children}</body>
     </html>
   );
