@@ -3,6 +3,7 @@
 import { ChevronDown, ChevronLeft, ChevronRight, MessageCircle, ShieldCheck } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Sheet } from "@/features/shared/Sheet";
+import { CalendarPicker } from "@/features/shared/DatePicker";
 import { isHabitFeatureEnabled } from "@/lib/habit-settings";
 import { localDateKey, netCarbs, resolveDailyTargets, resolveMealCalorieTarget, round, sumNutrition } from "@/lib/nutrition";
 import { habitFeatures, type Food, type Meal, type MealType, type Nutrition, type Profile, type Recipe } from "@/lib/types";
@@ -197,18 +198,6 @@ export function TodayView({
 }
 
 export function CalendarSheet({ dateKey, meals, profile, onDateChange, onClose }: { dateKey: string; meals: Meal[]; profile: Profile; onDateChange: (date: string) => void; onClose: () => void }) {
-  const selectedDate = new Date(`${dateKey}T12:00:00`);
-  const [monthStart, setMonthStart] = useState(() => new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1, 12));
-  const today = localDateKey();
-  const monthTitle = monthStart.toLocaleDateString(undefined, { month: "long", year: "numeric" });
-  const firstWeekday = (monthStart.getDay() + 6) % 7;
-  const daysInMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate();
-  const calendarDays = Array.from({ length: Math.ceil((firstWeekday + daysInMonth) / 7) * 7 }, (_, index) => {
-    const day = index - firstWeekday + 1;
-    if (day < 1 || day > daysInMonth) return undefined;
-    const date = new Date(monthStart.getFullYear(), monthStart.getMonth(), day, 12);
-    return localDateKey(date);
-  });
   const totalsByDate = useMemo(() => {
     const totals = new Map<string, Nutrition>();
     meals.forEach((meal) => {
@@ -218,31 +207,10 @@ export function CalendarSheet({ dateKey, meals, profile, onDateChange, onClose }
     });
     return totals;
   }, [meals]);
-  const previousMonth = () => setMonthStart(new Date(monthStart.getFullYear(), monthStart.getMonth() - 1, 1, 12));
-  const nextMonth = () => {
-    const next = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 1, 12);
-    if (localDateKey(next) <= today) setMonthStart(next);
-  };
-  const chooseDate = (key: string) => { onDateChange(key); onClose(); };
-
   return <div className="calendar-sheet">
     <div className="sheet-header"><div><span className="eyebrow">Your diary</span><h2>Month at a glance</h2></div><span /></div>
     <p className="calendar-intro">Tap a day to jump to its log. Rings show how close you were to your daily guide.</p>
-    <div className="calendar-toolbar"><button className="icon-button ghost" onClick={previousMonth} aria-label="Previous month"><ChevronLeft /></button><strong>{monthTitle}</strong><button className="icon-button ghost" onClick={nextMonth} disabled={monthStart.getFullYear() === new Date(`${today}T12:00:00`).getFullYear() && monthStart.getMonth() >= new Date(`${today}T12:00:00`).getMonth()} aria-label="Next month"><ChevronRight /></button></div>
-    <div className="calendar-weekdays" aria-hidden="true">{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => <span key={day}>{day}</span>)}</div>
-    <div className="calendar-grid" role="grid" aria-label={monthTitle}>
-      {calendarDays.map((key, index) => key ? (() => {
-        const total = totalsByDate.get(key);
-        const isFuture = key > today;
-        const isSelected = key === dateKey;
-        const progressValue = profile.hideCalories ? total?.protein || 0 : total?.calories || 0;
-        const targets = resolveDailyTargets(profile, key);
-        const progressTarget = profile.hideCalories ? targets.protein : targets.calories;
-        return <button key={key} className={`calendar-day ${isSelected ? "selected" : ""} ${total ? "logged" : ""}`} role="gridcell" onClick={() => chooseDate(key)} disabled={isFuture} aria-label={`${new Date(`${key}T12:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric" })}${total ? `, ${Math.round(progressValue)} of ${progressTarget} ${profile.hideCalories ? "grams protein" : "calories"}` : ", no meals logged"}`}>
-          <span>{new Date(`${key}T12:00:00`).getDate()}</span>{total && <MiniProgressRing value={progressValue} target={progressTarget} label="" />}
-        </button>;
-      })() : <span className="calendar-day empty" key={`empty-${index}`} aria-hidden="true" />)}
-    </div>
+    <CalendarPicker value={dateKey} maxDate={localDateKey()} onChange={(key) => { onDateChange(key); onClose(); }} renderDay={(key) => { const total = totalsByDate.get(key); if (!total) return null; const targets = resolveDailyTargets(profile, key); return <MiniProgressRing value={profile.hideCalories ? total.protein : total.calories} target={profile.hideCalories ? targets.protein : targets.calories} label="" />; }} getDayLabel={(key) => { const total = totalsByDate.get(key); const targets = resolveDailyTargets(profile, key); const progressValue = profile.hideCalories ? total?.protein || 0 : total?.calories || 0; const progressTarget = profile.hideCalories ? targets.protein : targets.calories; return `${new Date(`${key}T12:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric" })}${total ? `, ${Math.round(progressValue)} of ${progressTarget} ${profile.hideCalories ? "grams protein" : "calories"}` : ", no meals logged"}`; }} />
     <div className="calendar-legend"><span><i className="legend-ring" /> Logged day</span><span><i className="legend-selected" /> Selected</span>{!profile.hideCalories && <small>Uses each day’s target</small>}</div>
   </div>;
 }
