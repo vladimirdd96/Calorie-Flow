@@ -756,8 +756,6 @@ p { color: var(--muted); line-height: 1.55; }
 .workspace-tabs::-webkit-scrollbar { display: none; }
 .workspace-tabs button { min-width: 0; min-height: 36px; flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 0 12px; border: 0; border-radius: 10px; color: var(--muted); background: transparent; font-size: 11px; font-weight: 800; white-space: nowrap; }
 .workspace-tabs button.active { color: var(--mint-strong); background: var(--control-surface-selected); }
-.workspace-tabs button span { flex: 0 0 auto; align-self: center; display: inline-grid; min-width: 16px; height: 16px; place-items: center; padding: 0 4px; border-radius: 999px; color: var(--muted); background: var(--control-surface-strong); font-size: 9px; line-height: 1; }
-.workspace-tabs button.active span { color: var(--mint-strong); }
 .workspace-panel { animation: fade-in .18s ease both; }
 .plan-entry-form { display: grid; gap: 14px; }
 .plan-entry-form > label { display: grid; gap: 7px; font-size: 12px; color: var(--muted); }
