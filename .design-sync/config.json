@@ -1,0 +1,14 @@
+{
+  "projectId": "9ff71267-650b-41ee-99ee-f84de4c65d24",
+  "shape": "package",
+  "pkg": "calorie-flow-design-system",
+  "globalName": "CalorieFlowDS",
+  "buildCmd": "npm run build --prefix design-system",
+  "cssEntry": "globals.css",
+  "readmeHeader": ".design-sync/conventions.md",
+  "overrides": {
+    "Sheet": { "cardMode": "single", "viewport": "420x640" },
+    "BottomNav": { "cardMode": "single", "primaryStory": "Default", "viewport": "420x110" },
+    "TodayView": { "cardMode": "column" }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "calorie-flow-design-system",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/design-system/entry.js",
+  "module": "./dist/design-system/entry.js",
+  "types": "./dist/design-system/entry.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/design-system/entry.d.ts",
+      "import": "./dist/design-system/entry.js"
+    }
+  },
+  "scripts": {
+    "build": "cp ../src/app/globals.css ./globals.css && tsc -p tsconfig.json --emitDeclarationOnly && node build.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.1"
+  }
+}

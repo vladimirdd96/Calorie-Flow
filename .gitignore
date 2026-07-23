@@ -12,3 +12,12 @@ supabase/.temp/
 *.log
 .DS_Store
 upload/
+
+# design-sync (see docs/ and .design-sync/NOTES.md)
+.ds-sync/
+ds-bundle/
+design-system/dist/
+design-system/globals.css
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules
