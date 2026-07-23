@@ -52,7 +52,7 @@ export function useTrackerActions(dependencies: Dependencies) {
   const logMeal = async (meal: Meal, food: Food) => {
     const loggedDate = meal.loggedDate || dateKey;
     const adjustedDate = loggedDate === localDateKey() ? new Date() : new Date(`${loggedDate}T12:00:00`);
-    const savedMeal = { ...meal, loggedDate, createdAt: adjustedDate.toISOString() };
+    const savedMeal = { ...meal, imageUrl: meal.imageUrl || food.imageUrl, loggedDate, createdAt: adjustedDate.toISOString() };
     await Promise.all([put("meals", savedMeal), put("foods", food)]);
     setMeals((current) => [...current, savedMeal]);
     setFoods((current) => [food, ...current.filter((item) => item.id !== food.id)]);
