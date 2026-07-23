@@ -629,6 +629,12 @@ p { color: var(--muted); line-height: 1.55; }
 .recipe-picker-row small { color: var(--muted); font-size: 10px; }
 .recipe-picker-row svg { color: var(--mint); flex: 0 0 auto; }
 .recipe-save-sheet form, .recipe-log-sheet form { display: grid; gap: 16px; }
+.recipe-log-sheet form > .recipe-log-intro { order: 1; }
+.recipe-log-sheet form > .recipe-photo-editor { order: 2; }
+.recipe-log-sheet form > .recipe-log-total { order: 3; }
+.recipe-log-sheet form > .recipe-log-where { order: 4; }
+.recipe-log-sheet form > .recipe-log-ingredients { order: 5; }
+.recipe-log-sheet form > .sheet-actions { order: 6; }
 .recipe-name-field { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: end; }
 .recipe-photo-upload { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; min-height: 64px; padding: 10px 12px; border: 1px dashed var(--border-strong); border-radius: 12px; color: var(--text); background: color-mix(in oklch, var(--mint) 5%, var(--control-surface)); cursor: pointer; }
 .recipe-photo-upload > span:last-child { display: grid; gap: 2px; }
@@ -656,7 +662,7 @@ p { color: var(--muted); line-height: 1.55; }
 .recipe-log-where .meal-editor-form { gap: 6px; }
 .recipe-date-field { display: grid; gap: 6px; min-width: 0; }
 .recipe-date-field > span { color: var(--muted); font-size: 11px; font-weight: 800; }
-.recipe-date-field input { min-height: 40px; padding: 0 10px; color: var(--text); border: 1px solid var(--border); border-radius: 10px; background: var(--control-surface); font: inherit; font-size: 12px; }
+.recipe-date-field input { display: block; width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; min-height: 40px; padding: 0 8px; color: var(--text); border: 1px solid var(--border); border-radius: 10px; background: transparent; font: inherit; font-size: 12px; appearance: none; -webkit-appearance: none; }
 .recipe-date-field input:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
 .recipe-log-ingredients { display: grid; gap: 6px; }
 .recipe-log-ingredients h3 { margin: 0 0 3px; font-size: 13px; }
