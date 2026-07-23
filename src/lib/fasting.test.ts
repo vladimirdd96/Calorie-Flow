@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeFast, eatingSessions, fastingProgress, fastingRecordsForMeals, fastingWindowHours, formatFastingDuration, syncAutomaticFastAfterMeal, syncAutomaticFasting } from "./fasting";
+import { activeFast, eatingSessions, fastingProgress, fastingRecordsForMeals, fastingWindowHours, formatFastingDuration, shouldAskAboutLateMeal, syncAutomaticFastAfterMeal, syncAutomaticFasting } from "./fasting";
 import type { Meal, Profile } from "./types";
 
 const profile = { enabledHabitFeatures: ["fasting"], fastingRecords: [] } as unknown as Profile;
@@ -46,11 +46,21 @@ describe("fasting", () => {
   });
 
   it("groups foods logged within the standard meal window", () => {
-    const meals = [meal, { ...meal, id: "meal-2", createdAt: "2026-07-21T18:01:00.000Z" }, { ...meal, id: "meal-3", createdAt: "2026-07-22T06:00:00.000Z" }];
+    const meals = [
+      { ...meal, mealType: "breakfast" as const },
+      { ...meal, id: "meal-2", mealType: "breakfast" as const, createdAt: "2026-07-21T18:01:00.000Z" },
+      { ...meal, id: "meal-3", mealType: "dinner" as const, createdAt: "2026-07-22T06:00:00.000Z" },
+    ];
     const next = syncAutomaticFasting(profile, meals);
     expect(eatingSessions(profile, meals)).toHaveLength(2);
     expect(next.fastingRecords).toHaveLength(2);
     expect(next.fastingRecords?.[0].endedAt).toBe("2026-07-22T06:00:00.000Z");
+  });
+
+  it("does not ask to join a different meal type", () => {
+    const previous = { ...meal, mealType: "breakfast" as const };
+    const next = { ...meal, id: "meal-2", mealType: "lunch" as const, createdAt: "2026-07-21T20:00:00.000Z" };
+    expect(shouldAskAboutLateMeal(profile, [previous], next)).toBe(false);
   });
 
   it("keeps precise food timestamps as separate interruptions", () => {

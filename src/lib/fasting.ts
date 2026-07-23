@@ -37,7 +37,8 @@ export function eatingSessions(profile: Profile, meals: Meal[]) {
   for (const meal of sorted) {
     const explicit = meal.fastingSessionId ? explicitSessions.get(meal.fastingSessionId) : undefined;
     const previous = sessions[sessions.length - 1];
-    const closeEnough = previous && !precise && new Date(meal.createdAt).getTime() - new Date(previous.endedAt).getTime() <= windowMinutes(profile) * 60_000;
+    const sameMealType = previous?.meals.every((previousMeal) => previousMeal.mealType === meal.mealType);
+    const closeEnough = previous && sameMealType && !precise && new Date(meal.createdAt).getTime() - new Date(previous.endedAt).getTime() <= windowMinutes(profile) * 60_000;
     const session = explicit || closeEnough ? explicit || previous : { id: meal.fastingSessionId || `auto-session-${meal.id}`, meals: [], startedAt: meal.createdAt, endedAt: meal.createdAt };
     session.meals.push(meal);
     if (meal.createdAt < session.startedAt) session.startedAt = meal.createdAt;
@@ -87,7 +88,7 @@ export function lateMealBehavior(profile: Profile): FastingLateMealBehavior {
 export function shouldAskAboutLateMeal(profile: Profile, meals: Meal[], meal: Meal) {
   if (profile.fastingTrackingMode === "precise" || lateMealBehavior(profile) !== "ask") return false;
   const previous = meals.filter((candidate) => candidate.createdAt < meal.createdAt).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
-  return Boolean(previous && new Date(meal.createdAt).getTime() - new Date(previous.createdAt).getTime() > windowMinutes(profile) * 60_000);
+  return Boolean(previous && previous.mealType === meal.mealType && new Date(meal.createdAt).getTime() - new Date(previous.createdAt).getTime() > windowMinutes(profile) * 60_000);
 }
 
 export function sessionIdForMeal(profile: Profile, meals: Meal[], meal: Meal) {
