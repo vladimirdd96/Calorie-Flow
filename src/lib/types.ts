@@ -155,6 +155,7 @@ export type Profile = {
   fastingTrackingMode?: FastingTrackingMode;
   fastingMealWindowMinutes?: 15 | 30 | 60;
   fastingLateMealBehavior?: FastingLateMealBehavior;
+  fastingRecordEdits?: Record<string, { startedAt: string; endedAt?: string }>;
   fastingRecords?: FastingRecord[];
   recipes?: Recipe[];
   mealPlanEntries?: MealPlanEntry[];

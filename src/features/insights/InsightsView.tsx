@@ -1,6 +1,6 @@
 "use client";
 
-import { Droplets, Plus, Sparkles, Timer, Trash2, Utensils } from "lucide-react";
+import { Droplets, Pencil, Plus, Sparkles, Timer, Trash2, Utensils } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { localDateKey, round, sumNutrition } from "@/lib/nutrition";
 import { hydrationTotal } from "@/lib/hydration";
@@ -33,6 +33,12 @@ const mealLabels: Record<MealType, string> = {
 };
 
 const fastingDateTime = (value: string) => new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+const fastingDateTimeInput = (value?: string) => {
+  if (!value) return "";
+  const date = new Date(value);
+  const pad = (part: number) => String(part).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
 
 function startOfWeek(date: Date) {
   const result = new Date(date);
@@ -72,6 +78,8 @@ export function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: 
   const goalFasts = fastingDurations.filter((hours) => hours >= fastingGoal).length;
   const [weightPeriod, setWeightPeriod] = useState<WeightPeriod>("week");
   const [section, setSection] = useState<InsightsSection>("overview");
+  const [editingFastingId, setEditingFastingId] = useState<string>();
+  const [fastingDraft, setFastingDraft] = useState<{ startedAt: string; endedAt: string }>({ startedAt: "", endedAt: "" });
   const entries = [...(profile.weightEntries || [])].sort((a, b) => b.date.localeCompare(a.date));
   const latestWeight = entries[0]?.weightKg ?? profile.weightKg;
   const measurementSystem = measurementSystemFor(profile);
@@ -99,6 +107,16 @@ export function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: 
     onSave({ ...profile, weightKg, weightEntries: nextEntries });
   };
   const removeWeight = (entry: WeightEntry) => onSave({ ...profile, weightEntries: entries.filter((candidate) => candidate.date !== entry.date) });
+  const beginFastingEdit = (record: FastingRecord) => { setEditingFastingId(record.id); setFastingDraft({ startedAt: fastingDateTimeInput(record.startedAt), endedAt: fastingDateTimeInput(record.endedAt) }); };
+  const saveFastingEdit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editingFastingId || !fastingDraft.startedAt) return;
+    const startedAt = new Date(fastingDraft.startedAt);
+    const endedAt = fastingDraft.endedAt ? new Date(fastingDraft.endedAt) : undefined;
+    if (Number.isNaN(startedAt.getTime()) || (endedAt && Number.isNaN(endedAt.getTime())) || (endedAt && endedAt <= startedAt)) return;
+    onSave({ ...profile, fastingRecordEdits: { ...profile.fastingRecordEdits, [editingFastingId]: { startedAt: startedAt.toISOString(), ...(endedAt ? { endedAt: endedAt.toISOString() } : {}) } } });
+    setEditingFastingId(undefined);
+  };
   return (
     <main className="page">
       <header className="page-header"><span className="eyebrow">No judgement</span><h1>Your rhythm</h1><p>A lightweight view of patterns—not another dashboard to manage.</p></header>
@@ -152,7 +170,7 @@ export function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: 
         {completedFastingRecords.length > 0 ? <div className="fasting-history-list" aria-label="Completed fasting windows">{completedFastingRecords.map((record) => {
           const duration = fastingWindowHours(record.startedAt, record.endedAt);
           const reachedGoal = duration >= fastingGoal;
-          return <article className="fasting-history-row card" key={record.id}><div><strong>{fastingDateTime(record.startedAt)}</strong><small>Ended {fastingDateTime(record.endedAt)}</small></div><div className="fasting-history-duration"><strong>{formatFastingDuration(duration)}</strong><span className={reachedGoal ? "reached" : ""}>{reachedGoal ? "Goal reached" : `Goal: ${fastingGoal} h`}</span></div></article>;
+          return <div key={record.id}><article className="fasting-history-row card"><div><strong>{fastingDateTime(record.startedAt)}</strong><small>Ended {fastingDateTime(record.endedAt)}</small></div><div className="fasting-history-duration"><strong>{formatFastingDuration(duration)}</strong><span className={reachedGoal ? "reached" : ""}>{reachedGoal ? "Goal reached" : `Goal: ${fastingGoal} h`}</span></div><button type="button" className="icon-button subtle-button" onClick={() => beginFastingEdit(record)} aria-label="Edit fasting window"><Pencil size={14} /></button></article>{editingFastingId === record.id && <form className="fasting-edit-form card" onSubmit={saveFastingEdit}><div><label><span>Fast started</span><input type="datetime-local" required value={fastingDraft.startedAt} onChange={(event) => setFastingDraft((current) => ({ ...current, startedAt: event.target.value }))} /></label><label><span>Fast ended</span><input type="datetime-local" value={fastingDraft.endedAt} onChange={(event) => setFastingDraft((current) => ({ ...current, endedAt: event.target.value }))} /></label></div><div className="sheet-actions"><button type="button" className="secondary-button" onClick={() => setEditingFastingId(undefined)}>Cancel</button><button type="submit" className="primary-button">Save times</button></div></form>}</div>;
         })}</div> : <div className="fasting-history-empty card"><span className="action-icon amber"><Timer /></span><div><strong>Your fasting history starts here.</strong><p>Once a fasting window ends, you’ll see its duration and whether it reached your goal.</p></div></div>}
         {longestFast > 0 && <p className="panel-note">Longest completed fast: {formatFastingDuration(longestFast)}. Tracking only, not a medical recommendation.</p>}
       </section>}

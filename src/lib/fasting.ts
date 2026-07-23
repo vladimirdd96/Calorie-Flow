@@ -51,7 +51,11 @@ export function eatingSessions(profile: Profile, meals: Meal[]) {
 export function fastingRecordsForMeals(profile: Profile, meals: Meal[]): FastingRecord[] {
   if ((profile.enabledHabitFeatures && !profile.enabledHabitFeatures.includes("fasting")) || !meals.length) return [];
   const sessions = eatingSessions(profile, meals);
-  return sessions.map((session, index) => ({ id: `auto-fast-${session.id}`, startedAt: session.endedAt, ...(sessions[index + 1] ? { endedAt: sessions[index + 1].startedAt } : {}) }));
+  return sessions.map((session, index) => {
+    const id = `auto-fast-${session.id}`;
+    const generated = { id, startedAt: session.endedAt, ...(sessions[index + 1] ? { endedAt: sessions[index + 1].startedAt } : {}) };
+    return profile.fastingRecordEdits?.[id] ? { ...generated, ...profile.fastingRecordEdits[id] } : generated;
+  });
 }
 
 /** Rebuilds automatic records so history reflects eating sessions, not individual food entries. */

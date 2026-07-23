@@ -209,6 +209,13 @@ p { color: var(--muted); line-height: 1.55; }
 .meal-group-title { display: flex; justify-content: space-between; padding: 0 4px 9px; color: var(--muted); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
 .meal-list { min-height: 58px; border-radius: var(--radius-md); overflow: visible; transition: border-color .2s ease, background .2s ease; }
 .meal-list.drop-target { border-color: var(--mint); background: rgba(125,255,213,.08); }
+.eating-session + .eating-session { border-top: 1px solid var(--border-strong); }
+.eating-session-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 14px 7px; color: var(--muted); background: color-mix(in oklch, var(--panel-strong) 26%, transparent); }
+.eating-session-heading > span { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.eating-session-heading strong { color: var(--mint-strong); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+.eating-session-heading small, .eating-session-heading em { color: var(--muted); font-size: 10px; font-style: normal; }
+.eating-session-heading em { white-space: nowrap; }
+.eating-session-meals .meal-row:first-child { padding-top: 10px; }
 .meal-row { position: relative; display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto auto; align-items: center; gap: 9px; padding: 14px; cursor: grab; transition: background-color .18s ease, opacity .18s ease; }
 .meal-row:active { cursor: grabbing; }
 .meal-row.dragging { opacity: .48; background: color-mix(in oklch, var(--mint) 8%, transparent); }
@@ -501,6 +508,11 @@ p { color: var(--muted); line-height: 1.55; }
 .fasting-history-duration > strong { color: var(--mint-strong); font-size: 15px; letter-spacing: -.03em; }
 .fasting-history-duration span { color: var(--muted); font-size: 9px; }
 .fasting-history-duration span.reached { color: var(--mint-strong); }
+.fasting-edit-form { display: grid; gap: 14px; margin-top: 6px; padding: 14px 16px; }
+.fasting-edit-form > div:first-child { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.fasting-edit-form label { display: grid; gap: 6px; }
+.fasting-edit-form label span { color: var(--muted); font-size: 10px; font-weight: 800; }
+.fasting-edit-form input { min-width: 0; }
 .fasting-history-empty { margin-top: 14px; }
 .subtle-button { color: var(--muted); }
 .weight-prompt { display: grid; gap: 12px; padding: 10px 4px 4px; }

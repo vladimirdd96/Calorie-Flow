@@ -6,6 +6,7 @@ import { Sheet } from "@/features/shared/Sheet";
 import { CalendarPicker } from "@/features/shared/DatePicker";
 import { isHabitFeatureEnabled } from "@/lib/habit-settings";
 import { localDateKey, netCarbs, resolveDailyTargets, resolveMealCalorieTarget, round, sumNutrition } from "@/lib/nutrition";
+import { eatingSessions } from "@/lib/fasting";
 import { habitFeatures, type Food, type Meal, type MealType, type Nutrition, type Profile, type Recipe } from "@/lib/types";
 import { BrandMark, changeDate, dayLabel, mealLabels, MiniProgressRing, ProgressRing } from "./components/DiaryPrimitives";
 import { DailyRhythm, FastingTracker, HomeScreenPrompt, MealAddRow, SaveRecipeSheet } from "./components/DiaryTools";
@@ -70,7 +71,23 @@ export function TodayView({
   const targets = resolveDailyTargets(profile, dateKey);
   const carbs = profile.carbDisplay === "net" ? netCarbs(total) : total.carbs;
   const remaining = Math.max(0, targets.calories - total.calories);
-  const grouped = (Object.keys(mealLabels) as MealType[]).map((type) => ({ type, meals: meals.filter((meal) => meal.mealType === type) }));
+  const sessionByMealId = useMemo(() => {
+    const lookup = new Map<string, { id: string; startedAt: string; endedAt: string }>();
+    eatingSessions(profile, meals).forEach((session) => session.meals.forEach((meal) => lookup.set(meal.id, session)));
+    return lookup;
+  }, [profile, meals]);
+  const grouped = (Object.keys(mealLabels) as MealType[]).map((type) => {
+    const typeMeals = meals.filter((meal) => meal.mealType === type);
+    const sessionMap = new Map<string, Meal[]>();
+    typeMeals.forEach((meal) => {
+      const session = sessionByMealId.get(meal.id);
+      const sessionMeals = sessionMap.get(session?.id || `meal-${meal.id}`) || [];
+      sessionMeals.push(meal);
+      sessionMap.set(session?.id || `meal-${meal.id}`, sessionMeals);
+    });
+    const sessions = [...sessionMap.entries()].map(([id, sessionMeals]) => ({ id, meals: sessionMeals, session: sessionByMealId.get(sessionMeals[0].id) })).sort((left, right) => left.meals[0].createdAt.localeCompare(right.meals[0].createdAt));
+    return { type, meals: typeMeals, sessions };
+  });
   const updatePointerDropTarget = useCallback((clientX: number, clientY: number) => {
     const hovered = document.elementFromPoint(clientX, clientY)?.closest<HTMLElement>("[data-meal-id], [data-meal-list]");
     if (!hovered) { setDropTarget(undefined); return; }
@@ -175,11 +192,14 @@ export function TodayView({
 
       <section className="log-section">
         <div className="section-heading"><div><span className="eyebrow">Daily log</span><h2>Your meals</h2></div><span className="subtle meal-reorder-hint">Hold ⋮⋮ to reorder</span></div>
-        {grouped.map(({ type, meals: groupMeals }) => (
+        {grouped.map(({ type, meals: groupMeals, sessions }) => (
           <div className="meal-group" key={type}>
             <div className="meal-group-title"><span>{mealLabels[type]}</span>{!profile.hideCalories && (() => { const target = resolveMealCalorieTarget(profile, type); const calories = Math.round(sumNutrition(groupMeals.map((meal) => meal.nutrition)).calories); return <span aria-label={target ? `${calories} of ${target} calorie guide` : `${calories} calories`}>{calories}{target ? ` / ${target}` : ""} kcal</span>; })()}</div>
             <div className={`meal-list card ${dropTarget === type ? "drop-target" : ""}`} data-meal-list={type} onDragOver={(event) => { event.preventDefault(); setDropTarget(type); }} onDragLeave={() => setDropTarget(undefined)} onDrop={(event) => { event.preventDefault(); const mealId = event.dataTransfer.getData("text/meal-id"); const meal = meals.find((candidate) => candidate.id === mealId); if (meal) onDropMeal(meal, type); setDropTarget(undefined); }}>
-              {groupMeals.map((meal) => { const linkedImageUrl = meal.imageUrl || (meal.recipeId ? recipes.find((recipe) => recipe.id === meal.recipeId)?.imageUrls?.[0] : foods.find((food) => food.id === meal.foodId)?.imageUrl); return <MealRow key={meal.id} meal={meal} imageUrl={linkedImageUrl} hideCalories={profile.hideCalories} dragging={draggingMealId === meal.id} onPointerDown={startPointerDrag} onOpenImage={() => onOpenImage({ ...meal, imageUrl: linkedImageUrl })} dropPosition={dropTarget === `${type}:${meal.id}:before` ? "before" : dropTarget === `${type}:${meal.id}:after` ? "after" : undefined} onDelete={() => onDelete(meal.id)} onEdit={() => onEdit(meal)} onDetails={() => meal.recipeId ? onEdit(meal) : onOpenDetails(meal)} onDuplicate={() => onDuplicate(meal)} onMove={() => onMove(meal)} onDragStart={(draggedMeal, event) => { event.dataTransfer.setData("text/meal-id", draggedMeal.id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); setDropTarget(`${type}:${meal.id}:${event.clientY < rect.top + rect.height / 2 ? "before" : "after"}`); }} onDrop={(event) => { event.preventDefault(); event.stopPropagation(); const mealId = event.dataTransfer.getData("text/meal-id"); const draggedMeal = meals.find((candidate) => candidate.id === mealId); if (draggedMeal) { const rect = event.currentTarget.getBoundingClientRect(); onDropMeal(draggedMeal, type, meal.id, event.clientY >= rect.top + rect.height / 2); } setDropTarget(undefined); }} />; })}
+              {sessions.map(({ id, meals: sessionMeals, session }, sessionIndex) => <div className="eating-session" key={id}>
+                <div className="eating-session-heading"><span><strong>{sessionIndex === 0 ? "Eating session" : "New eating session"}</strong><small>{session ? `${new Date(session.startedAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}${session.startedAt !== session.endedAt ? `–${new Date(session.endedAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}` : ""}` : "Time not available"}</small></span><em>{sessionMeals.length} {sessionMeals.length === 1 ? "food" : "foods"}</em></div>
+                <div className="eating-session-meals">{sessionMeals.map((meal) => { const linkedImageUrl = meal.imageUrl || (meal.recipeId ? recipes.find((recipe) => recipe.id === meal.recipeId)?.imageUrls?.[0] : foods.find((food) => food.id === meal.foodId)?.imageUrl); return <MealRow key={meal.id} meal={meal} imageUrl={linkedImageUrl} hideCalories={profile.hideCalories} dragging={draggingMealId === meal.id} onPointerDown={startPointerDrag} onOpenImage={() => onOpenImage({ ...meal, imageUrl: linkedImageUrl })} dropPosition={dropTarget === `${type}:${meal.id}:before` ? "before" : dropTarget === `${type}:${meal.id}:after` ? "after" : undefined} onDelete={() => onDelete(meal.id)} onEdit={() => onEdit(meal)} onDetails={() => meal.recipeId ? onEdit(meal) : onOpenDetails(meal)} onDuplicate={() => onDuplicate(meal)} onMove={() => onMove(meal)} onDragStart={(draggedMeal, event) => { event.dataTransfer.setData("text/meal-id", draggedMeal.id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); setDropTarget(`${type}:${meal.id}:${event.clientY < rect.top + rect.height / 2 ? "before" : "after"}`); }} onDrop={(event) => { event.preventDefault(); event.stopPropagation(); const mealId = event.dataTransfer.getData("text/meal-id"); const draggedMeal = meals.find((candidate) => candidate.id === mealId); if (draggedMeal) { const rect = event.currentTarget.getBoundingClientRect(); onDropMeal(draggedMeal, type, meal.id, event.clientY >= rect.top + rect.height / 2); } setDropTarget(undefined); }} />; })}</div>
+              </div>)}
               <MealAddRow mealType={type} meals={groupMeals} onAdd={onAdd} onSaveRecipe={setRecipeDraftMeals} />
             </div>
           </div>

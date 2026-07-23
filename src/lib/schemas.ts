@@ -131,6 +131,7 @@ export const profileSchema = z.object({
   fastingTrackingMode: z.enum(["standard", "precise"]).optional(),
   fastingMealWindowMinutes: z.union([z.literal(15), z.literal(30), z.literal(60)]).optional(),
   fastingLateMealBehavior: z.enum(["ask", "new", "previous"]).optional(),
+  fastingRecordEdits: z.record(z.string().trim().min(1).max(240), z.object({ startedAt: z.string().datetime({ offset: true }), endedAt: z.string().datetime({ offset: true }).optional() }).strict()).optional(),
   fastingRecords: z.array(fastingRecordSchema).max(10_000).optional(),
   recipes: z.array(recipeSchema).max(10_000).optional(),
   mealPlanEntries: z.array(mealPlanEntrySchema).max(100_000).optional(),

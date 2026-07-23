@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeFast, eatingSessions, fastingProgress, fastingWindowHours, formatFastingDuration, syncAutomaticFastAfterMeal, syncAutomaticFasting } from "./fasting";
+import { activeFast, eatingSessions, fastingProgress, fastingRecordsForMeals, fastingWindowHours, formatFastingDuration, syncAutomaticFastAfterMeal, syncAutomaticFasting } from "./fasting";
 import type { Meal, Profile } from "./types";
 
 const profile = { enabledHabitFeatures: ["fasting"], fastingRecords: [] } as unknown as Profile;
@@ -57,5 +57,12 @@ describe("fasting", () => {
     const precise = { ...profile, fastingTrackingMode: "precise" as const };
     const meals = [meal, { ...meal, id: "meal-2", createdAt: "2026-07-21T18:01:00.000Z" }];
     expect(eatingSessions(precise, meals)).toHaveLength(2);
+  });
+
+  it("preserves user-edited fasting times over automatic recalculation", () => {
+    const edited = { ...profile, fastingRecordEdits: { "auto-fast-auto-session-meal-1": { startedAt: "2026-07-21T17:45:00.000Z", endedAt: "2026-07-22T06:15:00.000Z" } } };
+    const records = fastingRecordsForMeals(edited, [meal, { ...meal, id: "meal-2", createdAt: "2026-07-22T06:00:00.000Z" }]);
+    expect(records[0].startedAt).toBe("2026-07-21T17:45:00.000Z");
+    expect(records[0].endedAt).toBe("2026-07-22T06:15:00.000Z");
   });
 });
