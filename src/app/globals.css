@@ -481,6 +481,23 @@ p { color: var(--muted); line-height: 1.55; }
 .weight-empty { margin-top: 10px; padding: 18px; }
 .weight-empty strong { font-size: 13px; }
 .weight-empty p { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
+.fasting-history-section { margin-top: 30px; }
+.fasting-summary-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.fasting-summary-strip > div { min-width: 0; }
+.fasting-active-history, .fasting-history-empty { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start; margin-top: 14px; padding: 18px; }
+.action-icon.amber { color: var(--amber); background: color-mix(in oklch, var(--amber) 13%, var(--control-surface)); }
+.fasting-active-history strong, .fasting-history-empty strong { display: block; font-size: 13px; }
+.fasting-active-history p, .fasting-history-empty p { margin: 5px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.fasting-history-list { display: grid; gap: 8px; margin-top: 14px; }
+.fasting-history-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 16px; }
+.fasting-history-row > div:first-child { min-width: 0; display: grid; gap: 4px; }
+.fasting-history-row strong { color: var(--text); font-size: 12px; }
+.fasting-history-row small { color: var(--muted); font-size: 10px; }
+.fasting-history-duration { display: grid; justify-items: end; gap: 4px; flex: 0 0 auto; }
+.fasting-history-duration > strong { color: var(--mint-strong); font-size: 15px; letter-spacing: -.03em; }
+.fasting-history-duration span { color: var(--muted); font-size: 9px; }
+.fasting-history-duration span.reached { color: var(--mint-strong); }
+.fasting-history-empty { margin-top: 14px; }
 .subtle-button { color: var(--muted); }
 .weight-prompt { display: grid; gap: 12px; padding: 10px 4px 4px; }
 .weight-prompt > .action-icon { margin-bottom: 4px; }
@@ -1369,6 +1386,8 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 
 @media (max-width: 620px) {
   .insights-grid, .nutrition-insights-grid { grid-template-columns: 1fr; }
+  .fasting-summary-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fasting-summary-strip > div:last-child { grid-column: 1 / -1; }
 }
 
 @media (min-width: 1080px) {

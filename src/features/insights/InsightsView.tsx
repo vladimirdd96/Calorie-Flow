@@ -4,15 +4,15 @@ import { Droplets, Plus, Sparkles, Timer, Trash2, Utensils } from "lucide-react"
 import { FormEvent, useState } from "react";
 import { localDateKey, round, sumNutrition } from "@/lib/nutrition";
 import { hydrationTotal } from "@/lib/hydration";
-import { fastingWindowHours } from "@/lib/fasting";
+import { activeFast, fastingWindowHours } from "@/lib/fasting";
 import { isHabitFeatureEnabled } from "@/lib/habit-settings";
 import { recentLogDates } from "@/lib/logging";
 import { NumericInput } from "@/features/shared/NumericInput";
-import type { Meal, MealType, Nutrition, Profile, WeightEntry } from "@/lib/types";
-import { fastingGoalHours, habitFeatures, measurementSystems } from "@/lib/types";
+import type { FastingRecord, Meal, MealType, Profile, WeightEntry } from "@/lib/types";
+import { habitFeatures, measurementSystems } from "@/lib/types";
 
 type WeightPeriod = "week" | "month" | "all";
-type InsightsSection = "overview" | "nutrition" | "weight";
+type InsightsSection = "overview" | "nutrition" | "weight" | "fasting";
 
 const kgToLb = (kg: number) => kg * 2.2046226218;
 
@@ -30,6 +30,10 @@ const mealLabels: Record<MealType, string> = {
   dinner: "Dinner",
   snack: "Snack",
 };
+
+const formatFastingDuration = (hours: number) => hours % 1 ? `${hours.toFixed(1)} h` : `${hours} h`;
+
+const fastingDateTime = (value: string) => new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 
 function startOfWeek(date: Date) {
   const result = new Date(date);
@@ -58,6 +62,15 @@ export function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: 
   const waterTarget = profile.waterTargetMl || 2000;
   const waterDays = recentLogDates().filter((date) => hydrationTotal(profile.waterEntries, date) >= waterTarget * .8).length;
   const completedFasts = (profile.fastingRecords || []).filter((record) => record.endedAt && fastingWindowHours(record.startedAt, record.endedAt) >= (profile.fastingGoalHours || 16)).length;
+  const fastingGoal = profile.fastingGoalHours || 16;
+  const activeFasting = activeFast(profile.fastingRecords);
+  const completedFastingRecords = [...(profile.fastingRecords || [])]
+    .filter((record): record is FastingRecord & { endedAt: string } => Boolean(record.endedAt))
+    .sort((a, b) => b.endedAt.localeCompare(a.endedAt));
+  const fastingDurations = completedFastingRecords.map((record) => fastingWindowHours(record.startedAt, record.endedAt));
+  const averageFast = fastingDurations.length ? fastingDurations.reduce((sum, hours) => sum + hours, 0) / fastingDurations.length : 0;
+  const longestFast = fastingDurations.length ? Math.max(...fastingDurations) : 0;
+  const goalFasts = fastingDurations.filter((hours) => hours >= fastingGoal).length;
   const [weightPeriod, setWeightPeriod] = useState<WeightPeriod>("week");
   const [section, setSection] = useState<InsightsSection>("overview");
   const entries = [...(profile.weightEntries || [])].sort((a, b) => b.date.localeCompare(a.date));
@@ -93,6 +106,7 @@ export function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: 
       <div className="workspace-tabs" role="tablist" aria-label="Insights workspace">
         <button id="insights-overview-tab" type="button" role="tab" aria-selected={section === "overview"} aria-controls="insights-overview-panel" className={section === "overview" ? "active" : ""} onClick={() => setSection("overview")}>Overview</button>
         <button id="insights-nutrition-tab" type="button" role="tab" aria-selected={section === "nutrition"} aria-controls="insights-nutrition-panel" className={section === "nutrition" ? "active" : ""} onClick={() => setSection("nutrition")}>Nutrition</button>
+        {isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting) && <button id="insights-fasting-tab" type="button" role="tab" aria-selected={section === "fasting"} aria-controls="insights-fasting-panel" className={section === "fasting" ? "active" : ""} onClick={() => setSection("fasting")}>Fasting <span>{completedFastingRecords.length}</span></button>}
         {weightTrackingEnabled && <button id="insights-weight-tab" type="button" role="tab" aria-selected={section === "weight"} aria-controls="insights-weight-panel" className={section === "weight" ? "active" : ""} onClick={() => setSection("weight")}>Weight</button>}
       </div>
       {section === "overview" && <section id="insights-overview-panel" role="tabpanel" aria-labelledby="insights-overview-tab" className="workspace-panel">
@@ -127,6 +141,21 @@ export function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: 
           const label = weightPeriod === "week" ? `Week of ${new Date(`${group.key}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : new Date(`${group.key}-01T12:00:00`).toLocaleDateString(undefined, { month: "long", year: "numeric" });
           return <details className="weight-history-group" key={group.key}><summary><span><strong>{label}</strong><small>{group.entries.length} {group.entries.length === 1 ? "weigh-in" : "weigh-ins"}</small></span><b>{formatWeight(groupAverage, profile)}</b></summary><div className="weight-history-entries">{group.entries.map((entry) => <div className="weight-history-entry" key={entry.date}><span>{new Date(`${entry.date}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}</span><strong>{formatWeight(entry.weightKg, profile)}</strong><button type="button" className="icon-button subtle-button" onClick={() => removeWeight(entry)} aria-label={`Remove weight logged on ${entry.date}`}><Trash2 size={14} /></button></div>)}</div></details>;
         })}</div> : <div className="weight-empty card"><strong>Your weight history starts here.</strong><p>Log a weigh-in above to see daily entries and rolling averages.</p></div>}
+      </section>}
+      {section === "fasting" && isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting) && <section id="insights-fasting-panel" role="tabpanel" aria-labelledby="insights-fasting-tab" className="fasting-history-section workspace-panel">
+        <div className="section-heading"><div><span className="eyebrow">Optional rhythm</span><h2 id="fasting-history-heading">Fasting history</h2></div><span className="subtle">{fastingGoal}-hour goal</span></div>
+        <div className="summary-strip fasting-summary-strip">
+          <div className="card"><span>Completed</span><strong>{completedFastingRecords.length}</strong><small>tracked windows</small></div>
+          <div className="card"><span>Average fast</span><strong>{averageFast ? formatFastingDuration(Math.round(averageFast * 10) / 10) : "—"}</strong><small>across history</small></div>
+          <div className="card"><span>Reached goal</span><strong>{goalFasts}<small> / {completedFastingRecords.length}</small></strong><small>{completedFastingRecords.length ? "completed windows" : "no completed windows yet"}</small></div>
+        </div>
+        {activeFasting && <section className="fasting-active-history card" aria-labelledby="fasting-active-heading"><span className="action-icon amber"><Timer /></span><div><span className="eyebrow">In progress</span><strong id="fasting-active-heading">Started {fastingDateTime(activeFasting.startedAt)}</strong><p>Your current window will appear in history after your next meal.</p></div></section>}
+        {completedFastingRecords.length > 0 ? <div className="fasting-history-list" aria-label="Completed fasting windows">{completedFastingRecords.map((record) => {
+          const duration = fastingWindowHours(record.startedAt, record.endedAt);
+          const reachedGoal = duration >= fastingGoal;
+          return <article className="fasting-history-row card" key={record.id}><div><strong>{fastingDateTime(record.startedAt)}</strong><small>Ended {fastingDateTime(record.endedAt)}</small></div><div className="fasting-history-duration"><strong>{formatFastingDuration(duration)}</strong><span className={reachedGoal ? "reached" : ""}>{reachedGoal ? "Goal reached" : `Goal: ${fastingGoal} h`}</span></div></article>;
+        })}</div> : <div className="fasting-history-empty card"><span className="action-icon amber"><Timer /></span><div><strong>Your fasting history starts here.</strong><p>Once a fasting window ends, you’ll see its duration and whether it reached your goal.</p></div></div>}
+        {longestFast > 0 && <p className="panel-note">Longest completed fast: {formatFastingDuration(longestFast)}. Tracking only, not a medical recommendation.</p>}
       </section>}
       {section === "nutrition" && <section id="insights-nutrition-panel" role="tabpanel" aria-labelledby="insights-nutrition-tab" className="workspace-panel">
       {!profile.hideCalories && <section className="chart-card card">
