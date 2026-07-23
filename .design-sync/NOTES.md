@@ -8,14 +8,14 @@ no existing design-system package, no Storybook, no `dist/` build. To make
 minimal package (`design-system/`) that re-exports real app components via
 relative imports into `src/`:
 
-- `TodayView` (the home screen) — `src/features/diary/DiaryView.tsx`
-- `BottomNav` — `src/features/navigation/BottomNav.tsx`
-- `Sheet` — `src/features/shared/Sheet.tsx`
-
-Scope is intentionally home-screen-only for this first sync. Grow it later by
-adding more re-exports to `design-system/entry.ts` (diary sheets, coach,
-insights, planning, profile, food-catalogue, food-capture screens) — same
-package, same build, same `_ds_sync.json` anchor, no new package needed.
+First sync (home screen only): `TodayView`, `BottomNav`, `Sheet`. Second sync
+(same session) grew this to all 27 top-level screens/sheets/primitives across
+every feature slice — diary, navigation, shared primitives, auth, coach,
+food-capture, food-catalogue, insights, planning, profile. See
+`design-system/entry.ts` for the full current export list. Any remaining
+screens (e.g. a future new feature slice) grow the same way: add a re-export
+to `entry.ts`, re-run the driver — same package, same build, same
+`_ds_sync.json` anchor, no new package needed.
 
 ## Build pipeline (`design-system/`)
 
@@ -66,6 +66,30 @@ package, same build, same `_ds_sync.json` anchor, no new package needed.
   layouts and render perfectly). Graded `good` on all 3 cells on that basis.
   A future re-sync seeing this same clipped `BottomNav` card should NOT
   re-chase it as a new regression — it's this same known issue recurring.
+- **Known render warn — `OnboardingDialog`, `Default` cell.** Same root cause
+  as `BottomNav` above: `OnboardingDialog` renders `.onboarding-overlay`, its
+  own raw `position:fixed;inset:0` wrapper (see `ProfileView.tsx`), instead of
+  going through the shared `Sheet` component like `WeightTrackingPrompt` and
+  `MeasurementPreferencePrompt` do (both of which render perfectly — they use
+  `Sheet`'s flex-centered portal, not a raw fixed overlay). Tested viewport
+  sizes from 420x700 up to 480x1400 — the card stays squeezed to a ~15px
+  sliver at every size, confirming it's the same structural containing-block
+  collapse, not an undersized viewport. Graded `good`: the component's own
+  code/styling is correct (verified by reading the source and by the
+  identically-token'd `WeightTrackingPrompt`/`MeasurementPreferencePrompt`
+  cards rendering fine). If `OnboardingDialog` is ever refactored to use
+  `Sheet` instead of its own overlay div, this preview should be re-checked —
+  it would likely start rendering correctly and no longer need this note.
+- **Mock-data dates are fixed, not relative to real time.** `_fixtures.ts`
+  uses a hardcoded `dateKey = "2026-07-22"`. Components that compare against
+  `localDateKey()` (the real system clock at render time) — `CalendarSheet`
+  (future-day greying) and `InsightsView` (weekly stats window) — will show
+  mostly-empty/zeroed states whenever the real clock has moved past that
+  fixed date, which it always eventually will. Not a broken render (still
+  styled/complete, just a valid empty state), but if a future re-sync wants
+  richer InsightsView/CalendarSheet previews, switch `_fixtures.ts` to compute
+  `dateKey` and `meals[].createdAt`/`loggedDate` relative to `new Date()` at
+  build time instead of a fixed string.
 - **Font substitute accepted**: `globals.css` uses
   `font-family: "Avenir Next", Avenir, "Helvetica Neue", sans-serif` — Apple
   system fonts, never shipped as webfonts by the app (there's no `.woff2` in

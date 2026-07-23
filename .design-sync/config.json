@@ -9,6 +9,9 @@
   "overrides": {
     "Sheet": { "cardMode": "single", "viewport": "420x640" },
     "BottomNav": { "cardMode": "single", "primaryStory": "Default", "viewport": "420x110" },
-    "TodayView": { "cardMode": "column" }
+    "TodayView": { "cardMode": "column" },
+    "MeasurementPreferencePrompt": { "cardMode": "single", "primaryStory": "Default", "viewport": "420x500" },
+    "OnboardingDialog": { "cardMode": "single", "primaryStory": "Default", "viewport": "420x700" },
+    "WeightTrackingPrompt": { "cardMode": "single", "primaryStory": "Default", "viewport": "420x500" }
   }
 }

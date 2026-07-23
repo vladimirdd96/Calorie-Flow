@@ -68,6 +68,8 @@ export function Default() {
   return (
     <TodayView
       profile={baseProfile}
+      foods={[]}
+      recipes={[]}
       meals={dailyMeals}
       dateKey={dateKey}
       syncLabel="Synced privately"
@@ -81,6 +83,8 @@ export function EmptyDay() {
   return (
     <TodayView
       profile={baseProfile}
+      foods={[]}
+      recipes={[]}
       meals={[]}
       dateKey={dateKey}
       syncLabel="Private on this device"
@@ -94,6 +98,8 @@ export function MacroFocusMode() {
   return (
     <TodayView
       profile={{ ...baseProfile, hideCalories: true, carbDisplay: "net" }}
+      foods={[]}
+      recipes={[]}
       meals={dailyMeals}
       dateKey={dateKey}
       syncLabel="Synced privately"

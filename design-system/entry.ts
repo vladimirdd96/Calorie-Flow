@@ -1,3 +1,14 @@
-export { TodayView } from "../src/features/diary/DiaryView";
+export { TodayView, CalendarSheet, DuplicateMealSheet, MealEditor, MoveMealSheet, RecipeLogSheet } from "../src/features/diary/DiaryView";
+export { MealImageViewer, NutritionDetails, DailyNutritionBreakdown } from "../src/features/diary/NutritionDetails";
 export { BottomNav } from "../src/features/navigation/BottomNav";
 export { Sheet } from "../src/features/shared/Sheet";
+export { NumericInput } from "../src/features/shared/NumericInput";
+export { ClearableInput } from "../src/features/shared/ClearableInput";
+export { ThemedSelect } from "../src/features/shared/ThemedSelect";
+export { AuthGateway } from "../src/features/auth/AuthGateway";
+export { CoachView } from "../src/features/coach/CoachView";
+export { AddFoodSheet, FoodDetailsSheet, FoodEditor, PortionSheet } from "../src/features/food-capture/FoodCapture";
+export { DiscoverView } from "../src/features/food-catalogue/DiscoverView";
+export { InsightsView } from "../src/features/insights/InsightsView";
+export { PlanView } from "../src/features/planning/PlanView";
+export { ProfileView, OnboardingDialog, WeightTrackingPrompt, MeasurementPreferencePrompt } from "../src/features/profile/ProfileView";
