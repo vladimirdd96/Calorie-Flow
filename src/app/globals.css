@@ -475,6 +475,8 @@ p { color: var(--muted); line-height: 1.55; }
 .weight-history-group summary > span { display: grid; gap: 4px; }
 .weight-history-group summary strong { font-size: 12px; }
 .weight-history-group summary small { color: var(--muted); font-size: 10px; }
+.weight-history-group summary .weight-group-average { display: grid; justify-items: end; gap: 3px; }
+.weight-history-group summary .weight-group-average small { font-size: 9px; text-transform: uppercase; letter-spacing: .04em; }
 .weight-history-group summary b { color: var(--mint-strong); font-size: 13px; white-space: nowrap; }
 .weight-history-entries { padding: 0 14px 10px; border-top: 1px solid var(--border); }
 .weight-history-entry { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px; min-height: 40px; color: var(--muted); font-size: 11px; }
