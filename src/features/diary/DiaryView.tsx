@@ -3,10 +3,11 @@
 import { ChevronDown, ChevronLeft, ChevronRight, MessageCircle, ShieldCheck } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Sheet } from "@/features/shared/Sheet";
+import { isHabitFeatureEnabled } from "@/lib/habit-settings";
 import { localDateKey, netCarbs, resolveDailyTargets, resolveMealCalorieTarget, round, sumNutrition } from "@/lib/nutrition";
-import type { Meal, MealType, Nutrition, Profile, Recipe } from "@/lib/types";
+import { habitFeatures, type Food, type Meal, type MealType, type Nutrition, type Profile, type Recipe } from "@/lib/types";
 import { BrandMark, changeDate, dayLabel, mealLabels, MiniProgressRing, ProgressRing } from "./components/DiaryPrimitives";
-import { DailyRhythm, HomeScreenPrompt, MealAddRow, SaveRecipeSheet } from "./components/DiaryTools";
+import { DailyRhythm, FastingTracker, HomeScreenPrompt, MealAddRow, SaveRecipeSheet } from "./components/DiaryTools";
 import { MealRow } from "./components/MealControls";
 
 export { DuplicateMealSheet, MealEditor, MoveMealSheet } from "./components/MealControls";
@@ -15,6 +16,8 @@ export { readMealImage } from "./components/DiaryPrimitives";
 
 export function TodayView({
   profile,
+  foods,
+  recipes,
   meals,
   dateKey,
   onDateChange,
@@ -36,6 +39,8 @@ export function TodayView({
   onSaveRecipe,
 }: {
   profile: Profile;
+  foods: Food[];
+  recipes: Recipe[];
   meals: Meal[];
   dateKey: string;
   onDateChange: (date: string) => void;
@@ -158,6 +163,7 @@ export function TodayView({
             {!profile.hideCalories && <div><span>Remaining</span><strong>{Math.round(remaining).toLocaleString()}</strong><small>kcal</small></div>}
             <div><span>Fibre</span><strong>{round(total.fiber, 0)}</strong><small>/ {targets.fiber} g</small></div>
           </div>
+          {isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting) && <FastingTracker profile={profile} onSave={onSaveProfile} compact />}
         </div>
         <div className="macro-card card">
           <div className="section-heading compact"><div><span className="eyebrow">Daily nutrition</span><h2>Macro totals</h2></div><span className="subtle">from food & drinks</span></div>
@@ -172,7 +178,7 @@ export function TodayView({
           <div className="meal-group" key={type}>
             <div className="meal-group-title"><span>{mealLabels[type]}</span>{!profile.hideCalories && (() => { const target = resolveMealCalorieTarget(profile, type); const calories = Math.round(sumNutrition(groupMeals.map((meal) => meal.nutrition)).calories); return <span aria-label={target ? `${calories} of ${target} calorie guide` : `${calories} calories`}>{calories}{target ? ` / ${target}` : ""} kcal</span>; })()}</div>
             <div className={`meal-list card ${dropTarget === type ? "drop-target" : ""}`} data-meal-list={type} onDragOver={(event) => { event.preventDefault(); setDropTarget(type); }} onDragLeave={() => setDropTarget(undefined)} onDrop={(event) => { event.preventDefault(); const mealId = event.dataTransfer.getData("text/meal-id"); const meal = meals.find((candidate) => candidate.id === mealId); if (meal) onDropMeal(meal, type); setDropTarget(undefined); }}>
-              {groupMeals.map((meal) => <MealRow key={meal.id} meal={meal} hideCalories={profile.hideCalories} dragging={draggingMealId === meal.id} onPointerDown={startPointerDrag} onOpenImage={() => onOpenImage(meal)} dropPosition={dropTarget === `${type}:${meal.id}:before` ? "before" : dropTarget === `${type}:${meal.id}:after` ? "after" : undefined} onDelete={() => onDelete(meal.id)} onEdit={() => onEdit(meal)} onDetails={() => meal.recipeId ? onEdit(meal) : onOpenDetails(meal)} onDuplicate={() => onDuplicate(meal)} onMove={() => onMove(meal)} onDragStart={(draggedMeal, event) => { event.dataTransfer.setData("text/meal-id", draggedMeal.id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); setDropTarget(`${type}:${meal.id}:${event.clientY < rect.top + rect.height / 2 ? "before" : "after"}`); }} onDrop={(event) => { event.preventDefault(); event.stopPropagation(); const mealId = event.dataTransfer.getData("text/meal-id"); const draggedMeal = meals.find((candidate) => candidate.id === mealId); if (draggedMeal) { const rect = event.currentTarget.getBoundingClientRect(); onDropMeal(draggedMeal, type, meal.id, event.clientY >= rect.top + rect.height / 2); } setDropTarget(undefined); }} />)}
+              {groupMeals.map((meal) => { const linkedImageUrl = meal.imageUrl || (meal.recipeId ? recipes.find((recipe) => recipe.id === meal.recipeId)?.imageUrls?.[0] : foods.find((food) => food.id === meal.foodId)?.imageUrl); return <MealRow key={meal.id} meal={meal} imageUrl={linkedImageUrl} hideCalories={profile.hideCalories} dragging={draggingMealId === meal.id} onPointerDown={startPointerDrag} onOpenImage={() => onOpenImage({ ...meal, imageUrl: linkedImageUrl })} dropPosition={dropTarget === `${type}:${meal.id}:before` ? "before" : dropTarget === `${type}:${meal.id}:after` ? "after" : undefined} onDelete={() => onDelete(meal.id)} onEdit={() => onEdit(meal)} onDetails={() => meal.recipeId ? onEdit(meal) : onOpenDetails(meal)} onDuplicate={() => onDuplicate(meal)} onMove={() => onMove(meal)} onDragStart={(draggedMeal, event) => { event.dataTransfer.setData("text/meal-id", draggedMeal.id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); setDropTarget(`${type}:${meal.id}:${event.clientY < rect.top + rect.height / 2 ? "before" : "after"}`); }} onDrop={(event) => { event.preventDefault(); event.stopPropagation(); const mealId = event.dataTransfer.getData("text/meal-id"); const draggedMeal = meals.find((candidate) => candidate.id === mealId); if (draggedMeal) { const rect = event.currentTarget.getBoundingClientRect(); onDropMeal(draggedMeal, type, meal.id, event.clientY >= rect.top + rect.height / 2); } setDropTarget(undefined); }} />; })}
               <MealAddRow mealType={type} meals={groupMeals} onAdd={onAdd} onSaveRecipe={setRecipeDraftMeals} />
             </div>
           </div>

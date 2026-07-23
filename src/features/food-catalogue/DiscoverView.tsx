@@ -19,7 +19,7 @@ function FoodRow({ food, onSelect, hideCalories }: { food: Food; onSelect: () =>
 }
 
 function RecipeRow({ recipe, onSelect, hideCalories }: { recipe: Recipe; onSelect: () => void; hideCalories: boolean }) {
-  return <button className="food-row recipe-row" type="button" onClick={onSelect}><span className="recipe-row-icon"><BookOpen size={18} /></span><span className="food-copy"><strong>{recipe.name}</strong><small>{recipe.ingredients.length} {recipe.ingredients.length === 1 ? "food" : "foods"} · saved recipe</small></span>{!hideCalories && <span className="food-calories"><strong>{Math.round(recipe.nutritionPerServing.calories)}</strong><small>kcal total</small></span>}<ChevronRight size={18} /></button>;
+  return <button className="food-row recipe-row" type="button" onClick={onSelect}>{recipe.imageUrls?.[0] ? <img className="food-avatar" src={recipe.imageUrls[0]} alt="" /> : <span className="recipe-row-icon"><BookOpen size={18} /></span>}<span className="food-copy"><strong>{recipe.name}</strong><small>{recipe.ingredients.length} {recipe.ingredients.length === 1 ? "food" : "foods"} · saved recipe</small></span>{!hideCalories && <span className="food-calories"><strong>{Math.round(recipe.nutritionPerServing.calories)}</strong><small>kcal total</small></span>}<ChevronRight size={18} /></button>;
 }
 
 type LocalSearchResult = { kind: "food"; item: Food } | { kind: "recipe"; item: Recipe };

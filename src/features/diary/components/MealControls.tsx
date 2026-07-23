@@ -8,7 +8,7 @@ import { formatUnit, round } from "@/lib/nutrition";
 import type { Meal, MealType } from "@/lib/types";
 import { mealLabels, readMealImage } from "./DiaryPrimitives";
 
-export function MealRow({ meal, onDelete, onEdit, onDuplicate, onMove, onDetails, onOpenImage, onDragStart, onDragOver, onDrop, onPointerDown, dropPosition, dragging, hideCalories }: { meal: Meal; onDelete: () => void; onEdit: () => void; onDuplicate: () => void; onMove: () => void; onDetails: () => void; onOpenImage: () => void; onDragStart: (meal: Meal, event: React.DragEvent<HTMLDivElement>) => void; onDragOver: (event: React.DragEvent<HTMLDivElement>) => void; onDrop: (event: React.DragEvent<HTMLDivElement>) => void; onPointerDown: (meal: Meal, event: React.PointerEvent<HTMLButtonElement>) => void; dropPosition?: "before" | "after"; dragging?: boolean; hideCalories: boolean }) {
+export function MealRow({ meal, imageUrl, onDelete, onEdit, onDuplicate, onMove, onDetails, onOpenImage, onDragStart, onDragOver, onDrop, onPointerDown, dropPosition, dragging, hideCalories }: { meal: Meal; imageUrl?: string; onDelete: () => void; onEdit: () => void; onDuplicate: () => void; onMove: () => void; onDetails: () => void; onOpenImage: () => void; onDragStart: (meal: Meal, event: React.DragEvent<HTMLDivElement>) => void; onDragOver: (event: React.DragEvent<HTMLDivElement>) => void; onDrop: (event: React.DragEvent<HTMLDivElement>) => void; onPointerDown: (meal: Meal, event: React.PointerEvent<HTMLButtonElement>) => void; dropPosition?: "before" | "after"; dragging?: boolean; hideCalories: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLSpanElement>(null);
   useEffect(() => {
@@ -26,7 +26,7 @@ export function MealRow({ meal, onDelete, onEdit, onDuplicate, onMove, onDetails
   return (
     <div className={`meal-row ${dropPosition ? `drop-${dropPosition}` : ""}${dragging ? " dragging" : ""}`} draggable onDragStart={(event) => onDragStart(meal, event)} onDragOver={onDragOver} onDrop={onDrop} data-meal-id={meal.id} data-meal-type={meal.mealType} title="Drag this meal to reorder it or move it to another meal section" aria-label={`Drag ${meal.name} to reorder it or move it to another meal section`}>
       <button type="button" className="meal-drag-handle" onPointerDown={(event) => onPointerDown(meal, event)} aria-label={`Hold and drag ${meal.name} to reorder it`}><GripVertical size={17} aria-hidden="true" /></button>
-      {meal.imageUrl ? <button type="button" className="meal-icon meal-image-trigger" onClick={onOpenImage} aria-label={`Expand photo for ${meal.name}`}><img src={meal.imageUrl} alt="" /></button> : <div className="meal-icon"><Utensils size={17} /></div>}
+      {imageUrl ? <button type="button" className="meal-icon meal-image-trigger" onClick={onOpenImage} aria-label={`Expand photo for ${meal.name}`}><img src={imageUrl} alt="" /></button> : <div className="meal-icon"><Utensils size={17} /></div>}
       <button type="button" className="meal-detail-trigger" onClick={onDetails} aria-label={`View nutrition details for ${meal.name}`}><div className="meal-copy">
         <strong>{meal.name}</strong>
         <span>{meal.amount} {formatUnit(meal.unit, meal.amount)} · {new Date(meal.createdAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} · P {meal.nutrition.protein} · C {meal.nutrition.carbs} · F {meal.nutrition.fat}</span>

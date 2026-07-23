@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- local recipe thumbnails are dynamic data URLs. */
 
 import { ArrowLeft, BookOpen, Camera, ChevronRight, Database, Info, Mic, Package, Pencil, Plus, ScanLine, Search, Send, ShieldCheck, Square, Upload, WifiOff } from "lucide-react";
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -26,7 +27,7 @@ export function hideCalorieValues(content: string) { return content.replace(/\b\
 export { FoodDetailsSheet, FoodEditor, PortionSheet } from "./components/FoodEntrySheets";
 
 function RecipeSearchRow({ recipe, hideCalories, onSelect }: { recipe: Recipe; hideCalories: boolean; onSelect: () => void }) {
-  return <button className="food-row recipe-row" type="button" onClick={onSelect}><span className="recipe-row-icon"><BookOpen size={18} /></span><span className="food-copy"><strong>{recipe.name}</strong><small>{recipe.ingredients.length} {recipe.ingredients.length === 1 ? "food" : "foods"} · your recipe</small></span>{!hideCalories && <span className="food-calories"><strong>{Math.round(recipe.nutritionPerServing.calories)}</strong><small>kcal total</small></span>}<ChevronRight size={18} /></button>;
+  return <button className="food-row recipe-row" type="button" onClick={onSelect}>{recipe.imageUrls?.[0] ? <img className="food-avatar" src={recipe.imageUrls[0]} alt="" /> : <span className="recipe-row-icon"><BookOpen size={18} /></span>}<span className="food-copy"><strong>{recipe.name}</strong><small>{recipe.ingredients.length} {recipe.ingredients.length === 1 ? "food" : "foods"} · your recipe</small></span>{!hideCalories && <span className="food-calories"><strong>{Math.round(recipe.nutritionPerServing.calories)}</strong><small>kcal total</small></span>}<ChevronRight size={18} /></button>;
 }
 
 function SearchResultGroup({ title, detail, empty, children }: { title: string; detail: string; empty: boolean; children: ReactNode }) {
