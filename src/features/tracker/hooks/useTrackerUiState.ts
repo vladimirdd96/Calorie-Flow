@@ -14,6 +14,8 @@ export function useTrackerUiState() {
   const [adding, setAdding] = useState(false);
   const [initialAddView, setInitialAddView] = useState<AddFoodView>("start");
   const [directFood, setDirectFood] = useState<Food>();
+  const [foodDetails, setFoodDetails] = useState<Food>();
+  const [editingFood, setEditingFood] = useState<Food>();
   const [editingMeal, setEditingMeal] = useState<Meal>();
   const [detailMeal, setDetailMeal] = useState<Meal>();
   const [duplicateMealDraft, setDuplicateMealDraft] = useState<Meal>();
@@ -36,6 +38,7 @@ export function useTrackerUiState() {
   return {
     tab, setTab, dateKey, setDateKey, calendarOpen, setCalendarOpen,
     adding, setAdding, initialAddView, setInitialAddView, directFood, setDirectFood,
+    foodDetails, setFoodDetails, editingFood, setEditingFood,
     editingMeal, setEditingMeal, detailMeal, setDetailMeal, duplicateMealDraft, setDuplicateMealDraft,
     moveMealDraft, setMoveMealDraft, initialMealType, setInitialMealType, toast, setToast,
     showHomeScreenPrompt, setShowHomeScreenPrompt, weightPromptDismissedFor, setWeightPromptDismissedFor,

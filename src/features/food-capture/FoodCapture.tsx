@@ -23,7 +23,7 @@ type VoiceRecognitionConstructor = new () => VoiceRecognition;
 type VoicePhase = "idle" | "recording" | "processing";
 
 export function hideCalorieValues(content: string) { return content.replace(/\b\d[\d,.]*\s*(?:-|–|—)?\s*(?:kcal|calories?)\b/gi, "energy hidden"); }
-export { PortionSheet } from "./components/FoodEntrySheets";
+export { FoodDetailsSheet, FoodEditor, PortionSheet } from "./components/FoodEntrySheets";
 
 function RecipeSearchRow({ recipe, hideCalories, onSelect }: { recipe: Recipe; hideCalories: boolean; onSelect: () => void }) {
   return <button className="food-row recipe-row" type="button" onClick={onSelect}><span className="recipe-row-icon"><BookOpen size={18} /></span><span className="food-copy"><strong>{recipe.name}</strong><small>{recipe.ingredients.length} {recipe.ingredients.length === 1 ? "food" : "foods"} · your recipe</small></span>{!hideCalories && <span className="food-calories"><strong>{Math.round(recipe.nutritionPerServing.calories)}</strong><small>kcal total</small></span>}<ChevronRight size={18} /></button>;
@@ -34,7 +34,7 @@ function SearchResultGroup({ title, detail, empty, children }: { title: string; 
   return <section className="search-result-group" aria-label={title}><div className="quick-list-heading"><strong>{title}</strong><span>{detail}</span></div>{children}</section>;
 }
 
-export function AddFoodSheet({ foods, meals, recipes, initialView = "start", initialMealType, onLog, onMealPhoto, onSaveFood, onSelectRecipe, onSelectFood, selectionOnly = false, hideCalories }: { foods: Food[]; meals: Meal[]; recipes: Recipe[]; initialView?: AddView; initialMealType?: MealType; onLog: (meal: Meal, food: Food) => void; onMealPhoto: (analysis: MealPhotoAnalysis) => void; onSaveFood: (food: Food) => Promise<void>; onSelectRecipe: (recipe: Recipe) => void; onSelectFood?: (food: Food) => void; selectionOnly?: boolean; hideCalories: boolean }) {
+export function AddFoodSheet({ foods, meals, recipes, initialView = "start", initialMealType, onLog, onMealPhoto, onSaveFood, onSelectRecipe, onSelectFood, hideCalories }: { foods: Food[]; meals: Meal[]; recipes: Recipe[]; initialView?: AddView; initialMealType?: MealType; onLog: (meal: Meal, food: Food) => void; onMealPhoto: (analysis: MealPhotoAnalysis) => void; onSaveFood: (food: Food) => Promise<void>; onSelectRecipe: (recipe: Recipe) => void; onSelectFood?: (food: Food) => void; hideCalories: boolean }) {
   const [view, setView] = useState<AddView>(initialView);
   const [selected, setSelected] = useState<Food>();
   const [questions, setQuestions] = useState<string[]>([]);
@@ -86,7 +86,7 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
     }
     setView(nextView);
   };
-  const pick = (food: Food, followUps: string[] = []) => { setSearchError(""); if (selectionOnly) { onSelectFood?.(food); return; } setSelected(food); setQuestions(followUps); };
+  const pick = (food: Food, followUps: string[] = []) => { setSearchError(""); if (onSelectFood) { onSelectFood(food); return; } setSelected(food); setQuestions(followUps); };
   const runSearch = useCallback(async (value: string) => {
     const requestId = ++searchRequestRef.current;
     const normalized = value.trim().toLowerCase();
@@ -251,7 +251,7 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
   return (
     <div className="coach-intake" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); addImages(event.dataTransfer.files); }}>
       <div className="sheet-header"><span /><div><span className="eyebrow">Log with Coach</span><h2>Add food or get help</h2></div><span /></div>
-      <div className="intake-actions"><button type="button" onClick={() => changeView("scan")}><ScanLine size={17} />Barcode</button><button type="button" onClick={() => imageInputRef.current?.click()}><Upload size={17} />Add photos</button><button type="button" onClick={startVoiceSearch} disabled={voicePhase !== "idle"}><Mic size={17} />Voice</button><button type="button" onClick={() => changeView("quick")}><Plus size={17} />Quick macros</button></div>
+      <div className="intake-actions"><button type="button" onClick={() => changeView("scan")}><ScanLine size={17} />Barcode</button><button type="button" onClick={() => imageInputRef.current?.click()}><Upload size={17} />Add photos</button><button type="button" onClick={startVoiceSearch} disabled={voicePhase !== "idle"}><Mic size={17} />Voice</button><button type="button" onClick={() => changeView("quick")}><Plus size={17} />Quick add</button></div>
       {voicePhase !== "idle" && <section className={`voice-capture ${voicePhase}`} aria-live="polite" aria-label="Voice food entry">
         <div className="voice-capture-top"><span className="voice-status-dot" aria-hidden="true" /><div><strong>{voicePhase === "recording" ? "Listening" : "Making sense of that"}</strong><small>{voicePhase === "recording" ? "Say what you ate, then tap Done" : "Searching your food library…"}</small></div>{voicePhase === "recording" && <time>{String(Math.floor(voiceElapsed / 60)).padStart(2, "0")}:{String(voiceElapsed % 60).padStart(2, "0")}</time>}</div>
         <div className={`voice-waveform ${voiceTranscript ? "has-speech" : ""}`} aria-hidden="true">{[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((bar) => <i key={bar} />)}</div>
