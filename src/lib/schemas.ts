@@ -53,7 +53,7 @@ export const foodSchema = z.object({
   name: z.string().trim().min(1).max(240),
   brand: optionalShortText,
   barcode: z.string().trim().max(64).optional(),
-  imageUrl: z.string().url().max(2_048).optional(),
+  imageUrl: optionalAvatar,
   quantityLabel: optionalShortText,
   servingGrams: positiveFinite.optional(),
   servingLabel: optionalShortText,

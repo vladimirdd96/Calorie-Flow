@@ -16,3 +16,9 @@ This is the durable record of product requirements stated in user requests. Read
 - Recipe logging shows a compact meal and date choice, defaulting to today, and persists the selected calendar date.
 - Recipe ingredients can be removed individually with an explicit confirmation; recipe logging does not offer ingredient replacement controls.
 - Recipe photos remain visible and editable from the recipe logging sheet.
+
+## Food photos — 2026-07-23
+
+- Photos added to a logged meal or recipe are persisted in the local database and optional cloud sync payload.
+- When the logged item is linked to a saved food, its photo is also shown for that food in the Food Library.
+- Food photos use the same resized private data-URL format as meal and recipe photos so offline storage remains available.
