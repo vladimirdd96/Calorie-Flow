@@ -2,12 +2,13 @@
 import type { Dispatch, SetStateAction } from "react";
 import { clearCloudCoachMessages, deleteCloudMeal, getAllCloudCoachMessages, getCloudSnapshot, mergeSnapshots, pushCloudSnapshot, replaceCloudSnapshot, saveCloudCoachChat, saveCloudCoachMessage, upsertCloudFood, upsertCloudMeal } from "@/lib/cloud";
 import { exportData, getAll, getLocalSnapshot, getSetting, importData, put, remove, replaceData, setSetting } from "@/lib/db";
-import { syncAutomaticFastAfterMeal } from "@/lib/fasting";
+import { lateMealBehavior, sessionIdForMeal, shouldAskAboutLateMeal, syncAutomaticFasting } from "@/lib/fasting";
 import { localDateKey } from "@/lib/nutrition";
 import type { BackupData } from "@/lib/db";
 import type { AddFoodView } from "@/features/food-capture/types";
 import type { CloudUser } from "@/lib/supabase";
 import type { CoachMealAction, Food, Meal, MealPhotoAnalysis, MealType, Profile, Recipe } from "@/lib/types";
+import type { MealTimingPrompt } from "./useTrackerUiState";
 
 const mealLabels: Record<MealType, string> = { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snack" };
 const compareMealOrder = (left: Meal, right: Meal) => (left.position ?? Number.MAX_SAFE_INTEGER) - (right.position ?? Number.MAX_SAFE_INTEGER) || left.createdAt.localeCompare(right.createdAt);
@@ -16,13 +17,26 @@ const compareMealOrder = (left: Meal, right: Meal) => (left.position ?? Number.M
 type Dependencies = {
   auth: { user: CloudUser | null };
   profile: Profile; foods: Food[]; meals: Meal[]; dateKey: string; onboardingOrigin?: Profile; undoMeal?: { meal: Meal; timerId: number };
-  setFoods: Dispatch<SetStateAction<Food[]>>; setMeals: Dispatch<SetStateAction<Meal[]>>; setOnboardingOrigin: Dispatch<SetStateAction<Profile | undefined>>; setUndoMeal: Dispatch<SetStateAction<{ meal: Meal; timerId: number } | undefined>>;
+  setFoods: Dispatch<SetStateAction<Food[]>>; setMeals: Dispatch<SetStateAction<Meal[]>>; setOnboardingOrigin: Dispatch<SetStateAction<Profile | undefined>>; setUndoMeal: Dispatch<SetStateAction<{ meal: Meal; timerId: number } | undefined>>; setMealTimingPrompt: Dispatch<SetStateAction<MealTimingPrompt | undefined>>;
   setAdding: Dispatch<SetStateAction<boolean>>; setDirectFood: Dispatch<SetStateAction<Food | undefined>>; setInitialMealType: Dispatch<SetStateAction<MealType | undefined>>; setInitialAddView: Dispatch<SetStateAction<AddFoodView>>; setDateKey: Dispatch<SetStateAction<string>>; setToast: Dispatch<SetStateAction<string>>; setTab: Dispatch<SetStateAction<"today" | "search" | "coach" | "plan" | "insights" | "profile">>; setEditingMeal: Dispatch<SetStateAction<Meal | undefined>>; setDuplicateMealDraft: Dispatch<SetStateAction<Meal | undefined>>;
   saveProfile: (profile: Profile, announce?: boolean) => Promise<void>; syncWrite: (work: (userId: string) => Promise<void>) => void; markSyncMutation: () => void; refresh: () => Promise<void>;
 };
 
 export function useTrackerActions(dependencies: Dependencies) {
-  const { auth, profile, foods, meals, dateKey, onboardingOrigin, undoMeal, setFoods, setMeals, setOnboardingOrigin, setUndoMeal, setAdding, setDirectFood, setInitialMealType, setInitialAddView, setDateKey, setToast, setTab, setEditingMeal, setDuplicateMealDraft, saveProfile, syncWrite, markSyncMutation, refresh } = dependencies;
+  const { auth, profile, foods, meals, dateKey, onboardingOrigin, undoMeal, setFoods, setMeals, setOnboardingOrigin, setUndoMeal, setMealTimingPrompt, setAdding, setDirectFood, setInitialMealType, setInitialAddView, setDateKey, setToast, setTab, setEditingMeal, setDuplicateMealDraft, saveProfile, syncWrite, markSyncMutation, refresh } = dependencies;
+  const prepareMeal = (meal: Meal, commit: (nextMeal: Meal) => void) => {
+    const previousMeal = meals.filter((candidate) => candidate.createdAt < meal.createdAt).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+    const commitWithDecision = (decision: "new" | "previous") => {
+      setMealTimingPrompt(undefined);
+      const nextMeal = decision === "previous" && previousMeal ? { ...meal, fastingSessionId: sessionIdForMeal(profile, meals, previousMeal) || `manual-session-${previousMeal.id}` } : meal;
+      commit(nextMeal);
+    };
+    if (shouldAskAboutLateMeal(profile, meals, meal) && previousMeal) {
+      setMealTimingPrompt({ meal, previousMeal, onDecision: commitWithDecision });
+      return;
+    }
+    commitWithDecision(lateMealBehavior(profile) === "previous" ? "previous" : "new");
+  };
   const saveLinkedFoodPhotos = async (photos: Array<{ foodId?: string; imageUrl?: string }>) => {
     const updates = new Map<string, Food>();
     photos.forEach(({ foodId, imageUrl }) => {
@@ -49,17 +63,18 @@ export function useTrackerActions(dependencies: Dependencies) {
     setOnboardingOrigin(undefined);
     void saveProfile(previousProfile);
   };
-  const logMeal = async (meal: Meal, food: Food) => {
+  const persistLogMeal = async (meal: Meal, food: Food) => {
     const loggedDate = meal.loggedDate || dateKey;
     const adjustedDate = loggedDate === localDateKey() ? new Date() : new Date(`${loggedDate}T12:00:00`);
     const savedMeal = { ...meal, imageUrl: meal.imageUrl || food.imageUrl, loggedDate, createdAt: adjustedDate.toISOString() };
     await Promise.all([put("meals", savedMeal), put("foods", food)]);
     setMeals((current) => [...current, savedMeal]);
     setFoods((current) => [food, ...current.filter((item) => item.id !== food.id)]);
-    void saveProfile(syncAutomaticFastAfterMeal(profile, savedMeal), false);
+    void saveProfile(syncAutomaticFasting(profile, [...meals, savedMeal]), false);
     setAdding(false); setDirectFood(undefined); setInitialMealType(undefined); setDateKey(loggedDate); setToast(`${food.name} logged`); setTab("today");
     syncWrite(async (userId) => { await Promise.all([upsertCloudMeal(userId, savedMeal), upsertCloudFood(userId, food)]); });
   };
+  const logMeal = async (meal: Meal, food: Food) => { prepareMeal(meal, (nextMeal) => { void persistLogMeal(nextMeal, food); }); };
   const saveFood = async (food: Food) => {
     await put("foods", food);
     setFoods((current) => [food, ...current.filter((item) => item.id !== food.id)]);
@@ -98,14 +113,17 @@ export function useTrackerActions(dependencies: Dependencies) {
   const duplicateMeal = async (meal: Meal, mealType: MealType) => {
     const destinationMeals = meals.filter((candidate) => (candidate.loggedDate || localDateKey(new Date(candidate.createdAt))) === dateKey && candidate.mealType === mealType).sort(compareMealOrder);
     const copy: Meal = { ...meal, id: `duplicate-${crypto.randomUUID()}`, mealType, loggedDate: meal.loggedDate || dateKey, createdAt: new Date().toISOString(), position: destinationMeals.length };
-    await put("meals", copy);
-    setMeals((current) => [...current, copy]);
-    void saveProfile(syncAutomaticFastAfterMeal(profile, copy), false);
-    syncWrite((userId) => upsertCloudMeal(userId, copy));
-    setDuplicateMealDraft(undefined);
-    setToast(`Copied to ${mealLabels[mealType]}`);
+    prepareMeal(copy, (nextMeal) => {
+      void put("meals", nextMeal).then(() => {
+        setMeals((current) => [...current, nextMeal]);
+        void saveProfile(syncAutomaticFasting(profile, [...meals, nextMeal]), false);
+        syncWrite((userId) => upsertCloudMeal(userId, nextMeal));
+        setDuplicateMealDraft(undefined);
+        setToast(`Copied to ${mealLabels[mealType]}`);
+      });
+    });
   };
-  const saveNewMeal = async (meal: Meal) => {
+  const persistNewMeal = async (meal: Meal) => {
     await put("meals", meal);
     if (meal.recipeId) {
       const recipe = profile.recipes?.find((candidate) => candidate.id === meal.recipeId);
@@ -114,9 +132,10 @@ export function useTrackerActions(dependencies: Dependencies) {
       await saveLinkedFoodPhotos([meal]);
     }
     setMeals((current) => [...current, meal]); setEditingMeal(undefined); setToast(`${meal.name} logged`); setTab("today");
-    void saveProfile(syncAutomaticFastAfterMeal(profile, meal), false);
+    void saveProfile(syncAutomaticFasting(profile, [...meals, meal]), false);
     syncWrite((userId) => upsertCloudMeal(userId, meal));
   };
+  const saveNewMeal = async (meal: Meal) => { prepareMeal(meal, (nextMeal) => { void persistNewMeal(nextMeal); }); };
   const packageRecipe = async (recipe: Recipe, components: Meal[]) => {
     const componentIds = new Set(components.map((meal) => meal.id));
     const recipeMeal: Meal = {
@@ -143,6 +162,20 @@ export function useTrackerActions(dependencies: Dependencies) {
       await Promise.all([...components.map((meal) => deleteCloudMeal(userId, meal.id)), upsertCloudMeal(userId, recipeMeal)]);
     });
   };
+  const persistCoachMeal = async (meal: Meal, loggedDate: string) => {
+    // Mark the mutation before the async IndexedDB write so an initial cloud
+    // snapshot cannot replace this meal during the write window.
+    markSyncMutation();
+    await put("meals", meal);
+    const storedMeals = await getAll<Meal>("meals");
+    if (!storedMeals.some((candidate) => candidate.id === meal.id)) throw new Error("The meal was not written to the local diary.");
+    setMeals((current) => [...current, meal]);
+    void saveProfile(syncAutomaticFasting(profile, [...meals, meal]), false);
+    setDateKey(loggedDate);
+    setTab("today");
+    setToast(`${meal.name} logged`);
+    syncWrite((userId) => upsertCloudMeal(userId, meal));
+  };
   const logCoachMeal = async (action: CoachMealAction) => {
     const meal: Meal = {
       id: `coach-${crypto.randomUUID()}`,
@@ -157,18 +190,7 @@ export function useTrackerActions(dependencies: Dependencies) {
       source: "custom",
       estimated: action.estimated,
     };
-    // Mark the mutation before the async IndexedDB write so an initial cloud
-    // snapshot cannot replace this meal during the write window.
-    markSyncMutation();
-    await put("meals", meal);
-    const storedMeals = await getAll<Meal>("meals");
-    if (!storedMeals.some((candidate) => candidate.id === meal.id)) throw new Error("The meal was not written to the local diary.");
-    setMeals((current) => [...current, meal]);
-    void saveProfile(syncAutomaticFastAfterMeal(profile, meal), false);
-    setDateKey(action.loggedDate);
-    setTab("today");
-    setToast(`${meal.name} logged`);
-    syncWrite((userId) => upsertCloudMeal(userId, meal));
+    prepareMeal(meal, (nextMeal) => { void persistCoachMeal(nextMeal, action.loggedDate); });
   };
   const addPhotoMeal = (analysis: MealPhotoAnalysis) => {
     const details = analysis.components.length ? ` · ${analysis.components.join(", ")}` : "";

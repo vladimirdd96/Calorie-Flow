@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeFast, fastingProgress, fastingWindowHours, formatFastingDuration, syncAutomaticFastAfterMeal, syncAutomaticFasting } from "./fasting";
+import { activeFast, eatingSessions, fastingProgress, fastingWindowHours, formatFastingDuration, syncAutomaticFastAfterMeal, syncAutomaticFasting } from "./fasting";
 import type { Meal, Profile } from "./types";
 
 const profile = { enabledHabitFeatures: ["fasting"], fastingRecords: [] } as unknown as Profile;
@@ -43,5 +43,19 @@ describe("fasting", () => {
   it("does not create records when fasting is disabled", () => {
     const disabled = { ...profile, enabledHabitFeatures: [] };
     expect(syncAutomaticFasting(disabled, [meal])).toBe(disabled);
+  });
+
+  it("groups foods logged within the standard meal window", () => {
+    const meals = [meal, { ...meal, id: "meal-2", createdAt: "2026-07-21T18:01:00.000Z" }, { ...meal, id: "meal-3", createdAt: "2026-07-22T06:00:00.000Z" }];
+    const next = syncAutomaticFasting(profile, meals);
+    expect(eatingSessions(profile, meals)).toHaveLength(2);
+    expect(next.fastingRecords).toHaveLength(2);
+    expect(next.fastingRecords?.[0].endedAt).toBe("2026-07-22T06:00:00.000Z");
+  });
+
+  it("keeps precise food timestamps as separate interruptions", () => {
+    const precise = { ...profile, fastingTrackingMode: "precise" as const };
+    const meals = [meal, { ...meal, id: "meal-2", createdAt: "2026-07-21T18:01:00.000Z" }];
+    expect(eatingSessions(precise, meals)).toHaveLength(2);
   });
 });

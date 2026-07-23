@@ -5,8 +5,8 @@ import { type FormEvent, useState } from "react";
 import { ThemedSelect } from "@/features/shared/ThemedSelect";
 import { NumericInput } from "@/features/shared/NumericInput";
 import { isHabitFeatureEnabled, toggleHabitFeature } from "@/lib/habit-settings";
-import type { HabitFeature, MealType, Profile, WeightTrackingStatus, Weekday } from "@/lib/types";
-import { habitFeatures, measurementSystems, weightTrackingStatuses } from "@/lib/types";
+import type { FastingLateMealBehavior, FastingTrackingMode, HabitFeature, MealType, Profile, WeightTrackingStatus, Weekday } from "@/lib/types";
+import { fastingLateMealBehaviors, fastingTrackingModes, habitFeatures, measurementSystems, weightTrackingStatuses } from "@/lib/types";
 
 type ThemeMode = "light" | "dark";
 type ChatTextSize = "compact" | "comfortable" | "large";
@@ -46,6 +46,27 @@ export function FeatureVisibilityPreferences({ profile, onSave }: { profile: Pro
       <button className={`display-preference ${waterEnabled ? "active" : ""}`} type="button" aria-pressed={waterEnabled} onClick={() => toggle(habitFeatures.water)}><span><strong>{waterEnabled ? "Water is shown" : "Water is hidden"}</strong><small>{waterEnabled ? "Keep hydration within easy reach on Today." : "Your logged water stays saved until you show it again."}</small></span><span className="toggle" /></button>
       <button className={`display-preference ${fastingEnabled ? "active" : ""}`} type="button" aria-pressed={fastingEnabled} onClick={() => toggle(habitFeatures.fasting)}><span><strong>{fastingEnabled ? "Fasting is shown" : "Fasting is hidden"}</strong><small>{fastingEnabled ? "Keep your optional eating-window check-in on Today." : "Your fasting history stays saved until you show it again."}</small></span><span className="toggle" /></button>
     </div>
+  </section>;
+}
+
+export function FastingPreferences({ profile, onSave }: { profile: Profile; onSave: (profile: Profile) => void }) {
+  const mode = profile.fastingTrackingMode || fastingTrackingModes.standard;
+  const window = profile.fastingMealWindowMinutes || 30;
+  const behavior = profile.fastingLateMealBehavior || fastingLateMealBehaviors.ask;
+  const setMode = (nextMode: FastingTrackingMode) => onSave({ ...profile, fastingTrackingMode: nextMode });
+  const setBehavior = (nextBehavior: FastingLateMealBehavior) => onSave({ ...profile, fastingLateMealBehavior: nextBehavior });
+  return <section className="display-section fasting-preferences">
+    <div className="section-heading"><div><span className="eyebrow">Fasting detail</span><h2>How should meals be timed?</h2></div></div>
+    <p className="display-subsection-description">Choose whether Calorie Flow groups normal meal logging or treats each logged food as a precise interruption.</p>
+    <div className="segmented two" role="group" aria-label="Fasting tracking detail">
+      <button type="button" aria-pressed={mode === fastingTrackingModes.standard} className={mode === fastingTrackingModes.standard ? "active" : ""} onClick={() => setMode(fastingTrackingModes.standard)}><strong>Standard</strong><small>Smart meal grouping</small></button>
+      <button type="button" aria-pressed={mode === fastingTrackingModes.precise} className={mode === fastingTrackingModes.precise ? "active" : ""} onClick={() => setMode(fastingTrackingModes.precise)}><strong>Precise</strong><small>Every logged time counts</small></button>
+    </div>
+    {mode === fastingTrackingModes.precise ? <p className="fasting-preference-note">Precise mode uses the exact time each food is logged. It is best when you record food as you eat it and want every interruption reflected in your fasting history.</p> : <>
+      <div className="display-subsection"><div className="display-subsection-heading"><span className="eyebrow">Meal window</span><h3>Group foods logged within</h3></div><div className="segmented three" role="group" aria-label="Meal grouping window">{([15, 30, 60] as const).map((minutes) => <button key={minutes} type="button" aria-pressed={window === minutes} className={window === minutes ? "active" : ""} onClick={() => onSave({ ...profile, fastingMealWindowMinutes: minutes })}>{minutes} min</button>)}</div></div>
+      <div className="display-subsection"><div className="display-subsection-heading"><span className="eyebrow">Late entries</span><h3>When food is logged after the window</h3></div><ThemedSelect ariaLabel="Late food entry behavior" value={behavior} onChange={(value) => setBehavior(value as FastingLateMealBehavior)} options={[{ value: fastingLateMealBehaviors.ask, label: "Ask me each time" }, { value: fastingLateMealBehaviors.new, label: "Always start a new meal" }, { value: fastingLateMealBehaviors.previous, label: "Always add to the previous meal" }]} /></div>
+      <p className="fasting-preference-note">Standard mode keeps foods from the same breakfast, lunch, or snack together, even when you log them a few minutes apart.</p>
+    </>}
   </section>;
 }
 

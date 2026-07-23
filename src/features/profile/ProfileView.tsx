@@ -100,7 +100,7 @@ type Tab = AppTab;
 import { TargetEditor, TargetSummary } from "./components/ProfileTargets";
 import { useDismissibleDisclosure, useModalFocus } from "./hooks/useDisclosure";
 
-import { AppearancePreferences, CarbDisplayPreference, DailyTargetPreferences, DisplayPreferences, FeatureVisibilityPreferences, MealTargetPreferences, MeasurementPreferences, WeightTrackingPreference } from "./components/ProfilePreferences";
+import { AppearancePreferences, CarbDisplayPreference, DailyTargetPreferences, DisplayPreferences, FeatureVisibilityPreferences, FastingPreferences, MealTargetPreferences, MeasurementPreferences, WeightTrackingPreference } from "./components/ProfilePreferences";
 function ProfileIdentity({ profile, user, onSave }: { profile: Profile; user: CloudUser | null; onSave: (profile: Profile) => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [editing, setEditing] = useState(false);
@@ -415,6 +415,7 @@ export function ProfileView({
         <MeasurementPreferences profile={profile} onChange={(measurementSystem) => onSave({ ...profile, measurementSystem })} />
         <DisplayPreferences hideCalories={profile.hideCalories} onChange={(hideCalories) => onSave({ ...profile, hideCalories })} chatTextSize={chatTextSize} onChatTextSizeChange={onChatTextSizeChange} />
         <FeatureVisibilityPreferences profile={profile} onSave={onSave} />
+        <FastingPreferences profile={profile} onSave={onSave} />
         <CarbDisplayPreference profile={profile} onSave={onSave} />
         <DailyTargetPreferences profile={profile} onSave={onSave} />
         <MealTargetPreferences profile={profile} onSave={onSave} />

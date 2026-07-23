@@ -81,6 +81,7 @@ export const mealSchema = z.object({
   position: z.number().int().nonnegative().optional(),
   loggedDate: localDateSchema.optional(),
   imageUrl: optionalAvatar,
+  fastingSessionId: z.string().trim().max(240).optional(),
   source: z.enum(["seed", "open-food-facts", "food-data-central", "restaurant", "ai-label", "custom"]),
   estimated: z.boolean().optional(),
 }).strict() satisfies z.ZodType<Meal>;
@@ -127,6 +128,9 @@ export const profileSchema = z.object({
   enabledHabitFeatures: z.array(z.enum(["water", "fasting"])).max(2).refine((features) => new Set(features).size === features.length, "Habit features must not repeat").optional(),
   planEnabled: z.boolean().optional(),
   fastingGoalHours: z.union([z.literal(12), z.literal(16), z.literal(24), z.literal(36), z.literal(48)]).optional(),
+  fastingTrackingMode: z.enum(["standard", "precise"]).optional(),
+  fastingMealWindowMinutes: z.union([z.literal(15), z.literal(30), z.literal(60)]).optional(),
+  fastingLateMealBehavior: z.enum(["ask", "new", "previous"]).optional(),
   fastingRecords: z.array(fastingRecordSchema).max(10_000).optional(),
   recipes: z.array(recipeSchema).max(10_000).optional(),
   mealPlanEntries: z.array(mealPlanEntrySchema).max(100_000).optional(),

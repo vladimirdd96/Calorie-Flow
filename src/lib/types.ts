@@ -71,6 +71,8 @@ export type Meal = {
   loggedDate?: string;
   /** Optional user-supplied meal photo, stored locally as a resized image data URL. */
   imageUrl?: string;
+  /** Explicitly groups a late entry with an earlier eating session. */
+  fastingSessionId?: string;
   source: FoodSource;
   estimated?: boolean;
 };
@@ -107,6 +109,10 @@ export const allHabitFeatures = [habitFeatures.water, habitFeatures.fasting] as 
 export const defaultHabitFeatures = [] as const;
 export const fastingGoalHours = [12, 16, 24, 36, 48] as const;
 export type FastingGoalHours = typeof fastingGoalHours[number];
+export const fastingTrackingModes = { standard: "standard", precise: "precise" } as const;
+export type FastingTrackingMode = typeof fastingTrackingModes[keyof typeof fastingTrackingModes];
+export const fastingLateMealBehaviors = { ask: "ask", new: "new", previous: "previous" } as const;
+export type FastingLateMealBehavior = typeof fastingLateMealBehaviors[keyof typeof fastingLateMealBehaviors];
 
 export type DailyTargets = {
   calories: number;
@@ -146,6 +152,9 @@ export type Profile = {
   enabledHabitFeatures?: HabitFeature[];
   planEnabled?: boolean;
   fastingGoalHours?: FastingGoalHours;
+  fastingTrackingMode?: FastingTrackingMode;
+  fastingMealWindowMinutes?: 15 | 30 | 60;
+  fastingLateMealBehavior?: FastingLateMealBehavior;
   fastingRecords?: FastingRecord[];
   recipes?: Recipe[];
   mealPlanEntries?: MealPlanEntry[];
