@@ -424,9 +424,10 @@ p { color: var(--muted); line-height: 1.55; }
 .habit-insight-grid span { color: var(--muted); font-size: 10px; }
 .habit-insight-grid strong { font-size: 18px; letter-spacing: -.03em; }
 .habit-insight-grid strong small { margin-left: 2px; color: var(--muted); font-size: 10px; font-weight: 600; }
-.nutrition-insights-grid { align-items: start; margin-top: 14px; }
+.nutrition-insights-grid { align-items: stretch; margin-top: 14px; }
+.nutrition-insights-grid > .insights-panel { display: flex; flex-direction: column; }
 .insight-macro-bars { display: grid; gap: 13px; }
-.meal-mix { display: grid; gap: 12px; }
+.meal-mix { display: grid; flex: 1; align-content: space-between; gap: 12px; padding-top: 6px; }
 .meal-mix > div { display: grid; grid-template-columns: 74px minmax(0, 1fr) 24px; align-items: center; gap: 9px; color: var(--muted); font-size: 10px; }
 .meal-mix .bar-track { height: 7px; }
 .meal-mix strong { color: var(--text); font-size: 11px; text-align: right; }
