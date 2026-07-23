@@ -46,7 +46,14 @@ export function eatingSessions(profile: Profile, meals: Meal[]) {
     if (!sessions.includes(session)) sessions.push(session);
     if (meal.fastingSessionId) explicitSessions.set(meal.fastingSessionId, session);
   }
-  return sessions.sort((a, b) => a.startedAt.localeCompare(b.startedAt));
+  const orderedSessions = sessions.sort((a, b) => a.startedAt.localeCompare(b.startedAt));
+  orderedSessions.forEach((session, index) => {
+    const edit = profile.fastingRecordEdits?.[`auto-fast-${session.id}`];
+    const nextSession = orderedSessions[index + 1];
+    if (edit?.startedAt) session.endedAt = edit.startedAt;
+    if (edit?.endedAt && nextSession) nextSession.startedAt = edit.endedAt;
+  });
+  return orderedSessions;
 }
 
 export function fastingRecordsForMeals(profile: Profile, meals: Meal[]): FastingRecord[] {

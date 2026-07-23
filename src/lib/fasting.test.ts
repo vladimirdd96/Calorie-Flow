@@ -72,7 +72,10 @@ describe("fasting", () => {
   it("preserves user-edited fasting times over automatic recalculation", () => {
     const edited = { ...profile, fastingRecordEdits: { "auto-fast-auto-session-meal-1": { startedAt: "2026-07-21T17:45:00.000Z", endedAt: "2026-07-22T06:15:00.000Z" } } };
     const records = fastingRecordsForMeals(edited, [meal, { ...meal, id: "meal-2", createdAt: "2026-07-22T06:00:00.000Z" }]);
+    const sessions = eatingSessions(edited, [meal, { ...meal, id: "meal-2", createdAt: "2026-07-22T06:00:00.000Z" }]);
     expect(records[0].startedAt).toBe("2026-07-21T17:45:00.000Z");
     expect(records[0].endedAt).toBe("2026-07-22T06:15:00.000Z");
+    expect(sessions[0].endedAt).toBe("2026-07-21T17:45:00.000Z");
+    expect(sessions[1].startedAt).toBe("2026-07-22T06:15:00.000Z");
   });
 });
