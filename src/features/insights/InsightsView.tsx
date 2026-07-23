@@ -4,7 +4,7 @@ import { Droplets, Plus, Sparkles, Timer, Trash2, Utensils } from "lucide-react"
 import { FormEvent, useState } from "react";
 import { localDateKey, round, sumNutrition } from "@/lib/nutrition";
 import { hydrationTotal } from "@/lib/hydration";
-import { activeFast, fastingWindowHours } from "@/lib/fasting";
+import { activeFast, fastingWindowHours, formatFastingDuration } from "@/lib/fasting";
 import { isHabitFeatureEnabled } from "@/lib/habit-settings";
 import { recentLogDates } from "@/lib/logging";
 import { NumericInput } from "@/features/shared/NumericInput";
@@ -30,8 +30,6 @@ const mealLabels: Record<MealType, string> = {
   dinner: "Dinner",
   snack: "Snack",
 };
-
-const formatFastingDuration = (hours: number) => hours % 1 ? `${hours.toFixed(1)} h` : `${hours} h`;
 
 const fastingDateTime = (value: string) => new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 
@@ -107,7 +105,7 @@ export function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: 
         <button id="insights-overview-tab" type="button" role="tab" aria-selected={section === "overview"} aria-controls="insights-overview-panel" className={section === "overview" ? "active" : ""} onClick={() => setSection("overview")}>Overview</button>
         <button id="insights-nutrition-tab" type="button" role="tab" aria-selected={section === "nutrition"} aria-controls="insights-nutrition-panel" className={section === "nutrition" ? "active" : ""} onClick={() => setSection("nutrition")}>Nutrition</button>
         {isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting) && <button id="insights-fasting-tab" type="button" role="tab" aria-selected={section === "fasting"} aria-controls="insights-fasting-panel" className={section === "fasting" ? "active" : ""} onClick={() => setSection("fasting")}>Fasting <span>{completedFastingRecords.length}</span></button>}
-        {weightTrackingEnabled && <button id="insights-weight-tab" type="button" role="tab" aria-selected={section === "weight"} aria-controls="insights-weight-panel" className={section === "weight" ? "active" : ""} onClick={() => setSection("weight")}>Weight</button>}
+        {weightTrackingEnabled && <button id="insights-weight-tab" type="button" role="tab" aria-selected={section === "weight"} aria-controls="insights-weight-panel" className={section === "weight" ? "active" : ""} onClick={() => setSection("weight")}>Weight <span>{entries.length}</span></button>}
       </div>
       {section === "overview" && <section id="insights-overview-panel" role="tabpanel" aria-labelledby="insights-overview-tab" className="workspace-panel">
       <div className="summary-strip">
@@ -124,7 +122,7 @@ export function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: 
       {(isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.water) || isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting)) && <section className="insights-panel card habit-insights"><div className="section-heading compact"><div><span className="eyebrow">Optional rhythms</span><h2>Beyond food</h2></div><span className="subtle">last 7 days</span></div><div className="habit-insight-grid">{isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.water) && <div><Droplets size={17} /><span>Water days</span><strong>{waterDays}<small> / 7</small></strong></div>}{isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting) && <div><Timer size={17} /><span>Fasts completed</span><strong>{completedFasts}</strong></div>}</div></section>}
       </section>}
       {section === "weight" && weightTrackingEnabled && <section id="insights-weight-panel" role="tabpanel" aria-labelledby="insights-weight-tab" className="weight-section workspace-panel">
-        <div className="section-heading"><div><span className="eyebrow">Optional progress log</span><h2 id="weight-heading">Body weight</h2></div><span className="subtle">{entries.length} {entries.length === 1 ? "entry" : "entries"}</span></div>
+        <div className="section-heading"><div><span className="eyebrow">Optional progress</span><h2 id="weight-heading">Weight history</h2></div><span className="subtle">{entries.length} {entries.length === 1 ? "entry" : "entries"}</span></div>
         <form className="weight-log card" onSubmit={saveWeight}>
           <div><span className="weight-log-label">Log a weigh-in</span><p>Use the same conditions when you can. Trends are more useful than any single day.</p></div>
           <div className="weight-log-fields"><label><span>Date</span><input type="date" value={weightDate} max={localDateKey()} onChange={(event) => setWeightDate(event.target.value)} /></label><label><span>Weight</span><div className="input-suffix"><NumericInput required inputMode="decimal" min={measurementSystem === measurementSystems.imperial ? 44 : 20} max={measurementSystem === measurementSystems.imperial ? 1102 : 500} step="0.1" value={weightInput} onChange={(event) => setWeightInput(event.target.value)} /><span>{weightUnitFor(profile)}</span></div></label><button className="primary-button" type="submit"><Plus size={17} />Save weight</button></div>

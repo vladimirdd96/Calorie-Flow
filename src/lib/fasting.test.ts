@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeFast, fastingProgress, fastingWindowHours, syncAutomaticFastAfterMeal, syncAutomaticFasting } from "./fasting";
+import { activeFast, fastingProgress, fastingWindowHours, formatFastingDuration, syncAutomaticFastAfterMeal, syncAutomaticFasting } from "./fasting";
 import type { Meal, Profile } from "./types";
 
 const profile = { enabledHabitFeatures: ["fasting"], fastingRecords: [] } as unknown as Profile;
@@ -18,6 +18,11 @@ describe("fasting", () => {
 
   it("reports a completed fasting window in whole minutes", () => {
     expect(fastingWindowHours("2026-07-21T18:00:00.000Z", "2026-07-22T06:30:00.000Z")).toBe(12.5);
+  });
+
+  it("formats fasting durations as hours and minutes", () => {
+    expect(formatFastingDuration(13.833333)).toBe("13h 50min");
+    expect(formatFastingDuration(16)).toBe("16h");
   });
 
   it("starts an automatic fast at the latest logged meal", () => {

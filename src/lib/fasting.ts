@@ -14,6 +14,13 @@ export function fastingWindowHours(startedAt: string, endedAt: string) {
   return Math.max(0, Math.round((new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 36_000) / 100);
 }
 
+export function formatFastingDuration(hours: number) {
+  const totalMinutes = Math.max(0, Math.round(hours * 60));
+  const wholeHours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return minutes ? `${wholeHours}h ${minutes}min` : `${wholeHours}h`;
+}
+
 /** Keep the active fast anchored to the most recently logged meal. */
 export function syncAutomaticFastAfterMeal(profile: Profile, meal: Meal) {
   if (!profile.enabledHabitFeatures?.includes("fasting") && profile.enabledHabitFeatures) return profile;
