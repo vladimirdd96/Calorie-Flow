@@ -22,3 +22,8 @@ This is the durable record of product requirements stated in user requests. Read
 - Photos added to a logged meal or recipe are persisted in the local database and optional cloud sync payload.
 - When the logged item is linked to a saved food, its photo is also shown for that food in the Food Library.
 - Food photos use the same resized private data-URL format as meal and recipe photos so offline storage remains available.
+
+## Meal planning and food library navigation — 2026-07-30
+
+- Meal plans can contain either saved recipes or saved foods. Existing recipe-based plan entries remain valid, and shopping lists continue to use recipe ingredients only.
+- When Foods is opened from Plan, the Food Library provides an explicit return action to Plan in addition to the primary navigation.

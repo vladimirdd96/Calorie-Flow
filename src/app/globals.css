@@ -1858,11 +1858,14 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 /* Foods and Plan handoff */
 .food-library-page, .plan-page { width: min(100%, clamp(420px, 62vw, 780px)); max-width: none; margin: 0 auto; padding: clamp(20px, 5vw, 40px) 16px calc(110px + env(safe-area-inset-bottom)); }
 .library-handoff-header, .plan-handoff-header { margin-bottom: 16px; }
+.library-handoff-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .library-handoff-header > span, .plan-handoff-header > span { display: block; margin-bottom: 2px; color: var(--carbs); font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .library-handoff-header h1, .plan-handoff-header h1 { margin: 0; font-size: 20px; }
 .plan-handoff-header > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .plan-handoff-header button { min-height: 44px; display: flex; align-items: center; gap: 6px; padding: 0 12px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; font-size: 13px; font-weight: 700; }
 .plan-handoff-header button svg { color: var(--carbs); }
+.library-back-button { min-height: 40px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; color: var(--muted-2); background: var(--panel); border: 1px solid var(--border); border-radius: 12px; font-size: 12px; font-weight: 750; white-space: nowrap; }
+.library-back-button svg { color: var(--carbs); }
 .food-library-page .library-search { min-height: 46px; margin-bottom: 12px; padding: 0 12px; color: var(--muted); background: var(--panel); }
 .food-library-page .library-search input { min-height: 44px; }
 .library-filter-wrap { position: relative; margin-bottom: 14px; }

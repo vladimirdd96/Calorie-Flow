@@ -17,7 +17,11 @@ const localDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const weightEntrySchema = z.object({ date: localDateSchema, weightKg: z.number().finite().min(20).max(500) }).strict() satisfies z.ZodType<WeightEntry>;
 const waterEntrySchema = z.object({ date: localDateSchema, amountMl: z.number().finite().int().min(1).max(20_000) }).strict() satisfies z.ZodType<WaterEntry>;
 const fastingRecordSchema = z.object({ id: z.string().trim().min(1).max(240), startedAt: z.string().datetime({ offset: true }), endedAt: z.string().datetime({ offset: true }).optional() }).strict() satisfies z.ZodType<FastingRecord>;
-const mealPlanEntrySchema = z.object({ id: z.string().trim().min(1).max(240), recipeId: z.string().trim().min(1).max(240), date: localDateSchema, mealType: z.enum(["breakfast", "lunch", "dinner", "snack"]) }).strict() satisfies z.ZodType<MealPlanEntry>;
+const mealPlanEntryBaseSchema = { id: z.string().trim().min(1).max(240), date: localDateSchema, mealType: z.enum(["breakfast", "lunch", "dinner", "snack"]) };
+export const mealPlanEntrySchema = z.union([
+  z.object({ ...mealPlanEntryBaseSchema, recipeId: z.string().trim().min(1).max(240) }).strict(),
+  z.object({ ...mealPlanEntryBaseSchema, foodId: z.string().trim().min(1).max(240) }).strict(),
+]) satisfies z.ZodType<MealPlanEntry>;
 const dailyTargetsSchema = z.object({ calories: positiveFinite.max(20_000), protein: finiteNonNegative.max(2_000), carbs: finiteNonNegative.max(2_000), fat: finiteNonNegative.max(2_000), fiber: finiteNonNegative.max(2_000) }).strict() satisfies z.ZodType<DailyTargets>;
 
 export const nutritionSchema = z.object({

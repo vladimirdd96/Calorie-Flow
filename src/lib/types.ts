@@ -203,10 +203,9 @@ export type Recipe = {
 
 export type MealPlanEntry = {
   id: string;
-  recipeId: string;
   date: string;
   mealType: MealType;
-};
+} & ({ recipeId: string; foodId?: never } | { foodId: string; recipeId?: never });
 
 export type LabelAnalysis = {
   productName: string | null;

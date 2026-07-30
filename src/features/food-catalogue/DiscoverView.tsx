@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- product thumbnails are dynamic user content. */
 
-import { BookOpen, ChevronRight, Plus, Search, WifiOff } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronRight, Plus, Search, WifiOff } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AddFoodView } from "@/features/food-capture/types";
 import { ClearableInput } from "@/features/shared/ClearableInput";
@@ -33,7 +33,7 @@ function matchScore(value: string, query: string, boost = 0) {
   return 40 + boost;
 }
 
-export function DiscoverView({ foods, recipes, meals, onSelect, onSelectRecipe, onAdd, hideCalories }: { foods: Food[]; recipes: Recipe[]; meals: Meal[]; onSelect: (food: Food) => void; onSelectRecipe: (recipe: Recipe) => void; onAdd: (view: AddFoodView) => void; hideCalories: boolean }) {
+export function DiscoverView({ foods, recipes, meals, onSelect, onSelectRecipe, onAdd, hideCalories, onBack }: { foods: Food[]; recipes: Recipe[]; meals: Meal[]; onSelect: (food: Food) => void; onSelectRecipe: (recipe: Recipe) => void; onAdd: (view: AddFoodView) => void; hideCalories: boolean; onBack: () => void }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<FoodFilter>("all");
   const [remoteResults, setRemoteResults] = useState<Food[]>([]);
@@ -79,7 +79,7 @@ export function DiscoverView({ foods, recipes, meals, onSelect, onSelectRecipe, 
   const visibleFoods = foods.filter((food) => filter === "all" || (filter === "custom" ? food.source !== "seed" : food.source === "seed"));
   const noResults = showResults && !localMatches.length && !remoteResults.length && !loading;
   return <main className="page discover-page food-library-page">
-    <header className="library-handoff-header"><span>Library</span><h1>Your foods</h1></header>
+    <header className="library-handoff-header"><div><span>Library</span><h1>Your foods</h1></div><button type="button" className="library-back-button" onClick={onBack}><ArrowLeft size={16} />Back to plan</button></header>
     <label className="library-search"><Search size={16} aria-hidden="true" /><span className="visually-hidden">Search your foods</span><ClearableInput value={query} onChange={(event) => setQuery(event.target.value)} onClear={() => setQuery("")} placeholder="Search your foods" type="search" clearLabel="Clear food library search" /></label>
     {!showResults && <div className="library-filter-wrap"><div className="library-filters" role="group" aria-label="Food filters">{([{ key: "all", label: "All" }, { key: "custom", label: "Your foods" }, { key: "reference", label: "Reference" }] as const).map((item) => <button key={item.key} type="button" className={filter === item.key ? "active" : ""} onClick={() => setFilter(item.key)}>{item.label}</button>)}</div></div>}
     {showResults ? <div className="search-result-groups">

@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { backupSchema, diaryShareSchema, labelAnalysisSchema, mealSchema, profileSchema } from "./schemas";
+import { backupSchema, diaryShareSchema, labelAnalysisSchema, mealSchema, mealPlanEntrySchema, profileSchema } from "./schemas";
 
 const nutrition = { calories: 120, protein: 10, carbs: 12, fat: 4, fiber: 3, sugar: 2 };
 
 describe("external data schemas", () => {
+  it("accepts recipe and food meal plan entries", () => {
+    expect(mealPlanEntrySchema.parse({ id: "plan-recipe", recipeId: "recipe-1", date: "2026-07-21", mealType: "dinner" })).toMatchObject({ recipeId: "recipe-1" });
+    expect(mealPlanEntrySchema.parse({ id: "plan-food", foodId: "food-1", date: "2026-07-21", mealType: "snack" })).toMatchObject({ foodId: "food-1" });
+    expect(() => mealPlanEntrySchema.parse({ id: "plan-invalid", recipeId: "recipe-1", foodId: "food-1", date: "2026-07-21", mealType: "dinner" })).toThrow();
+  });
   it("accepts a local logged date that is independent of its storage timestamp", () => {
     const meal = mealSchema.parse({
       id: "meal-1",
