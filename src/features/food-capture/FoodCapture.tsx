@@ -15,6 +15,7 @@ import { LabelReader } from "./components/LabelReader";
 import { MealPhotoReader } from "./components/MealPhotoReader";
 
 type AddView = AddFoodView;
+type AddFoodPurpose = "log" | "plan";
 
 type VoiceResult = { 0?: { transcript?: string }; isFinal?: boolean };
 type VoiceResultEvent = { resultIndex?: number; results: { length: number; [index: number]: VoiceResult } };
@@ -58,7 +59,7 @@ function loggingDateLabel(dateKey: string) {
   return new Date(`${dateKey}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 }
 
-export function AddFoodSheet({ foods, meals, recipes, initialView = "start", initialMealType, initialLoggedDate = localDateKey(), onLog, onMealPhoto, onSaveFood, onSelectRecipe, onSelectFood, onClose, hideCalories }: { foods: Food[]; meals: Meal[]; recipes: Recipe[]; initialView?: AddView; initialMealType?: MealType; initialLoggedDate?: string; onLog: (meal: Meal, food: Food) => void; onMealPhoto: (analysis: MealPhotoAnalysis) => void; onSaveFood: (food: Food) => Promise<void>; onSelectRecipe: (recipe: Recipe) => void; onSelectFood?: (food: Food) => void; onClose?: () => void; hideCalories: boolean }) {
+export function AddFoodSheet({ foods, meals, recipes, initialView = "start", initialMealType, initialLoggedDate = localDateKey(), onLog, onMealPhoto, onSaveFood, onSelectRecipe, onSelectFood, onClose, hideCalories, purpose = "log" }: { foods: Food[]; meals: Meal[]; recipes: Recipe[]; initialView?: AddView; initialMealType?: MealType; initialLoggedDate?: string; onLog: (meal: Meal, food: Food) => void; onMealPhoto: (analysis: MealPhotoAnalysis) => void; onSaveFood: (food: Food) => Promise<void>; onSelectRecipe: (recipe: Recipe) => void; onSelectFood?: (food: Food) => void; onClose?: () => void; hideCalories: boolean; purpose?: AddFoodPurpose }) {
   const [view, setView] = useState<AddView>(initialView);
   const [selected, setSelected] = useState<Food>();
   const [questions, setQuestions] = useState<string[]>([]);
@@ -248,19 +249,19 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
   );
   return (
     <div className="add-food-start" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); addImages(event.dataTransfer.files); }}>
-      <div className="add-food-header"><div><span className="eyebrow">Add food</span><h2>Find or log a food</h2></div>{onClose && <button type="button" className="add-food-close" onClick={onClose} aria-label="Close"><X size={19} /></button>}</div>
-      <div className="logging-date-switcher">
+      <div className="add-food-header"><div><span className="eyebrow">{purpose === "plan" ? "Add to plan" : "Add food"}</span><h2>{purpose === "plan" ? "Find a food or recipe" : "Find or log a food"}</h2></div>{onClose && <button type="button" className="add-food-close" onClick={onClose} aria-label="Close"><X size={19} /></button>}</div>
+      {purpose === "log" && <div className="logging-date-switcher">
         <button type="button" onClick={() => setLoggedDate((current) => shiftDate(current, -1))} aria-label="Previous day"><ChevronLeft size={16} /></button>
         <span><strong>{loggingDateLabel(loggedDate)}</strong><small>Logging to this day</small></span>
         <button type="button" disabled={loggedDate >= localDateKey()} onClick={() => setLoggedDate((current) => shiftDate(current, 1))} aria-label="Next day"><ChevronRight size={16} /></button>
-      </div>
+      </div>}
       <form className="add-food-search" onSubmit={search}><Search size={18} /><ClearableInput value={query} onChange={(event) => setQuery(event.target.value)} onClear={() => setQuery("")} placeholder="Search foods and recipes" clearLabel="Clear food search" /></form>
       <div className="add-food-actions">
         <button type="button" onClick={() => changeView("scan")}><ScanLine className="blue" size={19} /><span>Barcode</span></button>
          <button type="button" aria-label="Add photos to scan label" onClick={() => changeView("camera")}><Camera className="carbs" size={19} /><span>Scan label</span></button>
         <button type="button" onClick={startVoiceSearch} disabled={voicePhase !== "idle"}><Mic className="fat" size={19} /><span>Voice</span></button>
-        <button type="button" onClick={() => changeView("photo")}><ImagePlus className="mint" size={19} /><span>Meal photo</span></button>
-        <button type="button" className="quick-add-action" onClick={() => changeView("quick")}><Zap className="carbs" size={19} /><span><strong>Quick add</strong><small>Just calories, no food record</small></span></button>
+        {purpose === "log" && <button type="button" onClick={() => changeView("photo")}><ImagePlus className="mint" size={19} /><span>Meal photo</span></button>}
+        {purpose === "log" && <button type="button" className="quick-add-action" onClick={() => changeView("quick")}><Zap className="carbs" size={19} /><span><strong>Quick add</strong><small>Just calories, no food record</small></span></button>}
       </div>
       {voicePhase !== "idle" && <section className={`voice-capture ${voicePhase}`} aria-live="polite" aria-label="Voice food entry">
         <div className="voice-capture-top"><span className="voice-status-dot" aria-hidden="true" /><div><strong>{voicePhase === "recording" ? "Listening" : "Making sense of that"}</strong><small>{voicePhase === "recording" ? "Say what you ate, then tap Done" : "Searching your food library…"}</small></div>{voicePhase === "recording" && <time>{String(Math.floor(voiceElapsed / 60)).padStart(2, "0")}:{String(voiceElapsed % 60).padStart(2, "0")}</time>}</div>

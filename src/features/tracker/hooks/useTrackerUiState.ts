@@ -7,6 +7,7 @@ import type { AppTab } from "@/features/navigation/types";
 import type { Food, Meal, MealType, Recipe } from "@/lib/types";
 
 export type MealTimingPrompt = { meal: Meal; previousMeal: Meal; onDecision: (decision: "new" | "previous") => void };
+export type PlanAddDraft = { date: string; mealType: MealType };
 
 /** Ephemeral navigation and overlay state; no persistence or domain writes. */
 export function useTrackerUiState() {
@@ -31,6 +32,7 @@ export function useTrackerUiState() {
   const [nutritionDetailsOpen, setNutritionDetailsOpen] = useState(false);
   const [recipeToLog, setRecipeToLog] = useState<Recipe>();
   const [mealTimingPrompt, setMealTimingPrompt] = useState<MealTimingPrompt>();
+  const [planAddDraft, setPlanAddDraft] = useState<PlanAddDraft>();
 
   useEffect(() => {
     if (!toast) return;
@@ -48,5 +50,6 @@ export function useTrackerUiState() {
     undoMeal, setUndoMeal, imageMeal, setImageMeal, nutritionDetailsOpen, setNutritionDetailsOpen,
     recipeToLog, setRecipeToLog,
     mealTimingPrompt, setMealTimingPrompt,
+    planAddDraft, setPlanAddDraft,
   };
 }
