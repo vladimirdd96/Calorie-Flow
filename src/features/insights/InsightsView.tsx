@@ -4,7 +4,7 @@ import { Activity, Droplets, Flame, Pencil, Plus, Scale, Sparkles, Timer, Trash2
 import { FormEvent, useState } from "react";
 import { localDateKey, round, sumNutrition } from "@/lib/nutrition";
 import { hydrationTotal } from "@/lib/hydration";
-import { activeFast, fastingWindowHours, formatFastingDuration } from "@/lib/fasting";
+import { activeFast, fastingWindowHours, formatFastingDuration, uniqueFastingRecords } from "@/lib/fasting";
 import { isHabitFeatureEnabled } from "@/lib/habit-settings";
 import { recentLogDates } from "@/lib/logging";
 import { NumericInput } from "@/features/shared/NumericInput";
@@ -67,10 +67,11 @@ export function InsightsView({ meals, profile, onSave }: { meals: Meal[]; profil
   const targetDays = profile.hideCalories ? loggedDays.filter((day) => day.total.protein >= profile.proteinTarget * .8).length : loggedDays.filter((day) => day.total.calories >= profile.calorieTarget * .8 && day.total.calories <= profile.calorieTarget * 1.1).length;
   const waterTarget = profile.waterTargetMl || 2000;
   const waterDays = recentLogDates().filter((date) => hydrationTotal(profile.waterEntries, date) >= waterTarget * .8).length;
-  const completedFasts = (profile.fastingRecords || []).filter((record) => record.endedAt && fastingWindowHours(record.startedAt, record.endedAt) >= (profile.fastingGoalHours || 16)).length;
+  const fastingRecords = uniqueFastingRecords(profile.fastingRecords);
+  const completedFasts = fastingRecords.filter((record) => record.endedAt && fastingWindowHours(record.startedAt, record.endedAt) >= (profile.fastingGoalHours || 16)).length;
   const fastingGoal = profile.fastingGoalHours || 16;
-  const activeFasting = activeFast(profile.fastingRecords);
-  const completedFastingRecords = [...(profile.fastingRecords || [])]
+  const activeFasting = activeFast(fastingRecords);
+  const completedFastingRecords = fastingRecords
     .filter((record): record is FastingRecord & { endedAt: string } => Boolean(record.endedAt))
     .sort((a, b) => b.endedAt.localeCompare(a.endedAt));
   const fastingDurations = completedFastingRecords.map((record) => fastingWindowHours(record.startedAt, record.endedAt));

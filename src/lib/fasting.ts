@@ -2,8 +2,12 @@ import type { FastingLateMealBehavior, FastingRecord, Meal, Profile } from "./ty
 
 export const DEFAULT_FASTING_WINDOW_MINUTES = 30;
 
+export function uniqueFastingRecords(records: FastingRecord[] | undefined) {
+  return [...new Map((records || []).map((record) => [record.id, record])).values()];
+}
+
 export function activeFast(records: FastingRecord[] | undefined) {
-  return [...(records || [])].sort((a, b) => b.startedAt.localeCompare(a.startedAt)).find((record) => !record.endedAt);
+  return uniqueFastingRecords(records).sort((a, b) => b.startedAt.localeCompare(a.startedAt)).find((record) => !record.endedAt);
 }
 
 export function fastingProgress(startedAt: string, now: string, goalHours: number) {
@@ -30,7 +34,7 @@ function windowMinutes(profile: Profile) {
 }
 
 export function eatingSessions(profile: Profile, meals: Meal[]) {
-  const sorted = meals.slice().sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const sorted = [...new Map(meals.map((meal) => [meal.id, meal])).values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   const sessions: EatingSession[] = [];
   const explicitSessions = new Map<string, EatingSession>();
   const precise = profile.fastingTrackingMode === "precise";
@@ -71,7 +75,7 @@ export function syncAutomaticFasting(profile: Profile, meals: Meal[]) {
   if (profile.enabledHabitFeatures && !profile.enabledHabitFeatures.includes("fasting")) return profile;
   const nextRecords = fastingRecordsForMeals(profile, meals);
   const manualRecords = (profile.fastingRecords || []).filter((record) => !record.id.startsWith("auto-fast-"));
-  const merged = [...manualRecords, ...nextRecords];
+  const merged = uniqueFastingRecords([...manualRecords, ...nextRecords]);
   if (JSON.stringify(merged) === JSON.stringify(profile.fastingRecords || [])) return profile;
   return { ...profile, fastingRecords: merged };
 }
@@ -79,7 +83,7 @@ export function syncAutomaticFasting(profile: Profile, meals: Meal[]) {
 /** Compatibility helper for callers that add one meal before the full diary is available. */
 export function syncAutomaticFastAfterMeal(profile: Profile, meal: Meal) {
   if (profile.enabledHabitFeatures && !profile.enabledHabitFeatures.includes("fasting")) return profile;
-  const records = profile.fastingRecords || [];
+  const records = uniqueFastingRecords(profile.fastingRecords);
   const active = activeFast(records);
   if (active && new Date(meal.createdAt).getTime() > new Date(active.startedAt).getTime()) {
     return { ...profile, fastingRecords: [...records.map((record) => record.id === active.id ? { ...record, endedAt: meal.createdAt } : record), { id: `auto-fast-${meal.id}`, startedAt: meal.createdAt }] };

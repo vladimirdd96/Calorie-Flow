@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeFast, eatingSessions, fastingProgress, fastingRecordsForMeals, fastingWindowHours, formatFastingDuration, shouldAskAboutLateMeal, syncAutomaticFastAfterMeal, syncAutomaticFasting } from "./fasting";
+import { activeFast, eatingSessions, fastingProgress, fastingRecordsForMeals, fastingWindowHours, formatFastingDuration, shouldAskAboutLateMeal, syncAutomaticFastAfterMeal, syncAutomaticFasting, uniqueFastingRecords } from "./fasting";
 import type { Meal, Profile } from "./types";
 
 const profile = { enabledHabitFeatures: ["fasting"], fastingRecords: [] } as unknown as Profile;
@@ -9,6 +9,11 @@ describe("fasting", () => {
   it("finds only an unfinished fast", () => {
     const records = [{ id: "done", startedAt: "2026-07-20T10:00:00.000Z", endedAt: "2026-07-20T22:00:00.000Z" }, { id: "active", startedAt: "2026-07-21T18:00:00.000Z" }];
     expect(activeFast(records)?.id).toBe("active");
+  });
+
+  it("deduplicates fasting records by their stable id", () => {
+    const duplicate = { id: "same", startedAt: "2026-07-20T10:00:00.000Z", endedAt: "2026-07-20T22:00:00.000Z" };
+    expect(uniqueFastingRecords([duplicate, duplicate])).toEqual([duplicate]);
   });
 
   it("limits progress to a completed target", () => {
@@ -55,6 +60,12 @@ describe("fasting", () => {
     expect(eatingSessions(profile, meals)).toHaveLength(2);
     expect(next.fastingRecords).toHaveLength(2);
     expect(next.fastingRecords?.[0].endedAt).toBe("2026-07-22T06:00:00.000Z");
+  });
+
+  it("does not create duplicate automatic records for duplicate meal rows", () => {
+    const duplicateMeals = [meal, { ...meal }];
+    expect(fastingRecordsForMeals(profile, duplicateMeals)).toHaveLength(1);
+    expect(syncAutomaticFasting({ ...profile, fastingRecords: [{ id: "auto-fast-auto-session-meal-1", startedAt: meal.createdAt }, { id: "auto-fast-auto-session-meal-1", startedAt: meal.createdAt }] }, duplicateMeals).fastingRecords).toHaveLength(1);
   });
 
   it("does not ask to join a different meal type", () => {
