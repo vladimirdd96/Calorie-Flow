@@ -258,6 +258,11 @@ p { color: var(--muted); line-height: 1.55; }
 .duplicate-meal-dialog { width: min(100%, 560px); }
 .duplicate-meal-dialog .meal-editor { width: 100%; padding: 24px 20px 12px; }
 .meal-editor-form { display: grid; gap: 16px; }
+.editor-tabs { margin-bottom: 16px; }
+.editor-tabs.segmented.three button { font-size: 12px; }
+.editor-tab-panel { display: grid; gap: 16px; }
+.editor-tab-fields { display: grid; gap: 16px; }
+.editor-sticky-actions { position: sticky; bottom: -1px; margin: 20px -24px -24px; padding: 16px 24px; background: color-mix(in oklch, var(--bg) 92%, transparent); backdrop-filter: blur(6px); border-top: 1px solid var(--border); }
 .meal-photo-editor { display: grid; gap: 10px; }
 .meal-photo-editor > div:first-child { display: grid; gap: 4px; }
 .meal-photo-editor small { color: var(--muted); font-size: 10px; }

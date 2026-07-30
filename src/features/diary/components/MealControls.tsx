@@ -49,10 +49,18 @@ export function DuplicateMealSheet({ meal, onDuplicate, onClose }: { meal: Meal;
   return <div className="meal-editor duplicate-meal-sheet"><div className="sheet-header"><div><span className="eyebrow">Your diary</span><h2>Duplicate meal</h2></div></div><div className="duplicate-meal-copy"><strong>{meal.name}</strong><p>Choose where to add a copy. The original meal stays where it is.</p></div><label className="meal-editor-form"><span>Add copy to</span><ThemedSelect ariaLabel="Add copy to" value={mealType} onChange={(value) => setMealType(value as MealType)} options={(Object.keys(mealLabels) as MealType[]).map((type) => ({ value: type, label: mealLabels[type] }))} /></label><div className="sheet-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="button" className="primary-button" onClick={() => onDuplicate(mealType)}><Copy size={17} />Duplicate</button></div></div>;
 }
 
+const mealEditorTabs = [
+  { id: "details", label: "Details" },
+  { id: "photo", label: "Photo" },
+  { id: "nutrition", label: "Nutrition" },
+] as const;
+type MealEditorTab = (typeof mealEditorTabs)[number]["id"];
+
 export function MealEditor({ meal, onSave, onClose, hideCalories }: { meal: Meal; onSave: (meal: Meal) => void; onClose: () => void; hideCalories: boolean }) {
   const [name, setName] = useState(meal.name);
   const [amount, setAmount] = useState(String(meal.amount));
   const [mealType, setMealType] = useState<MealType>(meal.mealType);
+  const [tab, setTab] = useState<MealEditorTab>("details");
   const [nutrition, setNutrition] = useState(() => ({
     calories: String(Math.round(meal.nutrition.calories)),
     protein: String(meal.nutrition.protein),
@@ -69,41 +77,46 @@ export function MealEditor({ meal, onSave, onClose, hideCalories }: { meal: Meal
     event.preventDefault();
     const nextAmount = Number(amount);
     const nextNutrition = Object.fromEntries(Object.entries(nutrition).map(([key, value]) => [key, Number(value)])) as Record<keyof typeof nutrition, number>;
-    if (!name.trim() || !Number.isFinite(nextAmount) || nextAmount <= 0 || Object.values(nextNutrition).some((value) => !Number.isFinite(value) || value < 0)) {
-      setError("Add a meal name, a positive amount, and zero or positive nutrition values.");
-      return;
-    }
+    if (!name.trim() || !Number.isFinite(nextAmount) || nextAmount <= 0) { setTab("details"); setError("Add a meal name and a positive amount."); return; }
+    if (Object.values(nextNutrition).some((value) => !Number.isFinite(value) || value < 0)) { setTab("nutrition"); setError("Use zero or positive nutrition values."); return; }
     const ratio = meal.amount > 0 ? nextAmount / meal.amount : 1;
     onSave({ ...meal, name: name.trim(), amount: nextAmount, mealType, imageUrl, grams: round(meal.grams * ratio), nutrition: { ...meal.nutrition, ...nextNutrition, calories: Math.round(nextNutrition.calories) } });
   };
   const chooseImage = async (file: File | undefined) => {
     if (!file) return;
     try { setImageUrl(await readMealImage(file)); setError(""); }
-    catch (imageError) { setError(imageError instanceof Error ? imageError.message : "The image could not be added."); }
+    catch (imageError) { setTab("photo"); setError(imageError instanceof Error ? imageError.message : "The image could not be added."); }
   };
   return <div className="meal-editor">
     <div className="sheet-header"><div><span className="eyebrow">Your diary</span><h2 id="meal-editor-title">Edit meal</h2></div><span /></div>
+    <div className="segmented three editor-tabs" role="tablist" aria-label="Edit meal sections">
+      {mealEditorTabs.map((item) => <button type="button" key={item.id} role="tab" aria-selected={tab === item.id} className={tab === item.id ? "active" : ""} onClick={() => setTab(item.id)}>{item.label}</button>)}
+    </div>
     <form className="meal-editor-form" onSubmit={submit}>
-      <label><span>Meal and additions</span><ClearableInput autoFocus value={name} onChange={(event) => setName(event.target.value)} onClear={() => setName("")} maxLength={240} placeholder="e.g. Greek yoghurt and berries" clearLabel="Clear meal name" /></label>
-      <section className="meal-photo-editor" aria-labelledby="meal-photo-heading">
-        <div><span className="eyebrow" id="meal-photo-heading">Meal photo</span><small>Optional. Stored privately with this diary entry.</small></div>
-        {imageUrl ? <div className="meal-photo-preview"><img src={imageUrl} alt="Preview of this meal" /><div><strong>Photo added</strong><small>You can replace it or remove it below.</small><button type="button" className="secondary-button" onClick={() => imageInputRef.current?.click()}>Replace photo</button><button type="button" className="text-button muted" onClick={() => setImageUrl(undefined)}>Remove</button></div></div> : <button type="button" className="meal-photo-upload" onClick={() => imageInputRef.current?.click()}><span className="meal-photo-upload-icon"><ImagePlus size={19} /></span><span className="meal-photo-upload-copy"><strong>Add a meal photo</strong><small>Choose from your device</small></span><ChevronRight size={17} aria-hidden="true" /> </button>}
-        <input ref={imageInputRef} type="file" accept="image/*" hidden onChange={(event) => { void chooseImage(event.target.files?.[0]); event.target.value = ""; }} />
-      </section>
-      <div className="form-grid two"><label><span>Amount</span><NumericInput min="0.1" step="0.1" value={amount} onChange={(event) => setAmount(event.target.value)} /></label><label><span>Meal</span><ThemedSelect ariaLabel="Meal" value={mealType} onChange={(value) => setMealType(value as MealType)} options={(Object.keys(mealLabels) as MealType[]).map((type) => ({ value: type, label: mealLabels[type] }))} /></label></div>
-      <section className="editor-nutrition" aria-labelledby="meal-nutrition-heading">
-        <div className="editor-nutrition-heading"><div><span className="eyebrow" id="meal-nutrition-heading">Nutrition for this entry</span><small>Adjust what you actually ate.</small></div><Pencil size={17} aria-hidden="true" /></div>
-        <div className="form-grid three editor-nutrition-fields">
-          {!hideCalories && <label><span>Calories <small>kcal</small></span><NumericInput required min="0" step="1" inputMode="numeric" value={nutrition.calories} onChange={(event) => updateNutrition("calories", event.target.value)} /></label>}
-          <label><span>Protein <small>g</small></span><NumericInput min="0" step="0.1" inputMode="decimal" value={nutrition.protein} onChange={(event) => updateNutrition("protein", event.target.value)} /></label>
-          <label><span>Carbs <small>g</small></span><NumericInput min="0" step="0.1" inputMode="decimal" value={nutrition.carbs} onChange={(event) => updateNutrition("carbs", event.target.value)} /></label>
-          <label><span>Fat <small>g</small></span><NumericInput min="0" step="0.1" inputMode="decimal" value={nutrition.fat} onChange={(event) => updateNutrition("fat", event.target.value)} /></label>
-          <label><span>Fibre <small>g</small></span><NumericInput min="0" step="0.1" inputMode="decimal" value={nutrition.fiber} onChange={(event) => updateNutrition("fiber", event.target.value)} /></label>
-          <label><span>Sugar <small>g</small></span><NumericInput min="0" step="0.1" inputMode="decimal" value={nutrition.sugar} onChange={(event) => updateNutrition("sugar", event.target.value)} /></label>
-        </div>
-      </section>
+      <div className="editor-tab-panel" role="tabpanel">
+        {tab === "details" && <div className="editor-tab-fields">
+          <label><span>Meal and additions</span><ClearableInput autoFocus value={name} onChange={(event) => setName(event.target.value)} onClear={() => setName("")} maxLength={240} placeholder="e.g. Greek yoghurt and berries" clearLabel="Clear meal name" /></label>
+          <div className="form-grid two"><label><span>Amount</span><NumericInput min="0.1" step="0.1" value={amount} onChange={(event) => setAmount(event.target.value)} /></label><label><span>Meal</span><ThemedSelect ariaLabel="Meal" value={mealType} onChange={(value) => setMealType(value as MealType)} options={(Object.keys(mealLabels) as MealType[]).map((type) => ({ value: type, label: mealLabels[type] }))} /></label></div>
+        </div>}
+        {tab === "photo" && <section className="meal-photo-editor" aria-labelledby="meal-photo-heading">
+          <div><span className="eyebrow" id="meal-photo-heading">Meal photo</span><small>Optional. Stored privately with this diary entry.</small></div>
+          {imageUrl ? <div className="meal-photo-preview"><img src={imageUrl} alt="Preview of this meal" /><div><strong>Photo added</strong><small>You can replace it or remove it below.</small><button type="button" className="secondary-button" onClick={() => imageInputRef.current?.click()}>Replace photo</button><button type="button" className="text-button muted" onClick={() => setImageUrl(undefined)}>Remove</button></div></div> : <button type="button" className="meal-photo-upload" onClick={() => imageInputRef.current?.click()}><span className="meal-photo-upload-icon"><ImagePlus size={19} /></span><span className="meal-photo-upload-copy"><strong>Add a meal photo</strong><small>Choose from your device</small></span><ChevronRight size={17} aria-hidden="true" /> </button>}
+          <input ref={imageInputRef} type="file" accept="image/*" hidden onChange={(event) => { void chooseImage(event.target.files?.[0]); event.target.value = ""; }} />
+        </section>}
+        {tab === "nutrition" && <section className="editor-nutrition" aria-labelledby="meal-nutrition-heading">
+          <div className="editor-nutrition-heading"><div><span className="eyebrow" id="meal-nutrition-heading">Nutrition for this entry</span><small>Adjust what you actually ate.</small></div><Pencil size={17} aria-hidden="true" /></div>
+          <div className="form-grid three editor-nutrition-fields">
+            {!hideCalories && <label><span>Calories <small>kcal</small></span><NumericInput required min="0" step="1" inputMode="numeric" value={nutrition.calories} onChange={(event) => updateNutrition("calories", event.target.value)} /></label>}
+            <label><span>Protein <small>g</small></span><NumericInput min="0" step="0.1" inputMode="decimal" value={nutrition.protein} onChange={(event) => updateNutrition("protein", event.target.value)} /></label>
+            <label><span>Carbs <small>g</small></span><NumericInput min="0" step="0.1" inputMode="decimal" value={nutrition.carbs} onChange={(event) => updateNutrition("carbs", event.target.value)} /></label>
+            <label><span>Fat <small>g</small></span><NumericInput min="0" step="0.1" inputMode="decimal" value={nutrition.fat} onChange={(event) => updateNutrition("fat", event.target.value)} /></label>
+            <label><span>Fibre <small>g</small></span><NumericInput min="0" step="0.1" inputMode="decimal" value={nutrition.fiber} onChange={(event) => updateNutrition("fiber", event.target.value)} /></label>
+            <label><span>Sugar <small>g</small></span><NumericInput min="0" step="0.1" inputMode="decimal" value={nutrition.sugar} onChange={(event) => updateNutrition("sugar", event.target.value)} /></label>
+          </div>
+        </section>}
+      </div>
       {error && <div className="inline-alert error" role="alert"><Info size={16} />{error}</div>}
-      <div className="sheet-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="submit" className="primary-button"><Check size={17} />Save changes</button></div>
+      <div className="sheet-actions editor-sticky-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="submit" className="primary-button"><Check size={17} />Save changes</button></div>
     </form>
   </div>;
 }
