@@ -1,10 +1,9 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
 import { useState } from "react";
-import { formatUnit, localDateKey, round } from "@/lib/nutrition";
+import { localDateKey, round } from "@/lib/nutrition";
 import { readFoodImage } from "@/lib/image";
-import type { Food, MealType, Nutrition } from "@/lib/types";
+import type { MealType, Nutrition } from "@/lib/types";
 
 export function BrandMark({ large = false }: { large?: boolean }) {
   return <img className={`brand-mark${large ? " large" : ""}`} src="/icon.svg" alt="" aria-hidden="true" />;
@@ -33,7 +32,7 @@ export function changeDate(dateKey: string, amount: number) {
   return localDateKey(date);
 }
 
-export function ProgressRing({ value, target, nutrition, eyebrow = "Eaten", targetText, targetContext = "daily target" }: { value: number; target: number; nutrition: Nutrition; eyebrow?: string; targetText?: string; targetContext?: string }) {
+export function ProgressRing({ value, target, nutrition, eyebrow = "Eaten", targetText, targetContext = "daily target", centerValue, centerUnit, centerSub, centerColor, hideLegend = false }: { value: number; target: number; nutrition: Nutrition; eyebrow?: string; targetText?: string; targetContext?: string; centerValue?: number; centerUnit?: string; centerSub?: string; centerColor?: string; hideLegend?: boolean }) {
   const [activeSegment, setActiveSegment] = useState<string>();
   const progress = Math.min(1, value / Math.max(1, target));
   const circumference = 2 * Math.PI * 82;
@@ -87,13 +86,14 @@ export function ProgressRing({ value, target, nutrition, eyebrow = "Eaten", targ
       </svg>
       {selectedSegment && <div className="ring-tooltip" role="status" style={tooltipPosition}><strong>{selectedSegment.label}</strong><span>{round(selectedSegment.grams)} g · {Math.round(selectedSegment.value)} kcal</span><small>{Math.round((selectedSegment.value / Math.max(1, target)) * 100)}% of {targetContext}</small></div>}
       <div className="ring-content">
-        <span className="eyebrow">{eyebrow}</span>
-        <strong>{Math.round(value).toLocaleString()}</strong>
-        <span>{targetText || `of ${target.toLocaleString()} kcal`}</span>
+        {centerValue === undefined && <span className="eyebrow">{eyebrow}</span>}
+        <strong style={centerColor ? { color: centerColor } : undefined}>{Math.round(centerValue ?? value).toLocaleString()}</strong>
+        <span className={centerUnit ? "ring-unit" : undefined}>{centerUnit || targetText || `of ${target.toLocaleString()} kcal`}</span>
+        {centerSub && <small className="ring-sub">{centerSub}</small>}
       </div>
-      <div className="ring-legend" aria-hidden="true">
+      {!hideLegend && <div className="ring-legend" aria-hidden="true">
         {macroSegments.map((segment) => <span key={segment.label}><i style={{ background: segment.color }} />{segment.label}</span>)}
-      </div>
+      </div>}
     </div>
   );
 }
@@ -101,21 +101,6 @@ export function ProgressRing({ value, target, nutrition, eyebrow = "Eaten", targ
 export function MiniProgressRing({ value, target, label }: { value: number; target: number; label: string }) {
   const progress = Math.min(1, value / Math.max(1, target));
   return <span className="mini-progress-ring" style={{ "--progress": `${progress * 100}%` } as React.CSSProperties} aria-label={label} />;
-}
-
-function MacroBar({ label, value, target, color }: { label: string; value: number; target: number; color: string }) {
-  const progress = Math.min(100, (value / Math.max(1, target)) * 100);
-  return (
-    <div className="macro-row">
-      <div className="macro-label"><span>{label}</span><strong>{round(value, 0)} <small>/ {target} g</small></strong></div>
-      <div className="bar-track" role="progressbar" aria-label={`${label}: ${round(value, 0)} of ${target} grams`} aria-valuemin={0} aria-valuemax={target} aria-valuenow={round(value, 0)}><div className="bar-fill" style={{ width: `${progress}%`, background: color }} /></div>
-    </div>
-  );
-}
-
-function FoodAvatar({ food, name }: { food?: Food; name?: string }) {
-  if (food?.imageUrl) return <img className="food-avatar" src={food.imageUrl} alt="" />;
-  return <div className="food-avatar fallback">{(name || food?.name || "F").slice(0, 1).toUpperCase()}</div>;
 }
 
 export const readMealImage = readFoodImage;

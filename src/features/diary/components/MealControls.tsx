@@ -1,14 +1,14 @@
 "use client";
 
-import { ArrowRightLeft, Check, ChevronRight, Copy, GripVertical, ImagePlus, Info, MoreHorizontal, Pencil, Trash2, Utensils } from "lucide-react";
+import { ArrowRightLeft, Check, ChevronRight, Copy, GripVertical, ImagePlus, Info, MoreHorizontal, Pencil, Sparkles, Trash2, Utensils } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { ThemedSelect } from "@/features/shared/ThemedSelect";
 import { NumericInput } from "@/features/shared/NumericInput";
-import { formatUnit, round } from "@/lib/nutrition";
+import { round } from "@/lib/nutrition";
 import type { Meal, MealType } from "@/lib/types";
 import { mealLabels, readMealImage } from "./DiaryPrimitives";
 
-export function MealRow({ meal, imageUrl, onDelete, onEdit, onDuplicate, onMove, onDetails, onOpenImage, onDragStart, onDragOver, onDrop, onPointerDown, dropPosition, dragging, hideCalories }: { meal: Meal; imageUrl?: string; onDelete: () => void; onEdit: () => void; onDuplicate: () => void; onMove: () => void; onDetails: () => void; onOpenImage: () => void; onDragStart: (meal: Meal, event: React.DragEvent<HTMLDivElement>) => void; onDragOver: (event: React.DragEvent<HTMLDivElement>) => void; onDrop: (event: React.DragEvent<HTMLDivElement>) => void; onPointerDown: (meal: Meal, event: React.PointerEvent<HTMLButtonElement>) => void; dropPosition?: "before" | "after"; dragging?: boolean; hideCalories: boolean }) {
+export function MealRow({ meal, imageUrl, onDelete, onEdit, onMove, onDetails, onOpenImage, onDragStart, onDragOver, onDrop, onPointerDown, dropPosition, dragging, hideCalories }: { meal: Meal; imageUrl?: string; onDelete: () => void; onEdit: () => void; onMove: () => void; onDetails: () => void; onOpenImage: () => void; onDragStart: (meal: Meal, event: React.DragEvent<HTMLDivElement>) => void; onDragOver: (event: React.DragEvent<HTMLDivElement>) => void; onDrop: (event: React.DragEvent<HTMLDivElement>) => void; onPointerDown: (meal: Meal, event: React.PointerEvent<HTMLButtonElement>) => void; dropPosition?: "before" | "after"; dragging?: boolean; hideCalories: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLSpanElement>(null);
   useEffect(() => {
@@ -28,18 +28,19 @@ export function MealRow({ meal, imageUrl, onDelete, onEdit, onDuplicate, onMove,
       <button type="button" className="meal-drag-handle" onPointerDown={(event) => onPointerDown(meal, event)} aria-label={`Hold and drag ${meal.name} to reorder it`}><GripVertical size={17} aria-hidden="true" /></button>
       {imageUrl ? <button type="button" className="meal-icon meal-image-trigger" onClick={onOpenImage} aria-label={`Expand photo for ${meal.name}`}><img src={imageUrl} alt="" /></button> : <div className="meal-icon"><Utensils size={17} /></div>}
       <button type="button" className="meal-detail-trigger" onClick={onDetails} aria-label={`View nutrition details for ${meal.name}`}><div className="meal-copy">
-        <strong>{meal.name}</strong>
-        <span>{meal.amount} {formatUnit(meal.unit, meal.amount)} · {new Date(meal.createdAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} · P {meal.nutrition.protein} · C {meal.nutrition.carbs} · F {meal.nutrition.fat}</span>
+        <span className="meal-name-line"><strong>{meal.name}</strong>{meal.estimated && <span className="estimate-badge"><Sparkles />Est.</span>}</span>
+        <span>P {round(meal.nutrition.protein)} · C {round(meal.nutrition.carbs)} · F {round(meal.nutrition.fat)}g</span>
       </div></button>
       {!hideCalories && <strong className="meal-kcal"><span>{Math.round(meal.nutrition.calories)}</span><small>kcal</small></strong>}
-      <span ref={menuRef} className="meal-actions"><button type="button" className="meal-menu-trigger" onClick={() => setMenuOpen((open) => !open)} aria-label={`Options for ${meal.name}`} aria-expanded={menuOpen}><MoreHorizontal size={18} /></button>{menuOpen && <span className="meal-action-menu" role="menu"><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onMove(); }}><ArrowRightLeft size={14} />Move</button><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onEdit(); }}><Pencil size={14} />Edit</button><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onDuplicate(); }}><Copy size={14} />Duplicate</button><button type="button" role="menuitem" className="danger" onClick={() => { setMenuOpen(false); onDelete(); }}><Trash2 size={14} />Delete</button></span>}</span>
+      <span ref={menuRef} className="meal-actions"><button type="button" className="meal-menu-trigger" onClick={() => setMenuOpen((open) => !open)} aria-label={`Options for ${meal.name}`} aria-expanded={menuOpen}><MoreHorizontal size={18} /></button>{menuOpen && <span className="meal-action-menu" role="menu"><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onEdit(); }}><Pencil size={14} />Edit</button><button type="button" role="menuitem" onClick={() => { setMenuOpen(false); onMove(); }}><ArrowRightLeft size={14} />Move or copy</button><button type="button" role="menuitem" className="danger" onClick={() => { setMenuOpen(false); onDelete(); }}><Trash2 size={14} />Delete</button></span>}</span>
     </div>
   );
 }
 
-export function MoveMealSheet({ meal, onMove, onClose }: { meal: Meal; onMove: (mealType: MealType) => void; onClose: () => void }) {
+export function MoveMealSheet({ meal, onMove, onCopy, onClose }: { meal: Meal; onMove: (mealType: MealType) => void; onCopy?: (mealType: MealType) => void; onClose: () => void }) {
   const [mealType, setMealType] = useState<MealType>(meal.mealType);
-  return <div className="meal-editor duplicate-meal-sheet"><div className="sheet-header"><div><span className="eyebrow">Your diary</span><h2>Move meal</h2></div></div><div className="duplicate-meal-copy"><strong>{meal.name}</strong><p>Choose a meal section. On mobile, this is the quickest way to move food.</p></div><label className="meal-editor-form"><span>Move to</span><ThemedSelect ariaLabel="Move to" value={mealType} onChange={(value) => setMealType(value as MealType)} options={(Object.keys(mealLabels) as MealType[]).map((type) => ({ value: type, label: mealLabels[type] }))} /></label><div className="sheet-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="button" className="primary-button" onClick={() => onMove(mealType)}><ArrowRightLeft size={17} />Move meal</button></div></div>;
+  const [mode, setMode] = useState<"move" | "copy">("move");
+  return <div className="meal-editor duplicate-meal-sheet"><div className="sheet-header"><div><span className="eyebrow">Your diary</span><h2>{meal.name}</h2></div></div><p className="move-copy-current">Currently in {mealLabels[meal.mealType]}</p>{onCopy && <div className="move-copy-tabs"><button type="button" className={mode === "move" ? "active" : ""} onClick={() => setMode("move")}><ArrowRightLeft />Move to</button><button type="button" className={mode === "copy" ? "active" : ""} onClick={() => setMode("copy")}><Copy />Copy to</button></div>}<label className="meal-editor-form"><span>{mode === "move" ? "Move to" : "Copy to"}</span><ThemedSelect ariaLabel={mode === "move" ? "Move to" : "Copy to"} value={mealType} onChange={(value) => setMealType(value as MealType)} options={(Object.keys(mealLabels) as MealType[]).map((type) => ({ value: type, label: mealLabels[type] }))} /></label><div className="sheet-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="button" className="primary-button" onClick={() => mode === "copy" && onCopy ? onCopy(mealType) : onMove(mealType)}>{mode === "copy" ? <Copy size={17} /> : <ArrowRightLeft size={17} />}{mode === "copy" ? "Copy meal" : "Move meal"}</button></div></div>;
 }
 
 export function DuplicateMealSheet({ meal, onDuplicate, onClose }: { meal: Meal; onDuplicate: (mealType: MealType) => void; onClose: () => void }) {

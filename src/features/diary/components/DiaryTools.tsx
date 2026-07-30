@@ -155,10 +155,9 @@ export function FastingTracker({ profile, onSave, compact = false }: { profile: 
 
 export function DailyRhythm({ profile, dateKey, onSave }: { profile: Profile; dateKey: string; onSave: (profile: Profile) => void }) {
   const showWater = isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.water);
-  const showFasting = isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting);
-  if (!showWater && !showFasting) return null;
+  if (!showWater) return null;
   return <details className="daily-rhythm" aria-labelledby="daily-rhythm-heading">
-    <summary><span><span className="eyebrow">Optional, after your food log</span><strong id="daily-rhythm-heading">Daily check-ins</strong></span><span className="daily-rhythm-summary"><span>{[showWater && "Water", showFasting && "Fasting"].filter(Boolean).join(" · ")}</span><ChevronDown size={17} aria-hidden="true" /></span></summary>
-    <div className="daily-rhythm-grid">{showWater && <WaterTracker profile={profile} dateKey={dateKey} onSave={onSave} />}{showFasting && <FastingTracker profile={profile} onSave={onSave} />}</div>
+    <summary><span><span className="eyebrow">Optional, after your food log</span><strong id="daily-rhythm-heading">Daily check-ins</strong></span><span className="daily-rhythm-summary"><span>Water</span><ChevronDown size={17} aria-hidden="true" /></span></summary>
+    <div className="daily-rhythm-grid"><WaterTracker profile={profile} dateKey={dateKey} onSave={onSave} /></div>
   </details>;
 }

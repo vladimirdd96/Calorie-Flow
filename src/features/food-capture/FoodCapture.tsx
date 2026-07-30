@@ -1,14 +1,13 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- local recipe thumbnails are dynamic data URLs. */
 
-import { ArrowLeft, BookOpen, Camera, ChevronRight, Database, Info, Mic, Package, Pencil, Plus, ScanLine, Search, Send, ShieldCheck, Square, Upload, WifiOff } from "lucide-react";
+import { ArrowLeft, BookOpen, Camera, ChevronLeft, ChevronRight, Database, ImagePlus, Info, Mic, Package, Pencil, Plus, Repeat, ScanLine, Search, Square, Star, WifiOff, X, Zap } from "lucide-react";
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AddFoodView } from "@/features/food-capture/types";
 import { ClearableInput } from "@/features/shared/ClearableInput";
 import { localDateKey } from "@/lib/nutrition";
 import { findByBarcode, searchOpenFoodFacts } from "@/lib/openfoodfacts";
 import { normalizeVoiceFoodQuery } from "@/lib/voice";
-import { getSupabase } from "@/lib/supabase";
 import type { Food, Meal, MealPhotoAnalysis, MealType, Recipe } from "@/lib/types";
 import { BarcodeScanner } from "./components/BarcodeScanner";
 import { FoodRow, ManualFood, PortionSheet, QuickMacroSheet } from "./components/FoodEntrySheets";
@@ -30,12 +29,36 @@ function RecipeSearchRow({ recipe, hideCalories, onSelect }: { recipe: Recipe; h
   return <button className="food-row recipe-row" type="button" onClick={onSelect}>{recipe.imageUrls?.[0] ? <img className="food-avatar" src={recipe.imageUrls[0]} alt="" /> : <span className="recipe-row-icon"><BookOpen size={18} /></span>}<span className="food-copy"><strong>{recipe.name}</strong><small>{recipe.ingredients.length} {recipe.ingredients.length === 1 ? "food" : "foods"} · your recipe</small></span>{!hideCalories && <span className="food-calories"><strong>{Math.round(recipe.nutritionPerServing.calories)}</strong><small>kcal total</small></span>}<ChevronRight size={18} /></button>;
 }
 
+function RecentFoodRow({ food, hideCalories, onSelect }: { food: Food; hideCalories: boolean; onSelect: () => void }) {
+  const servingGrams = food.servingGrams || 100;
+  const servingCalories = Math.round(food.nutrientsPer100.calories * servingGrams / 100);
+  return <button className="food-row recent-food-row" type="button" onClick={onSelect}>
+    {food.imageUrl ? <img className="food-avatar" src={food.imageUrl} alt="" /> : <span className="food-avatar fallback">{food.name.slice(0, 1).toUpperCase()}</span>}
+    <span className="food-copy"><strong>{food.name}</strong><small>1 serving · {servingGrams} g</small></span>
+    {!hideCalories && <span className="food-calories"><strong>{servingCalories}</strong><small>kcal</small></span>}
+    <span className="recent-food-add" aria-hidden="true"><Plus size={15} /></span>
+  </button>;
+}
+
 function SearchResultGroup({ title, detail, empty, children }: { title: string; detail: string; empty: boolean; children: ReactNode }) {
   if (empty) return null;
   return <section className="search-result-group" aria-label={title}><div className="quick-list-heading"><strong>{title}</strong><span>{detail}</span></div>{children}</section>;
 }
 
-export function AddFoodSheet({ foods, meals, recipes, initialView = "start", initialMealType, onLog, onMealPhoto, onSaveFood, onSelectRecipe, onSelectFood, hideCalories }: { foods: Food[]; meals: Meal[]; recipes: Recipe[]; initialView?: AddView; initialMealType?: MealType; onLog: (meal: Meal, food: Food) => void; onMealPhoto: (analysis: MealPhotoAnalysis) => void; onSaveFood: (food: Food) => Promise<void>; onSelectRecipe: (recipe: Recipe) => void; onSelectFood?: (food: Food) => void; hideCalories: boolean }) {
+function shiftDate(dateKey: string, offset: number) {
+  const date = new Date(`${dateKey}T12:00:00`);
+  date.setDate(date.getDate() + offset);
+  return localDateKey(date);
+}
+
+function loggingDateLabel(dateKey: string) {
+  const today = localDateKey();
+  if (dateKey === today) return "Today";
+  if (dateKey === shiftDate(today, -1)) return "Yesterday";
+  return new Date(`${dateKey}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+}
+
+export function AddFoodSheet({ foods, meals, recipes, initialView = "start", initialMealType, initialLoggedDate = localDateKey(), onLog, onMealPhoto, onSaveFood, onSelectRecipe, onSelectFood, onClose, hideCalories }: { foods: Food[]; meals: Meal[]; recipes: Recipe[]; initialView?: AddView; initialMealType?: MealType; initialLoggedDate?: string; onLog: (meal: Meal, food: Food) => void; onMealPhoto: (analysis: MealPhotoAnalysis) => void; onSaveFood: (food: Food) => Promise<void>; onSelectRecipe: (recipe: Recipe) => void; onSelectFood?: (food: Food) => void; onClose?: () => void; hideCalories: boolean }) {
   const [view, setView] = useState<AddView>(initialView);
   const [selected, setSelected] = useState<Food>();
   const [questions, setQuestions] = useState<string[]>([]);
@@ -46,9 +69,7 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
   const [intakeError, setIntakeError] = useState("");
   const [manualNotice, setManualNotice] = useState("");
   const [unknownBarcode, setUnknownBarcode] = useState("");
-  const [intakeDraft, setIntakeDraft] = useState("");
-  const [coachReply, setCoachReply] = useState("");
-  const [askingCoach, setAskingCoach] = useState(false);
+  const [loggedDate, setLoggedDate] = useState(initialLoggedDate);
   const [voicePhase, setVoicePhase] = useState<VoicePhase>("idle");
   const [voiceTranscript, setVoiceTranscript] = useState("");
   const [voiceElapsed, setVoiceElapsed] = useState(0);
@@ -58,7 +79,11 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
   const voiceTranscriptRef = useRef("");
   const voiceStopRequestedRef = useRef(false);
   const searchRequestRef = useRef(0);
-  const recent = [...foods].filter((food) => food.lastUsedAt).sort((a, b) => (b.lastUsedAt || "").localeCompare(a.lastUsedAt || "")).slice(0, 6);
+  const recent = useMemo(() => {
+    const used = [...foods].filter((food) => food.lastUsedAt).sort((a, b) => (b.lastUsedAt || "").localeCompare(a.lastUsedAt || ""));
+    return (used.length ? used : foods).slice(0, 6);
+  }, [foods]);
+  const mostPicked = recent.slice(0, 4);
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const diaryFoodIds = useMemo(() => new Set(meals.map((meal) => meal.foodId).filter((id): id is string => Boolean(id))), [meals]);
   const matchingRecipes = useMemo(() => recipes.filter((recipe) => normalizedQuery && `${recipe.name} ${recipe.ingredients.map((ingredient) => ingredient.name).join(" ")}`.toLocaleLowerCase().includes(normalizedQuery)), [recipes, normalizedQuery]);
@@ -74,6 +99,7 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
   const matchingPersonalFoods = useMemo(() => foods.filter((food) => normalizedQuery && food.source === "custom" && `${food.name} ${food.brand || ""} ${food.barcode || ""}`.toLocaleLowerCase().includes(normalizedQuery)), [foods, normalizedQuery]);
   const matchingDiaryFoods = useMemo(() => foods.filter((food) => normalizedQuery && food.source !== "custom" && diaryFoodIds.has(food.id) && `${food.name} ${food.brand || ""} ${food.barcode || ""}`.toLocaleLowerCase().includes(normalizedQuery)), [foods, diaryFoodIds, normalizedQuery]);
   const matchingReferenceFoods = useMemo(() => foods.filter((food) => normalizedQuery && food.source === "seed" && `${food.name} ${food.brand || ""}`.toLocaleLowerCase().includes(normalizedQuery)), [foods, normalizedQuery]);
+  const matchingOwnFoods = useMemo(() => [...new Map([...matchingPersonalFoods, ...matchingReferenceFoods, ...matchingDiaryFoods].map((food) => [food.id, food])).values()], [matchingDiaryFoods, matchingPersonalFoods, matchingReferenceFoods]);
   const changeView = (nextView: AddView) => {
     if (view === "search" && nextView !== "search") {
       searchRequestRef.current += 1;
@@ -107,39 +133,10 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
   }, [foods, matchingDiaryFoods.length, matchingDiaryRecipes.length, matchingPersonalFoods.length, matchingReferenceFoods.length, matchingRecipes.length]);
   const search = async (event?: FormEvent) => { event?.preventDefault(); await runSearch(query); };
   useEffect(() => {
-    if (view !== "search") return;
+    if (view !== "search" && view !== "start") return;
     const timer = window.setTimeout(() => { void runSearch(query); }, 700);
     return () => window.clearTimeout(timer);
   }, [query, runSearch, view]);
-  const sendIntake = async (event: FormEvent) => {
-    event.preventDefault();
-    const message = intakeDraft.trim();
-    if (!message || askingCoach) return;
-    const soundsConversational = /\b(i|my|me|how|what|can|should|help|ate|eaten|bite|bites|slice|slices|calorie|protein|macro|portion)\b|[?]/i.test(message);
-    setCoachReply(""); setIntakeError("");
-    if (!soundsConversational) {
-      setQuery(message); changeView("search"); await runSearch(message);
-      return;
-    }
-    setAskingCoach(true);
-    try {
-      const session = await getSupabase()?.auth.getSession();
-      const token = session?.data.session?.access_token;
-      if (!token) throw new Error("Sign in to ask the Coach about your log.");
-      const response = await fetch("/api/coach", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ message, history: [], localDate: localDateKey(), timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
-      });
-      const body: unknown = await response.json();
-      const bodyRecord = body && typeof body === "object" ? body as Record<string, unknown> : {};
-      if (!response.ok) throw new Error(typeof bodyRecord.error === "string" ? bodyRecord.error : "The Coach is unavailable right now.");
-      if (typeof bodyRecord.reply !== "string") throw new Error("The Coach returned an invalid response.");
-      setCoachReply(hideCalories ? hideCalorieValues(bodyRecord.reply) : bodyRecord.reply);
-    } catch (caught) {
-      setIntakeError(caught instanceof Error ? caught.message : "The Coach is unavailable right now.");
-    } finally { setAskingCoach(false); }
-  };
   useEffect(() => {
     if (voicePhase !== "recording") return;
     const startedAt = Date.now();
@@ -155,7 +152,7 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
     setVoicePhase("idle");
     setVoiceElapsed(0);
     if (!phrase) { setIntakeError("I didn’t catch a food name. Try again or type it instead."); return; }
-    setIntakeDraft(phrase); setQuery(phrase); changeView("search"); await runSearch(phrase);
+    setQuery(phrase); changeView("start"); await runSearch(phrase);
   };
 
   const stopVoiceSearch = () => {
@@ -229,13 +226,13 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
     if (labeledFood.barcode) await barcode(labeledFood.barcode, labeledFood, followUps, true);
     else await saveAndPick(labeledFood, followUps);
   };
-  if (selected) return <PortionSheet food={selected} questions={questions} initialMealType={initialMealType} hideCalories={hideCalories} onLog={onLog} onClose={() => setSelected(undefined)} />;
+  if (selected) return <PortionSheet food={selected} questions={questions} initialMealType={initialMealType} initialLoggedDate={loggedDate} hideCalories={hideCalories} onLog={onLog} onClose={() => setSelected(undefined)} />;
   if (view === "scan") return <>{loading && <div className="global-loader"><i />Looking up product…</div>}<BarcodeScanner onResult={barcode} onClose={() => changeView("start")} /></>;
   if (view === "camera") return <LabelReader initialFiles={pendingImages} initialAction="camera" onFood={(food, followUps) => { void handleLabelFood(food, followUps); }} onClose={() => { setPendingImages([]); changeView("start"); }} />;
   if (view === "photo") return <MealPhotoReader onMeal={onMealPhoto} onClose={() => changeView("start")} />;
   if (view === "label") return <LabelReader initialFiles={pendingImages} onFood={(food, followUps) => { void handleLabelFood(food, followUps); }} onClose={() => { setPendingImages([]); changeView("start"); }} />;
   if (view === "manual") return <ManualFood initialBarcode={unknownBarcode} notice={manualNotice} hideCalories={hideCalories} onSave={(food) => void saveAndPick(food)} onClose={() => changeView("start")} />;
-  if (view === "quick") return <QuickMacroSheet hideCalories={hideCalories} onLog={onLog} onClose={() => changeView("start")} />;
+  if (view === "quick") return <QuickMacroSheet initialLoggedDate={loggedDate} hideCalories={hideCalories} onLog={onLog} onClose={() => changeView("start")} />;
   if (view === "barcode-not-found") return <div className="barcode-not-found"><div className="sheet-header"><button className="icon-button ghost" onClick={() => changeView("scan")} aria-label="Back to barcode scanner"><ArrowLeft /></button><div><span className="eyebrow">Barcode not found</span><h2>Let’s add this food</h2></div><span /></div><div className="barcode-not-found-copy"><span className="action-icon amber"><Package /></span><div><strong>No saved product matched {unknownBarcode}</strong><p>Use the package label to check the nutrition, or enter it yourself. We’ll save it for next time.</p></div></div><div className="barcode-not-found-actions"><button className="primary-button full" type="button" onClick={() => { setPendingImages([]); changeView("label"); }}><Camera size={18} />Scan nutrition label</button><button className="secondary-button full" type="button" onClick={() => changeView("manual")}><Pencil size={18} />Add by hand</button></div></div>;
   if (view === "search") return (
     <div>
@@ -250,9 +247,21 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
     </div>
   );
   return (
-    <div className="coach-intake" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); addImages(event.dataTransfer.files); }}>
-      <div className="sheet-header"><span /><div><span className="eyebrow">Log with Coach</span><h2>Add food or get help</h2></div><span /></div>
-      <div className="intake-actions"><button type="button" onClick={() => changeView("scan")}><ScanLine size={17} />Barcode</button><button type="button" onClick={() => imageInputRef.current?.click()}><Upload size={17} />Add photos</button><button type="button" onClick={startVoiceSearch} disabled={voicePhase !== "idle"}><Mic size={17} />Voice</button><button type="button" onClick={() => changeView("quick")}><Plus size={17} />Quick add</button></div>
+    <div className="add-food-start" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); addImages(event.dataTransfer.files); }}>
+      <div className="add-food-header"><div><span className="eyebrow">Add food</span><h2>Find or log a food</h2></div>{onClose && <button type="button" className="add-food-close" onClick={onClose} aria-label="Close"><X size={19} /></button>}</div>
+      <div className="logging-date-switcher">
+        <button type="button" onClick={() => setLoggedDate((current) => shiftDate(current, -1))} aria-label="Previous day"><ChevronLeft size={16} /></button>
+        <span><strong>{loggingDateLabel(loggedDate)}</strong><small>Logging to this day</small></span>
+        <button type="button" disabled={loggedDate >= localDateKey()} onClick={() => setLoggedDate((current) => shiftDate(current, 1))} aria-label="Next day"><ChevronRight size={16} /></button>
+      </div>
+      <form className="add-food-search" onSubmit={search}><Search size={18} /><ClearableInput value={query} onChange={(event) => setQuery(event.target.value)} onClear={() => setQuery("")} placeholder="Search foods and recipes" clearLabel="Clear food search" /></form>
+      <div className="add-food-actions">
+        <button type="button" onClick={() => changeView("scan")}><ScanLine className="blue" size={19} /><span>Barcode</span></button>
+         <button type="button" aria-label="Add photos to scan label" onClick={() => changeView("camera")}><Camera className="carbs" size={19} /><span>Scan label</span></button>
+        <button type="button" onClick={startVoiceSearch} disabled={voicePhase !== "idle"}><Mic className="fat" size={19} /><span>Voice</span></button>
+        <button type="button" onClick={() => changeView("photo")}><ImagePlus className="mint" size={19} /><span>Meal photo</span></button>
+        <button type="button" className="quick-add-action" onClick={() => changeView("quick")}><Zap className="carbs" size={19} /><span><strong>Quick add</strong><small>Just calories, no food record</small></span></button>
+      </div>
       {voicePhase !== "idle" && <section className={`voice-capture ${voicePhase}`} aria-live="polite" aria-label="Voice food entry">
         <div className="voice-capture-top"><span className="voice-status-dot" aria-hidden="true" /><div><strong>{voicePhase === "recording" ? "Listening" : "Making sense of that"}</strong><small>{voicePhase === "recording" ? "Say what you ate, then tap Done" : "Searching your food library…"}</small></div>{voicePhase === "recording" && <time>{String(Math.floor(voiceElapsed / 60)).padStart(2, "0")}:{String(voiceElapsed % 60).padStart(2, "0")}</time>}</div>
         <div className={`voice-waveform ${voiceTranscript ? "has-speech" : ""}`} aria-hidden="true">{[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((bar) => <i key={bar} />)}</div>
@@ -260,13 +269,25 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
         {voicePhase === "recording" && <button className="voice-stop-button" type="button" onClick={stopVoiceSearch}><Square size={15} fill="currentColor" />Done</button>}
       </section>}
       <input ref={imageInputRef} className="visually-hidden-file" type="file" accept="image/*" multiple onChange={(event) => addImages(event.target.files || undefined)} />
-      <label className="intake-input-label" htmlFor="coach-intake">Search a food or ask Coach</label>
-      <form className="intake-composer" onSubmit={sendIntake}><ClearableInput id="coach-intake" value={intakeDraft} onChange={(event) => setIntakeDraft(event.target.value)} onClear={() => setIntakeDraft("")} placeholder="Food or question" clearLabel="Clear Coach prompt" /><button type="submit" disabled={!intakeDraft.trim() || askingCoach} aria-label="Send to Coach">{askingCoach ? <span className="coach-loader" /> : <Send />}</button></form>
-      {coachReply && <div className="intake-reply"><span>Coach</span><p>{coachReply}</p><button className="text-button" onClick={() => { setQuery(intakeDraft); changeView("search"); void runSearch(intakeDraft); }}><Search size={16} />Find a food to log</button></div>}
       {intakeError && <div className="inline-alert error" role="alert"><Info size={17} />{intakeError}</div>}
-      {!!recent.length && <div className="quick-list"><span className="eyebrow">Recent · one tap</span>{recent.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div>}
-      <button className="text-button intake-manual" onClick={() => changeView("manual")}><Pencil size={16} />Add custom food</button>
-      <div className="simple-note"><ShieldCheck size={17} /><span>Barcode and saved-food search work directly. Package photos are sent to AI only after you add them.</span></div>
+      {loading && <div className="search-status" role="status"><i />Searching foods…</div>}
+      {searchError && <div className="inline-alert" role="alert"><WifiOff size={17} />{searchError}</div>}
+      {normalizedQuery ? <div className="add-food-results">
+        <SearchResultGroup title="Your foods & recipes" detail="" empty={matchingRecipes.length + matchingDiaryRecipes.length + matchingOwnFoods.length === 0}>
+          <div className="add-food-row-list">
+            {matchingRecipes.map((recipe) => <RecipeSearchRow key={recipe.id} recipe={recipe} hideCalories={hideCalories} onSelect={() => onSelectRecipe(recipe)} />)}
+            {matchingDiaryRecipes.map((recipe) => <RecipeSearchRow key={recipe.id} recipe={recipe} hideCalories={hideCalories} onSelect={() => onSelectRecipe(recipe)} />)}
+            {matchingOwnFoods.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}
+          </div>
+        </SearchResultGroup>
+        <SearchResultGroup title="Search results" detail="Open Food Facts" empty={!remoteResults.length && !loading}><div className="add-food-row-list">{remoteResults.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div></SearchResultGroup>
+        {!loading && matchingRecipes.length + matchingDiaryRecipes.length + matchingOwnFoods.length + remoteResults.length === 0 && <div className="search-empty"><Database /><strong>No match yet</strong><p>Create the food once and it will be ready next time.</p></div>}
+      </div> : <>
+        {!!mostPicked.length && <section className="most-picked"><h3><Repeat size={12} />Most picked</h3><div>{mostPicked.map((food) => <button key={food.id} type="button" onClick={() => pick(food)}><span className="most-picked-top"><span className="food-avatar fallback">{food.name.slice(0, 1).toUpperCase()}</span><span className="most-picked-plus"><Plus size={14} /></span></span><strong>{food.name}</strong><small>{food.brand || "Picked recently"}</small></button>)}</div></section>}
+        {!!recent.length && <section className="add-food-recent"><h3>Recent</h3><div className="add-food-row-list">{recent.map((food) => <RecentFoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div></section>}
+      </>}
+      <button className="add-custom-food" type="button" onClick={() => changeView("manual")}><Pencil size={16} />Create a new food</button>
+      <p className="add-food-credit"><Star size={13} />Save a food with its per-100 g values so you can reuse it. For a one-off entry, use Quick add.</p>
     </div>
   );
 }

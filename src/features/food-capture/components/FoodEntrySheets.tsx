@@ -1,8 +1,7 @@
 "use client";
 
-import { ArrowLeft, Camera, Check, ChevronRight, Info, Package, Pencil, Plus, Sparkles } from "lucide-react";
+import { ArrowLeft, Camera, Check, ChevronDown, ChevronRight, Info, Package, Pencil, Plus, Sparkles } from "lucide-react";
 import { type FormEvent, useRef, useState } from "react";
-import { ThemedSelect } from "@/features/shared/ThemedSelect";
 import { NumericInput } from "@/features/shared/NumericInput";
 import { ClearableInput } from "@/features/shared/ClearableInput";
 import { DatePickerField } from "@/features/shared/DatePicker";
@@ -90,15 +89,15 @@ export function ManualFood({ initialBarcode, notice, onSave, onClose, hideCalori
   );
 }
 
-export function PortionSheet({ food, questions, initialMealType, onLog, onClose, hideCalories }: { food: Food; questions?: string[]; initialMealType?: MealType; onLog: (meal: Meal, food: Food) => void; onClose: () => void; hideCalories: boolean }) {
+export function PortionSheet({ food, questions, initialMealType, initialLoggedDate = localDateKey(), onLog, onClose, hideCalories }: { food: Food; questions?: string[]; initialMealType?: MealType; initialLoggedDate?: string; onLog: (meal: Meal, food: Food) => void; onClose: () => void; hideCalories: boolean }) {
   const units = contextualUnits(food);
   const initialUnit: ServingUnit = food.packageGrams ? "package" : food.servingGrams ? "serving" : "g";
   const [unit, setUnit] = useState<ServingUnit>(initialUnit);
   const [amount, setAmount] = useState(initialUnit === "g" ? 100 : 1);
   const [mealType, setMealType] = useState<MealType>(() => initialMealType || suggestedMealType());
-  const [loggedDate, setLoggedDate] = useState(localDateKey());
+  const [loggedDate, setLoggedDate] = useState(initialLoggedDate);
   const [additionalDatesOpen, setAdditionalDatesOpen] = useState(false);
-  const [loggedDates, setLoggedDates] = useState<string[]>([localDateKey()]);
+  const [loggedDates, setLoggedDates] = useState<string[]>([initialLoggedDate]);
   const grams = gramsFor(food, amount, unit);
   const nutrition = scaleNutrition(food.nutrientsPer100, grams);
   const log = (event: FormEvent<HTMLFormElement>) => {
@@ -129,8 +128,29 @@ export function PortionSheet({ food, questions, initialMealType, onLog, onClose,
   );
 }
 
-export function QuickMacroSheet({ onLog, onClose, hideCalories }: { onLog: (meal: Meal, food: Food) => void; onClose: () => void; hideCalories: boolean }) {
-  const [name, setName] = useState(""); const [mealType, setMealType] = useState<MealType>(suggestedMealType()); const [date, setDate] = useState(localDateKey()); const [values, setValues] = useState({ protein: "", carbs: "", fat: "", fiber: "", sugar: "" });
-  const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const nutrients = { protein: Number(values.protein), carbs: Number(values.carbs), fat: Number(values.fat), fiber: Number(values.fiber), sugar: Number(values.sugar) }; if (!name.trim() || Object.values(nutrients).some((value) => !Number.isFinite(value) || value < 0)) return; const nutrition: Nutrition = { ...nutrients, calories: round(nutrients.protein * 4 + nutrients.carbs * 4 + nutrients.fat * 9, 0) }; const food: Food = { id: `quick-${crypto.randomUUID()}`, name: name.trim(), servingGrams: 100, nutrientsPer100: nutrition, source: "custom" }; onLog({ id: crypto.randomUUID(), foodId: food.id, name: food.name, mealType, amount: 1, unit: "serving", grams: 100, nutrition, createdAt: new Date().toISOString(), loggedDate: date, source: "custom" }, food); };
-  return <form className="sheet-form quick-macro-sheet" onSubmit={submit}><div className="sheet-header"><button type="button" className="icon-button ghost" onClick={onClose} aria-label="Back to add food options"><ArrowLeft /></button><div><span className="eyebrow">Fast entry</span><h2>Quick add</h2></div><span /></div><label><span>Name</span><ClearableInput required value={name} maxLength={120} onChange={(event) => setName(event.target.value)} onClear={() => setName("")} placeholder="e.g. Protein shake" clearLabel="Clear macro name" /></label><div className="form-grid three">{(["protein", "carbs", "fat", "fiber", "sugar"] as const).map((key) => <label key={key}><span>{key === "fiber" ? "Fibre" : key[0].toUpperCase() + key.slice(1)} g</span><NumericInput min="0" step="0.1" value={values[key]} placeholder="0" onChange={(event) => setValues((current) => ({ ...current, [key]: event.target.value }))} /></label>)}</div>{!hideCalories && <p className="form-footnote">Calories are calculated from the macros you enter.</p>}<div className="form-grid two"><label><span>Meal</span><ThemedSelect ariaLabel="Quick add meal" value={mealType} onChange={(value) => setMealType(value as MealType)} options={(Object.keys(mealLabels) as MealType[]).map((type) => ({ value: type, label: mealLabels[type] }))} /></label><DatePickerField label="Date" value={date} max={localDateKey()} onChange={(value) => setDate(value || localDateKey())} /></div><button className="primary-button full" type="submit"><Plus size={18} />Log food</button></form>;
+export function QuickMacroSheet({ initialLoggedDate = localDateKey(), onLog, onClose, hideCalories }: { initialLoggedDate?: string; onLog: (meal: Meal, food: Food) => void; onClose: () => void; hideCalories: boolean }) {
+  const [name, setName] = useState("");
+  const [calories, setCalories] = useState("");
+  const [mealType, setMealType] = useState<MealType>(suggestedMealType());
+  const [macrosOpen, setMacrosOpen] = useState(false);
+  const [values, setValues] = useState({ protein: "", carbs: "", fat: "", fiber: "", sugar: "" });
+  const macroCalories = round(Number(values.protein) * 4 + Number(values.carbs) * 4 + Number(values.fat) * 9, 0);
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const nutrients = { protein: Number(values.protein), carbs: Number(values.carbs), fat: Number(values.fat), fiber: Number(values.fiber), sugar: Number(values.sugar) };
+    const enteredCalories = Number(calories);
+    if (!name.trim() || Object.values(nutrients).some((value) => !Number.isFinite(value) || value < 0) || !Number.isFinite(enteredCalories) || enteredCalories < 0) return;
+    const nutrition: Nutrition = { ...nutrients, calories: hideCalories ? macroCalories : enteredCalories };
+    const food: Food = { id: `quick-${crypto.randomUUID()}`, name: name.trim(), servingGrams: 100, nutrientsPer100: nutrition, source: "custom" };
+    onLog({ id: crypto.randomUUID(), foodId: food.id, name: food.name, mealType, amount: 1, unit: "serving", grams: 100, nutrition, createdAt: new Date().toISOString(), loggedDate: initialLoggedDate, source: "custom" }, food);
+  };
+  return <form className="sheet-form quick-macro-sheet" onSubmit={submit}>
+    <div className="sheet-header"><button type="button" className="icon-button ghost" onClick={onClose} aria-label="Back to add food options"><ArrowLeft /></button><div><span className="eyebrow">Fast entry</span><h2>Quick add</h2></div><span /></div>
+    <label><span>Name</span><ClearableInput required value={name} maxLength={120} onChange={(event) => setName(event.target.value)} onClear={() => setName("")} placeholder="e.g. Protein shake" clearLabel="Clear quick-add name" /></label>
+    {!hideCalories && <label><span>Calories</span><NumericInput className="quick-calorie-input" required min="0" step="1" value={calories} placeholder="0" onChange={(event) => setCalories(event.target.value)} /></label>}
+    <button type="button" className="quick-macros-toggle" aria-expanded={macrosOpen} onClick={() => setMacrosOpen((open) => !open)}>Add macros <ChevronDown size={15} /></button>
+    {macrosOpen && <><div className="form-grid quick-macro-grid">{(["protein", "carbs", "fat", "fiber", "sugar"] as const).map((key) => <label key={key}><span>{key === "fiber" ? "Fibre" : key[0].toUpperCase() + key.slice(1)} g</span><NumericInput min="0" step="0.1" value={values[key]} placeholder="0" onChange={(event) => setValues((current) => ({ ...current, [key]: event.target.value }))} /></label>)}</div>{!hideCalories && <p className="quick-macro-total">From these macros: <strong>{macroCalories} kcal</strong> · <button type="button" onClick={() => setCalories(String(macroCalories))}>use this</button></p>}</>}
+    <div className="field-block"><span id="quick-meal-type-label">Add to</span><div className="segmented four" role="group" aria-labelledby="quick-meal-type-label">{(Object.keys(mealLabels) as MealType[]).map((type) => <button type="button" key={type} aria-pressed={mealType === type} className={mealType === type ? "active" : ""} onClick={() => setMealType(type)}>{mealLabels[type]}</button>)}</div></div>
+    <button className="primary-button full" type="submit"><Plus size={18} />Log food</button>
+  </form>;
 }

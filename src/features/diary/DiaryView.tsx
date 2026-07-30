@@ -1,16 +1,16 @@
 "use client";
 
-import { ChevronDown, ChevronLeft, ChevronRight, MessageCircle, ShieldCheck } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, MessageCircle, Plus, TrendingUp } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Sheet } from "@/features/shared/Sheet";
 import { CalendarPicker } from "@/features/shared/DatePicker";
 import { isHabitFeatureEnabled } from "@/lib/habit-settings";
-import { localDateKey, netCarbs, resolveDailyTargets, resolveMealCalorieTarget, round, sumNutrition } from "@/lib/nutrition";
-import { eatingSessions } from "@/lib/fasting";
+import { localDateKey, resolveDailyTargets, resolveMealCalorieTarget, sumNutrition } from "@/lib/nutrition";
 import { habitFeatures, type Food, type Meal, type MealType, type Nutrition, type Profile, type Recipe } from "@/lib/types";
-import { BrandMark, changeDate, dayLabel, mealLabels, MiniProgressRing, ProgressRing } from "./components/DiaryPrimitives";
-import { DailyRhythm, FastingTracker, HomeScreenPrompt, MealAddRow, SaveRecipeSheet } from "./components/DiaryTools";
+import { BrandMark, changeDate, dayLabel, mealLabels, MiniProgressRing } from "./components/DiaryPrimitives";
+import { HomeScreenPrompt, SaveRecipeSheet } from "./components/DiaryTools";
 import { MealRow } from "./components/MealControls";
+import { TodaySummary, TodayWater } from "./components/TodaySummary";
 
 export { DuplicateMealSheet, MealEditor, MoveMealSheet } from "./components/MealControls";
 export { RecipeLogSheet } from "./components/DiaryTools";
@@ -28,15 +28,13 @@ export function TodayView({
   onDelete,
   onEdit,
   onOpenDetails,
-  onOpenNutritionDetails,
   onOpenImage,
   onDropMeal,
-  onDuplicate,
   onMove,
-  syncLabel,
   showHomeScreenPrompt,
   onDismissHomeScreenPrompt,
   onOpenCalendar,
+  onOpenInsights,
   onSaveProfile,
   onSaveRecipe,
 }: {
@@ -51,15 +49,13 @@ export function TodayView({
   onDelete: (id: string) => void;
   onEdit: (meal: Meal) => void;
   onOpenDetails: (meal: Meal) => void;
-  onOpenNutritionDetails: () => void;
   onOpenImage: (meal: Meal) => void;
   onDropMeal: (meal: Meal, mealType: MealType, targetMealId?: string, insertAfter?: boolean) => void;
-  onDuplicate: (meal: Meal) => void;
   onMove: (meal: Meal) => void;
-  syncLabel: string;
   showHomeScreenPrompt: boolean;
   onDismissHomeScreenPrompt: () => void;
   onOpenCalendar: () => void;
+  onOpenInsights: () => void;
   onSaveProfile: (profile: Profile) => void;
   onSaveRecipe: (recipe: Recipe, components: Meal[]) => Promise<void>;
 }) {
@@ -69,24 +65,9 @@ export function TodayView({
   const pointerDragRef = useRef<{ meal: Meal; pointerId: number; startX: number; startY: number; active: boolean; timerId?: number } | undefined>(undefined);
   const total = useMemo(() => sumNutrition(meals.map((meal) => meal.nutrition)), [meals]);
   const targets = resolveDailyTargets(profile, dateKey);
-  const carbs = profile.carbDisplay === "net" ? netCarbs(total) : total.carbs;
-  const remaining = Math.max(0, targets.calories - total.calories);
-  const sessionByMealId = useMemo(() => {
-    const lookup = new Map<string, { id: string; startedAt: string; endedAt: string }>();
-    eatingSessions(profile, meals).forEach((session) => session.meals.forEach((meal) => lookup.set(meal.id, session)));
-    return lookup;
-  }, [profile, meals]);
   const grouped = (Object.keys(mealLabels) as MealType[]).map((type) => {
     const typeMeals = meals.filter((meal) => meal.mealType === type);
-    const sessionMap = new Map<string, Meal[]>();
-    typeMeals.forEach((meal) => {
-      const session = sessionByMealId.get(meal.id);
-      const sessionMeals = sessionMap.get(session?.id || `meal-${meal.id}`) || [];
-      sessionMeals.push(meal);
-      sessionMap.set(session?.id || `meal-${meal.id}`, sessionMeals);
-    });
-    const sessions = [...sessionMap.entries()].map(([id, sessionMeals]) => ({ id, meals: sessionMeals, session: sessionByMealId.get(sessionMeals[0].id) })).sort((left, right) => left.meals[0].createdAt.localeCompare(right.meals[0].createdAt));
-    return { type, meals: typeMeals, sessions };
+    return { type, meals: typeMeals };
   });
   const updatePointerDropTarget = useCallback((clientX: number, clientY: number) => {
     const hovered = document.elementFromPoint(clientX, clientY)?.closest<HTMLElement>("[data-meal-id], [data-meal-list]");
@@ -161,55 +142,31 @@ export function TodayView({
   }, [cancelPointerDrag, finishPointerDrag, updatePointerDropTarget]);
   return (
     <main className="page today-page">
-      <header className="topbar">
-        <div className="brand"><BrandMark /><div><strong>Calorie Flow</strong><small>Simple by default</small></div></div>
-        <div className="status-pill"><ShieldCheck size={14} /> {syncLabel}</div>
+      <header className="today-header">
+        <div className="today-brand"><BrandMark /><div><span>{new Date().getHours() < 12 ? "Good morning" : new Date().getHours() < 18 ? "Good afternoon" : "Good evening"}</span><strong>Calorie Flow</strong></div></div>
+        <div className="today-header-actions"><div className="today-date-control"><button type="button" onClick={() => onDateChange(changeDate(dateKey, -1))} aria-label="Previous day"><ChevronLeft /></button><button type="button" className="today-date-label" onClick={onOpenCalendar} aria-label={`Open calendar for ${dayLabel(dateKey)}`}><CalendarDays /><span>{dayLabel(dateKey)}</span></button><button type="button" disabled={dateKey >= localDateKey()} onClick={() => onDateChange(changeDate(dateKey, 1))} aria-label="Next day"><ChevronRight /></button></div><button type="button" className="today-coach-button" onClick={onOpenCoach} aria-label="Ask Coach"><MessageCircle /></button></div>
       </header>
-
-      <div className="date-switcher">
-        <button className="icon-button ghost" onClick={() => onDateChange(changeDate(dateKey, -1))} aria-label="Previous day"><ChevronLeft /></button>
-        <button className="date-switcher-current" onClick={onOpenCalendar} aria-label={`Open calendar for ${dayLabel(dateKey)}`}><strong>{dayLabel(dateKey)}</strong><span>{new Date(`${dateKey}T12:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric" })}</span><ChevronDown size={15} aria-hidden="true" /></button>
-        <button className="icon-button ghost" disabled={dateKey >= localDateKey()} onClick={() => onDateChange(changeDate(dateKey, 1))} aria-label="Next day"><ChevronRight /></button>
-      </div>
 
       {showHomeScreenPrompt && <HomeScreenPrompt onDismiss={onDismissHomeScreenPrompt} />}
 
-      <section className="hero-grid">
-        <div className="hero-card card">
-          {profile.hideCalories ? <div className="nutrition-focus"><span className="eyebrow">Today’s nutrients</span><strong>Focus on your macros</strong><p>Protein, carbs, fat and fibre stay visible. Energy numbers are hidden.</p></div> : <ProgressRing value={total.calories} target={targets.calories} nutrition={total} />}
-          <div className="hero-stat-grid">
-            {!profile.hideCalories && <div><span>Remaining</span><strong>{Math.round(remaining).toLocaleString()}</strong><small>kcal</small></div>}
-            <div><span>Fibre</span><strong>{round(total.fiber, 0)}</strong><small>/ {targets.fiber} g</small></div>
-          </div>
-          {isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting) && <FastingTracker profile={profile} onSave={onSaveProfile} compact />}
-        </div>
-        <div className="macro-card card">
-          <div className="section-heading compact"><div><span className="eyebrow">Daily nutrition</span><h2>Macro totals</h2></div><span className="subtle">from food & drinks</span></div>
-          <div className="macro-total-grid"><div><span>Protein</span><strong>{round(total.protein)}<small>g</small></strong></div><div><span>{profile.carbDisplay === "net" ? "Net carbs" : "Carbs"}</span><strong>{round(carbs)}<small>g</small></strong></div><div><span>Fat</span><strong>{round(total.fat)}<small>g</small></strong></div></div>
-          <button type="button" className="macro-expand-trigger" onClick={onOpenNutritionDetails}><span>See full nutrition details</span><span className="macro-expand-hint"><span>View details</span><ChevronDown size={17} aria-hidden="true" /></span></button>
-        </div>
-      </section>
+      <TodaySummary profile={profile} meals={meals} total={total} targets={targets} onSaveProfile={onSaveProfile} onOpenWeight={onOpenInsights} />
+      {isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.water) && <TodayWater profile={profile} dateKey={dateKey} onSave={onSaveProfile} />}
 
       <section className="log-section">
-        <div className="section-heading"><div><span className="eyebrow">Daily log</span><h2>Your meals</h2></div><span className="subtle meal-reorder-hint">Hold ⋮⋮ to reorder</span></div>
-        {grouped.map(({ type, meals: groupMeals, sessions }) => (
+        {grouped.map(({ type, meals: groupMeals }) => (
           <div className="meal-group" key={type}>
-            <div className="meal-group-title"><span>{mealLabels[type]}</span>{!profile.hideCalories && (() => { const target = resolveMealCalorieTarget(profile, type); const calories = Math.round(sumNutrition(groupMeals.map((meal) => meal.nutrition)).calories); return <span aria-label={target ? `${calories} of ${target} calorie guide` : `${calories} calories`}>{calories}{target ? ` / ${target}` : ""} kcal</span>; })()}</div>
-            <div className={`meal-list card ${dropTarget === type ? "drop-target" : ""}`} data-meal-list={type} onDragOver={(event) => { event.preventDefault(); setDropTarget(type); }} onDragLeave={() => setDropTarget(undefined)} onDrop={(event) => { event.preventDefault(); const mealId = event.dataTransfer.getData("text/meal-id"); const meal = meals.find((candidate) => candidate.id === mealId); if (meal) onDropMeal(meal, type); setDropTarget(undefined); }}>
-              {sessions.map(({ id, meals: sessionMeals, session }, sessionIndex) => <div className="eating-session" key={id}>
-                <div className="eating-session-heading"><span><strong>{sessionIndex === 0 ? "Eating session" : "New eating session"}</strong><small>{session ? `${new Date(session.startedAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}${session.startedAt !== session.endedAt ? `–${new Date(session.endedAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}` : ""}` : "Time not available"}</small></span><em>{sessionMeals.length} {sessionMeals.length === 1 ? "food" : "foods"}</em></div>
-                <div className="eating-session-meals">{sessionMeals.map((meal) => { const linkedImageUrl = meal.imageUrl || (meal.recipeId ? recipes.find((recipe) => recipe.id === meal.recipeId)?.imageUrls?.[0] : foods.find((food) => food.id === meal.foodId)?.imageUrl); return <MealRow key={meal.id} meal={meal} imageUrl={linkedImageUrl} hideCalories={profile.hideCalories} dragging={draggingMealId === meal.id} onPointerDown={startPointerDrag} onOpenImage={() => onOpenImage({ ...meal, imageUrl: linkedImageUrl })} dropPosition={dropTarget === `${type}:${meal.id}:before` ? "before" : dropTarget === `${type}:${meal.id}:after` ? "after" : undefined} onDelete={() => onDelete(meal.id)} onEdit={() => onEdit(meal)} onDetails={() => meal.recipeId ? onEdit(meal) : onOpenDetails(meal)} onDuplicate={() => onDuplicate(meal)} onMove={() => onMove(meal)} onDragStart={(draggedMeal, event) => { event.dataTransfer.setData("text/meal-id", draggedMeal.id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); setDropTarget(`${type}:${meal.id}:${event.clientY < rect.top + rect.height / 2 ? "before" : "after"}`); }} onDrop={(event) => { event.preventDefault(); event.stopPropagation(); const mealId = event.dataTransfer.getData("text/meal-id"); const draggedMeal = meals.find((candidate) => candidate.id === mealId); if (draggedMeal) { const rect = event.currentTarget.getBoundingClientRect(); onDropMeal(draggedMeal, type, meal.id, event.clientY >= rect.top + rect.height / 2); } setDropTarget(undefined); }} />; })}</div>
-              </div>)}
-              <MealAddRow mealType={type} meals={groupMeals} onAdd={onAdd} onSaveRecipe={setRecipeDraftMeals} />
-            </div>
+            <div className="meal-group-title"><span>{mealLabels[type]}</span><span>{!profile.hideCalories && (() => { const target = resolveMealCalorieTarget(profile, type); const calories = Math.round(sumNutrition(groupMeals.map((meal) => meal.nutrition)).calories); return <em className={target && calories > target ? "over" : ""} aria-label={target ? `${calories} of ${target} calorie guide` : `${calories} calories`}>{groupMeals.length ? `${calories}${target ? ` / ${target}` : ""} kcal` : ""}</em>; })()}{groupMeals.length > 0 && <button type="button" onClick={() => onAdd(type)} aria-label={`Add food to ${mealLabels[type]}`}><Plus /></button>}</span></div>
+            {groupMeals.length ? <div className={`meal-list card ${dropTarget === type ? "drop-target" : ""}`} data-meal-list={type} onDragOver={(event) => { event.preventDefault(); setDropTarget(type); }} onDragLeave={() => setDropTarget(undefined)} onDrop={(event) => { event.preventDefault(); const mealId = event.dataTransfer.getData("text/meal-id"); const meal = meals.find((candidate) => candidate.id === mealId); if (meal) onDropMeal(meal, type); setDropTarget(undefined); }}>
+              {groupMeals.map((meal) => { const linkedImageUrl = meal.imageUrl || (meal.recipeId ? recipes.find((recipe) => recipe.id === meal.recipeId)?.imageUrls?.[0] : foods.find((food) => food.id === meal.foodId)?.imageUrl); return <MealRow key={meal.id} meal={meal} imageUrl={linkedImageUrl} hideCalories={profile.hideCalories} dragging={draggingMealId === meal.id} onPointerDown={startPointerDrag} onOpenImage={() => onOpenImage({ ...meal, imageUrl: linkedImageUrl })} dropPosition={dropTarget === `${type}:${meal.id}:before` ? "before" : dropTarget === `${type}:${meal.id}:after` ? "after" : undefined} onDelete={() => onDelete(meal.id)} onEdit={() => onEdit(meal)} onDetails={() => meal.recipeId ? onEdit(meal) : onOpenDetails(meal)} onMove={() => onMove(meal)} onDragStart={(draggedMeal, event) => { event.dataTransfer.setData("text/meal-id", draggedMeal.id); event.dataTransfer.effectAllowed = "move"; }} onDragOver={(event) => { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); setDropTarget(`${type}:${meal.id}:${event.clientY < rect.top + rect.height / 2 ? "before" : "after"}`); }} onDrop={(event) => { event.preventDefault(); event.stopPropagation(); const mealId = event.dataTransfer.getData("text/meal-id"); const draggedMeal = meals.find((candidate) => candidate.id === mealId); if (draggedMeal) { const rect = event.currentTarget.getBoundingClientRect(); onDropMeal(draggedMeal, type, meal.id, event.clientY >= rect.top + rect.height / 2); } setDropTarget(undefined); }} />; })}
+              {groupMeals.filter((meal) => !meal.recipeId).length > 1 && <button type="button" className="combine-recipe" onClick={() => setRecipeDraftMeals(groupMeals.filter((meal) => !meal.recipeId))}>Combine into recipe</button>}
+            </div> : <button type="button" className="empty-meal-button" onClick={() => onAdd(type)} data-meal-list={type}><Plus />Add {mealLabels[type].toLowerCase()}</button>}
           </div>
         ))}
-        <DailyRhythm profile={profile} dateKey={dateKey} onSave={onSaveProfile} />
       </section>
 
-      <button className="coach-check-in" onClick={onOpenCoach}>
-        <span className="action-icon mint"><MessageCircle size={19} /></span>
-        <span><strong>Ask Coach about today</strong><small>Get guidance with your diary in context</small></span>
+      <button className="coach-check-in today-insights-teaser" onClick={onOpenInsights}>
+        <span className="action-icon mint"><TrendingUp size={19} /></span>
+        <span><strong>{profile.hideCalories ? "See your nutrition patterns" : "Review your weekly calorie trend"}</strong><small>Protein target and daily averages</small></span>
         <ChevronRight size={18} />
       </button>
       {recipeDraftMeals && <Sheet onClose={() => setRecipeDraftMeals(undefined)} label="Save meal as recipe"><SaveRecipeSheet meals={recipeDraftMeals} onSave={async (recipe, components) => { await onSaveRecipe(recipe, components); setRecipeDraftMeals(undefined); }} onClose={() => setRecipeDraftMeals(undefined)} /></Sheet>}
@@ -218,6 +175,7 @@ export function TodayView({
 }
 
 export function CalendarSheet({ dateKey, meals, profile, onDateChange, onClose }: { dateKey: string; meals: Meal[]; profile: Profile; onDateChange: (date: string) => void; onClose: () => void }) {
+  const [selectedDate, setSelectedDate] = useState(dateKey);
   const totalsByDate = useMemo(() => {
     const totals = new Map<string, Nutrition>();
     meals.forEach((meal) => {
@@ -227,10 +185,15 @@ export function CalendarSheet({ dateKey, meals, profile, onDateChange, onClose }
     });
     return totals;
   }, [meals]);
-  return <div className="calendar-sheet">
-    <div className="sheet-header"><div><span className="eyebrow">Your diary</span><h2>Month at a glance</h2></div><span /></div>
-    <p className="calendar-intro">Tap a day to jump to its log. Rings show how close you were to your daily guide.</p>
-    <CalendarPicker value={dateKey} maxDate={localDateKey()} onChange={(key) => { onDateChange(key); onClose(); }} renderDay={(key) => { const total = totalsByDate.get(key); if (!total) return null; const targets = resolveDailyTargets(profile, key); return <MiniProgressRing value={profile.hideCalories ? total.protein : total.calories} target={profile.hideCalories ? targets.protein : targets.calories} label="" />; }} getDayLabel={(key) => { const total = totalsByDate.get(key); const targets = resolveDailyTargets(profile, key); const progressValue = profile.hideCalories ? total?.protein || 0 : total?.calories || 0; const progressTarget = profile.hideCalories ? targets.protein : targets.calories; return `${new Date(`${key}T12:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric" })}${total ? `, ${Math.round(progressValue)} of ${progressTarget} ${profile.hideCalories ? "grams protein" : "calories"}` : ", no meals logged"}`; }} />
-    <div className="calendar-legend"><span><i className="legend-ring" /> Logged day</span><span><i className="legend-selected" /> Selected</span>{!profile.hideCalories && <small>Uses each day’s target</small>}</div>
+  const selectedTotal = totalsByDate.get(selectedDate);
+  const selectedTargets = resolveDailyTargets(profile, selectedDate);
+  const selectedValue = profile.hideCalories ? selectedTotal?.protein || 0 : selectedTotal?.calories || 0;
+  const selectedTarget = profile.hideCalories ? selectedTargets.protein : selectedTargets.calories;
+  const percent = Math.min(100, Math.round(selectedValue / Math.max(1, selectedTarget) * 100));
+  return <div className="calendar-sheet today-calendar-sheet">
+    <CalendarPicker value={selectedDate} maxDate={localDateKey()} onChange={setSelectedDate} renderDay={(key) => { const total = totalsByDate.get(key); if (!total) return null; const targets = resolveDailyTargets(profile, key); return <MiniProgressRing value={profile.hideCalories ? total.protein : total.calories} target={profile.hideCalories ? targets.protein : targets.calories} label="" />; }} getDayLabel={(key) => { const total = totalsByDate.get(key); const targets = resolveDailyTargets(profile, key); const progressValue = profile.hideCalories ? total?.protein || 0 : total?.calories || 0; const progressTarget = profile.hideCalories ? targets.protein : targets.calories; return `${new Date(`${key}T12:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric" })}${total ? `, ${Math.round(progressValue)} of ${progressTarget} ${profile.hideCalories ? "grams protein" : "calories"}` : ", no meals logged"}`; }} />
+    <div className="calendar-day-summary"><div className="calendar-summary-ring" style={{ "--progress": `${percent}%` } as React.CSSProperties}><strong>{percent}%</strong></div><div><small>{selectedDate === localDateKey() ? "Today" : new Date(`${selectedDate}T12:00:00`).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}</small><strong>{Math.round(selectedValue)} <em>{profile.hideCalories ? "g protein logged" : "kcal logged"}</em></strong><span>Target {selectedTarget} {profile.hideCalories ? "g" : "kcal"}</span></div></div>
+    {!selectedTotal && <p className="calendar-missed">No meals logged this day</p>}
+    {selectedDate !== dateKey && <button type="button" className="primary-button calendar-view-day" onClick={() => { onDateChange(selectedDate); onClose(); }}>View this day</button>}
   </div>;
 }

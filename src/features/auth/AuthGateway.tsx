@@ -1,8 +1,6 @@
 "use client";
-/* eslint-disable @next/next/no-img-element -- static brand asset preserves the existing presentation. */
 
-import { LockKeyhole } from "lucide-react";
-import { ClearableInput } from "@/features/shared/ClearableInput";
+import { AlertCircle, ChevronRight, Eye, EyeOff, LockKeyhole, MailCheck } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import type { SocialAuthProvider } from "@/lib/supabase";
 
@@ -14,9 +12,101 @@ function GoogleIcon() {
 
 export function AuthGateway({ configured, onSignIn, onSignUp, onSignInWithProvider, onRequestPasswordReset, onUpdatePassword, passwordRecovery }: { configured: boolean; onSignIn: (email: string, password: string) => Promise<void>; onSignUp: (email: string, password: string, name: string) => Promise<{ needsEmailConfirmation: boolean }>; onSignInWithProvider: (provider: SocialAuthProvider) => Promise<void>; onRequestPasswordReset: (email: string) => Promise<void>; onUpdatePassword: (password: string) => Promise<void>; passwordRecovery: boolean }) {
   const [mode, setMode] = useState<AuthMode>(passwordRecovery ? "update-password" : "sign-in");
-  const [email, setEmail] = useState(""); const [name, setName] = useState(""); const [password, setPassword] = useState(""); const [confirmPassword, setConfirmPassword] = useState(""); const [busy, setBusy] = useState(false); const [notice, setNotice] = useState("");
-  const isRegistering = mode === "register"; const isPasswordReset = mode === "forgot-password" || mode === "update-password"; const isUpdatingPassword = mode === "update-password";
-  const submit = async (event: FormEvent) => { event.preventDefault(); if (!configured) return; if (isRegistering && !name.trim()) return setNotice("Enter your name to create your account."); if ((isRegistering || isUpdatingPassword) && password !== confirmPassword) return setNotice("Passwords do not match."); setBusy(true); setNotice(""); try { if (mode === "forgot-password") { await onRequestPasswordReset(email.trim()); setNotice("If an account exists for that email, a reset link is on its way."); } else if (isUpdatingPassword) { await onUpdatePassword(password); setNotice("Your password is updated. You can continue to your diary."); } else if (isRegistering) { const { needsEmailConfirmation } = await onSignUp(email.trim(), password, name.trim()); setNotice(needsEmailConfirmation ? "Check your inbox to confirm your account, then sign in." : "Your account is ready."); } else await onSignIn(email.trim(), password); } catch (error) { setNotice(error instanceof Error ? error.message : "We couldn't complete that request."); } finally { setBusy(false); } };
-  const signInWithGoogle = async () => { setBusy(true); setNotice(""); try { await onSignInWithProvider("google"); } catch (error) { setNotice(error instanceof Error ? error.message : "Google sign-in could not start."); setBusy(false); } };
-  return <main className="auth-page"><section className="auth-card card" aria-labelledby="auth-title"><div className="auth-brand"><img className="brand-mark large" src="/icon.svg" alt="" aria-hidden="true" /><span>Calorie Flow</span></div><div><span className="eyebrow">{isRegistering ? "Create your account" : isUpdatingPassword ? "Choose a new password" : mode === "forgot-password" ? "Reset your password" : "Welcome back"}</span><h1 id="auth-title">{isRegistering ? "Start your flow" : isUpdatingPassword ? "Secure your diary" : mode === "forgot-password" ? "Get back in" : "Sign in to Calorie Flow"}</h1><p>{isRegistering ? "Save your diary privately and keep it in sync across your devices." : isUpdatingPassword ? "Use a new password you have not used elsewhere." : mode === "forgot-password" ? "We’ll email a secure reset link if this address has an account." : "Pick up right where you left off."}</p></div>{!configured ? <p className="auth-unavailable"><LockKeyhole size={16} />Account sign-in is unavailable until this deployment is connected to Supabase.</p> : <><form className="auth-form" onSubmit={submit}>{isRegistering && <label><span>Name</span><ClearableInput type="text" autoComplete="name" required value={name} onChange={(event) => setName(event.target.value)} onClear={() => setName("")} placeholder="Your name" clearLabel="Clear name" /></label>}{!isUpdatingPassword && <label><span>Email</span><ClearableInput type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} onClear={() => setEmail("")} placeholder="you@example.com" clearLabel="Clear email" /></label>}{mode !== "forgot-password" && <label><span>{isRegistering || isUpdatingPassword ? "New password" : "Password"}</span><ClearableInput type="password" autoComplete={isRegistering || isUpdatingPassword ? "new-password" : "current-password"} minLength={6} required value={password} onChange={(event) => setPassword(event.target.value)} onClear={() => setPassword("")} placeholder="At least 6 characters" clearLabel="Clear password" /></label>}{(isRegistering || isUpdatingPassword) && <label><span>Confirm password</span><ClearableInput type="password" autoComplete="new-password" minLength={6} required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} onClear={() => setConfirmPassword("")} placeholder="Repeat your password" clearLabel="Clear password confirmation" /></label>}<button className="primary-button" type="submit" disabled={busy}>{busy ? "Please wait…" : isRegistering ? "Create account" : isUpdatingPassword ? "Save new password" : mode === "forgot-password" ? "Email reset link" : "Sign in"}</button></form>{!isPasswordReset && <><div className="account-divider"><span>or</span></div><button className="secondary-button auth-google" type="button" disabled={busy} onClick={signInWithGoogle}><GoogleIcon />Continue with Google</button></>}{notice && <p className="account-notice" role="status">{notice}</p>}</>} {!isPasswordReset && <><p className="auth-switch">{isRegistering ? "Already have an account?" : "New to Calorie Flow?"} <button type="button" onClick={() => { setMode(isRegistering ? "sign-in" : "register"); setNotice(""); }}>{isRegistering ? "Sign in" : "Create an account"}</button></p>{mode === "sign-in" && <button className="auth-secondary auth-recovery" type="button" onClick={() => { setMode("forgot-password"); setNotice(""); }}>Forgot your password?</button>}</>}{isPasswordReset && <button className="text-button auth-secondary" type="button" onClick={() => { setMode("sign-in"); setNotice(""); }}>Back to sign in</button>}</section></main>;
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [confirmationEmail, setConfirmationEmail] = useState("");
+  const isRegistering = mode === "register";
+  const isPasswordReset = mode === "forgot-password" || mode === "update-password";
+  const isUpdatingPassword = mode === "update-password";
+
+  const selectMode = (nextMode: "sign-in" | "register") => {
+    setMode(nextMode);
+    setNotice("");
+    setConfirmationEmail("");
+  };
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!configured) return;
+    if (isRegistering && !name.trim()) return setNotice("Enter your name.");
+    if (mode !== "forgot-password" && password.length < 8) return setNotice("Password must be at least 8 characters.");
+    if ((isRegistering || isUpdatingPassword) && password !== confirmPassword) return setNotice("Passwords don't match.");
+    setBusy(true);
+    setNotice("");
+    try {
+      if (mode === "forgot-password") {
+        await onRequestPasswordReset(email.trim());
+        setConfirmationEmail(email.trim());
+      } else if (isUpdatingPassword) {
+        await onUpdatePassword(password);
+        setNotice("Your password is updated. You can continue to your diary.");
+      } else if (isRegistering) {
+        const { needsEmailConfirmation } = await onSignUp(email.trim(), password, name.trim());
+        if (needsEmailConfirmation) setConfirmationEmail(email.trim());
+      } else {
+        await onSignIn(email.trim(), password);
+      }
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "We couldn't complete that request.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    setBusy(true);
+    setNotice("");
+    try {
+      await onSignInWithProvider("google");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Google sign-in could not start.");
+      setBusy(false);
+    }
+  };
+
+  const headline = mode === "forgot-password" ? "Reset password" : isUpdatingPassword ? "Choose a new password" : isRegistering ? "Create your account" : "Welcome back";
+  const subhead = mode === "forgot-password" ? "We'll email you a link." : isUpdatingPassword ? "Secure your diary with a new password." : isRegistering ? "Track meals, macros and progress in one place." : "Log in to keep your streak going.";
+
+  return (
+    <main className="auth-page">
+      <section className="auth-shell" aria-labelledby="auth-title">
+        <header className="auth-heading">
+          <span className="auth-mark" aria-hidden="true">CF</span>
+          <h1 id="auth-title">{headline}</h1>
+          <p>{subhead}</p>
+        </header>
+
+        {!isUpdatingPassword && <div className="auth-tabs" role="tablist" aria-label="Account access">
+          <button type="button" role="tab" aria-selected={mode === "sign-in"} className={mode === "sign-in" ? "active" : ""} onClick={() => selectMode("sign-in")}>Sign in</button>
+          <button type="button" role="tab" aria-selected={mode === "register"} className={mode === "register" ? "active" : ""} onClick={() => selectMode("register")}>Sign up</button>
+        </div>}
+
+        <div className="auth-card">
+          {!configured ? <p className="auth-unavailable"><LockKeyhole size={16} />Account sign-in is unavailable until this deployment is connected to Supabase.</p> : confirmationEmail ? <div className="auth-confirmation"><span><MailCheck /></span><strong>Check your inbox</strong><p>{mode === "forgot-password" ? "We sent a password reset link" : "We sent a confirmation link"} to {confirmationEmail}. {mode === "register" && "Verify to finish creating your account."}</p></div> : <>
+            {notice && <p className="auth-alert" role="alert"><AlertCircle size={15} /><span>{notice}</span></p>}
+            {mode === "forgot-password" && <p className="auth-reset-copy">Enter your email and we&apos;ll send a reset link.</p>}
+            <form className="auth-form" onSubmit={submit}>
+              {isRegistering && <label><span>Name</span><input type="text" autoComplete="name" required value={name} onChange={(event) => setName(event.target.value)} placeholder="Jamie Ortiz" /></label>}
+              {!isUpdatingPassword && <label><span>Email</span><input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" /></label>}
+              {mode !== "forgot-password" && <label><span>{isUpdatingPassword ? "New password" : "Password"}</span><span className="auth-password"><input type={passwordVisible ? "text" : "password"} autoComplete={isRegistering || isUpdatingPassword ? "new-password" : "current-password"} minLength={8} required value={password} onChange={(event) => setPassword(event.target.value)} placeholder={isRegistering ? "At least 8 characters" : "Your password"} /><button type="button" aria-label="Toggle password visibility" onClick={() => setPasswordVisible((visible) => !visible)}>{passwordVisible ? <EyeOff size={15} /> : <Eye size={15} />}</button></span></label>}
+              {isRegistering && <p className="auth-password-hint">Use at least 8 characters.</p>}
+              {(isRegistering || isUpdatingPassword) && <label><span>Confirm password</span><input type={passwordVisible ? "text" : "password"} autoComplete="new-password" minLength={8} required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Re-enter your password" /></label>}
+              {mode === "sign-in" && <button className="auth-forgot" type="button" onClick={() => { setMode("forgot-password"); setNotice(""); }}>Forgot password?</button>}
+              <button className="auth-submit" type="submit" disabled={busy}>{busy ? "Please wait…" : isRegistering ? "Create account" : isUpdatingPassword ? "Save new password" : mode === "forgot-password" ? "Send reset link" : "Sign in"}<ChevronRight size={16} /></button>
+            </form>
+            {!isPasswordReset && <><div className="account-divider"><span>or continue with</span></div><button className="auth-google" type="button" disabled={busy} onClick={signInWithGoogle}><GoogleIcon />Continue with Google</button></>}
+            {isPasswordReset && <button className="auth-back" type="button" onClick={() => { setMode("sign-in"); setNotice(""); }}>Back to sign in</button>}
+          </>}
+        </div>
+
+        {!isPasswordReset && !confirmationEmail && <p className="auth-switch">{isRegistering ? "Already have an account?" : "New here?"} <button type="button" onClick={() => selectMode(isRegistering ? "sign-in" : "register")}>{isRegistering ? "Sign in" : "Create one"}</button></p>}
+        <p className="auth-legal">By continuing you agree to Calorie Flow&apos;s Terms and Privacy Policy.</p>
+      </section>
+    </main>
+  );
 }
