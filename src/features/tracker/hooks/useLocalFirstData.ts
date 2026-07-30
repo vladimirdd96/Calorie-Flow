@@ -16,7 +16,7 @@ type ChatTextSize = typeof chatTextSizes[keyof typeof chatTextSizes];
 const THEME_SETTING = "appearance:theme";
 const CHAT_TEXT_SIZE_SETTING = "appearance:chat-text-size";
 const HOME_SCREEN_PROMPT_SETTING = "homeScreenPromptCompleted";
-const DEFAULT_PROFILE: Profile = { name: "", sex: "male", age: 30, heightCm: 180, weightKg: 80, activity: "moderate", goalMode: "maintain", dietPreset: "balanced", calorieTarget: 2750, proteinTarget: 145, carbsTarget: 375, fatTarget: 70, fiberTarget: 30, hideCalories: false, onboardingDone: false, weightEntries: [], waterEntries: [], waterTargetMl: 2000, enabledHabitFeatures: [...defaultHabitFeatures], planEnabled: false, fastingGoalHours: 16, fastingRecords: [] };
+const DEFAULT_PROFILE: Profile = { name: "", sex: "male", age: 30, heightCm: 180, weightKg: 80, activity: "moderate", goalMode: "maintain", dietPreset: "balanced", calorieTarget: 2750, proteinTarget: 145, carbsTarget: 375, fatTarget: 70, fiberTarget: 30, hideCalories: false, onboardingDone: false, weightEntries: [], waterEntries: [], waterTargetMl: 2000, enabledHabitFeatures: [...defaultHabitFeatures], planEnabled: true, fastingGoalHours: 16, fastingRecords: [] };
 const isThemeMode = (value: unknown): value is ThemeMode => value === themeModes.light || value === themeModes.dark;
 const isChatTextSize = (value: unknown): value is ChatTextSize => value === chatTextSizes.compact || value === chatTextSizes.comfortable || value === chatTextSizes.large;
 const isStandaloneDisplay = () => window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;

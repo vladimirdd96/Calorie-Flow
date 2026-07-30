@@ -68,7 +68,7 @@ export function ProfileCustomize({ profile, onSave, theme, onThemeChange, chatTe
     <h2 className="profile-section-label">Optional features</h2>
     <p className="profile-section-help">Turn off anything you don&apos;t use and it disappears from the app.</p>
     <section className="profile-toggle-card">
-      <ToggleRow icon={CalendarRange} tone="mint" title="Plan" detail="Weekly meal plan, recipes and shopping list" checked={profile.planEnabled ?? false} onChange={() => onSave({ ...profile, planEnabled: !(profile.planEnabled ?? false) })} />
+      <ToggleRow icon={CalendarRange} tone="mint" title="Plan" detail="Weekly meal plan, recipes and shopping list" checked={profile.planEnabled ?? true} onChange={() => onSave({ ...profile, planEnabled: !(profile.planEnabled ?? true) })} />
       <ToggleRow icon={Droplet} tone="blue" title="Water" detail="A hydration tracker on Today" checked={waterEnabled} onChange={() => saveHabit(habitFeatures.water)} />
       <ToggleRow icon={Timer} tone="carbs" title="Fasting" detail="Track eating windows between meals" checked={fastingEnabled} onChange={() => saveHabit(habitFeatures.fasting)} />
       <ToggleRow icon={Scale} tone="fat" title="Weight" detail="Weigh-ins, trend and history in Insights" checked={weightEnabled} onChange={() => onSave({ ...profile, weightTracking: weightEnabled ? weightTrackingStatuses.disabled : weightTrackingStatuses.enabled })} />
