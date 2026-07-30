@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, ChevronRight, Cloud, Download, FileText, Library, LogOut, MessageCircle, Pencil, RefreshCw, Ruler, Share2, SlidersHorizontal, Upload, UserRound, Utensils, X } from "lucide-react";
+import { BarChart3, ChevronRight, Cloud, Download, FileText, Library, MessageCircle, Pencil, RefreshCw, Ruler, Share2, SlidersHorizontal, Upload, UserRound, Utensils, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ThemedSelect } from "@/features/shared/ThemedSelect";
 import { ClearableInput } from "@/features/shared/ClearableInput";
@@ -274,7 +274,6 @@ export function ProfileView({
           <input ref={importRef} type="file" accept="application/json" hidden onChange={(event) => upload(event.target.files?.[0])} />
         </section>
         {backupNotice && <p className="backup-notice" role="status">{backupNotice}</p>}
-        <button className="profile-sign-out" type="button" onClick={() => void onSignOut()}><LogOut size={16} />Sign out</button>
       </div> : <div id="customize-panel" role="tabpanel" aria-labelledby="customize-tab" tabIndex={0}><ProfileCustomize profile={profile} onSave={onSave} theme={theme} onThemeChange={onThemeChange} chatTextSize={chatTextSize} onChatTextSizeChange={onChatTextSizeChange} /></div>}
       {editingTargets && <Sheet label="Daily targets" onClose={() => setEditingTargets(false)} showClose={false}><DailyTargetsSheet profile={profile} onSave={onSave} onClose={() => setEditingTargets(false)} /></Sheet>}
       {editingBody && <Sheet label="Body and activity" onClose={() => setEditingBody(false)} showClose={false}><BodyActivitySheet profile={profile} onSave={onSave} onClose={() => setEditingBody(false)} /></Sheet>}

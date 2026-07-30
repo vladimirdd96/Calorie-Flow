@@ -7,6 +7,8 @@ export type Nutrition = {
   sugar: number;
   /** Optional for backwards compatibility with meals logged before micronutrients were added. */
   micronutrients?: Micronutrients;
+  /** True when at least one summed item had no micronutrient data, so the micronutrient totals undercount. */
+  micronutrientsIncomplete?: boolean;
 };
 
 /** Vitamins and minerals normalized to the units shown in the detail view. */

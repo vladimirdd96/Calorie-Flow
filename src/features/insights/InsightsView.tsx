@@ -49,7 +49,8 @@ function startOfWeek(date: Date) {
   return result;
 }
 
-export function InsightsView({ meals, profile, onSave }: { meals: Meal[]; profile: Profile; onSave: (profile: Profile) => void; weightTrackingEnabled: boolean }) {
+export function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: { meals: Meal[]; profile: Profile; onSave: (profile: Profile) => void; weightTrackingEnabled: boolean }) {
+  const fastingEnabled = isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting);
   const days = Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
     date.setDate(date.getDate() - (6 - index));
@@ -67,26 +68,29 @@ export function InsightsView({ meals, profile, onSave }: { meals: Meal[]; profil
   const targetDays = profile.hideCalories ? loggedDays.filter((day) => day.total.protein >= profile.proteinTarget * .8).length : loggedDays.filter((day) => day.total.calories >= profile.calorieTarget * .8 && day.total.calories <= profile.calorieTarget * 1.1).length;
   const waterTarget = profile.waterTargetMl || 2000;
   const waterDays = recentLogDates().filter((date) => hydrationTotal(profile.waterEntries, date) >= waterTarget * .8).length;
+  const MAX_PLAUSIBLE_FASTING_HOURS = 48;
   const fastingRecords = uniqueFastingRecords(profile.fastingRecords);
-  const completedFasts = fastingRecords.filter((record) => record.endedAt && fastingWindowHours(record.startedAt, record.endedAt) >= (profile.fastingGoalHours || 16)).length;
+  const completedFasts = fastingRecords.filter((record) => record.endedAt && fastingWindowHours(record.startedAt, record.endedAt) >= (profile.fastingGoalHours || 16) && fastingWindowHours(record.startedAt, record.endedAt) <= MAX_PLAUSIBLE_FASTING_HOURS).length;
   const fastingGoal = profile.fastingGoalHours || 16;
   const activeFasting = activeFast(fastingRecords);
   const completedFastingRecords = fastingRecords
     .filter((record): record is FastingRecord & { endedAt: string } => Boolean(record.endedAt))
     .sort((a, b) => b.endedAt.localeCompare(a.endedAt));
   const fastingDurations = completedFastingRecords.map((record) => fastingWindowHours(record.startedAt, record.endedAt));
-  const averageFast = fastingDurations.length ? fastingDurations.reduce((sum, hours) => sum + hours, 0) / fastingDurations.length : 0;
-  const longestFast = fastingDurations.length ? Math.max(...fastingDurations) : 0;
+  const plausibleFastingDurations = fastingDurations.filter((hours) => hours <= MAX_PLAUSIBLE_FASTING_HOURS);
+  const averageFast = plausibleFastingDurations.length ? plausibleFastingDurations.reduce((sum, hours) => sum + hours, 0) / plausibleFastingDurations.length : 0;
+  const longestFast = plausibleFastingDurations.length ? Math.max(...plausibleFastingDurations) : 0;
   const [weightPeriod, setWeightPeriod] = useState<WeightPeriod>("week");
   const [range, setRange] = useState<InsightsRange>("week");
   const [section, setSection] = useState<InsightsSection>("overview");
+  const activeSection: InsightsSection = (section === "weight" && !weightTrackingEnabled) || (section === "fasting" && !fastingEnabled) ? "overview" : section;
   const [editingFastingId, setEditingFastingId] = useState<string>();
   const [fastingDraft, setFastingDraft] = useState<{ startedAt: string; endedAt: string }>({ startedAt: "", endedAt: "" });
   const entries = [...(profile.weightEntries || [])].sort((a, b) => b.date.localeCompare(a.date));
   const latestWeight = entries[0]?.weightKg ?? profile.weightKg;
   const measurementSystem = measurementSystemFor(profile);
   const [weightDate, setWeightDate] = useState(localDateKey());
-  const [weightInput, setWeightInput] = useState(String(measurementSystem === measurementSystems.imperial ? Math.round(kgToLb(latestWeight) * 10) / 10 : latestWeight));
+  const [weightInput, setWeightInput] = useState(entries.length ? String(measurementSystem === measurementSystems.imperial ? Math.round(kgToLb(latestWeight) * 10) / 10 : latestWeight) : "");
   let streakDays = 0;
   for (const day of [...days].reverse()) {
     if (day.total.calories <= 0 && day.total.protein <= 0) break;
@@ -126,15 +130,15 @@ export function InsightsView({ meals, profile, onSave }: { meals: Meal[]; profil
   };
   return (
     <main className="page insights-page">
-      <header className="insights-handoff-header"><span>Insights</span><h1>{section === "overview" ? "How it’s going" : section === "nutrition" ? "Nutrition" : section === "weight" ? "Weight" : "Fasting"}</h1></header>
+      <header className="insights-handoff-header"><span>Insights</span><h1>{activeSection === "overview" ? "How it’s going" : activeSection === "nutrition" ? "Nutrition" : activeSection === "weight" ? "Weight" : "Fasting"}</h1></header>
       <div className="workspace-tabs" role="tablist" aria-label="Insights workspace">
-        <button id="insights-overview-tab" type="button" role="tab" aria-selected={section === "overview"} aria-controls="insights-overview-panel" className={section === "overview" ? "active" : ""} onClick={() => setSection("overview")}><Activity size={15} />Overview</button>
-        <button id="insights-nutrition-tab" type="button" role="tab" aria-selected={section === "nutrition"} aria-controls="insights-nutrition-panel" className={section === "nutrition" ? "active" : ""} onClick={() => setSection("nutrition")}><Wheat size={15} />Nutrition</button>
-        <button id="insights-weight-tab" type="button" role="tab" aria-selected={section === "weight"} aria-controls="insights-weight-panel" className={section === "weight" ? "active" : ""} onClick={() => setSection("weight")}><Scale size={15} />Weight</button>
-        <button id="insights-fasting-tab" type="button" role="tab" aria-selected={section === "fasting"} aria-controls="insights-fasting-panel" className={section === "fasting" ? "active" : ""} onClick={() => setSection("fasting")}><Timer size={15} />Fasting</button>
+        <button id="insights-overview-tab" type="button" role="tab" aria-selected={activeSection === "overview"} aria-controls="insights-overview-panel" className={activeSection === "overview" ? "active" : ""} onClick={() => setSection("overview")}><Activity size={15} />Overview</button>
+        <button id="insights-nutrition-tab" type="button" role="tab" aria-selected={activeSection === "nutrition"} aria-controls="insights-nutrition-panel" className={activeSection === "nutrition" ? "active" : ""} onClick={() => setSection("nutrition")}><Wheat size={15} />Nutrition</button>
+        {weightTrackingEnabled && <button id="insights-weight-tab" type="button" role="tab" aria-selected={activeSection === "weight"} aria-controls="insights-weight-panel" className={activeSection === "weight" ? "active" : ""} onClick={() => setSection("weight")}><Scale size={15} />Weight</button>}
+        {fastingEnabled && <button id="insights-fasting-tab" type="button" role="tab" aria-selected={activeSection === "fasting"} aria-controls="insights-fasting-panel" className={activeSection === "fasting" ? "active" : ""} onClick={() => setSection("fasting")}><Timer size={15} />Fasting</button>}
       </div>
-      {(section === "overview" || section === "nutrition") && <div className="insights-ranges" role="group" aria-label="Insights range">{([{ key: "week", label: "7 days" }, { key: "month", label: "30 days" }, { key: "all", label: "All time" }] as const).map((item) => <button key={item.key} type="button" className={range === item.key ? "active" : ""} onClick={() => setRange(item.key)}>{item.label}</button>)}</div>}
-      {section === "overview" && <section id="insights-overview-panel" role="tabpanel" aria-labelledby="insights-overview-tab" className="workspace-panel">
+      {(activeSection === "overview" || activeSection === "nutrition") && <div className="insights-ranges" role="group" aria-label="Insights range">{([{ key: "week", label: "7 days" }, { key: "month", label: "30 days" }, { key: "all", label: "All time" }] as const).map((item) => <button key={item.key} type="button" className={range === item.key ? "active" : ""} onClick={() => setRange(item.key)}>{item.label}</button>)}</div>}
+      {activeSection === "overview" && <section id="insights-overview-panel" role="tabpanel" aria-labelledby="insights-overview-tab" className="workspace-panel">
       <div className="insights-stat-grid"><div className="card"><span>Logging streak</span><strong><Flame />{streakDays}<small> days</small></strong></div><div className="card"><span>Days logged</span><strong>{loggedDays.length}<small> of {range === "week" ? 7 : range === "month" ? 30 : Math.max(7, entries.length)}</small></strong></div></div>
       {!profile.hideCalories && <section className="chart-card card insights-calorie-chart"><div className="section-heading compact"><div><span className="eyebrow">Calories by day</span></div><span className="subtle">avg <strong>{Math.round(average).toLocaleString()}</strong></span></div><div className="chart-area"><div className="target-line" style={{ bottom: `${(profile.calorieTarget / max) * 100}%` }} />{days.map((day) => <div className="chart-column" key={day.key}><div className="chart-bar-wrap"><div className={`chart-bar${day.total.calories > profile.calorieTarget ? " over" : ""}`} style={{ height: `${(day.total.calories / max) * 100}%` }}><span>{day.total.calories ? Math.round(day.total.calories) : ""}</span></div></div><small>{day.label}</small></div>)}</div><div className="insights-chart-legend"><span><i />Within target</span><span><i />Over target</span></div></section>}
       <section className="insight-card card"><span className="action-icon mint"><Sparkles /></span><div><strong>{loggedDays.length < 3 ? "Your pattern will appear here" : profile.hideCalories ? "Your nutrient rhythm is taking shape" : average > profile.calorieTarget * 1.08 ? "A little above your target" : average < profile.calorieTarget * 0.75 ? "Your logged average is low" : "You’re close to your target"}</strong><p>{loggedDays.length < 3 ? "Log a few complete days. Partial days are never treated as failure." : profile.hideCalories ? "Use the nutrition view to notice protein, fibre and meal patterns without energy numbers." : "Use the nutrition view as a guide. One unusual meal or day does not define progress."}</p></div></section>
@@ -144,7 +148,7 @@ export function InsightsView({ meals, profile, onSave }: { meals: Meal[]; profil
       </div>
       {(isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.water) || isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting)) && <section className="insights-panel card habit-insights"><div className="section-heading compact"><div><span className="eyebrow">Optional rhythms</span><h2>Beyond food</h2></div><span className="subtle">last 7 days</span></div><div className="habit-insight-grid">{isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.water) && <div><Droplets size={17} /><span>Water days</span><strong>{waterDays}<small> / 7</small></strong></div>}{isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting) && <div><Timer size={17} /><span>Fasts completed</span><strong>{completedFasts}</strong></div>}</div></section>}
       </section>}
-      {section === "weight" && <section id="insights-weight-panel" role="tabpanel" aria-labelledby="insights-weight-tab" className="weight-section workspace-panel">
+      {activeSection === "weight" && weightTrackingEnabled && <section id="insights-weight-panel" role="tabpanel" aria-labelledby="insights-weight-tab" className="weight-section workspace-panel">
         <div className="section-heading"><div><span className="eyebrow">Optional progress</span><h2 id="weight-heading">Weight history</h2></div><span className="subtle">{entries.length} {entries.length === 1 ? "entry" : "entries"}</span></div>
         <form className="weight-log card" onSubmit={saveWeight}>
           <div><span className="weight-log-label">Log a weigh-in</span><p>Use the same conditions when you can. Trends are more useful than any single day.</p></div>
@@ -153,25 +157,26 @@ export function InsightsView({ meals, profile, onSave }: { meals: Meal[]; profil
         <div className="weight-controls" role="group" aria-label="Weight average period">
           {(Object.entries({ week: "This week", month: "This month", all: "All time" }) as [WeightPeriod, string][]).map(([period, label]) => <button key={period} type="button" className={weightPeriod === period ? "active" : ""} aria-pressed={weightPeriod === period} onClick={() => setWeightPeriod(period)}>{label}</button>)}
         </div>
-        <div className="weight-summary-strip"><div className="weight-metric card"><span>Latest</span><strong>{formatWeight(latestWeight, profile)}</strong></div><div className="weight-metric card"><span>Change</span><strong className={weightChange < 0 ? "weight-down" : weightChange > 0 ? "weight-up" : ""}>{periodEntries.length > 1 ? `${weightChange > 0 ? "+" : ""}${(measurementSystem === measurementSystems.imperial ? kgToLb(weightChange) : weightChange).toFixed(1)} ${weightUnitFor(profile)}` : "—"}</strong></div><div className="weight-metric card"><span>Average</span><strong>{weightAverage ? formatWeight(weightAverage, profile) : "—"}</strong></div></div>
+        <div className="weight-summary-strip"><div className="weight-metric card"><span>Latest</span><strong>{entries.length ? formatWeight(latestWeight, profile) : "—"}</strong></div><div className="weight-metric card"><span>Change</span><strong className={weightChange < 0 ? "weight-down" : weightChange > 0 ? "weight-up" : ""}>{periodEntries.length > 1 ? `${weightChange > 0 ? "+" : ""}${(measurementSystem === measurementSystems.imperial ? kgToLb(weightChange) : weightChange).toFixed(1)} ${weightUnitFor(profile)}` : "—"}</strong></div><div className="weight-metric card"><span>Average</span><strong>{weightAverage ? formatWeight(weightAverage, profile) : "—"}</strong></div></div>
         {groupedWeights.length > 0 ? <div className="weight-history">{groupedWeights.map((group) => {
           const groupAverage = group.entries.reduce((sum, entry) => sum + entry.weightKg, 0) / group.entries.length;
           const label = weightPeriod === "week" ? `Week of ${new Date(`${group.key}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : new Date(`${group.key}-01T12:00:00`).toLocaleDateString(undefined, { month: "long", year: "numeric" });
           return <details className="weight-history-group" key={group.key}><summary><span><strong>{label}</strong><small>{group.entries.length} {group.entries.length === 1 ? "weigh-in" : "weigh-ins"}</small></span><span className="weight-group-average"><small>{weightPeriod === "week" ? "Weekly average" : "Monthly average"}</small><b>{formatWeight(groupAverage, profile)}</b></span></summary><div className="weight-history-entries">{group.entries.map((entry) => <div className="weight-history-entry" key={entry.date}><span>{new Date(`${entry.date}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}</span><strong>{formatWeight(entry.weightKg, profile)}</strong><button type="button" className="icon-button subtle-button" onClick={() => removeWeight(entry)} aria-label={`Remove weight logged on ${entry.date}`}><Trash2 size={14} /></button></div>)}</div></details>;
         })}</div> : <div className="weight-empty card"><strong>Your weight history starts here.</strong><p>Log a weigh-in above to see daily entries and rolling averages.</p></div>}
       </section>}
-      {section === "fasting" && <section id="insights-fasting-panel" role="tabpanel" aria-labelledby="insights-fasting-tab" className="fasting-history-section workspace-panel">
+      {activeSection === "fasting" && fastingEnabled && <section id="insights-fasting-panel" role="tabpanel" aria-labelledby="insights-fasting-tab" className="fasting-history-section workspace-panel">
         <div className="section-heading"><div><span className="eyebrow">Optional rhythm</span><h2 id="fasting-history-heading">Fasting history</h2></div><span className="subtle">{fastingGoal}-hour goal</span></div>
         <div className="summary-strip fasting-summary-strip"><div className="card"><span>Average fast</span><strong>{averageFast ? averageFast.toFixed(1) : "—"}<small> h</small></strong></div><div className="card"><span>Longest</span><strong>{longestFast ? longestFast.toFixed(1) : "—"}<small> h</small></strong></div></div>
         {activeFasting && <section className="fasting-active-history card" aria-labelledby="fasting-active-heading"><span className="action-icon amber"><Timer /></span><div><span className="eyebrow">In progress</span><strong id="fasting-active-heading">Started {fastingDateTime(activeFasting.startedAt)}</strong><p>Your current window will appear in history after your next meal.</p></div></section>}
         {completedFastingRecords.length > 0 ? <div className="fasting-history-list" aria-label="Completed fasting windows">{completedFastingRecords.map((record) => {
           const duration = fastingWindowHours(record.startedAt, record.endedAt);
           const reachedGoal = duration >= fastingGoal;
-          return <div key={record.id}><article className="fasting-history-row card"><div><strong>{fastingDateTime(record.startedAt)}</strong><small>Ended {fastingDateTime(record.endedAt)}</small></div><div className="fasting-history-duration"><strong>{formatFastingDuration(duration)}</strong><span className={reachedGoal ? "reached" : ""}>{reachedGoal ? "Goal reached" : `Goal: ${fastingGoal} h`}</span></div><button type="button" className="icon-button subtle-button" onClick={() => beginFastingEdit(record)} aria-label="Edit fasting window"><Pencil size={14} /></button></article>{editingFastingId === record.id && <form className="fasting-edit-form card" onSubmit={saveFastingEdit}><div><label><span>Fast started</span><input type="datetime-local" required value={fastingDraft.startedAt} onChange={(event) => setFastingDraft((current) => ({ ...current, startedAt: event.target.value }))} /></label><label><span>Fast ended</span><input type="datetime-local" value={fastingDraft.endedAt} onChange={(event) => setFastingDraft((current) => ({ ...current, endedAt: event.target.value }))} /></label></div><div className="sheet-actions"><button type="button" className="secondary-button" onClick={() => setEditingFastingId(undefined)}>Cancel</button><button type="submit" className="primary-button">Save times</button></div></form>}</div>;
+          const implausible = duration > MAX_PLAUSIBLE_FASTING_HOURS;
+          return <div key={record.id}><article className="fasting-history-row card"><div><strong>{fastingDateTime(record.startedAt)}</strong><small>Ended {fastingDateTime(record.endedAt)}</small></div><div className="fasting-history-duration"><strong>{formatFastingDuration(duration)}</strong><span className={reachedGoal ? "reached" : ""}>{implausible ? "Not counted — likely a missed log" : reachedGoal ? "Goal reached" : `Goal: ${fastingGoal} h`}</span></div><button type="button" className="icon-button subtle-button" onClick={() => beginFastingEdit(record)} aria-label="Edit fasting window"><Pencil size={14} /></button></article>{editingFastingId === record.id && <form className="fasting-edit-form card" onSubmit={saveFastingEdit}><div><label><span>Fast started</span><input type="datetime-local" required value={fastingDraft.startedAt} onChange={(event) => setFastingDraft((current) => ({ ...current, startedAt: event.target.value }))} /></label><label><span>Fast ended</span><input type="datetime-local" value={fastingDraft.endedAt} onChange={(event) => setFastingDraft((current) => ({ ...current, endedAt: event.target.value }))} /></label></div><div className="sheet-actions"><button type="button" className="secondary-button" onClick={() => setEditingFastingId(undefined)}>Cancel</button><button type="submit" className="primary-button">Save times</button></div></form>}</div>;
         })}</div> : <div className="fasting-history-empty card"><span className="action-icon amber"><Timer /></span><div><strong>Your fasting history starts here.</strong><p>Once a fasting window ends, you’ll see its duration and whether it reached your goal.</p></div></div>}
         {longestFast > 0 && <p className="panel-note">Longest completed fast: {formatFastingDuration(longestFast)}. Tracking only, not a medical recommendation.</p>}
       </section>}
-      {section === "nutrition" && <section id="insights-nutrition-panel" role="tabpanel" aria-labelledby="insights-nutrition-tab" className="workspace-panel">
+      {activeSection === "nutrition" && <section id="insights-nutrition-panel" role="tabpanel" aria-labelledby="insights-nutrition-tab" className="workspace-panel">
       {!profile.hideCalories && <section className="chart-card card">
         <div className="section-heading compact"><div><span className="eyebrow">Last 7 days</span><h2>Calories</h2></div><span className="legend"><i /> {profile.calorieTarget.toLocaleString()} target</span></div>
         <div className="chart-area">

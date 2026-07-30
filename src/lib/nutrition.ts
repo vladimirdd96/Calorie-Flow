@@ -65,7 +65,8 @@ export function sumNutrition(items: Nutrition[]): Nutrition {
     const micros = item.micronutrients || EMPTY_MICRONUTRIENTS;
     return Object.fromEntries(Object.keys(EMPTY_MICRONUTRIENTS).map((key) => [key, sum[key as keyof Micronutrients] + micros[key as keyof Micronutrients]])) as Micronutrients;
   }, { ...EMPTY_MICRONUTRIENTS });
-  return items.some((item) => item.micronutrients) ? { ...total, micronutrients } : total;
+  const micronutrientsIncomplete = items.length > 0 && items.some((item) => !item.micronutrients);
+  return items.some((item) => item.micronutrients) ? { ...total, micronutrients, micronutrientsIncomplete } : total;
 }
 
 export function scaleNutrition(per100: Nutrition, grams: number): Nutrition {

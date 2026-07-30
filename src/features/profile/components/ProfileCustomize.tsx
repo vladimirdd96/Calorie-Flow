@@ -96,18 +96,18 @@ export function ProfileCustomize({ profile, onSave, theme, onThemeChange, chatTe
 
     <h2 className="profile-section-label">Units</h2>
     <div className="profile-choice-card two" role="group" aria-label="Measurement units">
-      <button type="button" className={measurementSystem === measurementSystems.metric ? "active" : ""} onClick={() => onSave({ ...profile, measurementSystem: measurementSystems.metric })}>Metric (kg, cm)</button>
-      <button type="button" className={measurementSystem === measurementSystems.imperial ? "active" : ""} onClick={() => onSave({ ...profile, measurementSystem: measurementSystems.imperial })}>Imperial (lb, in)</button>
+      <button type="button" aria-pressed={measurementSystem === measurementSystems.metric} className={measurementSystem === measurementSystems.metric ? "active" : ""} onClick={() => onSave({ ...profile, measurementSystem: measurementSystems.metric })}>Metric (kg, cm)</button>
+      <button type="button" aria-pressed={measurementSystem === measurementSystems.imperial} className={measurementSystem === measurementSystems.imperial ? "active" : ""} onClick={() => onSave({ ...profile, measurementSystem: measurementSystems.imperial })}>Imperial (lb, in)</button>
     </div>
 
     <h2 className="profile-section-label">Appearance</h2>
     <div className="profile-choice-card two" role="group" aria-label="Colour theme">
-      <button type="button" className={theme === "light" ? "active" : ""} onClick={() => onThemeChange("light")}><Sun />Light</button>
-      <button type="button" className={theme === "dark" ? "active" : ""} onClick={() => onThemeChange("dark")}><Moon />Dark</button>
+      <button type="button" aria-pressed={theme === "light"} className={theme === "light" ? "active" : ""} onClick={() => onThemeChange("light")}><Sun />Light</button>
+      <button type="button" aria-pressed={theme === "dark"} className={theme === "dark" ? "active" : ""} onClick={() => onThemeChange("dark")}><Moon />Dark</button>
     </div>
     <section className="profile-settings-card profile-text-size">
       <span className="profile-setting-label">Coach text size</span>
-      <div className="profile-segmented three" role="group" aria-label="Coach text size">{(["compact", "comfortable", "large"] as const).map((size) => <button type="button" key={size} className={chatTextSize === size ? "active" : ""} onClick={() => onChatTextSizeChange(size)}>{size === "comfortable" ? "Regular" : `${size[0].toUpperCase()}${size.slice(1)}`}</button>)}</div>
+      <div className="profile-segmented three" role="group" aria-label="Coach text size">{(["compact", "comfortable", "large"] as const).map((size) => <button type="button" key={size} aria-pressed={chatTextSize === size} className={chatTextSize === size ? "active" : ""} onClick={() => onChatTextSizeChange(size)}>{size === "comfortable" ? "Regular" : `${size[0].toUpperCase()}${size.slice(1)}`}</button>)}</div>
     </section>
   </div>;
 }
