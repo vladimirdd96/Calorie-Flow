@@ -1438,7 +1438,7 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 }
 
 @media (min-width: 1080px) {
-  .app-shell { padding-bottom: 0; padding-left: 100px; }
+  .app-shell { padding-bottom: 0; }
   .content-shell { width: min(100%, 1030px); }
   .page { padding-bottom: 70px; }
   .bottom-nav { left: 14px; top: 50%; bottom: auto; transform: translateY(-50%); width: 76px; height: 520px; grid-template-columns: 1fr; grid-template-rows: repeat(6, 1fr); border-radius: 26px; }
