@@ -1786,6 +1786,84 @@ body:has(.onboarding-overlay) { overflow: hidden; }
   .onboarding-step-card { padding: 18px; }
 }
 
+/* Secondary surfaces use the same handoff language as the primary screens. */
+.primary-button {
+  color: var(--bg);
+  background: var(--text);
+  box-shadow: 0 8px 18px color-mix(in oklch, var(--text) 14%, transparent);
+}
+.primary-button:hover,
+.primary-button:focus-visible { background: var(--mint-strong); }
+.danger-button { color: var(--bg); background: var(--red); box-shadow: none; }
+.danger-button:hover,
+.danger-button:focus-visible { background: color-mix(in oklch, var(--red) 86%, var(--text)); }
+
+.meal-timing-prompt,
+.weight-prompt,
+.recipe-delete-sheet,
+.duplicate-meal-sheet,
+.manual-food-form,
+.fasting-preferences,
+.meal-target-preferences,
+.profile-fasting-settings { display: grid; gap: 14px; }
+.meal-timing-prompt p,
+.weight-prompt p,
+.recipe-delete-sheet p { margin: 0; max-width: 58ch; font-size: 13px; line-height: 1.55; }
+.meal-timing-prompt .sheet-actions,
+.recipe-delete-sheet .sheet-actions { margin-top: 4px; }
+.weight-prompt { padding: 8px 0 4px; }
+.weight-prompt > .action-icon { margin-bottom: -3px; }
+.weight-prompt h2 { margin: 0; font-size: 22px; }
+.weight-prompt-actions { display: grid; gap: 9px; margin-top: 4px; }
+.weight-prompt-actions .primary-button,
+.weight-prompt-actions .secondary-button { width: 100%; justify-content: space-between; }
+.weight-prompt-actions .text-button { justify-self: start; min-height: 40px; padding: 0; }
+
+.fasting-preferences,
+.meal-target-preferences,
+.profile-fasting-settings,
+.water-tracker { padding: 16px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-lg); }
+.fasting-preference-note { margin: -4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.manual-food-form { padding-bottom: 4px; }
+.manual-food-form .nutrition-entry { margin-top: 2px; }
+.duplicate-meal-sheet .sheet-header { margin-bottom: 0; }
+.duplicate-meal-sheet .sheet-actions { margin-top: 2px; }
+.micro-detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.nutrition-detail-card.fiber,
+.nutrition-detail-card.sugar { background: color-mix(in oklch, var(--mint) 7%, var(--panel)); }
+.nutrition-detail-card.sugar strong { color: var(--carbs); }
+
+.grocery-list-choices,
+.grocery-manage-list { display: grid; gap: 7px; }
+.grocery-list-choices button,
+.grocery-manage-list button {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  text-align: left;
+}
+.grocery-list-choices button:hover,
+.grocery-list-choices button:focus-visible,
+.grocery-manage-list button.active { border-color: var(--border-strong); background: color-mix(in oklch, var(--mint) 8%, var(--panel)); }
+.grocery-list-choices button span,
+.grocery-manage-list button span { min-width: 0; display: grid; gap: 3px; }
+.grocery-list-choices small,
+.grocery-manage-list small { color: var(--muted); font-size: 11px; }
+.grocery-modal-copy { margin: 0; font-size: 13px; }
+
+@media (max-width: 520px) {
+  .micro-detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .meal-timing-prompt .sheet-actions,
+  .recipe-delete-sheet .sheet-actions { grid-template-columns: 1fr; }
+}
+
 /* Profile handoff */
 .profile-page { width: min(100%, clamp(420px, 62vw, 780px)); max-width: none; margin: 0 auto; padding: clamp(20px, 5vw, 40px) 16px calc(110px + env(safe-area-inset-bottom)); }
 .profile-handoff-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
