@@ -2320,3 +2320,26 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 .auth-confirmation > span svg { width: 22px; }
 .auth-confirmation strong { display: block; margin-bottom: 6px; font-size: 15px; }
 .auth-confirmation p { margin: 0; color: var(--muted-2); font-size: 13px; line-height: 1.5; }
+
+/* Desktop navigation lives in the page chrome instead of covering the footer. */
+@media (min-width: 1080px) {
+  .app-shell { padding-bottom: 0; padding-left: 100px; }
+  .bottom-nav {
+    left: 14px;
+    top: 50%;
+    bottom: auto;
+    width: 76px;
+    height: auto;
+    min-height: 350px;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(5, 1fr);
+    align-items: stretch;
+    gap: 4px;
+    padding: 10px 8px;
+    transform: translateY(-50%);
+    border-radius: 26px;
+  }
+  .bottom-nav::before { display: none; }
+  .bottom-nav > button { height: 54px; padding: 6px 2px; }
+  .bottom-nav > .bottom-nav-add { top: auto; align-self: center; }
+}
