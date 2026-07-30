@@ -12,7 +12,7 @@ import { acceptCloudDiaryShare, getCloudDiaryShares, getSharedDiarySnapshot, inv
 import { localDateKey } from "@/lib/nutrition";
 import { mealsCsv } from "@/lib/reports";
 import { type CloudUser } from "@/lib/supabase";
-import type { ActivityLevel, DiaryShare, Profile, WeightTrackingStatus } from "@/lib/types";
+import type { ActivityLevel, DiaryShare, Profile } from "@/lib/types";
 import { measurementSystems } from "@/lib/types";
 import type { BackupData } from "@/lib/db";
 
@@ -32,7 +32,7 @@ function accountDisplayName(user: CloudUser | null) {
 import { TargetEditor } from "./components/ProfileTargets";
 import { useModalFocus } from "./hooks/useDisclosure";
 
-import { AppearancePreferences, CarbDisplayPreference, DailyTargetPreferences, DisplayPreferences, FeatureVisibilityPreferences, FastingPreferences, MealTargetPreferences, MeasurementPreferences, WeightTrackingPreference } from "./components/ProfilePreferences";
+import { ProfileCustomize } from "./components/ProfileCustomize";
 
 function ProfileSectionLabel({ children }: { children: React.ReactNode }) {
   return <h2 className="profile-section-label">{children}</h2>;
@@ -183,7 +183,6 @@ export function ProfileView({
   onThemeChange,
   chatTextSize,
   onChatTextSizeChange,
-  weightTracking,
   onNavigate,
 }: {
   profile: Profile;
@@ -198,7 +197,6 @@ export function ProfileView({
   onThemeChange: (theme: ThemeMode) => void;
   chatTextSize: ChatTextSize;
   onChatTextSizeChange: (size: ChatTextSize) => void;
-  weightTracking?: WeightTrackingStatus;
   onNavigate: (tab: AppTab) => void;
 }) {
   const importRef = useRef<HTMLInputElement>(null);
@@ -277,18 +275,7 @@ export function ProfileView({
         </section>
         {backupNotice && <p className="backup-notice" role="status">{backupNotice}</p>}
         <button className="profile-sign-out" type="button" onClick={() => void onSignOut()}><LogOut size={16} />Sign out</button>
-      </div> : <div id="customize-panel" role="tabpanel" aria-labelledby="customize-tab" tabIndex={0}>
-        <section className="customize-intro" aria-labelledby="customize-heading"><div><span className="eyebrow">Your preferences</span><h2 id="customize-heading">A calmer tracker, your way</h2><p>These choices only change how Calorie Flow feels and what it shows. Your diary stays private on this device.</p></div></section>
-        <DisplayPreferences hideCalories={profile.hideCalories} onChange={(hideCalories) => onSave({ ...profile, hideCalories })} chatTextSize={chatTextSize} onChatTextSizeChange={onChatTextSizeChange} />
-        <CarbDisplayPreference profile={profile} onSave={onSave} />
-        <FeatureVisibilityPreferences profile={profile} onSave={onSave} />
-        <FastingPreferences profile={profile} onSave={onSave} />
-        <DailyTargetPreferences profile={profile} onSave={onSave} />
-        <MealTargetPreferences profile={profile} onSave={onSave} />
-        <WeightTrackingPreference status={weightTracking} onChange={(next) => onSave({ ...profile, weightTracking: next })} />
-        <MeasurementPreferences profile={profile} onChange={(measurementSystem) => onSave({ ...profile, measurementSystem })} />
-        <AppearancePreferences theme={theme} onChange={onThemeChange} />
-      </div>}
+      </div> : <div id="customize-panel" role="tabpanel" aria-labelledby="customize-tab" tabIndex={0}><ProfileCustomize profile={profile} onSave={onSave} theme={theme} onThemeChange={onThemeChange} chatTextSize={chatTextSize} onChatTextSizeChange={onChatTextSizeChange} /></div>}
       {editingTargets && <Sheet label="Daily targets" onClose={() => setEditingTargets(false)} showClose={false}><DailyTargetsSheet profile={profile} onSave={onSave} onClose={() => setEditingTargets(false)} /></Sheet>}
       {editingBody && <Sheet label="Body and activity" onClose={() => setEditingBody(false)} showClose={false}><BodyActivitySheet profile={profile} onSave={onSave} onClose={() => setEditingBody(false)} /></Sheet>}
       {sharingOpen && <Sheet label="Share a read-only diary" onClose={() => setSharingOpen(false)} wide><DiarySharing user={user} /></Sheet>}

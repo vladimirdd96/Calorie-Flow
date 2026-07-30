@@ -116,6 +116,7 @@ export const profileSchema = z.object({
   fatTarget: finiteNonNegative.max(2_000),
   fiberTarget: finiteNonNegative.max(2_000),
   hideCalories: z.boolean(),
+  showEstimatedBadges: z.boolean().optional(),
   onboardingDone: z.boolean(),
   measurementSystem: z.enum(["metric", "imperial"]).optional(),
   weightEntries: z.array(weightEntrySchema).max(10_000).optional(),

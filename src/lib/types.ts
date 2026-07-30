@@ -140,6 +140,7 @@ export type Profile = {
   fatTarget: number;
   fiberTarget: number;
   hideCalories: boolean;
+  showEstimatedBadges?: boolean;
   onboardingDone: boolean;
   measurementSystem?: MeasurementSystem;
   weightEntries?: WeightEntry[];

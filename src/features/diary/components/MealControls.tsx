@@ -8,7 +8,7 @@ import { round } from "@/lib/nutrition";
 import type { Meal, MealType } from "@/lib/types";
 import { mealLabels, readMealImage } from "./DiaryPrimitives";
 
-export function MealRow({ meal, imageUrl, onDelete, onEdit, onMove, onDetails, onOpenImage, onDragStart, onDragOver, onDrop, onPointerDown, dropPosition, dragging, hideCalories }: { meal: Meal; imageUrl?: string; onDelete: () => void; onEdit: () => void; onMove: () => void; onDetails: () => void; onOpenImage: () => void; onDragStart: (meal: Meal, event: React.DragEvent<HTMLDivElement>) => void; onDragOver: (event: React.DragEvent<HTMLDivElement>) => void; onDrop: (event: React.DragEvent<HTMLDivElement>) => void; onPointerDown: (meal: Meal, event: React.PointerEvent<HTMLButtonElement>) => void; dropPosition?: "before" | "after"; dragging?: boolean; hideCalories: boolean }) {
+export function MealRow({ meal, imageUrl, onDelete, onEdit, onMove, onDetails, onOpenImage, onDragStart, onDragOver, onDrop, onPointerDown, dropPosition, dragging, hideCalories, showEstimatedBadge = true }: { meal: Meal; imageUrl?: string; onDelete: () => void; onEdit: () => void; onMove: () => void; onDetails: () => void; onOpenImage: () => void; onDragStart: (meal: Meal, event: React.DragEvent<HTMLDivElement>) => void; onDragOver: (event: React.DragEvent<HTMLDivElement>) => void; onDrop: (event: React.DragEvent<HTMLDivElement>) => void; onPointerDown: (meal: Meal, event: React.PointerEvent<HTMLButtonElement>) => void; dropPosition?: "before" | "after"; dragging?: boolean; hideCalories: boolean; showEstimatedBadge?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLSpanElement>(null);
   useEffect(() => {
@@ -28,7 +28,7 @@ export function MealRow({ meal, imageUrl, onDelete, onEdit, onMove, onDetails, o
       <button type="button" className="meal-drag-handle" onPointerDown={(event) => onPointerDown(meal, event)} aria-label={`Hold and drag ${meal.name} to reorder it`}><GripVertical size={17} aria-hidden="true" /></button>
       {imageUrl ? <button type="button" className="meal-icon meal-image-trigger" onClick={onOpenImage} aria-label={`Expand photo for ${meal.name}`}><img src={imageUrl} alt="" /></button> : <div className="meal-icon"><Utensils size={17} /></div>}
       <button type="button" className="meal-detail-trigger" onClick={onDetails} aria-label={`View nutrition details for ${meal.name}`}><div className="meal-copy">
-        <span className="meal-name-line"><strong>{meal.name}</strong>{meal.estimated && <span className="estimate-badge"><Sparkles />Est.</span>}</span>
+        <span className="meal-name-line"><strong>{meal.name}</strong>{showEstimatedBadge && meal.estimated && <span className="estimate-badge"><Sparkles />Est.</span>}</span>
         <span>P {round(meal.nutrition.protein)} · C {round(meal.nutrition.carbs)} · F {round(meal.nutrition.fat)}g</span>
       </div></button>
       {!hideCalories && <strong className="meal-kcal"><span>{Math.round(meal.nutrition.calories)}</span><small>kcal</small></strong>}
