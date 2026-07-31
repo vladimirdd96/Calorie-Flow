@@ -20,6 +20,7 @@ export function useTrackerUiState() {
   const [foodDetails, setFoodDetails] = useState<Food>();
   const [editingFood, setEditingFood] = useState<Food>();
   const [editingMeal, setEditingMeal] = useState<Meal>();
+  const [editingRecipeMeal, setEditingRecipeMeal] = useState<Meal>();
   const [detailMeal, setDetailMeal] = useState<Meal>();
   const [duplicateMealDraft, setDuplicateMealDraft] = useState<Meal>();
   const [moveMealDraft, setMoveMealDraft] = useState<Meal>();
@@ -44,7 +45,7 @@ export function useTrackerUiState() {
     tab, setTab, dateKey, setDateKey, calendarOpen, setCalendarOpen,
     adding, setAdding, initialAddView, setInitialAddView, directFood, setDirectFood,
     foodDetails, setFoodDetails, editingFood, setEditingFood,
-    editingMeal, setEditingMeal, detailMeal, setDetailMeal, duplicateMealDraft, setDuplicateMealDraft,
+    editingMeal, setEditingMeal, editingRecipeMeal, setEditingRecipeMeal, detailMeal, setDetailMeal, duplicateMealDraft, setDuplicateMealDraft,
     moveMealDraft, setMoveMealDraft, initialMealType, setInitialMealType, toast, setToast,
     showHomeScreenPrompt, setShowHomeScreenPrompt, weightPromptDismissedFor, setWeightPromptDismissedFor,
     undoMeal, setUndoMeal, imageMeal, setImageMeal, nutritionDetailsOpen, setNutritionDetailsOpen,

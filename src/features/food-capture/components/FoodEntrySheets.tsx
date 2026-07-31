@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Camera, Check, ChevronDown, ChevronRight, Info, Package, Pencil, Plus, Sparkles } from "lucide-react";
+import { ArrowLeft, Camera, Check, ChevronDown, ChevronRight, Info, Package, Pencil, Plus, Sparkles, X } from "lucide-react";
 import { type FormEvent, useRef, useState } from "react";
 import { NumericInput } from "@/features/shared/NumericInput";
 import { ClearableInput } from "@/features/shared/ClearableInput";
@@ -8,6 +8,7 @@ import { DatePickerField } from "@/features/shared/DatePicker";
 import { contextualUnits, formatUnit, gramsFor, localDateKey, round, scaleNutrition, suggestedMealType } from "@/lib/nutrition";
 import { recentLogDates } from "@/lib/logging";
 import { readFoodImage } from "@/lib/image";
+import { recipeLogId } from "@/features/recipes/recipeLogging";
 import type { Food, Meal, MealType, Nutrition, ServingUnit } from "@/lib/types";
 
 const mealLabels: Record<MealType, string> = { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snack" };
@@ -127,13 +128,13 @@ export function ManualFood({ initialBarcode, notice, onSave, onClose, hideCalori
   );
 }
 
-export function PortionSheet({ food, questions, initialMealType, initialLoggedDate = localDateKey(), onLog, onClose, hideCalories }: { food: Food; questions?: string[]; initialMealType?: MealType; initialLoggedDate?: string; onLog: (meal: Meal, food: Food) => void; onClose: () => void; hideCalories: boolean }) {
+export function PortionSheet({ food, questions, initialMealType, initialLoggedDate = localDateKey(), editingMeal, recipeId, onLog, onSaveEdit, onClose, hideCalories }: { food: Food; questions?: string[]; initialMealType?: MealType; initialLoggedDate?: string; editingMeal?: Meal; recipeId?: string; onLog?: (meal: Meal, food: Food) => void; onSaveEdit?: (meal: Meal) => void; onClose: () => void; hideCalories: boolean }) {
   const units = contextualUnits(food);
   const initialUnit: ServingUnit = food.packageGrams ? "package" : food.servingGrams ? "serving" : "g";
-  const [unit, setUnit] = useState<ServingUnit>(initialUnit);
-  const [amount, setAmount] = useState(initialUnit === "g" ? 100 : 1);
-  const [mealType, setMealType] = useState<MealType>(() => initialMealType || suggestedMealType());
-  const [loggedDate, setLoggedDate] = useState(initialLoggedDate);
+  const [unit, setUnit] = useState<ServingUnit>(editingMeal?.unit || initialUnit);
+  const [amount, setAmount] = useState(editingMeal?.amount ?? (initialUnit === "g" ? 100 : 1));
+  const [mealType, setMealType] = useState<MealType>(() => editingMeal?.mealType || initialMealType || suggestedMealType());
+  const [loggedDate, setLoggedDate] = useState(editingMeal?.loggedDate || initialLoggedDate);
   const [additionalDatesOpen, setAdditionalDatesOpen] = useState(false);
   const [loggedDates, setLoggedDates] = useState<string[]>([initialLoggedDate]);
   const grams = gramsFor(food, amount, unit);
@@ -141,17 +142,21 @@ export function PortionSheet({ food, questions, initialMealType, initialLoggedDa
   const log = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(grams) || grams <= 0) return;
+    if (editingMeal) { onSaveEdit?.({ ...editingMeal, mealType, amount, unit, grams, nutrition, loggedDate }); return; }
     const dates = additionalDatesOpen ? loggedDates : [loggedDate];
-    dates.forEach((date) => onLog({
+    dates.forEach((date) => onLog?.(recipeId ? {
+      id: crypto.randomUUID(), recipeId, recipeLogId: recipeLogId(), name: food.name, mealType, amount, unit, grams, nutrition,
+      createdAt: new Date().toISOString(), loggedDate: date, source: "custom",
+    } : {
       id: crypto.randomUUID(), foodId: food.id, name: food.name, brand: food.brand, mealType, amount, unit, grams, nutrition,
       createdAt: new Date().toISOString(), loggedDate: date, source: food.source, estimated: food.source === "ai-label" || !food.verified,
     }, { ...food, lastUsedAt: new Date().toISOString() }));
   };
   return (
     <form className="portion-sheet" onSubmit={log}>
-      <div className="sheet-header"><button type="button" className="icon-button ghost" onClick={onClose} aria-label="Back to food selection"><ArrowLeft /></button><div><span className="eyebrow">Confirm amount</span><h2>Log food</h2></div><span /></div>
+      <div className="sheet-header"><button type="button" className="icon-button ghost" onClick={onClose} aria-label={editingMeal ? "Close" : "Back to food selection"}>{editingMeal ? <X /> : <ArrowLeft />}</button><div><span className="eyebrow">{editingMeal ? "Edit entry" : "Confirm amount"}</span><h2>{editingMeal ? "Edit amount" : "Log food"}</h2></div><span /></div>
       <div className="selected-food"><FoodAvatar food={food} /><div><strong>{food.name}</strong><span>{food.brand || food.quantityLabel || "Nutrition per 100 g"}</span></div>{!hideCalories && <div className="selected-calories"><strong>{nutrition.calories}</strong><small>kcal</small></div>}</div>
-      {!!questions?.length && <div className="follow-up"><Sparkles size={18} /><div><strong>One detail still matters</strong>{questions.map((question) => <p key={question}>{question}</p>)}<small>Use grams below if the package or serving amount is unknown.</small></div></div>}
+      {!editingMeal && !!questions?.length && <div className="follow-up"><Sparkles size={18} /><div><strong>One detail still matters</strong>{questions.map((question) => <p key={question}>{question}</p>)}<small>Use grams below if the package or serving amount is unknown.</small></div></div>}
       <div className="amount-control"><button type="button" aria-label="Decrease amount" onClick={() => setAmount(Math.max(unit === "g" ? 1 : 0.25, round(amount - (unit === "g" || unit === "ml" ? 10 : 0.5), 2)))}>−</button><label><NumericInput required aria-label="Amount" inputMode="decimal" min="0.01" step="any" value={amount} onChange={(event) => setAmount(Number(event.target.value))} /><span>{formatUnit(unit, amount)}</span></label><button type="button" aria-label="Increase amount" onClick={() => setAmount(round(amount + (unit === "g" || unit === "ml" ? 10 : 0.5), 2))}>+</button></div>
       <div className="unit-scroll" role="group" aria-label="Serving unit">{units.map((option) => <button type="button" key={option} aria-pressed={unit === option} className={unit === option ? "active" : ""} onClick={() => { setUnit(option); setAmount(option === "g" || option === "ml" ? 100 : 1); }}>{unitLabels[option]}</button>)}</div>
       {(unit === "tbsp" || unit === "tsp" || unit === "ml") && <p className="estimate-note"><Info size={14} /> Volume-to-weight conversion is approximate unless the food provides it.</p>}
@@ -159,8 +164,8 @@ export function PortionSheet({ food, questions, initialMealType, initialLoggedDa
       <div className="portion-action-area">
         <div className="field-block"><span id="meal-type-label">Add to</span><div className="segmented four" role="group" aria-labelledby="meal-type-label">{(Object.keys(mealLabels) as MealType[]).map((type) => <button type="button" key={type} aria-pressed={mealType === type} className={mealType === type ? "active" : ""} onClick={() => setMealType(type)}>{mealLabels[type]}</button>)}</div></div>
       <DatePickerField className="meal-date-field" label="Meal date" value={loggedDate} max={localDateKey()} onChange={(value) => setLoggedDate(value || localDateKey())} />
-      <div className="multi-date-log"><button type="button" className="text-button" aria-expanded={additionalDatesOpen} onClick={() => setAdditionalDatesOpen((open) => !open)}>{additionalDatesOpen ? "Log one day instead" : "Log this on multiple days"}</button>{additionalDatesOpen && <div className="multi-date-options" role="group" aria-label="Days to log this food">{recentLogDates().map((date) => <button type="button" key={date} className={loggedDates.includes(date) ? "active" : ""} aria-pressed={loggedDates.includes(date)} onClick={() => setLoggedDates((current) => current.includes(date) ? current.filter((item) => item !== date) : [...current, date])}>{dayLabel(date)}</button>)}</div>}</div>
-      <div className="portion-submit"><button className="primary-button full" type="submit" disabled={additionalDatesOpen && loggedDates.length === 0}><Plus size={18} />{hideCalories ? "Log food" : `Log ${nutrition.calories} kcal`}</button><p className="form-footnote">{grams} g total · {food.source === "open-food-facts" ? "Open Food Facts" : food.source === "food-data-central" ? "USDA FoodData Central" : food.source === "restaurant" ? "Restaurant menu nutrition" : food.source === "ai-label" ? "AI-extracted—check the package" : food.source === "custom" ? "Your custom food" : "Generic reference value"}</p></div>
+      {!editingMeal && <div className="multi-date-log"><button type="button" className="text-button" aria-expanded={additionalDatesOpen} onClick={() => setAdditionalDatesOpen((open) => !open)}>{additionalDatesOpen ? "Log one day instead" : "Log this on multiple days"}</button>{additionalDatesOpen && <div className="multi-date-options" role="group" aria-label="Days to log this food">{recentLogDates().map((date) => <button type="button" key={date} className={loggedDates.includes(date) ? "active" : ""} aria-pressed={loggedDates.includes(date)} onClick={() => setLoggedDates((current) => current.includes(date) ? current.filter((item) => item !== date) : [...current, date])}>{dayLabel(date)}</button>)}</div>}</div>}
+      <div className="portion-submit"><button className="primary-button full" type="submit" disabled={!editingMeal && additionalDatesOpen && loggedDates.length === 0}>{editingMeal ? <Check size={18} /> : <Plus size={18} />}{editingMeal ? "Save changes" : hideCalories ? "Log food" : `Log ${nutrition.calories} kcal`}</button><p className="form-footnote">{grams} g total · {food.source === "open-food-facts" ? "Open Food Facts" : food.source === "food-data-central" ? "USDA FoodData Central" : food.source === "restaurant" ? "Restaurant menu nutrition" : food.source === "ai-label" ? "AI-extracted—check the package" : food.source === "custom" ? "Your custom food" : "Generic reference value"}</p></div>
       </div>
     </form>
   );

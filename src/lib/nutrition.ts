@@ -85,6 +85,12 @@ export function scaleNutrition(per100: Nutrition, grams: number): Nutrition {
   return scaled;
 }
 
+/** Inverse of scaleNutrition: nutrition known for `grams` grams, expressed per 100 g. */
+export function nutritionPer100Grams(nutrition: Nutrition, grams: number): Nutrition {
+  if (!(grams > 0)) return nutrition;
+  return scaleNutrition(nutrition, 10_000 / grams);
+}
+
 export function gramsFor(food: Food, amount: number, unit: ServingUnit): number {
   const safeAmount = Math.max(0, amount || 0);
   const unitWeights: Record<ServingUnit, number> = {

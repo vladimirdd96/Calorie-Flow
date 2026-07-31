@@ -1,5 +1,5 @@
-import { scaleNutrition, sumNutrition } from "../../lib/nutrition";
-import type { Food, Nutrition, Recipe, RecipeIngredient } from "../../lib/types";
+import { nutritionPer100Grams, scaleNutrition, sumNutrition } from "../../lib/nutrition";
+import type { Food, Meal, Nutrition, Recipe, RecipeIngredient } from "../../lib/types";
 
 export function recipeLogId() {
   return `recipe-log-${crypto.randomUUID()}`;
@@ -32,4 +32,49 @@ export function recipeIngredientNutrition(ingredient: RecipeIngredient, foods: F
 export function recipeNutritionForLogging(recipe: Recipe, foods: Food[], replacements: Record<string, string>) {
   if (!canLogRecipeIngredients(recipe)) return recipe.nutritionPerServing;
   return sumNutrition(recipe.ingredients.map((ingredient) => recipeIngredientNutrition(ingredient, foods, replacements[ingredient.id])));
+}
+
+/** Grams for one serving: explicit value, else summed ingredient grams, else a flat fallback. */
+export function recipeServingGrams(recipe: Recipe): number {
+  if (recipe.servingGrams) return recipe.servingGrams;
+  const total = recipe.ingredients.reduce((sum, ingredient) => sum + (ingredient.grams || 0), 0);
+  return total > 0 ? total : 100;
+}
+
+/**
+ * Represents a saved recipe as a Food so portion-picking UI (unit switching, gram entry,
+ * live nutrition preview) can be reused as-is for logging a recipe.
+ */
+export function recipeAsFood(recipe: Recipe, foods: Food[], replacements: Record<string, string> = {}): Food {
+  const servingGrams = recipeServingGrams(recipe);
+  const nutritionPerServingUnit = recipeNutritionForLogging(recipe, foods, replacements);
+  return {
+    id: recipe.id,
+    name: recipe.name,
+    imageUrl: recipe.imageUrls?.[0],
+    servingGrams,
+    packageGrams: servingGrams * Math.max(1, recipe.servings),
+    nutrientsPer100: nutritionPer100Grams(nutritionPerServingUnit, servingGrams),
+    source: "custom",
+  };
+}
+
+/**
+ * Represents an already-logged meal as a Food, so its exact recorded nutrition (not the
+ * recipe's current defaults) drives portion editing. Falls back to the recipe's batch size
+ * for the "package" unit when the meal is linked to one.
+ */
+export function mealAsFood(meal: Meal, recipe?: Recipe): Food {
+  const grams = meal.grams > 0 ? meal.grams : 100;
+  const food: Food = {
+    id: meal.foodId || meal.recipeId || meal.id,
+    name: meal.name,
+    brand: meal.brand,
+    imageUrl: meal.imageUrl,
+    servingGrams: grams,
+    nutrientsPer100: nutritionPer100Grams(meal.nutrition, grams),
+    source: meal.source,
+  };
+  if (recipe) food.packageGrams = recipeServingGrams(recipe) * Math.max(1, recipe.servings);
+  return food;
 }

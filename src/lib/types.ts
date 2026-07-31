@@ -197,6 +197,8 @@ export type Recipe = {
   servings: number;
   ingredients: RecipeIngredient[];
   nutritionPerServing: Nutrition;
+  /** Grams for one serving. Defaults to the summed ingredient grams, then a flat fallback, when absent. */
+  servingGrams?: number;
   /** Optional user photos, stored locally as resized image data URLs. */
   imageUrls?: string[];
   createdAt: string;
