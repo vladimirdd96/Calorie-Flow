@@ -17,23 +17,25 @@ const FALLBACK_DISHES = ["Weeknight vegetable stir-fry", "Baked chicken and rice
 type SearchCandidate = { title: string; description: string; pageUrl: string; imageUrl?: string; siteName?: string };
 
 function isRecipeSearchConfigured() {
-  return Boolean(serverEnv.RECIPE_SEARCH_API_KEY);
+  return Boolean(serverEnv.TAVILY_API_KEY);
 }
 
-async function braveWebSearch(query: string): Promise<SearchCandidate[]> {
-  const key = serverEnv.RECIPE_SEARCH_API_KEY;
+async function tavilySearch(query: string): Promise<SearchCandidate[]> {
+  const key = serverEnv.TAVILY_API_KEY;
   if (!key) return [];
   try {
-    const response = await fetch(`https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=8`, {
-      headers: { Accept: "application/json", "X-Subscription-Token": key },
+    const response = await fetch("https://api.tavily.com/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ query, max_results: 8 }),
       cache: "no-store",
     });
     if (!response.ok) return [];
-    const body = await response.json() as { web?: { results?: Array<{ title?: string; description?: string; url?: string }> } };
-    const results = body.web?.results || [];
+    const body = await response.json() as { results?: Array<{ title?: string; content?: string; url?: string }> };
+    const results = body.results || [];
     return results
-      .filter((result): result is { title: string; description: string; url: string } => Boolean(result.title && result.url))
-      .map((result) => ({ title: result.title, description: result.description || "", pageUrl: result.url }));
+      .filter((result): result is { title: string; content: string; url: string } => Boolean(result.title && result.url))
+      .map((result) => ({ title: result.title, description: result.content || "", pageUrl: result.url }));
   } catch {
     return [];
   }
@@ -143,7 +145,7 @@ export async function POST(request: NextRequest) {
     const ai = await getWorkersAi();
     const searchConfigured = isRecipeSearchConfigured();
     const query = topFoods.length ? `${topFoods.slice(0, 3).join(" ")} recipe` : "healthy home-cooked recipe";
-    const searchResults = searchConfigured ? await braveWebSearch(query) : [];
+    const searchResults = searchConfigured ? await tavilySearch(query) : [];
     const enriched = await Promise.all(searchResults.slice(0, 10).map(enrichWithPageMeta));
 
     const surfaced: PublicRecipe[] = [];
