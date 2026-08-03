@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { CoachChat, CoachMealAction, CoachMealChoice, CoachMessage, DailyTargets, DiaryShare, FastingRecord, Food, LabelAnalysis, Meal, MealPhotoAnalysis, MealPlanEntry, Nutrition, Profile, Recipe, WaterEntry, WeightEntry } from "./types";
+import type { CoachChat, CoachMealAction, CoachMealChoice, CoachMessage, DailyTargets, DiaryShare, FastingRecord, Food, LabelAnalysis, Meal, MealPhotoAnalysis, MealPlanEntry, Nutrition, Profile, PublicRecipe, Recipe, WaterEntry, WeightEntry } from "./types";
 
 const finiteNonNegative = z.number().finite().min(0);
 const positiveFinite = z.number().finite().positive();
@@ -50,7 +50,7 @@ const recipeIngredientSchema = z.object({
   nutrition: nutritionSchema.optional(),
 }).strict();
 
-const recipeSchema = z.object({ id: z.string().trim().min(1).max(240), name: z.string().trim().min(1).max(240), servings: positiveFinite.max(100), ingredients: z.array(recipeIngredientSchema).max(100), nutritionPerServing: nutritionSchema, servingGrams: positiveFinite.max(20_000).optional(), imageUrls: z.array(z.string().min(1).max(400_000)).max(8).optional(), createdAt: z.string().datetime({ offset: true }), updatedAt: z.string().datetime({ offset: true }) }).strict() satisfies z.ZodType<Recipe>;
+const recipeSchema = z.object({ id: z.string().trim().min(1).max(240), name: z.string().trim().min(1).max(240), servings: positiveFinite.max(100), ingredients: z.array(recipeIngredientSchema).max(100), nutritionPerServing: nutritionSchema, servingGrams: positiveFinite.max(20_000).optional(), imageUrls: z.array(z.string().min(1).max(400_000)).max(8).optional(), isPublic: z.boolean().optional(), publicRecipeId: z.string().trim().min(1).max(240).optional(), createdAt: z.string().datetime({ offset: true }), updatedAt: z.string().datetime({ offset: true }) }).strict() satisfies z.ZodType<Recipe>;
 
 export const foodSchema = z.object({
   id: z.string().trim().min(1).max(240),
@@ -179,6 +179,35 @@ export const mealPhotoAnalysisSchema = z.object({
   components: z.array(z.string().trim().min(1).max(120)).max(20),
   confidence: z.enum(["low", "medium", "high"]),
 }).strict() satisfies z.ZodType<MealPhotoAnalysis>;
+
+export const publicRecipeSchema = z.object({
+  id: z.string().trim().min(1).max(240),
+  name: z.string().trim().min(1).max(240),
+  servings: positiveFinite.max(100),
+  servingGrams: positiveFinite.max(20_000),
+  ingredients: z.array(recipeIngredientSchema).max(100),
+  nutritionPerServing: nutritionSchema,
+  imageUrl: z.string().trim().url().max(2_000).optional(),
+  imageCredit: z.object({ label: z.string().trim().min(1).max(200), sourceUrl: z.string().trim().url().max(2_000) }).strict().optional(),
+  source: z.enum(["community", "ai"]),
+  authorId: z.string().uuid().optional(),
+  createdAt: z.string().datetime({ offset: true }),
+}).strict() satisfies z.ZodType<PublicRecipe>;
+
+/** Response from POST /api/recipes/estimate-nutrition. */
+export const recipeNutritionEstimateSchema = z.object({
+  nutritionPerServing: nutritionSchema,
+  confidence: z.enum(["low", "medium", "high"]),
+}).strict();
+
+/** A single AI-rewritten catalogue candidate from POST /api/recipes/generate. */
+export const generatedRecipeSchema = z.object({
+  name: z.string().trim().min(1).max(240),
+  servings: positiveFinite.max(100),
+  servingGrams: positiveFinite.max(20_000),
+  ingredients: z.array(z.string().trim().min(1).max(240)).min(1).max(30),
+  nutritionPerServing: nutritionSchema,
+}).strict();
 
 export const coachMealActionSchema = z.object({
   name: z.string().trim().min(1).max(240),

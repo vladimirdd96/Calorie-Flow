@@ -1,8 +1,9 @@
-import type { CoachChat, CoachMessage, DiaryShare, Food, Meal, Profile } from "./types";
+import type { CoachChat, CoachMessage, DiaryShare, Food, Meal, Profile, PublicRecipe, Recipe } from "./types";
 import { getSupabase } from "./supabase";
 import { z } from "zod";
-import { coachChatSchema, coachMessageSchema, diaryShareSchema, foodSchema, mealSchema, profileSchema } from "./schemas";
+import { coachChatSchema, coachMessageSchema, diaryShareSchema, foodSchema, mealSchema, profileSchema, publicRecipeSchema } from "./schemas";
 import { prepareDiaryShareInvite } from "./diary-sharing";
+import { recipeSearchKey } from "./planning";
 
 export type CloudSnapshot = {
   profile?: Profile;
@@ -40,6 +41,31 @@ function isDiarySharingUnavailable(error: unknown) {
   const message = typeof record.message === "string" ? record.message : "";
   return code === "42P01" || code === "PGRST202" || code === "PGRST205"
     || /diary_shares|accept_diary_share.*?(?:does not exist|not found|schema cache)/i.test(message);
+}
+
+function isPublicRecipesUnavailable(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const record = error as Record<string, unknown>;
+  const code = record.code;
+  const message = typeof record.message === "string" ? record.message : "";
+  return code === "42P01" || code === "PGRST205"
+    || /public_recipes.*?(?:does not exist|not found|schema cache)/i.test(message);
+}
+
+function publicRecipeFromRow(row: Record<string, unknown>): PublicRecipe {
+  return publicRecipeSchema.parse({
+    id: row.id,
+    name: row.name,
+    servings: row.servings,
+    servingGrams: row.serving_grams,
+    ingredients: row.ingredients,
+    nutritionPerServing: row.nutrition_per_serving,
+    imageUrl: row.image_url || undefined,
+    imageCredit: row.image_credit || undefined,
+    source: row.source,
+    authorId: row.author_id || undefined,
+    createdAt: row.created_at,
+  });
 }
 
 function diaryShareFromRow(row: Record<string, unknown>) {
@@ -194,6 +220,60 @@ export async function upsertCloudFood(userId: string, food: Food) {
     data: food,
     updated_at: food.lastUsedAt || new Date().toISOString(),
   }, { onConflict: "user_id,id" });
+  if (error) throw error;
+}
+
+const publicRecipeColumns = "id,name,servings,serving_grams,ingredients,nutrition_per_serving,image_url,image_credit,source,author_id,created_at";
+
+export async function fetchCatalogue(options: { q?: string; source?: "all" | "community" | "ai"; limit?: number } = {}): Promise<PublicRecipe[]> {
+  const { q, source = "all", limit = 60 } = options;
+  let query = client().from("public_recipes").select(publicRecipeColumns).order("created_at", { ascending: false }).limit(limit);
+  if (source !== "all") query = query.eq("source", source);
+  if (q?.trim()) query = query.ilike("name", `%${q.trim()}%`);
+  const { data, error } = await query;
+  if (error) {
+    if (isPublicRecipesUnavailable(error)) return [];
+    throw error;
+  }
+  return (data || []).map((row) => publicRecipeFromRow(row as Record<string, unknown>));
+}
+
+async function findPublicRecipeBySearchKey(searchKey: string): Promise<PublicRecipe | undefined> {
+  const { data, error } = await client().from("public_recipes").select(publicRecipeColumns).eq("search_key", searchKey).maybeSingle();
+  if (error) {
+    if (isPublicRecipesUnavailable(error)) return undefined;
+    throw error;
+  }
+  return data ? publicRecipeFromRow(data as Record<string, unknown>) : undefined;
+}
+
+/** Mirrors a user's own recipe into the public catalogue, or links to an existing near-duplicate instead of inserting again. */
+export async function publishRecipeToCatalogue(userId: string, recipe: Recipe): Promise<string> {
+  const searchKey = recipeSearchKey(recipe.name);
+  const existing = await findPublicRecipeBySearchKey(searchKey);
+  if (existing) return existing.id;
+  const { data, error } = await client().from("public_recipes").insert({
+    name: recipe.name,
+    servings: recipe.servings,
+    serving_grams: recipe.servingGrams || 100,
+    ingredients: recipe.ingredients,
+    nutrition_per_serving: recipe.nutritionPerServing,
+    image_url: recipe.imageUrls?.[0],
+    source: "community",
+    author_id: userId,
+  }).select("id").single();
+  if (error) {
+    if (error.code === "23505") {
+      const raceWinner = await findPublicRecipeBySearchKey(searchKey);
+      if (raceWinner) return raceWinner.id;
+    }
+    throw error;
+  }
+  return z.object({ id: z.string() }).parse(data).id;
+}
+
+export async function unpublishRecipe(userId: string, publicRecipeId: string) {
+  const { error } = await client().from("public_recipes").delete().eq("id", publicRecipeId).eq("author_id", userId);
   if (error) throw error;
 }
 

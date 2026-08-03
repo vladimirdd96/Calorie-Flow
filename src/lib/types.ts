@@ -201,6 +201,10 @@ export type Recipe = {
   servingGrams?: number;
   /** Optional user photos, stored locally as resized image data URLs. */
   imageUrls?: string[];
+  /** True once this recipe has a mirrored row in the public catalogue. */
+  isPublic?: boolean;
+  /** Links this recipe to its public_recipes row when shared. */
+  publicRecipeId?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -210,6 +214,25 @@ export type MealPlanEntry = {
   date: string;
   mealType: MealType;
 } & ({ recipeId: string; foodId?: never } | { foodId: string; recipeId?: never });
+
+export const publicRecipeSources = { community: "community", ai: "ai" } as const;
+export type PublicRecipeSource = typeof publicRecipeSources[keyof typeof publicRecipeSources];
+
+/** A shared row in the recipe catalogue, sourced either from a user's own recipe or an AI-assisted search. */
+export type PublicRecipe = {
+  id: string;
+  name: string;
+  servings: number;
+  servingGrams: number;
+  ingredients: RecipeIngredient[];
+  nutritionPerServing: Nutrition;
+  imageUrl?: string;
+  /** Present when the photo is hotlinked from a source site; always shown with a visible credit + link. */
+  imageCredit?: { label: string; sourceUrl: string };
+  source: PublicRecipeSource;
+  authorId?: string;
+  createdAt: string;
+};
 
 export type LabelAnalysis = {
   productName: string | null;

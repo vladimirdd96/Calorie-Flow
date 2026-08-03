@@ -15,6 +15,8 @@ const serverEnvSchema = publicEnvSchema.extend({
   FDC_API_KEY: optionalTrimmedString,
   NUTRITIONIX_APP_ID: optionalTrimmedString,
   NUTRITIONIX_APP_KEY: optionalTrimmedString,
+  /** Brave Search API key for recipe-catalogue web search. The generate endpoint degrades to AI-only recipes without it. */
+  RECIPE_SEARCH_API_KEY: optionalTrimmedString,
 });
 
 export const publicEnv = publicEnvSchema.parse({
@@ -30,6 +32,7 @@ export const serverEnv = serverEnvSchema.parse({
   FDC_API_KEY: process.env.FDC_API_KEY,
   NUTRITIONIX_APP_ID: process.env.NUTRITIONIX_APP_ID,
   NUTRITIONIX_APP_KEY: process.env.NUTRITIONIX_APP_KEY,
+  RECIPE_SEARCH_API_KEY: process.env.RECIPE_SEARCH_API_KEY,
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;

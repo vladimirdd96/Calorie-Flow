@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { backupSchema, diaryShareSchema, labelAnalysisSchema, mealSchema, mealPlanEntrySchema, profileSchema } from "./schemas";
+import { backupSchema, diaryShareSchema, generatedRecipeSchema, labelAnalysisSchema, mealSchema, mealPlanEntrySchema, profileSchema, publicRecipeSchema, recipeNutritionEstimateSchema } from "./schemas";
 
 const nutrition = { calories: 120, protein: 10, carbs: 12, fat: 4, fiber: 3, sugar: 2 };
 
@@ -100,5 +100,51 @@ describe("external data schemas", () => {
     };
     expect(() => diaryShareSchema.parse(invitation)).toThrow("Accepted shares require a recipient.");
     expect(diaryShareSchema.parse({ ...invitation, recipientId: "a9d05ff0-b060-4e0f-944f-a1cc2a2d96d9" }).status).toBe("accepted");
+  });
+});
+
+describe("recipe catalogue schemas", () => {
+  it("accepts a community public recipe and rejects negative nutrition", () => {
+    const recipe = {
+      id: "d4b47f94-9137-49aa-b5d4-e681bb1c3e17",
+      name: "Lentil bowl",
+      servings: 2,
+      servingGrams: 350,
+      ingredients: [{ id: "a", name: "Lentils" }],
+      nutritionPerServing: nutrition,
+      source: "community" as const,
+      authorId: "9b85bc95-00c2-4dbd-9df1-e2458ececf51",
+      createdAt: "2026-07-20T12:00:00.000Z",
+    };
+    expect(publicRecipeSchema.parse(recipe).source).toBe("community");
+    expect(() => publicRecipeSchema.parse({ ...recipe, nutritionPerServing: { ...nutrition, calories: -1 } })).toThrow();
+  });
+
+  it("accepts an AI-sourced recipe with a hotlinked, credited photo and rejects an untrusted image URL", () => {
+    const recipe = {
+      id: "33333333-3333-3333-3333-333333333333",
+      name: "Weeknight stir-fry",
+      servings: 3,
+      servingGrams: 300,
+      ingredients: [{ id: "a", name: "Broccoli" }],
+      nutritionPerServing: nutrition,
+      imageUrl: "https://example.com/photo.jpg",
+      imageCredit: { label: "Example Kitchen", sourceUrl: "https://example.com/recipe" },
+      source: "ai" as const,
+      createdAt: "2026-07-20T12:00:00.000Z",
+    };
+    expect(publicRecipeSchema.parse(recipe).imageCredit?.label).toBe("Example Kitchen");
+    expect(() => publicRecipeSchema.parse({ ...recipe, imageUrl: "not-a-url" })).toThrow();
+  });
+
+  it("validates the nutrition-estimate response shape", () => {
+    expect(recipeNutritionEstimateSchema.parse({ nutritionPerServing: nutrition, confidence: "medium" }).confidence).toBe("medium");
+    expect(() => recipeNutritionEstimateSchema.parse({ nutritionPerServing: nutrition, confidence: "certain" })).toThrow();
+  });
+
+  it("requires at least one ingredient for an AI-generated recipe candidate", () => {
+    const candidate = { name: "Baked chicken and rice", servings: 4, servingGrams: 320, ingredients: ["Chicken breast", "Rice"], nutritionPerServing: nutrition };
+    expect(generatedRecipeSchema.parse(candidate).ingredients).toHaveLength(2);
+    expect(() => generatedRecipeSchema.parse({ ...candidate, ingredients: [] })).toThrow();
   });
 });
