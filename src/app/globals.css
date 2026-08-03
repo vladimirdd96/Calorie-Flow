@@ -761,8 +761,9 @@ p { color: var(--muted); line-height: 1.55; }
 .recipe-composer textarea { min-height: 86px; resize: vertical; }
 .recipe-nutrition { display: grid; gap: 8px; }
 .recipe-list, .planned-list { display: grid; gap: 8px; }
-.recipe-card, .planned-entry { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.recipe-card > div:first-child, .planned-entry > span { display: grid; gap: 3px; min-width: 0; }
+.recipe-card, .planned-entry { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; }
+.recipe-card-body { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.recipe-card-body > div:last-child, .planned-entry > span { display: grid; gap: 3px; min-width: 0; }
 .recipe-card small, .planned-entry small { color: var(--muted); font-size: 11px; }
 .recipe-card-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .recipe-empty { display: grid; gap: 8px; padding: 18px; }
