@@ -78,12 +78,13 @@ async function rewriteAsRecipe(ai: Awaited<ReturnType<typeof getWorkersAi>>, ins
       name: { type: "string" }, servings: { type: "number" }, servingGrams: { type: "number" },
       ingredients: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 20 },
       nutritionPerServing: { type: "object", additionalProperties: false, properties: { calories: { type: "number" }, protein: { type: "number" }, carbs: { type: "number" }, fat: { type: "number" }, fiber: { type: "number" }, sugar: { type: "number" } }, required: ["calories", "protein", "carbs", "fat", "fiber", "sugar"] },
+      instructions: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 12 },
     },
-    required: ["name", "servings", "servingGrams", "ingredients", "nutritionPerServing"],
+    required: ["name", "servings", "servingGrams", "ingredients", "nutritionPerServing", "instructions"],
   };
   const request = {
     messages: [
-      { role: "system", content: "Write an original home-cook recipe inspired by a dish concept. Never copy sentences from any source you're given — write your own ingredient list and name in your own words, thinking about what that dish typically contains. Return realistic servings, grams per serving, and an estimated nutritionPerServing." },
+      { role: "system", content: "Write an original home-cook recipe inspired by a dish concept. Never copy sentences from any source you're given — write your own ingredient list, name, and step-by-step cooking instructions in your own words, thinking about what that dish typically contains and how it's typically made. Return realistic servings, grams per serving, an estimated nutritionPerServing, and clear ordered instructions a home cook can actually follow." },
       { role: "user", content: `Dish concept: ${inspiration}\n\nReturn a structured recipe.` },
     ],
     response_format: { type: "json_schema", json_schema: { name: "generated_recipe", strict: true, schema: responseSchema } },
@@ -109,14 +110,16 @@ async function existingBySearchKey(token: string, searchKey: string): Promise<Pu
   return row ? rowToPublicRecipe(row as Record<string, unknown>) : undefined;
 }
 
-const publicRecipeRestColumns = "id,name,servings,serving_grams,ingredients,nutrition_per_serving,image_url,image_credit,source,author_id,created_at";
+const publicRecipeRestColumns = "id,name,servings,serving_grams,ingredients,nutrition_per_serving,image_url,image_credit,source,author_id,instructions,cuisine,dietary_tags,created_at";
 
 function rowToPublicRecipe(row: Record<string, unknown>): PublicRecipe {
   return publicRecipeSchema.parse({
     id: row.id, name: row.name, servings: row.servings, servingGrams: row.serving_grams,
     ingredients: row.ingredients, nutritionPerServing: row.nutrition_per_serving,
     imageUrl: row.image_url || undefined, imageCredit: row.image_credit || undefined,
-    source: row.source, authorId: row.author_id || undefined, createdAt: row.created_at,
+    source: row.source, authorId: row.author_id || undefined,
+    instructions: row.instructions || [], cuisine: row.cuisine || undefined, dietaryTags: row.dietary_tags || [],
+    createdAt: row.created_at,
   });
 }
 
@@ -177,6 +180,7 @@ export async function POST(request: NextRequest) {
           image_url: candidate.source?.imageUrl,
           image_credit: candidate.source?.imageUrl ? { label: candidate.source.siteName, sourceUrl: candidate.source.pageUrl } : undefined,
           source: "ai",
+          instructions: generated.instructions,
         }),
       });
       if (insertResponse.ok) {

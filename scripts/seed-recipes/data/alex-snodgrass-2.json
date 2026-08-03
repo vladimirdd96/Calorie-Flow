@@ -1,0 +1,1001 @@
+[
+  {
+    "name": "3-Ingredient Chili-Cheese Enchiladas",
+    "servings": 4,
+    "servingGrams": 300,
+    "ingredients": [
+      "Corn tortillas",
+      "Rotisserie chicken",
+      "Red chili enchilada sauce",
+      "Shredded cheddar cheese",
+      "Shredded Monterey Jack cheese",
+      "Chopped cilantro",
+      "Diced onion"
+    ],
+    "nutritionPerServing": {
+      "calories": 480,
+      "protein": 32,
+      "carbs": 30,
+      "fat": 26,
+      "fiber": 4,
+      "sugar": 4
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2021/09/2021-09-13-01.04.17-2.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/3-ingredient-chili-cheese-enchiladas/"
+    }
+  },
+  {
+    "name": "5-Ingredient Green Chile Stew",
+    "servings": 6,
+    "servingGrams": 400,
+    "ingredients": [
+      "Pork shoulder, cubed",
+      "Hatch green chiles, roasted and diced",
+      "Yellow onion",
+      "Chicken broth",
+      "Diced potatoes",
+      "Garlic",
+      "Salt and pepper"
+    ],
+    "nutritionPerServing": {
+      "calories": 360,
+      "protein": 28,
+      "carbs": 20,
+      "fat": 18,
+      "fiber": 3,
+      "sugar": 3
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2023/08/230731_green-chile-stew-08.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/5-ingredient-green-chile-stew/"
+    }
+  },
+  {
+    "name": "Cheesy Chicken Stuffed Bacon-Wrapped Jalapeños",
+    "servings": 6,
+    "servingGrams": 180,
+    "ingredients": [
+      "Jalapeño peppers",
+      "Shredded cooked chicken",
+      "Cream cheese",
+      "Shredded cheddar cheese",
+      "Bacon slices",
+      "Garlic powder",
+      "Smoked paprika"
+    ],
+    "nutritionPerServing": {
+      "calories": 320,
+      "protein": 20,
+      "carbs": 4,
+      "fat": 25,
+      "fiber": 1,
+      "sugar": 2
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2019/09/2019-09-18-00.07.32.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/cheesy-chicken-stuffed-bacon-wrapped-jalapenos/"
+    }
+  },
+  {
+    "name": "Chicken and Scallion Dumpling Meatballs with Chili-Sesame Drizzle",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": [
+      "Ground chicken",
+      "Scallions",
+      "Garlic",
+      "Fresh ginger",
+      "Egg",
+      "Sesame oil",
+      "Soy sauce or coconut aminos",
+      "Chili oil",
+      "Sesame seeds",
+      "Rice vinegar"
+    ],
+    "nutritionPerServing": {
+      "calories": 340,
+      "protein": 26,
+      "carbs": 8,
+      "fat": 22,
+      "fiber": 1,
+      "sugar": 3
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2026/01/Chicken-Scallion-Dumpling-Meatballs-5-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/chicken-scallion-dumpling-meatballs/"
+    }
+  },
+  {
+    "name": "Bacon Apricot Zingers with Blue Cheese Drizzle",
+    "servings": 8,
+    "servingGrams": 90,
+    "ingredients": [
+      "Dried apricots",
+      "Bacon slices",
+      "Blue cheese crumbles",
+      "Mayonnaise",
+      "Honey",
+      "Lemon juice",
+      "Black pepper",
+      "Fresh chives"
+    ],
+    "nutritionPerServing": {
+      "calories": 150,
+      "protein": 6,
+      "carbs": 10,
+      "fat": 10,
+      "fiber": 1,
+      "sugar": 8
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/10/Bacon-Wrapped-Apricot-Zingers-5-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/bacon-apricot-zingers-with-blue-cheese-drizzle/"
+    }
+  },
+  {
+    "name": "Mini Ham and Gruyere Quiches",
+    "servings": 12,
+    "servingGrams": 70,
+    "ingredients": [
+      "Puff pastry or pie dough",
+      "Diced ham",
+      "Shredded Gruyere cheese",
+      "Eggs",
+      "Heavy cream",
+      "Chopped chives",
+      "Salt and pepper",
+      "Nutmeg"
+    ],
+    "nutritionPerServing": {
+      "calories": 180,
+      "protein": 8,
+      "carbs": 10,
+      "fat": 12,
+      "fiber": 0,
+      "sugar": 1
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2026/04/Ham-Gruyere-Puff-Pastry-Quiches-6-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/mini-ham-and-cheese-quiches/"
+    }
+  },
+  {
+    "name": "Sausage McMuffin Egg Bake",
+    "servings": 8,
+    "servingGrams": 200,
+    "ingredients": [
+      "Breakfast sausage",
+      "English muffins",
+      "Eggs",
+      "Milk",
+      "Shredded cheddar cheese",
+      "Dijon mustard",
+      "Garlic powder",
+      "Salt and pepper"
+    ],
+    "nutritionPerServing": {
+      "calories": 380,
+      "protein": 22,
+      "carbs": 18,
+      "fat": 24,
+      "fiber": 1,
+      "sugar": 3
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2026/02/Sausage-McMuffin-Egg-Bake-4-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/sausage-mcmuffin-egg-bake/"
+    }
+  },
+  {
+    "name": "Pumpkin Spice Streusel Muffins",
+    "servings": 12,
+    "servingGrams": 100,
+    "ingredients": [
+      "All-purpose flour",
+      "Pumpkin puree",
+      "Brown sugar",
+      "Eggs",
+      "Vegetable oil",
+      "Pumpkin pie spice",
+      "Baking powder",
+      "Cinnamon",
+      "Butter",
+      "Chopped pecans"
+    ],
+    "nutritionPerServing": {
+      "calories": 260,
+      "protein": 4,
+      "carbs": 34,
+      "fat": 12,
+      "fiber": 2,
+      "sugar": 18
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/10/Bakery-Style-Pumpkin-Coffee-Cake-Muffins-5-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/pumpkin-spice-streusel-muffins/"
+    }
+  },
+  {
+    "name": "The Kauai Margarita",
+    "servings": 1,
+    "servingGrams": 220,
+    "ingredients": [
+      "Blanco tequila",
+      "Fresh pineapple juice",
+      "Lime juice",
+      "Agave nectar",
+      "Mezcal float",
+      "Tajin rim salt",
+      "Pineapple wedge garnish"
+    ],
+    "nutritionPerServing": {
+      "calories": 190,
+      "protein": 0,
+      "carbs": 18,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 15
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2026/06/The-Flyin_-Hawaiian-3-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/the-kauai-margarita-smoky-pineapple-margarita/"
+    }
+  },
+  {
+    "name": "Summer Rose Sangria",
+    "servings": 6,
+    "servingGrams": 240,
+    "ingredients": [
+      "Rose wine",
+      "Peach schnapps",
+      "Sliced peaches",
+      "Sliced strawberries",
+      "Orange slices",
+      "Club soda",
+      "Fresh mint"
+    ],
+    "nutritionPerServing": {
+      "calories": 170,
+      "protein": 0,
+      "carbs": 16,
+      "fat": 0,
+      "fiber": 1,
+      "sugar": 12
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2026/06/Summer-Rose-Sangria-4-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/summer-rose-sangria/"
+    }
+  },
+  {
+    "name": "Batched Cosmopolitans",
+    "servings": 6,
+    "servingGrams": 150,
+    "ingredients": [
+      "Vodka",
+      "Triple sec",
+      "Cranberry juice",
+      "Fresh lime juice",
+      "Orange twist garnish"
+    ],
+    "nutritionPerServing": {
+      "calories": 180,
+      "protein": 0,
+      "carbs": 12,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 10
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2026/02/Batched-Cosmopolitans-3-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/batched-cosmopolitans/"
+    }
+  },
+  {
+    "name": "Batched Sparkling Elderflower Negronis",
+    "servings": 6,
+    "servingGrams": 180,
+    "ingredients": [
+      "Gin",
+      "Campari",
+      "Sweet vermouth",
+      "Elderflower liqueur",
+      "Sparkling wine",
+      "Orange peel garnish"
+    ],
+    "nutritionPerServing": {
+      "calories": 210,
+      "protein": 0,
+      "carbs": 14,
+      "fat": 0,
+      "fiber": 0,
+      "sugar": 11
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/12/Batched-Elderflower-Negroni-5-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/batched-sparkling-elderflower-negronis/"
+    }
+  },
+  {
+    "name": "Whole30 Creamy Italian Dressing",
+    "servings": 8,
+    "servingGrams": 30,
+    "ingredients": [
+      "Avocado oil mayonnaise",
+      "White wine vinegar",
+      "Garlic",
+      "Dried oregano",
+      "Dried basil",
+      "Onion powder",
+      "Dijon mustard",
+      "Lemon juice"
+    ],
+    "nutritionPerServing": {
+      "calories": 110,
+      "protein": 0,
+      "carbs": 1,
+      "fat": 12,
+      "fiber": 0,
+      "sugar": 0
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2020/08/2020-08-25-00.10.02.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/whole30-creamy-italian-dressing/"
+    }
+  },
+  {
+    "name": "Whole30 Buffalo Ranch Dressing",
+    "servings": 8,
+    "servingGrams": 30,
+    "ingredients": [
+      "Avocado oil mayonnaise",
+      "Coconut milk",
+      "Buffalo hot sauce",
+      "Garlic powder",
+      "Onion powder",
+      "Dried dill",
+      "Chives",
+      "Lemon juice"
+    ],
+    "nutritionPerServing": {
+      "calories": 120,
+      "protein": 0,
+      "carbs": 1,
+      "fat": 13,
+      "fiber": 0,
+      "sugar": 0
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2020/07/2020-07-29-23.59.11.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/whole30-buffalo-ranch-dressing/"
+    }
+  },
+  {
+    "name": "Spinach and Artichoke Avocado Dip",
+    "servings": 6,
+    "servingGrams": 100,
+    "ingredients": [
+      "Ripe avocados",
+      "Chopped spinach",
+      "Marinated artichoke hearts",
+      "Cream cheese",
+      "Garlic",
+      "Lemon juice",
+      "Grated parmesan cheese",
+      "Salt and pepper"
+    ],
+    "nutritionPerServing": {
+      "calories": 190,
+      "protein": 5,
+      "carbs": 8,
+      "fat": 16,
+      "fiber": 5,
+      "sugar": 1
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2018/07/IMG_7393.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/spinach-and-artichoke-avocado-dip/"
+    }
+  },
+  {
+    "name": "Hibachi Style Chicken with Magic Mustard Sauce",
+    "servings": 4,
+    "servingGrams": 350,
+    "ingredients": [
+      "Chicken breast, cubed",
+      "Zucchini",
+      "Yellow onion",
+      "Garlic",
+      "Butter or ghee",
+      "Soy sauce or coconut aminos",
+      "Mayonnaise",
+      "Dijon mustard",
+      "Rice vinegar",
+      "Sesame seeds"
+    ],
+    "nutritionPerServing": {
+      "calories": 420,
+      "protein": 34,
+      "carbs": 12,
+      "fat": 27,
+      "fiber": 2,
+      "sugar": 5
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2022/08/Hibachi-Style-Chicken-5-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/hibachi-style-chicken-with-magic-mustard-sauce/"
+    }
+  },
+  {
+    "name": "Instant Pot Shredded Greek Beef Bowls",
+    "servings": 6,
+    "servingGrams": 320,
+    "ingredients": [
+      "Beef chuck roast",
+      "Greek seasoning blend",
+      "Lemon juice",
+      "Garlic",
+      "Beef broth",
+      "Cherry tomatoes",
+      "Cucumber",
+      "Red onion",
+      "Feta cheese",
+      "Kalamata olives"
+    ],
+    "nutritionPerServing": {
+      "calories": 400,
+      "protein": 36,
+      "carbs": 8,
+      "fat": 25,
+      "fiber": 2,
+      "sugar": 3
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2024/01/Instant-Pot-Greek-Shredded-Beef-Bowls-5-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/instant-pot-shredded-greek-beef-bowls/"
+    }
+  },
+  {
+    "name": "Slow Cooker Shredded Lemongrass Pork Bowls",
+    "servings": 6,
+    "servingGrams": 350,
+    "ingredients": [
+      "Pork shoulder",
+      "Lemongrass",
+      "Garlic",
+      "Fish sauce",
+      "Lime juice",
+      "Brown sugar",
+      "Shallots",
+      "Fresh ginger",
+      "Jasmine rice",
+      "Cucumber",
+      "Carrots",
+      "Fresh cilantro",
+      "Chili flakes"
+    ],
+    "nutritionPerServing": {
+      "calories": 480,
+      "protein": 34,
+      "carbs": 42,
+      "fat": 18,
+      "fiber": 2,
+      "sugar": 9
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2024/01/Vietnamese-Shredded-Pork-Bowls-5-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/slow-cooker-shredded-lemongrass-pork-bowls/"
+    }
+  },
+  {
+    "name": "Slow Cooker Tagine-Inspired Chicken",
+    "servings": 6,
+    "servingGrams": 380,
+    "ingredients": [
+      "Chicken thighs",
+      "Onion",
+      "Garlic",
+      "Diced tomatoes",
+      "Dried apricots",
+      "Chickpeas",
+      "Cinnamon",
+      "Cumin",
+      "Ginger",
+      "Paprika",
+      "Green olives",
+      "Chicken broth",
+      "Fresh cilantro"
+    ],
+    "nutritionPerServing": {
+      "calories": 420,
+      "protein": 32,
+      "carbs": 28,
+      "fat": 20,
+      "fiber": 5,
+      "sugar": 12
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2024/01/Slow-Cooker-Chicken-Tagine-4-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/slow-cooker-tagine-inspired-chicken/"
+    }
+  },
+  {
+    "name": "The Best Whole30 Pot Roast",
+    "servings": 8,
+    "servingGrams": 400,
+    "ingredients": [
+      "Chuck roast",
+      "Carrots",
+      "Yellow onion",
+      "Celery",
+      "Garlic",
+      "Beef broth",
+      "Tomato paste",
+      "Bay leaves",
+      "Fresh thyme",
+      "Fresh rosemary",
+      "Coconut aminos",
+      "Avocado oil"
+    ],
+    "nutritionPerServing": {
+      "calories": 410,
+      "protein": 38,
+      "carbs": 12,
+      "fat": 24,
+      "fiber": 3,
+      "sugar": 5
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2022/08/Whole30-Pot-Roast-1-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/the-best-whole30-pot-roast/"
+    }
+  },
+  {
+    "name": "Grilled Huli Huli Inspired Chicken",
+    "servings": 6,
+    "servingGrams": 300,
+    "ingredients": [
+      "Chicken thighs",
+      "Pineapple juice",
+      "Coconut aminos",
+      "Ketchup",
+      "Fresh ginger",
+      "Garlic",
+      "Brown sugar",
+      "Rice vinegar",
+      "Sesame oil",
+      "Green onions",
+      "Sesame seeds"
+    ],
+    "nutritionPerServing": {
+      "calories": 360,
+      "protein": 33,
+      "carbs": 18,
+      "fat": 16,
+      "fiber": 0,
+      "sugar": 14
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2026/06/Huli-Huli-Chicken-5-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/grilled-huli-huli-inspired-chicken/"
+    }
+  },
+  {
+    "name": "Grilled Ahi Tuna with Ponzu-Lime Marinade",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": [
+      "Ahi tuna steaks",
+      "Soy sauce",
+      "Fresh lime juice",
+      "Rice vinegar",
+      "Fresh ginger",
+      "Garlic",
+      "Sesame oil",
+      "Green onions",
+      "Sesame seeds",
+      "Chili flakes"
+    ],
+    "nutritionPerServing": {
+      "calories": 280,
+      "protein": 38,
+      "carbs": 5,
+      "fat": 11,
+      "fiber": 0,
+      "sugar": 2
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2026/06/Grilled-Ahi-Tuna-with-Ponzu-Lime-Marinade-5-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/grilled-ahi-tuna-with-ponzu-lime-marinade/"
+    }
+  },
+  {
+    "name": "Flap Steak Tacos with Jalapeno Chimichurri",
+    "servings": 5,
+    "servingGrams": 280,
+    "ingredients": [
+      "Flap steak",
+      "Corn tortillas",
+      "Fresh parsley",
+      "Fresh cilantro",
+      "Jalapeno",
+      "Garlic",
+      "Red wine vinegar",
+      "Olive oil",
+      "Lime",
+      "Red onion",
+      "Cumin",
+      "Salt"
+    ],
+    "nutritionPerServing": {
+      "calories": 390,
+      "protein": 30,
+      "carbs": 24,
+      "fat": 19,
+      "fiber": 3,
+      "sugar": 2
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2026/06/Flap-Steak-Tacos-4-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/flap-steak-tacos-with-jalapeno-chimichurri/"
+    }
+  },
+  {
+    "name": "Pan-Seared Salmon with Castelvetrano Olive and Feta Salsa",
+    "servings": 4,
+    "servingGrams": 260,
+    "ingredients": [
+      "Salmon fillets",
+      "Castelvetrano olives",
+      "Feta cheese",
+      "Cherry tomatoes",
+      "Red onion",
+      "Fresh parsley",
+      "Lemon juice",
+      "Olive oil",
+      "Garlic",
+      "Black pepper"
+    ],
+    "nutritionPerServing": {
+      "calories": 420,
+      "protein": 34,
+      "carbs": 6,
+      "fat": 29,
+      "fiber": 1,
+      "sugar": 2
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2026/06/Pan-Seared-Salmon-with-Castelvetrano-Olive-and-Feta-Salsa-6-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/seared-salmon-with-olive-and-feta-salsa/"
+    }
+  },
+  {
+    "name": "Spicy Tuna Hand Rolls",
+    "servings": 4,
+    "servingGrams": 180,
+    "ingredients": [
+      "Sushi-grade ahi tuna",
+      "Nori sheets",
+      "Sushi rice",
+      "Kewpie mayonnaise",
+      "Sriracha",
+      "Sesame oil",
+      "Green onions",
+      "Cucumber",
+      "Avocado",
+      "Sesame seeds",
+      "Soy sauce"
+    ],
+    "nutritionPerServing": {
+      "calories": 340,
+      "protein": 22,
+      "carbs": 38,
+      "fat": 11,
+      "fiber": 3,
+      "sugar": 3
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2026/06/Spicy-Tuna-Handrolls-5-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/spicy-tuna-hand-rolls/"
+    }
+  },
+  {
+    "name": "Seared Salmon with Lemon-Chive Beurre Blanc",
+    "servings": 4,
+    "servingGrams": 260,
+    "ingredients": [
+      "Salmon fillets",
+      "Unsalted butter",
+      "Shallot",
+      "White wine",
+      "Lemon juice",
+      "Fresh chives",
+      "Heavy cream",
+      "Salt",
+      "Black pepper",
+      "Olive oil"
+    ],
+    "nutritionPerServing": {
+      "calories": 460,
+      "protein": 33,
+      "carbs": 3,
+      "fat": 35,
+      "fiber": 0,
+      "sugar": 1
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2026/04/Seared-Salmon-with-Lemon-Chive-Beurre-Blanc-6-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/seared-salmon-with-lemon-chive-beurre-blanc/"
+    }
+  },
+  {
+    "name": "Creamy Poached Halibut with Leeks",
+    "servings": 4,
+    "servingGrams": 300,
+    "ingredients": [
+      "Halibut fillets",
+      "Leeks",
+      "Heavy cream",
+      "White wine",
+      "Fish or vegetable stock",
+      "Garlic",
+      "Unsalted butter",
+      "Fresh thyme",
+      "Lemon juice",
+      "Salt",
+      "Black pepper"
+    ],
+    "nutritionPerServing": {
+      "calories": 400,
+      "protein": 36,
+      "carbs": 8,
+      "fat": 24,
+      "fiber": 1,
+      "sugar": 3
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2026/02/Creamy-Poached-Halibut-with-Leeks-6-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/creamy-poached-halibut-with-leeks/"
+    }
+  },
+  {
+    "name": "Sheet Pan Miso-Marinated Cod with Broccolini",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": [
+      "Cod fillets",
+      "White miso paste",
+      "Mirin",
+      "Rice vinegar",
+      "Sesame oil",
+      "Fresh ginger",
+      "Broccolini",
+      "Garlic",
+      "Green onions",
+      "Sesame seeds",
+      "Soy sauce"
+    ],
+    "nutritionPerServing": {
+      "calories": 300,
+      "protein": 32,
+      "carbs": 14,
+      "fat": 12,
+      "fiber": 3,
+      "sugar": 6
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/12/Sheet-Pan-Miso-Marinated-Cod-5-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/sheet-pan-miso-marinated-cod-with-broccolini/"
+    }
+  },
+  {
+    "name": "Gluten-Free Protein Bagel Bites",
+    "servings": 6,
+    "servingGrams": 150,
+    "ingredients": [
+      "Cottage cheese",
+      "Gluten-free flour blend",
+      "Eggs",
+      "Baking powder",
+      "Mozzarella cheese",
+      "Pepperoni",
+      "Salami",
+      "Everything bagel seasoning",
+      "Marinara sauce"
+    ],
+    "nutritionPerServing": {
+      "calories": 280,
+      "protein": 22,
+      "carbs": 20,
+      "fat": 13,
+      "fiber": 2,
+      "sugar": 2
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/10/Gluten-Free-Protein-Bagel-Bites-6-1200x1799.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/gluten-free-protein-bagel-bites/"
+    }
+  },
+  {
+    "name": "Freezer Friendly Breakfast Sandwiches",
+    "servings": 8,
+    "servingGrams": 180,
+    "ingredients": [
+      "English muffins",
+      "Eggs",
+      "Breakfast sausage patties",
+      "Cheddar cheese",
+      "Butter",
+      "Salt",
+      "Black pepper",
+      "Chives"
+    ],
+    "nutritionPerServing": {
+      "calories": 360,
+      "protein": 20,
+      "carbs": 26,
+      "fat": 19,
+      "fiber": 2,
+      "sugar": 3
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2024/09/Make-Ahead-Breakfast-Sandwiches-5-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/freezer-friendly-breakfast-sandwiches/"
+    }
+  },
+  {
+    "name": "Chipotle-Coffee Smoked Chuck Roast",
+    "servings": 8,
+    "servingGrams": 380,
+    "ingredients": [
+      "Chuck roast",
+      "Ground coffee",
+      "Chipotle powder",
+      "Brown sugar",
+      "Smoked paprika",
+      "Garlic powder",
+      "Onion powder",
+      "Cumin",
+      "Salt",
+      "Black pepper",
+      "Beef broth"
+    ],
+    "nutritionPerServing": {
+      "calories": 430,
+      "protein": 37,
+      "carbs": 6,
+      "fat": 27,
+      "fiber": 1,
+      "sugar": 4
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2026/04/Chipotle-Coffee-BBQ-Smoked-Chuck-Roast-6-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/chipotle-coffee-smoked-chuck-roast/"
+    }
+  },
+  {
+    "name": "Hoisin-Glazed Grilled Pork Tenderloin Bowls",
+    "servings": 4,
+    "servingGrams": 350,
+    "ingredients": [
+      "Pork tenderloin",
+      "Hoisin sauce",
+      "Soy sauce",
+      "Rice vinegar",
+      "Fresh ginger",
+      "Garlic",
+      "Sesame oil",
+      "Jasmine rice",
+      "Shredded cabbage",
+      "Carrots",
+      "Green onions",
+      "Sesame seeds"
+    ],
+    "nutritionPerServing": {
+      "calories": 470,
+      "protein": 36,
+      "carbs": 48,
+      "fat": 14,
+      "fiber": 3,
+      "sugar": 13
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2026/04/Hoisin-Glazed-Grilled-Pork-Tenderloin-5-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/hoisin-glazed-grilled-pork-tenderloin-bowls/"
+    }
+  },
+  {
+    "name": "Jalapeno Cheddar Turkey Burgers",
+    "servings": 5,
+    "servingGrams": 240,
+    "ingredients": [
+      "Ground turkey",
+      "Cheddar cheese",
+      "Jalapeno",
+      "Garlic powder",
+      "Onion powder",
+      "Smoked paprika",
+      "Egg",
+      "Burger buns",
+      "Lettuce",
+      "Tomato",
+      "Mayonnaise"
+    ],
+    "nutritionPerServing": {
+      "calories": 420,
+      "protein": 30,
+      "carbs": 26,
+      "fat": 22,
+      "fiber": 2,
+      "sugar": 4
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2026/04/Jalapeno-Cheddar-Turkey-Burgers-6-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/jalapeno-cheddar-turkey-burgers/"
+    }
+  },
+  {
+    "name": "Basque-Style Roasted Piquillo Peppers with Seared Ribeye",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": [
+      "Ribeye steak",
+      "Piquillo peppers",
+      "Garlic",
+      "Olive oil",
+      "Sherry vinegar",
+      "Fresh parsley",
+      "Smoked paprika",
+      "Salt",
+      "Black pepper",
+      "Flaky sea salt"
+    ],
+    "nutritionPerServing": {
+      "calories": 520,
+      "protein": 38,
+      "carbs": 8,
+      "fat": 38,
+      "fiber": 2,
+      "sugar": 4
+    },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/12/Basque-Style-Roasted-Piquillo-Peppers-with-Seared-Ribeye-5-scaled.jpg",
+    "imageCredit": {
+      "label": "The Defined Dish",
+      "sourceUrl": "https://thedefineddish.com/basque-style-roasted-piquillo-peppers-with-seared-ribeye/"
+    }
+  }
+]

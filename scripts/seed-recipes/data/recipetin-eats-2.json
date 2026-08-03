@@ -1,0 +1,443 @@
+[
+  {
+    "name": "Rainbow Chicken Stir Fry",
+    "servings": 4,
+    "servingGrams": 350,
+    "ingredients": ["Chicken breast", "Bell peppers", "Carrots", "Snap peas", "Purple cabbage", "Soy sauce", "Garlic", "Fresh ginger", "Sesame oil", "Jasmine rice"],
+    "nutritionPerServing": { "calories": 380, "protein": 32, "carbs": 36, "fat": 11, "fiber": 4, "sugar": 8 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2026/02/Rainbow-chicken-stir-fry_8.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/%f0%9f%8c%88-rainbow-chicken-stir-fry-%f0%9f%8c%88/" }
+  },
+  {
+    "name": "Thai Chicken Gai Yang",
+    "servings": 4,
+    "servingGrams": 250,
+    "ingredients": ["Chicken thighs", "Fish sauce", "Coriander root", "Garlic", "White pepper", "Palm sugar", "Soy sauce", "Lime juice"],
+    "nutritionPerServing": { "calories": 320, "protein": 30, "carbs": 6, "fat": 20, "fiber": 0, "sugar": 4 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2015/06/Thai-chicken-marinated-Gai-Yang_0.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/thai-grilled-chicken-gai-yang/" }
+  },
+  {
+    "name": "Easy Chinese Beef Stir Fry",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Flank steak", "Broccoli", "Bell pepper", "Soy sauce", "Oyster sauce", "Garlic", "Fresh ginger", "Cornstarch", "Sesame oil"],
+    "nutritionPerServing": { "calories": 360, "protein": 30, "carbs": 16, "fat": 20, "fiber": 3, "sugar": 6 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2015/12/Chinese-Beef-Stir-Fry_8.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/easy-classic-chinese-beef-stir-fry/" }
+  },
+  {
+    "name": "Korean Beef Bulgogi Rice Bowls",
+    "servings": 4,
+    "servingGrams": 380,
+    "ingredients": ["Ribeye steak", "Soy sauce", "Brown sugar", "Garlic", "Sesame oil", "Asian pear", "White rice", "Carrots", "Scallions", "Sesame seeds"],
+    "nutritionPerServing": { "calories": 480, "protein": 30, "carbs": 46, "fat": 20, "fiber": 2, "sugar": 12 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2025/09/Easy-Korean-Bulgogi-Beef-Bowls_6.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/korean-beef-bulgogi-rice-bowls-the-easy-way/" }
+  },
+  {
+    "name": "Crispy Thai Pork Bites with Sweet Chilli Sauce",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Pork belly", "Fish sauce", "Garlic", "White pepper", "Cornstarch", "Sweet chilli sauce", "Lime juice", "Cilantro"],
+    "nutritionPerServing": { "calories": 420, "protein": 20, "carbs": 14, "fat": 32, "fiber": 0, "sugar": 10 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2025/09/Crispy-Thai-Pork-Bites-Sweet-Chilli-Sauce_4.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/crispy-thai-pork-bites-with-sweet-chilli-sauce/" }
+  },
+  {
+    "name": "Crispy Chinese Lemon Chicken",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Chicken thighs", "Cornstarch", "Egg", "Lemon juice", "Sugar", "Chicken broth", "Soy sauce", "Garlic", "Jasmine rice"],
+    "nutritionPerServing": { "calories": 460, "protein": 28, "carbs": 42, "fat": 20, "fiber": 1, "sugar": 16 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2025/08/Crispy-Chinese-Lemon-Chicken_0.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/crispy-chinese-lemon-chicken/" }
+  },
+  {
+    "name": "Filipino Pork Adobo",
+    "servings": 6,
+    "servingGrams": 320,
+    "ingredients": ["Pork shoulder", "Soy sauce", "White vinegar", "Garlic", "Bay leaves", "Black peppercorns", "Brown sugar", "White rice"],
+    "nutritionPerServing": { "calories": 420, "protein": 28, "carbs": 30, "fat": 22, "fiber": 1, "sugar": 6 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2025/08/Pork-adobo-served-with-rice.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/filipino-pork-adobo/" }
+  },
+  {
+    "name": "The Fastest Noodle Stir Fry",
+    "servings": 2,
+    "servingGrams": 320,
+    "ingredients": ["Instant noodles", "Soy sauce", "Oyster sauce", "Garlic", "Egg", "Scallions", "Sesame oil", "Chili flakes"],
+    "nutritionPerServing": { "calories": 420, "protein": 14, "carbs": 54, "fat": 16, "fiber": 2, "sugar": 4 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2025/06/2-ingredient-noodle-stir-fry-_5.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/the-fastest-noodle-stir-fry-i-know/" }
+  },
+  {
+    "name": "Ginger Chicken and Rice",
+    "servings": 4,
+    "servingGrams": 380,
+    "ingredients": ["Chicken thighs", "Jasmine rice", "Fresh ginger", "Garlic", "Chicken broth", "Soy sauce", "Sesame oil", "Scallions"],
+    "nutritionPerServing": { "calories": 460, "protein": 30, "carbs": 48, "fat": 16, "fiber": 1, "sugar": 2 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2025/06/Ginger-chicken-and-rice-with-mushrooms_5.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/ginger-chicken-and-rice/" }
+  },
+  {
+    "name": "Everyday Hokkien Noodles",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Hokkien noodles", "Chicken breast", "Cabbage", "Carrots", "Bean sprouts", "Soy sauce", "Oyster sauce", "Garlic", "Sesame oil"],
+    "nutritionPerServing": { "calories": 400, "protein": 24, "carbs": 46, "fat": 13, "fiber": 3, "sugar": 5 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2024/08/Hokkien-noodles-with-chicken_2.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/hokkien-noodles/" }
+  },
+  {
+    "name": "Beef Tataki",
+    "servings": 4,
+    "servingGrams": 150,
+    "ingredients": ["Beef sirloin", "Soy sauce", "Rice vinegar", "Sesame oil", "Garlic", "Fresh ginger", "Scallions", "Sesame seeds"],
+    "nutritionPerServing": { "calories": 220, "protein": 26, "carbs": 3, "fat": 12, "fiber": 0, "sugar": 1 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2024/07/Beef-tataki_8.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/beef-tataki/" }
+  },
+  {
+    "name": "Singapore Chicken Vermicelli Noodles",
+    "servings": 4,
+    "servingGrams": 350,
+    "ingredients": ["Vermicelli rice noodles", "Chicken breast", "Curry powder", "Bell pepper", "Carrots", "Bean sprouts", "Soy sauce", "Egg"],
+    "nutritionPerServing": { "calories": 400, "protein": 26, "carbs": 48, "fat": 11, "fiber": 3, "sugar": 4 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2024/04/Easy-Singapore-chicken-vermicelli-noodles-2.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/singapore-vermicelli-noodles-with-chicken/" }
+  },
+  {
+    "name": "Thai Turmeric Chicken",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Chicken thighs", "Turmeric", "Garlic", "Fish sauce", "Coconut milk", "Lime juice", "White pepper"],
+    "nutritionPerServing": { "calories": 320, "protein": 30, "carbs": 4, "fat": 20, "fiber": 0, "sugar": 1 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2015/11/Thai-Turmeric-Chicken_4.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/southern-thai-tumeric-chicken-grilled-or-baked/" }
+  },
+  {
+    "name": "Bok Choy in Ginger Sauce",
+    "servings": 4,
+    "servingGrams": 150,
+    "ingredients": ["Bok choy", "Fresh ginger", "Garlic", "Soy sauce", "Oyster sauce", "Sesame oil", "Cornstarch"],
+    "nutritionPerServing": { "calories": 90, "protein": 3, "carbs": 8, "fat": 5, "fiber": 2, "sugar": 3 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2023/09/Bok-choy-in-ginger-sauce.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/bok-choy-in-ginger-sauce/" }
+  },
+  {
+    "name": "Garlic Noodles",
+    "servings": 4,
+    "servingGrams": 300,
+    "ingredients": ["Spaghetti", "Garlic", "Butter", "Soy sauce", "Oyster sauce", "Sugar", "Parmesan cheese", "Scallions"],
+    "nutritionPerServing": { "calories": 420, "protein": 12, "carbs": 56, "fat": 16, "fiber": 2, "sugar": 4 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2023/09/Garlic-noodles-with-egg-close-up.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/garlic-noodles/" }
+  },
+  {
+    "name": "Vietnamese Caramel Ginger Chicken",
+    "servings": 4,
+    "servingGrams": 300,
+    "ingredients": ["Chicken thighs", "Fish sauce", "Brown sugar", "Fresh ginger", "Garlic", "Shallots", "Black pepper", "Jasmine rice"],
+    "nutritionPerServing": { "calories": 380, "protein": 30, "carbs": 24, "fat": 18, "fiber": 0, "sugar": 16 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2023/08/Vietnamese-Ginger-Caramel-Chicken_6-close-up.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/vietnamese-caramel-ginger-chicken/" }
+  },
+  {
+    "name": "Charcoal Chicken Shop Chicken Skewers",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Chicken thighs", "Paprika", "Garlic powder", "Onion powder", "Chicken stock powder", "Turmeric", "Olive oil", "Lemon juice"],
+    "nutritionPerServing": { "calories": 300, "protein": 30, "carbs": 3, "fat": 18, "fiber": 0, "sugar": 0 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2026/03/Kebab-shop-chicken-skewers_4.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/charcoal-chicken-shop-chicken-skewers/" }
+  },
+  {
+    "name": "Chicken au Poivre",
+    "servings": 4,
+    "servingGrams": 280,
+    "ingredients": ["Chicken breast", "Black peppercorns", "Butter", "Shallot", "Brandy", "Heavy cream", "Chicken broth", "Dijon mustard"],
+    "nutritionPerServing": { "calories": 420, "protein": 34, "carbs": 5, "fat": 28, "fiber": 0, "sugar": 2 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2026/02/Chicken-Au-Poivre_4-copy.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/french-chicken-au-poivre-sauce/" }
+  },
+  {
+    "name": "Chicken Chasseur",
+    "servings": 4,
+    "servingGrams": 380,
+    "ingredients": ["Chicken thighs", "Mushrooms", "Shallots", "White wine", "Crushed tomatoes", "Chicken broth", "Tarragon", "Butter"],
+    "nutritionPerServing": { "calories": 400, "protein": 32, "carbs": 12, "fat": 24, "fiber": 2, "sugar": 5 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2025/10/Chicken-Chasseur-JB_7.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/chicken-chasseur/" }
+  },
+  {
+    "name": "Portuguese Chicken and Rice",
+    "servings": 4,
+    "servingGrams": 400,
+    "ingredients": ["Chicken thighs", "White rice", "Paprika", "Garlic", "Chicken broth", "Bell pepper", "Peri peri sauce", "Lemon"],
+    "nutritionPerServing": { "calories": 460, "protein": 30, "carbs": 46, "fat": 17, "fiber": 1, "sugar": 2 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2025/09/Portuguese-chicken-and-rice-one-pot_0.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/portuguese-chicken-and-rice-one-pot-recipe/" }
+  },
+  {
+    "name": "Chicken Mushroom Pie with Duchess Potato",
+    "servings": 6,
+    "servingGrams": 320,
+    "ingredients": ["Chicken breast", "Mushrooms", "Onion", "Chicken broth", "Heavy cream", "Butter", "Mashed potatoes", "Egg yolk", "Thyme"],
+    "nutritionPerServing": { "calories": 420, "protein": 24, "carbs": 30, "fat": 22, "fiber": 2, "sugar": 3 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2025/07/Duchess-potato-chicken-pie_9.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/duchess-potato-chicken-mushroom-pie/" }
+  },
+  {
+    "name": "Whipped Ricotta One Pot Chicken Pasta",
+    "servings": 4,
+    "servingGrams": 350,
+    "ingredients": ["Chicken thighs", "Pasta", "Ricotta cheese", "Sun-dried tomatoes", "Chicken broth", "Garlic", "Parmesan cheese", "Basil"],
+    "nutritionPerServing": { "calories": 500, "protein": 30, "carbs": 46, "fat": 22, "fiber": 3, "sugar": 5 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2025/04/One-pot-whipped-ricotta-chicken-pasta-with-sun-dried-tomatoes_6a.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/whipped-ricotta-one-pot-chicken-pasta/" }
+  },
+  {
+    "name": "Chicken and Leek Pie",
+    "servings": 6,
+    "servingGrams": 300,
+    "ingredients": ["Chicken thighs", "Leeks", "Butter", "Flour", "Chicken broth", "Heavy cream", "Puff pastry", "Egg wash"],
+    "nutritionPerServing": { "calories": 440, "protein": 24, "carbs": 32, "fat": 24, "fiber": 2, "sugar": 3 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2024/09/Chicken-and-Leek-Pie_9.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/chicken-and-leek-pie/" }
+  },
+  {
+    "name": "Chicken Cacciatore",
+    "servings": 6,
+    "servingGrams": 380,
+    "ingredients": ["Chicken thighs", "Crushed tomatoes", "Bell pepper", "Mushrooms", "Onion", "Garlic", "Red wine", "Oregano", "Olives"],
+    "nutritionPerServing": { "calories": 380, "protein": 30, "carbs": 14, "fat": 22, "fiber": 3, "sugar": 6 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2024/06/Chicken-Cacciatore-50813.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/chicken-cacciatore-italian-chicken-stew/" }
+  },
+  {
+    "name": "One Pot Chicken Risoni with Crispy Salami",
+    "servings": 4,
+    "servingGrams": 380,
+    "ingredients": ["Chicken thighs", "Risoni pasta", "Salami", "Crushed tomatoes", "Chicken broth", "Garlic", "Parmesan cheese", "Basil"],
+    "nutritionPerServing": { "calories": 480, "protein": 28, "carbs": 44, "fat": 22, "fiber": 3, "sugar": 5 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2024/01/One-pan-chicken-creamy-tomato-risoni-with-crispy-salami-2.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/one-pot-chicken-risoni-with-crispy-salami/" }
+  },
+  {
+    "name": "One-Pan Baked Butter Chicken",
+    "servings": 4,
+    "servingGrams": 350,
+    "ingredients": ["Chicken thighs", "Butter", "Tomato paste", "Garam masala", "Yogurt", "Garlic", "Fresh ginger", "Heavy cream", "Jasmine rice"],
+    "nutritionPerServing": { "calories": 460, "protein": 30, "carbs": 30, "fat": 26, "fiber": 2, "sugar": 6 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2023/11/One-pan-baked-butter-chicken_9.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/one-pan-baked-butter-chicken/" }
+  },
+  {
+    "name": "African Chicken Curry Kuku Paka",
+    "servings": 4,
+    "servingGrams": 380,
+    "ingredients": ["Chicken thighs", "Coconut milk", "Curry powder", "Garlic", "Fresh ginger", "Tomatoes", "Lime juice", "Cilantro"],
+    "nutritionPerServing": { "calories": 420, "protein": 30, "carbs": 12, "fat": 28, "fiber": 2, "sugar": 5 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2023/10/African-coconut-chicken-curry_3.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/african-chicken-curry-kuku-paka/" }
+  },
+  {
+    "name": "Henry's Crispy Fried Chicken Burger",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Chicken thighs", "Buttermilk", "Flour", "Cornstarch", "Paprika", "Burger buns", "Lettuce", "Pickles", "Mayonnaise"],
+    "nutritionPerServing": { "calories": 560, "protein": 30, "carbs": 44, "fat": 28, "fiber": 2, "sugar": 5 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2023/09/Crispy-fried-chicken-burgers_5.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/crispy-fried-chicken-burger/" }
+  },
+  {
+    "name": "Golden Coconut Chicken Curry",
+    "servings": 4,
+    "servingGrams": 380,
+    "ingredients": ["Chicken thighs", "Broccoli", "Coconut milk", "Curry powder", "Turmeric", "Garlic", "Fresh ginger", "Fish sauce"],
+    "nutritionPerServing": { "calories": 400, "protein": 30, "carbs": 10, "fat": 27, "fiber": 3, "sugar": 4 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2023/09/Chicken-broccoli-coconut-curry_3.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/golden-coconut-chicken-curry/" }
+  },
+  {
+    "name": "The Mighty Cobb Salad",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Romaine lettuce", "Grilled chicken breast", "Bacon", "Hard-boiled eggs", "Avocado", "Cherry tomatoes", "Blue cheese", "Red wine vinaigrette"],
+    "nutritionPerServing": { "calories": 420, "protein": 32, "carbs": 8, "fat": 30, "fiber": 4, "sugar": 3 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2023/08/Cobb-Salad_0.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/cobb-salad/" }
+  },
+  {
+    "name": "Crunchy Crumbed Chicken Drumsticks",
+    "servings": 6,
+    "servingGrams": 220,
+    "ingredients": ["Chicken drumsticks", "Panko breadcrumbs", "Parmesan cheese", "Egg", "Flour", "Garlic powder", "Paprika"],
+    "nutritionPerServing": { "calories": 340, "protein": 28, "carbs": 16, "fat": 18, "fiber": 1, "sugar": 1 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2023/05/Crunchy-crumbed-chicken-drumsticks_8.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/crunchy-crumbed-chicken-drumsticks/" }
+  },
+  {
+    "name": "Chicken Pasta Bake",
+    "servings": 6,
+    "servingGrams": 350,
+    "ingredients": ["Chicken breast", "Penne pasta", "Crushed tomatoes", "Mozzarella cheese", "Parmesan cheese", "Garlic", "Basil", "Olive oil"],
+    "nutritionPerServing": { "calories": 460, "protein": 30, "carbs": 44, "fat": 18, "fiber": 3, "sugar": 6 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2023/05/Chicken-pasta-bake_7.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/chicken-pasta-bake/" }
+  },
+  {
+    "name": "Jalapeno Popper Stuffed Chicken",
+    "servings": 4,
+    "servingGrams": 280,
+    "ingredients": ["Chicken breast", "Cream cheese", "Jalapeños", "Cheddar cheese", "Bacon", "Garlic powder", "Paprika"],
+    "nutritionPerServing": { "calories": 420, "protein": 36, "carbs": 4, "fat": 28, "fiber": 1, "sugar": 1 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2023/03/Jalapeno-popper-stuffed-chicken_4.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/jalapeno-popper-stuffed-chicken/" }
+  },
+  {
+    "name": "Easy Slow Cooker BBQ Shredded Beef",
+    "servings": 6,
+    "servingGrams": 300,
+    "ingredients": ["Chuck roast", "BBQ sauce", "Beef broth", "Onion", "Garlic", "Brown sugar", "Apple cider vinegar", "Worcestershire sauce"],
+    "nutritionPerServing": { "calories": 380, "protein": 32, "carbs": 20, "fat": 18, "fiber": 0, "sugar": 14 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2026/06/Easy-slow-cooker-BBQ-shredded-beef-8.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/easy-slow-cooker-bbq-shredded-beef/" }
+  },
+  {
+    "name": "Rump Cap Roast Picanha",
+    "servings": 6,
+    "servingGrams": 250,
+    "ingredients": ["Rump cap beef (picanha)", "Sea salt flakes", "Black pepper", "Olive oil"],
+    "nutritionPerServing": { "calories": 380, "protein": 34, "carbs": 0, "fat": 27, "fiber": 0, "sugar": 0 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2025/11/Rump-cap-roast-picanha_1.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/rump-cap-roast-picanha-recipe/" }
+  },
+  {
+    "name": "Birria Tacos",
+    "servings": 6,
+    "servingGrams": 280,
+    "ingredients": ["Chuck roast", "Dried guajillo chiles", "Dried ancho chiles", "Beef broth", "Onion", "Garlic", "Cumin", "Corn tortillas", "Mozzarella cheese", "Cilantro"],
+    "nutritionPerServing": { "calories": 440, "protein": 30, "carbs": 28, "fat": 24, "fiber": 3, "sugar": 3 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2025/09/Birria-tacos_4.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/birria-tacos/" }
+  },
+  {
+    "name": "Tomahawk Steak",
+    "servings": 4,
+    "servingGrams": 300,
+    "ingredients": ["Tomahawk ribeye steak", "Sea salt flakes", "Black pepper", "Garlic", "Butter", "Rosemary", "Thyme"],
+    "nutritionPerServing": { "calories": 520, "protein": 40, "carbs": 1, "fat": 40, "fiber": 0, "sugar": 0 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2025/05/Tomahawk-steak-shoot-3_6-1.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/tomahawk-steak/" }
+  },
+  {
+    "name": "Beef in Black Bean Sauce",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Flank steak", "Fermented black beans", "Bell pepper", "Onion", "Garlic", "Soy sauce", "Oyster sauce", "Cornstarch", "Jasmine rice"],
+    "nutritionPerServing": { "calories": 380, "protein": 28, "carbs": 22, "fat": 18, "fiber": 2, "sugar": 5 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2025/04/Beef-in-black-bean-sauce_8.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/beef-in-black-bean-sauce/" }
+  },
+  {
+    "name": "Thai Sweet Chilli Beef Bowls",
+    "servings": 4,
+    "servingGrams": 380,
+    "ingredients": ["Ground beef", "Sweet chilli sauce", "Fish sauce", "Garlic", "Jasmine rice", "Cucumber", "Carrots", "Cilantro", "Peanuts"],
+    "nutritionPerServing": { "calories": 460, "protein": 26, "carbs": 48, "fat": 18, "fiber": 2, "sugar": 14 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2024/12/Thai-sweet-chilli-beef-bowls_1.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/thai-sweet-chilli-beef-bowls/" }
+  },
+  {
+    "name": "One Pot Cajun Beef Pasta",
+    "servings": 6,
+    "servingGrams": 350,
+    "ingredients": ["Ground beef", "Penne pasta", "Cajun seasoning", "Bell pepper", "Crushed tomatoes", "Beef broth", "Cheddar cheese", "Garlic"],
+    "nutritionPerServing": { "calories": 480, "protein": 26, "carbs": 42, "fat": 22, "fiber": 3, "sugar": 5 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2024/09/One-pot-Cajun-Beef-Pasta_0.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/one-pot-cajun-beef-pasta/" }
+  },
+  {
+    "name": "Roast Beef Tenderloin with Mushroom Sauce",
+    "servings": 8,
+    "servingGrams": 220,
+    "ingredients": ["Beef tenderloin", "Mushrooms", "Butter", "Shallot", "Red wine", "Beef broth", "Heavy cream", "Fresh thyme"],
+    "nutritionPerServing": { "calories": 380, "protein": 34, "carbs": 5, "fat": 24, "fiber": 1, "sugar": 2 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2023/12/Beef-tenderloin-with-mushroom-sauce_3.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/beef-tenderloin-roast/" }
+  },
+  {
+    "name": "One Pot Creamy Tomato Beef Pasta",
+    "servings": 6,
+    "servingGrams": 350,
+    "ingredients": ["Ground beef", "Penne pasta", "Crushed tomatoes", "Heavy cream", "Beef broth", "Garlic", "Onion", "Parmesan cheese", "Basil"],
+    "nutritionPerServing": { "calories": 500, "protein": 26, "carbs": 44, "fat": 25, "fiber": 3, "sugar": 6 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2023/08/One-pot-creamy-tomato-beef-pasta_4.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/one-pot-creamy-tomato-beef-pasta/" }
+  },
+  {
+    "name": "Arayes Lebanese Meat Stuffed Pita",
+    "servings": 6,
+    "servingGrams": 180,
+    "ingredients": ["Ground beef", "Ground lamb", "Onion", "Garlic", "Parsley", "Baharat spice", "Pita bread", "Olive oil", "Tahini sauce"],
+    "nutritionPerServing": { "calories": 340, "protein": 20, "carbs": 22, "fat": 19, "fiber": 2, "sugar": 2 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2023/07/Arayes_2-close-up.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/arayes-lebanese-meat-stuffed-pita/" }
+  },
+  {
+    "name": "Chili Dogs",
+    "servings": 6,
+    "servingGrams": 220,
+    "ingredients": ["Beef hot dogs", "Ground beef", "Tomato paste", "Chili powder", "Cumin", "Hot dog buns", "Cheddar cheese", "Onion"],
+    "nutritionPerServing": { "calories": 460, "protein": 20, "carbs": 32, "fat": 28, "fiber": 2, "sugar": 6 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2023/02/Chili-dog.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/chili-dogs/" }
+  },
+  {
+    "name": "Salisbury Steak Meatballs with Mushroom Gravy",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Ground beef", "Breadcrumbs", "Egg", "Onion", "Mushrooms", "Beef broth", "Worcestershire sauce", "Cornstarch"],
+    "nutritionPerServing": { "calories": 400, "protein": 26, "carbs": 14, "fat": 26, "fiber": 1, "sugar": 3 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2023/01/Salisbury-Steak-Meatballs_close-up.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/salisbury-steak-meatballs-with-mushroom-gravy/" }
+  },
+  {
+    "name": "Spicy Firecracker Beef",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Ground beef", "Soy sauce", "Sriracha", "Garlic", "Fresh ginger", "Brown sugar", "Rice vinegar", "Scallions", "Jasmine rice"],
+    "nutritionPerServing": { "calories": 420, "protein": 26, "carbs": 32, "fat": 20, "fiber": 1, "sugar": 10 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2022/11/Firecracker-beef-mince_2-2.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/spicy-firecracker-beef/" }
+  },
+  {
+    "name": "Beef Wellington",
+    "servings": 8,
+    "servingGrams": 280,
+    "ingredients": ["Beef tenderloin", "Puff pastry", "Mushrooms", "Prosciutto", "Dijon mustard", "Egg wash", "Shallot", "Fresh thyme"],
+    "nutritionPerServing": { "calories": 540, "protein": 32, "carbs": 26, "fat": 34, "fiber": 2, "sugar": 2 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2022/10/Beef-Wellington-take-4_5.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/beef-wellington/" }
+  },
+  {
+    "name": "Saltimbocca",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Veal or chicken cutlets", "Prosciutto", "Fresh sage", "Butter", "White wine", "Chicken broth", "Flour"],
+    "nutritionPerServing": { "calories": 340, "protein": 30, "carbs": 6, "fat": 20, "fiber": 0, "sugar": 1 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2022/09/Veal-saltimbocca_6.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/saltimbocca/" }
+  },
+  {
+    "name": "Family Meat Pie",
+    "servings": 8,
+    "servingGrams": 220,
+    "ingredients": ["Ground beef", "Onion", "Beef broth", "Tomato paste", "Worcestershire sauce", "Shortcrust pastry", "Puff pastry", "Egg wash"],
+    "nutritionPerServing": { "calories": 420, "protein": 20, "carbs": 30, "fat": 25, "fiber": 2, "sugar": 3 },
+    "imageUrl": "https://www.recipetineats.com/tachyon/2021/09/Family-Meat-Pie.jpg",
+    "imageCredit": { "label": "RecipeTin Eats", "sourceUrl": "https://www.recipetineats.com/family-meat-pie/" }
+  }
+]

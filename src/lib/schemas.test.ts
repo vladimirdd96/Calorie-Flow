@@ -114,6 +114,8 @@ describe("recipe catalogue schemas", () => {
       nutritionPerServing: nutrition,
       source: "community" as const,
       authorId: "9b85bc95-00c2-4dbd-9df1-e2458ececf51",
+      instructions: ["Simmer lentils until tender."],
+      dietaryTags: ["vegetarian" as const],
       createdAt: "2026-07-20T12:00:00.000Z",
     };
     expect(publicRecipeSchema.parse(recipe).source).toBe("community");
@@ -131,6 +133,8 @@ describe("recipe catalogue schemas", () => {
       imageUrl: "https://example.com/photo.jpg",
       imageCredit: { label: "Example Kitchen", sourceUrl: "https://example.com/recipe" },
       source: "ai" as const,
+      instructions: ["Stir-fry broccoli over high heat until crisp-tender."],
+      dietaryTags: ["vegan" as const],
       createdAt: "2026-07-20T12:00:00.000Z",
     };
     expect(publicRecipeSchema.parse(recipe).imageCredit?.label).toBe("Example Kitchen");
@@ -143,7 +147,7 @@ describe("recipe catalogue schemas", () => {
   });
 
   it("requires at least one ingredient for an AI-generated recipe candidate", () => {
-    const candidate = { name: "Baked chicken and rice", servings: 4, servingGrams: 320, ingredients: ["Chicken breast", "Rice"], nutritionPerServing: nutrition };
+    const candidate = { name: "Baked chicken and rice", servings: 4, servingGrams: 320, ingredients: ["Chicken breast", "Rice"], nutritionPerServing: nutrition, instructions: ["Bake chicken at 400°F until cooked through.", "Serve over rice."] };
     expect(generatedRecipeSchema.parse(candidate).ingredients).toHaveLength(2);
     expect(() => generatedRecipeSchema.parse({ ...candidate, ingredients: [] })).toThrow();
   });

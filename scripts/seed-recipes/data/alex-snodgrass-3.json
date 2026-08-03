@@ -1,0 +1,434 @@
+[
+  {
+    "name": "Greek-Inspired Roasted Tomato Soup with Feta",
+    "servings": 6,
+    "servingGrams": 350,
+    "ingredients": ["Roma tomatoes", "Olive oil", "Garlic", "Onion", "Vegetable broth", "Feta cheese", "Oregano", "Red pepper flakes", "Fresh basil"],
+    "nutritionPerServing": { "calories": 210, "protein": 7, "carbs": 16, "fat": 14, "fiber": 3, "sugar": 9 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/10/Greek-Inspired-Roasted-Tomato-Soup-with-Feta-6-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/greek-inspired-roasted-tomato-soup-with-feta/" }
+  },
+  {
+    "name": "Gochujang and Coconut Shrimp Noodle Soup",
+    "servings": 4,
+    "servingGrams": 420,
+    "ingredients": ["Shrimp", "Rice noodles", "Coconut milk", "Gochujang", "Chicken broth", "Garlic", "Fresh ginger", "Fish sauce", "Lime juice", "Scallions", "Cilantro"],
+    "nutritionPerServing": { "calories": 400, "protein": 26, "carbs": 38, "fat": 17, "fiber": 2, "sugar": 5 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/10/Gochujang-Coconut-Shrimp-Noodle-Soup-6-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/gochujang-and-coconut-shrimp-noodle-soup/" }
+  },
+  {
+    "name": "Pesto Meatball and Pastina Soup",
+    "servings": 6,
+    "servingGrams": 380,
+    "ingredients": ["Ground beef", "Ground pork", "Breadcrumbs", "Egg", "Parmesan cheese", "Basil pesto", "Chicken broth", "Pastina pasta", "Carrots", "Celery", "Onion"],
+    "nutritionPerServing": { "calories": 340, "protein": 22, "carbs": 26, "fat": 16, "fiber": 2, "sugar": 3 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/10/Pesto-Parm-Meatball-Pastina-Soup-6-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/pesto-meatball-and-pastina-soup/" }
+  },
+  {
+    "name": "Sausage, Broccoli, and Pesto Pasta",
+    "servings": 6,
+    "servingGrams": 340,
+    "ingredients": ["Italian sausage", "Broccoli florets", "Short pasta", "Basil pesto", "Parmesan cheese", "Garlic", "Olive oil", "Red pepper flakes"],
+    "nutritionPerServing": { "calories": 470, "protein": 22, "carbs": 44, "fat": 24, "fiber": 3, "sugar": 3 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/08/Spicy-Sausage-Broccoli-Pesto-Pasta-6-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/sausage-broccoli-and-pesto-pasta/" }
+  },
+  {
+    "name": "One-Pan Roasted Chicken with Lemony White Beans",
+    "servings": 4,
+    "servingGrams": 380,
+    "ingredients": ["Bone-in chicken thighs", "Cannellini beans", "Lemon", "Garlic", "Chicken broth", "Rosemary", "Olive oil", "Baby spinach"],
+    "nutritionPerServing": { "calories": 420, "protein": 34, "carbs": 24, "fat": 20, "fiber": 6, "sugar": 2 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/08/Braised-Chicken-with-Lemony-Beans-6-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/one-pan-chicken-with-lemony-white-beans/" }
+  },
+  {
+    "name": "Green Curry Fish Parcels",
+    "servings": 4,
+    "servingGrams": 300,
+    "ingredients": ["White fish fillets", "Green curry paste", "Coconut milk", "Bell pepper", "Snap peas", "Kaffir lime leaves", "Fish sauce", "Cilantro", "Jasmine rice"],
+    "nutritionPerServing": { "calories": 330, "protein": 28, "carbs": 22, "fat": 14, "fiber": 3, "sugar": 4 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/08/Green-Curry-Fish-Parcels-4-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/green-curry-fish-parcels/" }
+  },
+  {
+    "name": "Mediterranean Beef and Veggie Skillet",
+    "servings": 4,
+    "servingGrams": 350,
+    "ingredients": ["Ground beef", "Zucchini", "Cherry tomatoes", "Red onion", "Kalamata olives", "Feta cheese", "Oregano", "Garlic", "Olive oil"],
+    "nutritionPerServing": { "calories": 380, "protein": 26, "carbs": 10, "fat": 27, "fiber": 3, "sugar": 5 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/08/Mediterranean-Ground-Beef-Stir-Fry-6-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/mediterranean-beef-and-veggie-skillet/" }
+  },
+  {
+    "name": "Broccoli Cheddar Egg Bites",
+    "servings": 6,
+    "servingGrams": 130,
+    "ingredients": ["Eggs", "Cottage cheese", "Broccoli florets", "Sharp cheddar cheese", "Garlic powder", "Salt", "Black pepper"],
+    "nutritionPerServing": { "calories": 150, "protein": 13, "carbs": 4, "fat": 10, "fiber": 1, "sugar": 1 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/08/Broccoli-Cheddar-Egg-Bites-4-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/broccoli-cheddar-egg-bites/" }
+  },
+  {
+    "name": "Sriracha Chicken Stir-Fry",
+    "servings": 4,
+    "servingGrams": 350,
+    "ingredients": ["Chicken breast", "Broccoli", "Bell pepper", "Carrots", "Sriracha", "Soy sauce", "Honey", "Garlic", "Fresh ginger", "Sesame oil", "Jasmine rice"],
+    "nutritionPerServing": { "calories": 400, "protein": 32, "carbs": 40, "fat": 12, "fiber": 4, "sugar": 10 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/08/Sriracha-Chicken-Stir-Fry-5-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/sriracha-chicken-stir-fry/" }
+  },
+  {
+    "name": "Detox Kale Salad",
+    "servings": 4,
+    "servingGrams": 200,
+    "ingredients": ["Curly kale", "Shredded carrots", "Red cabbage", "Almonds", "Dried cranberries", "Olive oil", "Apple cider vinegar", "Dijon mustard", "Honey"],
+    "nutritionPerServing": { "calories": 220, "protein": 5, "carbs": 20, "fat": 15, "fiber": 5, "sugar": 11 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/08/Detox-Kale-Salad-3-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/detox-kale-salad/" }
+  },
+  {
+    "name": "Baked Beef and Ricotta Stuffed Shells",
+    "servings": 6,
+    "servingGrams": 320,
+    "ingredients": ["Jumbo pasta shells", "Ground beef", "Ricotta cheese", "Mozzarella cheese", "Parmesan cheese", "Marinara sauce", "Egg", "Italian seasoning", "Garlic"],
+    "nutritionPerServing": { "calories": 460, "protein": 28, "carbs": 38, "fat": 22, "fiber": 2, "sugar": 6 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/08/oven-baked-beef-ricotta-shells-18.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/baked-stuffed-shells/" }
+  },
+  {
+    "name": "No-Bake Chocolate Peanut Butter Cookies",
+    "servings": 12,
+    "servingGrams": 40,
+    "ingredients": ["Peanut butter", "Rolled oats", "Honey", "Cocoa powder", "Coconut oil", "Vanilla extract", "Sea salt"],
+    "nutritionPerServing": { "calories": 160, "protein": 5, "carbs": 15, "fat": 10, "fiber": 2, "sugar": 8 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/08/No-Bake-Crunchy-PB-Chocolate-Cookies-5-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/no-bake-chocolate-peanut-butter-cookies/" }
+  },
+  {
+    "name": "One-Pot Spaghetti-O's with Mini Meatballs",
+    "servings": 6,
+    "servingGrams": 350,
+    "ingredients": ["Ground beef", "Small pasta rings", "Tomato sauce", "Chicken broth", "Onion powder", "Garlic powder", "Parmesan cheese", "Breadcrumbs", "Egg"],
+    "nutritionPerServing": { "calories": 400, "protein": 24, "carbs": 40, "fat": 16, "fiber": 3, "sugar": 8 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/08/One-Pot-Spaghetti-Os-with-Mini-Meatballs-4-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/one-pot-spaghettios-with-mini-meatballs/" }
+  },
+  {
+    "name": "Curried Turkey Sloppy Joes",
+    "servings": 6,
+    "servingGrams": 280,
+    "ingredients": ["Ground turkey", "Yellow curry powder", "Tomato paste", "Onion", "Bell pepper", "Garlic", "Coconut milk", "Hamburger buns"],
+    "nutritionPerServing": { "calories": 360, "protein": 24, "carbs": 32, "fat": 15, "fiber": 3, "sugar": 8 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/08/Curried-Turkey-Sloppy-Joes-2-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/curried-turkey-sloppy-joes/" }
+  },
+  {
+    "name": "One-Pan Salmon with Herb Butter Couscous",
+    "servings": 4,
+    "servingGrams": 380,
+    "ingredients": ["Salmon fillets", "Pearl couscous", "Chicken broth", "Butter", "Fresh parsley", "Fresh dill", "Lemon", "Garlic"],
+    "nutritionPerServing": { "calories": 480, "protein": 34, "carbs": 38, "fat": 22, "fiber": 2, "sugar": 1 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/08/One-Pot-Salmon-with-Herb-Butter-Couscous-4-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/one-pan-salmon-with-herb-butter-couscous/" }
+  },
+  {
+    "name": "Skillet King Ranch Casserole",
+    "servings": 6,
+    "servingGrams": 350,
+    "ingredients": ["Shredded chicken", "Corn tortillas", "Rotel tomatoes", "Cream of chicken soup", "Cheddar cheese", "Monterey Jack cheese", "Onion", "Cumin", "Chili powder"],
+    "nutritionPerServing": { "calories": 440, "protein": 28, "carbs": 30, "fat": 24, "fiber": 3, "sugar": 3 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/08/Skillet-King-Ranch-Chicken-Casserole-4-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/skillet-king-ranch-casserole/" }
+  },
+  {
+    "name": "Green Goddess Deviled Eggs",
+    "servings": 6,
+    "servingGrams": 60,
+    "ingredients": ["Hard-boiled eggs", "Mayonnaise", "Fresh basil", "Chives", "Parsley", "Lemon juice", "Anchovy paste", "Salt", "Black pepper"],
+    "nutritionPerServing": { "calories": 95, "protein": 6, "carbs": 1, "fat": 8, "fiber": 0, "sugar": 0 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/08/Green-Goddess-Deviled-Eggs-5-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/green-goddess-deviled-eggs/" }
+  },
+  {
+    "name": "Frozen Paloma",
+    "servings": 4,
+    "servingGrams": 250,
+    "ingredients": ["Tequila", "Grapefruit juice", "Lime juice", "Agave syrup", "Ice", "Grapefruit soda", "Salt for rim"],
+    "nutritionPerServing": { "calories": 190, "protein": 0, "carbs": 20, "fat": 0, "fiber": 0, "sugar": 18 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/07/Frozen-Paloma-6-2-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/frozen-paloma/" }
+  },
+  {
+    "name": "Meatballs with Basil and Burst Tomatoes",
+    "servings": 6,
+    "servingGrams": 320,
+    "ingredients": ["Ground beef", "Ground pork", "Breadcrumbs", "Egg", "Parmesan cheese", "Cherry tomatoes", "Fresh basil", "Garlic", "Olive oil", "Pasta"],
+    "nutritionPerServing": { "calories": 430, "protein": 24, "carbs": 34, "fat": 22, "fiber": 3, "sugar": 5 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/07/Meatballs-with-Basil-and-Burst-Tomatoes-4-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/meatballs-with-basil-and-burst-tomatoes/" }
+  },
+  {
+    "name": "Pounded Tuna Carpaccio",
+    "servings": 4,
+    "servingGrams": 140,
+    "ingredients": ["Sushi-grade tuna", "Olive oil", "Lemon juice", "Capers", "Shallot", "Fresh chives", "Sea salt", "Red pepper flakes"],
+    "nutritionPerServing": { "calories": 180, "protein": 22, "carbs": 1, "fat": 10, "fiber": 0, "sugar": 0 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/07/Pounded-Tuna-Carpaccio-5-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/pounded-tuna-carpaccio/" }
+  },
+  {
+    "name": "Michelada Mix",
+    "servings": 6,
+    "servingGrams": 200,
+    "ingredients": ["Tomato juice", "Lime juice", "Worcestershire sauce", "Hot sauce", "Soy sauce", "Black pepper", "Mexican lager", "Salt and chili rim"],
+    "nutritionPerServing": { "calories": 120, "protein": 1, "carbs": 10, "fat": 0, "fiber": 0, "sugar": 5 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/07/Michelada-Mix-3-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/michelada-mix/" }
+  },
+  {
+    "name": "Deli Chop Chicken Salad",
+    "servings": 4,
+    "servingGrams": 250,
+    "ingredients": ["Rotisserie chicken", "Celery", "Red onion", "Dill pickles", "Mayonnaise", "Dijon mustard", "Fresh dill", "Salt", "Black pepper"],
+    "nutritionPerServing": { "calories": 320, "protein": 28, "carbs": 4, "fat": 21, "fiber": 1, "sugar": 2 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/06/Beach-Sub-Scoopable-Chicken-Salad-5-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/deli-chop-chicken-salad/" }
+  },
+  {
+    "name": "Greek Pasta Salad",
+    "servings": 6,
+    "servingGrams": 250,
+    "ingredients": ["Rotini pasta", "Cherry tomatoes", "Cucumber", "Kalamata olives", "Red onion", "Feta cheese", "Olive oil", "Red wine vinegar", "Oregano"],
+    "nutritionPerServing": { "calories": 310, "protein": 9, "carbs": 34, "fat": 15, "fiber": 2, "sugar": 3 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/07/Greek-Macaroni-Salad-4-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/greek-pasta-salad/" }
+  },
+  {
+    "name": "Smoky Chipotle Lime Marinated Chicken",
+    "servings": 4,
+    "servingGrams": 200,
+    "ingredients": ["Chicken thighs", "Chipotle peppers in adobo", "Lime juice", "Garlic", "Cumin", "Smoked paprika", "Olive oil", "Cilantro"],
+    "nutritionPerServing": { "calories": 300, "protein": 32, "carbs": 3, "fat": 18, "fiber": 1, "sugar": 1 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/06/Smoky-Chipotle-Lime-Chicken-Marinade-3-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/smoky-chipotle-lime-marinated-chicken/" }
+  },
+  {
+    "name": "Vietnamese-Inspired Chicken and Noodle Bowls",
+    "servings": 4,
+    "servingGrams": 400,
+    "ingredients": ["Chicken breast", "Rice noodles", "Fish sauce", "Lime juice", "Brown sugar", "Garlic", "Carrots", "Cucumber", "Fresh mint", "Cilantro", "Peanuts"],
+    "nutritionPerServing": { "calories": 420, "protein": 30, "carbs": 46, "fat": 13, "fiber": 3, "sugar": 12 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/06/Thai-Inspired-Chicken-Noodle-Bowls-5-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/vietnamese-inspired-chicken-and-noodle-bowls/" }
+  },
+  {
+    "name": "Salted Citrus Bars",
+    "servings": 12,
+    "servingGrams": 60,
+    "ingredients": ["Almond flour", "Butter", "Eggs", "Sugar", "Lemon juice", "Orange zest", "Lime juice", "Sea salt"],
+    "nutritionPerServing": { "calories": 190, "protein": 4, "carbs": 20, "fat": 11, "fiber": 1, "sugar": 15 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/06/Salted-Citrus-Bars-4-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/salted-citrus-bars/" }
+  },
+  {
+    "name": "Grilled Lamb Chops with Arugula Pesto",
+    "servings": 4,
+    "servingGrams": 250,
+    "ingredients": ["Lamb chops", "Arugula", "Pine nuts", "Parmesan cheese", "Garlic", "Olive oil", "Lemon juice", "Salt", "Black pepper"],
+    "nutritionPerServing": { "calories": 420, "protein": 32, "carbs": 3, "fat": 30, "fiber": 1, "sugar": 0 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/06/Grilled-Lamb-Chops-Arugula-Pesto-6-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/grilled-lamb-chops-with-arugula-pesto/" }
+  },
+  {
+    "name": "Clayton's Favorite Chicken Salad",
+    "servings": 4,
+    "servingGrams": 250,
+    "ingredients": ["Rotisserie chicken", "Grapes", "Celery", "Pecans", "Mayonnaise", "Greek yogurt", "Dijon mustard", "Fresh tarragon"],
+    "nutritionPerServing": { "calories": 350, "protein": 27, "carbs": 10, "fat": 23, "fiber": 1, "sugar": 7 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/06/Clayton_s-Favorite-Chicken-Salad-6-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/claytons-favorite-chicken-salad/" }
+  },
+  {
+    "name": "Saucy Green Pasta with Calabrian Breadcrumbs",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Pasta", "Baby spinach", "Basil", "Garlic", "Olive oil", "Parmesan cheese", "Breadcrumbs", "Calabrian chili paste", "Lemon juice"],
+    "nutritionPerServing": { "calories": 440, "protein": 15, "carbs": 56, "fat": 17, "fiber": 4, "sugar": 3 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/06/Saucy-Green-Pasta-with-Calabrian-Chili-Breadcrumbs-6-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/saucy-green-pasta-with-calabrian-breadcrumbs/" }
+  },
+  {
+    "name": "Italian Margarita",
+    "servings": 4,
+    "servingGrams": 200,
+    "ingredients": ["Tequila", "Amaretto", "Lime juice", "Agave syrup", "Orange bitters", "Ice", "Salt for rim"],
+    "nutritionPerServing": { "calories": 210, "protein": 0, "carbs": 18, "fat": 0, "fiber": 0, "sugar": 15 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/05/Italian-Margarita-4-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/italian-margarita/" }
+  },
+  {
+    "name": "Chipotle Sesame Adobo Steak Tacos",
+    "servings": 4,
+    "servingGrams": 280,
+    "ingredients": ["Flank steak", "Chipotle peppers in adobo", "Sesame oil", "Lime juice", "Garlic", "Corn tortillas", "Red cabbage slaw", "Cilantro"],
+    "nutritionPerServing": { "calories": 400, "protein": 30, "carbs": 26, "fat": 20, "fiber": 3, "sugar": 3 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/05/Chipotle-Sesame-Adobo-Steak-Tacos-6-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/chipotle-sesame-adobo-steak-tacos/" }
+  },
+  {
+    "name": "Grilled Cajun Fish Bowls",
+    "servings": 4,
+    "servingGrams": 380,
+    "ingredients": ["White fish fillets", "Cajun seasoning", "Jasmine rice", "Black beans", "Corn", "Avocado", "Lime crema", "Cilantro"],
+    "nutritionPerServing": { "calories": 420, "protein": 30, "carbs": 42, "fat": 15, "fiber": 7, "sugar": 3 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/05/Cajun-Crusted-Fish-Bowls-6-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/grilled-cajun-fish-bowls/" }
+  },
+  {
+    "name": "Grilled Muffaletta Pizza",
+    "servings": 6,
+    "servingGrams": 220,
+    "ingredients": ["Pizza dough", "Salami", "Mortadella", "Provolone cheese", "Olive salad", "Giardiniera", "Olive oil", "Garlic"],
+    "nutritionPerServing": { "calories": 350, "protein": 16, "carbs": 32, "fat": 18, "fiber": 1, "sugar": 2 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/05/Muffaletta-Pizza-5-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/grilled-muffaletta-pizza/" }
+  },
+  {
+    "name": "Korean-Inspired Skirt Steak and Shaved Veggie Salad",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Skirt steak", "Soy sauce", "Sesame oil", "Brown sugar", "Garlic", "Shaved carrots", "Shaved cucumber", "Napa cabbage", "Sesame seeds"],
+    "nutritionPerServing": { "calories": 360, "protein": 30, "carbs": 14, "fat": 20, "fiber": 3, "sugar": 8 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/05/Bulgogi-Inspired-Crunchy-Skirt-Steak-Salad-5-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/korean-inspired-skirt-steak-and-shaved-veggie-salad/" }
+  },
+  {
+    "name": "Pepperoncini Grilled Chicken Sandwiches",
+    "servings": 4,
+    "servingGrams": 280,
+    "ingredients": ["Chicken breast", "Pepperoncini", "Provolone cheese", "Ciabatta rolls", "Mayonnaise", "Garlic", "Italian seasoning"],
+    "nutritionPerServing": { "calories": 440, "protein": 34, "carbs": 34, "fat": 18, "fiber": 2, "sugar": 3 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/04/Pepperoncini-Grilled-Chicken-Sandwiches-5-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/pepperoncini-grilled-chicken-sandwiches/" }
+  },
+  {
+    "name": "Persian-Inspired Grilled Chicken Kebabs",
+    "servings": 4,
+    "servingGrams": 250,
+    "ingredients": ["Chicken thighs", "Greek yogurt", "Saffron", "Lemon juice", "Onion", "Garlic", "Sumac", "Olive oil"],
+    "nutritionPerServing": { "calories": 320, "protein": 34, "carbs": 5, "fat": 18, "fiber": 0, "sugar": 3 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/04/Persian-Inspired-Chicken-Skewers-4-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/persian-inspired-grilled-chicken-kebabs/" }
+  },
+  {
+    "name": "Grain-Free Pistachio Italian Wedding Cookies",
+    "servings": 16,
+    "servingGrams": 30,
+    "ingredients": ["Almond flour", "Pistachios", "Butter", "Powdered sugar", "Vanilla extract", "Salt"],
+    "nutritionPerServing": { "calories": 120, "protein": 3, "carbs": 8, "fat": 9, "fiber": 1, "sugar": 5 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/03/Pistachio-Italian-Wedding-Cookies-6-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/grain-free-pistachio-italian-wedding-cookies/" }
+  },
+  {
+    "name": "Cream of Asparagus Soup with Crispy Prosciutto",
+    "servings": 6,
+    "servingGrams": 320,
+    "ingredients": ["Asparagus", "Onion", "Garlic", "Chicken broth", "Heavy cream", "Prosciutto", "Butter", "Lemon juice"],
+    "nutritionPerServing": { "calories": 240, "protein": 9, "carbs": 12, "fat": 18, "fiber": 3, "sugar": 4 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/03/Cream-of-Asparagus-Soup-6-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/cream-of-asparagus-soup-with-crispy-prosciutto/" }
+  },
+  {
+    "name": "Citrus Greek Yogurt Cake",
+    "servings": 10,
+    "servingGrams": 90,
+    "ingredients": ["All-purpose flour", "Greek yogurt", "Sugar", "Eggs", "Orange zest", "Lemon zest", "Olive oil", "Baking powder", "Pistachios"],
+    "nutritionPerServing": { "calories": 260, "protein": 6, "carbs": 32, "fat": 12, "fiber": 1, "sugar": 20 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/04/Citrus-Greek-Yogurt-Cake-5-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/citrus-greek-yogurt-cake/" }
+  },
+  {
+    "name": "Croque Monsieur Breakfast Casserole",
+    "servings": 8,
+    "servingGrams": 260,
+    "ingredients": ["Sourdough bread", "Black forest ham", "Gruyère cheese", "Eggs", "Milk", "Dijon mustard", "Butter", "Nutmeg"],
+    "nutritionPerServing": { "calories": 380, "protein": 22, "carbs": 26, "fat": 20, "fiber": 1, "sugar": 4 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/03/Croque-Monsieur-Breakfast-Bake-6-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/croque-monsieur-breakfast-casserole/" }
+  },
+  {
+    "name": "Italian Sausage and Arugula Quiche",
+    "servings": 8,
+    "servingGrams": 150,
+    "ingredients": ["Pie crust", "Italian sausage", "Eggs", "Heavy cream", "Arugula", "Parmesan cheese", "Onion", "Garlic"],
+    "nutritionPerServing": { "calories": 340, "protein": 15, "carbs": 16, "fat": 24, "fiber": 1, "sugar": 2 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/03/Italian-Sausage-Arugula-Quiche-5-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/italian-sausage-and-arugula-quiche/" }
+  },
+  {
+    "name": "GoGo's Perfect Cheesecake",
+    "servings": 12,
+    "servingGrams": 120,
+    "ingredients": ["Cream cheese", "Sugar", "Eggs", "Sour cream", "Vanilla extract", "Graham cracker crust", "Cherry topping"],
+    "nutritionPerServing": { "calories": 380, "protein": 7, "carbs": 30, "fat": 26, "fiber": 0, "sugar": 24 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/03/GoGo_s-Perfect-Cheesecake-6-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/gogos-perfect-cheesecake/" }
+  },
+  {
+    "name": "Chicken and Leek Noodle Soup",
+    "servings": 6,
+    "servingGrams": 380,
+    "ingredients": ["Chicken thighs", "Leeks", "Carrots", "Celery", "Egg noodles", "Chicken broth", "Garlic", "Fresh thyme", "Fresh parsley"],
+    "nutritionPerServing": { "calories": 290, "protein": 24, "carbs": 26, "fat": 10, "fiber": 3, "sugar": 4 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/03/chicken-leek-noodle-soup-18.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/chicken-and-leek-noodle-soup/" }
+  },
+  {
+    "name": "Copycat Starbucks Pesto and Ciabatta Egg Bake",
+    "servings": 6,
+    "servingGrams": 220,
+    "ingredients": ["Ciabatta bread", "Eggs", "Milk", "Mozzarella cheese", "Basil pesto", "Sun-dried tomatoes", "Parmesan cheese"],
+    "nutritionPerServing": { "calories": 340, "protein": 17, "carbs": 26, "fat": 19, "fiber": 2, "sugar": 3 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/03/Copycat-Starbucks-Egg-Mozzarella-Pesto-Bake-4-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/copycat-starbucks-pesto-ciabatta-egg-bake/" }
+  },
+  {
+    "name": "Garlic Shrimp Stir-Fry",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Shrimp", "Garlic", "Snap peas", "Bell pepper", "Soy sauce", "Sesame oil", "Chicken broth", "Cornstarch", "Jasmine rice"],
+    "nutritionPerServing": { "calories": 330, "protein": 26, "carbs": 34, "fat": 9, "fiber": 3, "sugar": 4 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/03/Garlic-Shrimp-Stir-Fry-5-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/garlic-shrimp-stir-fry/" }
+  },
+  {
+    "name": "Roast, Rice, and Gravy",
+    "servings": 6,
+    "servingGrams": 400,
+    "ingredients": ["Chuck roast", "Beef broth", "Onion", "Garlic", "Cornstarch", "Worcestershire sauce", "White rice", "Fresh thyme"],
+    "nutritionPerServing": { "calories": 450, "protein": 32, "carbs": 34, "fat": 20, "fiber": 1, "sugar": 2 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/03/Roast-Rice-Gravy-6-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/roast-rice-and-gravy/" }
+  },
+  {
+    "name": "Spring Lamb and Fennel Pasta",
+    "servings": 4,
+    "servingGrams": 340,
+    "ingredients": ["Ground lamb", "Fennel bulb", "Pasta", "White wine", "Garlic", "Parmesan cheese", "Fresh mint", "Lemon zest", "Olive oil"],
+    "nutritionPerServing": { "calories": 480, "protein": 26, "carbs": 46, "fat": 22, "fiber": 3, "sugar": 3 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/03/Spring-Lamb-Fennel-Pasta-4-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/spring-lamb-and-fennel-pasta/" }
+  },
+  {
+    "name": "Skillet Shepherd's Pie",
+    "servings": 6,
+    "servingGrams": 380,
+    "ingredients": ["Ground beef", "Ground lamb", "Carrots", "Peas", "Onion", "Beef broth", "Tomato paste", "Mashed potatoes", "Worcestershire sauce", "Cheddar cheese"],
+    "nutritionPerServing": { "calories": 420, "protein": 26, "carbs": 32, "fat": 20, "fiber": 4, "sugar": 5 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/03/Skillet-Shepherd_s-Pie-5-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/skillet-shepherds-pie/" }
+  }
+]

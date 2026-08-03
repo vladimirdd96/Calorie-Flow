@@ -189,7 +189,34 @@ export type RecipeIngredient = {
   unit?: ServingUnit;
   grams?: number;
   nutrition?: Nutrition;
+  /** Freeform cooking-measurement display text (e.g. "2 cups", "3 cloves"), separate from amount/unit/grams used for nutrition math. */
+  quantity?: string;
 };
+
+export const dietaryTags = {
+  vegetarian: "vegetarian",
+  vegan: "vegan",
+  glutenFree: "glutenFree",
+  dairyFree: "dairyFree",
+  pescatarian: "pescatarian",
+  keto: "keto",
+  paleo: "paleo",
+} as const;
+export type DietaryTag = typeof dietaryTags[keyof typeof dietaryTags];
+
+export const cuisines = {
+  american: "american",
+  australian: "australian",
+  middleEastern: "middleEastern",
+  mexican: "mexican",
+  korean: "korean",
+  thai: "thai",
+  vegetarianFusion: "vegetarianFusion",
+  westAfrican: "westAfrican",
+  french: "french",
+  indian: "indian",
+} as const;
+export type Cuisine = typeof cuisines[keyof typeof cuisines];
 
 export type Recipe = {
   id: string;
@@ -199,6 +226,10 @@ export type Recipe = {
   nutritionPerServing: Nutrition;
   /** Grams for one serving. Defaults to the summed ingredient grams, then a flat fallback, when absent. */
   servingGrams?: number;
+  /** Ordered cooking steps. */
+  instructions?: string[];
+  cuisine?: string;
+  dietaryTags?: DietaryTag[];
   /** Optional user photos, stored locally as resized image data URLs. */
   imageUrls?: string[];
   /** True once this recipe has a mirrored row in the public catalogue. */
@@ -231,6 +262,10 @@ export type PublicRecipe = {
   imageCredit?: { label: string; sourceUrl: string };
   source: PublicRecipeSource;
   authorId?: string;
+  /** Ordered cooking steps. */
+  instructions: string[];
+  cuisine?: string;
+  dietaryTags: DietaryTag[];
   createdAt: string;
 };
 

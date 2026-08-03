@@ -64,6 +64,9 @@ function publicRecipeFromRow(row: Record<string, unknown>): PublicRecipe {
     imageCredit: row.image_credit || undefined,
     source: row.source,
     authorId: row.author_id || undefined,
+    instructions: row.instructions || [],
+    cuisine: row.cuisine || undefined,
+    dietaryTags: row.dietary_tags || [],
     createdAt: row.created_at,
   });
 }
@@ -223,19 +226,29 @@ export async function upsertCloudFood(userId: string, food: Food) {
   if (error) throw error;
 }
 
-const publicRecipeColumns = "id,name,servings,serving_grams,ingredients,nutrition_per_serving,image_url,image_credit,source,author_id,created_at";
+const publicRecipeColumns = "id,name,servings,serving_grams,ingredients,nutrition_per_serving,image_url,image_credit,source,author_id,instructions,cuisine,dietary_tags,created_at";
 
-export async function fetchCatalogue(options: { q?: string; source?: "all" | "community" | "ai"; limit?: number } = {}): Promise<PublicRecipe[]> {
-  const { q, source = "all", limit = 60 } = options;
+export async function fetchCatalogue(options: { q?: string; source?: "all" | "community" | "ai"; cuisine?: string; dietary?: string[]; limit?: number } = {}): Promise<PublicRecipe[]> {
+  const { q, source = "all", cuisine, dietary, limit = 60 } = options;
   let query = client().from("public_recipes").select(publicRecipeColumns).order("created_at", { ascending: false }).limit(limit);
   if (source !== "all") query = query.eq("source", source);
+  if (cuisine) query = query.eq("cuisine", cuisine);
+  if (dietary?.length) query = query.contains("dietary_tags", dietary);
   if (q?.trim()) query = query.ilike("name", `%${q.trim()}%`);
   const { data, error } = await query;
   if (error) {
     if (isPublicRecipesUnavailable(error)) return [];
     throw error;
   }
-  return (data || []).map((row) => publicRecipeFromRow(row as Record<string, unknown>));
+  // A single malformed row (e.g. an oversized image URL from an older client) must not
+  // break the whole catalogue for everyone else — skip it and keep the rest.
+  return (data || []).flatMap((row) => {
+    try {
+      return [publicRecipeFromRow(row as Record<string, unknown>)];
+    } catch {
+      return [];
+    }
+  });
 }
 
 async function findPublicRecipeBySearchKey(searchKey: string): Promise<PublicRecipe | undefined> {
@@ -261,6 +274,9 @@ export async function publishRecipeToCatalogue(userId: string, recipe: Recipe): 
     image_url: recipe.imageUrls?.[0],
     source: "community",
     author_id: userId,
+    instructions: recipe.instructions || [],
+    cuisine: recipe.cuisine,
+    dietary_tags: recipe.dietaryTags || [],
   }).select("id").single();
   if (error) {
     if (error.code === "23505") {

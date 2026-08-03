@@ -1,0 +1,164 @@
+[
+  {
+    "name": "Seared Chicken Thighs with Garlic-Ginger Broth and Rice",
+    "servings": 4,
+    "servingGrams": 380,
+    "ingredients": ["Boneless skinless chicken thighs", "Fresh ginger", "Garlic cloves", "Low-sodium chicken broth", "Jasmine rice", "Scallions", "Soy sauce", "Sesame oil", "Rice vinegar", "Avocado oil", "Salt", "Black pepper"],
+    "nutritionPerServing": { "calories": 420, "protein": 32, "carbs": 38, "fat": 14, "fiber": 2, "sugar": 2 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2026/02/Seared-Chicken-Thighs-Garlic-Ginger-Bone-Broth-6-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/seared-chicken-thighs-with-garlic-ginger-broth-and-rice/" }
+  },
+  {
+    "name": "Easy Overnight Oats (3 Ways)",
+    "servings": 1,
+    "servingGrams": 280,
+    "ingredients": ["Rolled oats", "Milk of choice", "Chia seeds", "Vanilla extract", "Honey", "Banana", "Peanut butter", "Strawberries", "Raspberries"],
+    "nutritionPerServing": { "calories": 340, "protein": 12, "carbs": 52, "fat": 10, "fiber": 8, "sugar": 18 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2026/05/quaker-overnight-oats-25.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/easy-overnight-oats-3-ways/" }
+  },
+  {
+    "name": "Deviled Eggs with Dill Relish",
+    "servings": 6,
+    "servingGrams": 60,
+    "ingredients": ["Hard-boiled eggs", "Mayonnaise", "Dijon mustard", "Dill relish", "Celery", "Paprika", "Salt", "Black pepper"],
+    "nutritionPerServing": { "calories": 90, "protein": 6, "carbs": 1, "fat": 7, "fiber": 0, "sugar": 1 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2023/03/Deviled-Eggs-4-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/deviled-eggs/" }
+  },
+  {
+    "name": "Whole Roasted Chicken with Avocado and Tomato Salad",
+    "servings": 6,
+    "servingGrams": 350,
+    "ingredients": ["Whole chicken", "Avocado", "Cherry tomatoes", "Red onion", "Lime juice", "Olive oil", "Garlic", "Cilantro", "Cumin", "Paprika", "Salt", "Black pepper"],
+    "nutritionPerServing": { "calories": 410, "protein": 38, "carbs": 8, "fat": 26, "fiber": 4, "sugar": 3 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2019/09/2019-09-16-03.21.05.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/whole-roasted-chicken-with-avocado-tomato-salad/" }
+  },
+  {
+    "name": "Shrimp Brochette",
+    "servings": 4,
+    "servingGrams": 180,
+    "ingredients": ["Large shrimp", "Bacon", "Jalapeño", "Cream cheese", "Garlic powder", "Smoked paprika", "Skewers", "Avocado oil"],
+    "nutritionPerServing": { "calories": 260, "protein": 24, "carbs": 3, "fat": 17, "fiber": 0, "sugar": 1 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2019/09/2019-09-15-02.01.11.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/shrimp-brochette/" }
+  },
+  {
+    "name": "Reuben Egg Rolls",
+    "servings": 8,
+    "servingGrams": 120,
+    "ingredients": ["Corned beef", "Sauerkraut", "Swiss cheese", "Egg roll wrappers", "Thousand island dressing", "Caraway seeds", "Avocado oil for frying"],
+    "nutritionPerServing": { "calories": 230, "protein": 12, "carbs": 18, "fat": 12, "fiber": 1, "sugar": 2 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2026/01/Reuben-Egg-Rolls-7-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/reuben-egg-rolls/" }
+  },
+  {
+    "name": "Muffuletta Sliders",
+    "servings": 8,
+    "servingGrams": 150,
+    "ingredients": ["Slider buns", "Salami", "Mortadella", "Provolone cheese", "Green olives", "Giardiniera", "Garlic", "Olive oil", "Butter"],
+    "nutritionPerServing": { "calories": 320, "protein": 14, "carbs": 24, "fat": 19, "fiber": 1, "sugar": 3 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2026/01/Muffuletta-Sliders-3-1200x1799.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/muffuletta-sliders/" }
+  },
+  {
+    "name": "Turkey Taco Soup",
+    "servings": 6,
+    "servingGrams": 400,
+    "ingredients": ["Ground turkey", "Black beans", "Corn", "Diced tomatoes", "Tomato sauce", "Onion", "Taco seasoning", "Chicken broth", "Lime", "Cilantro"],
+    "nutritionPerServing": { "calories": 310, "protein": 26, "carbs": 28, "fat": 10, "fiber": 7, "sugar": 5 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/10/Turkey-Taco-Soup-6-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/turkey-taco-soup/" }
+  },
+  {
+    "name": "Smashburgers with Special Truffle Sauce",
+    "servings": 4,
+    "servingGrams": 260,
+    "ingredients": ["Ground beef", "Brioche buns", "American cheese", "Mayonnaise", "Ketchup", "Dijon mustard", "Truffle oil", "Pickles", "Onion", "Salt", "Black pepper"],
+    "nutritionPerServing": { "calories": 620, "protein": 32, "carbs": 34, "fat": 38, "fiber": 1, "sugar": 6 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/07/Smash-Burgers-with-Special-Truffle-Sauce-3-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/smashburgers-with-special-truffle-sauce/" }
+  },
+  {
+    "name": "Cajun Spiced Chicken Wings",
+    "servings": 6,
+    "servingGrams": 200,
+    "ingredients": ["Chicken wings", "Cajun seasoning", "Garlic powder", "Smoked paprika", "Cayenne pepper", "Avocado oil", "Baking powder", "Salt"],
+    "nutritionPerServing": { "calories": 320, "protein": 26, "carbs": 1, "fat": 23, "fiber": 0, "sugar": 0 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/01/Cajun-Spiced-Chicken-Wings-4-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/cajun-spiced-chicken-wings/" }
+  },
+  {
+    "name": "Shredded Beef Chipotle Burrito Bowls",
+    "servings": 6,
+    "servingGrams": 400,
+    "ingredients": ["Chuck roast", "Chipotle peppers in adobo", "Beef broth", "Cumin", "Garlic", "Cilantro-lime rice", "Black beans", "Corn", "Avocado", "Lime"],
+    "nutritionPerServing": { "calories": 480, "protein": 34, "carbs": 42, "fat": 18, "fiber": 8, "sugar": 3 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2024/08/Shredded-Chipotle-Beef-Burrito-Bowls-6-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/shredded-beef-chipotle-burrito-bowls/" }
+  },
+  {
+    "name": "Slow Cooker BBQ Chicken Tacos",
+    "servings": 6,
+    "servingGrams": 220,
+    "ingredients": ["Chicken breasts", "BBQ sauce", "Chicken broth", "Corn tortillas", "Coleslaw mix", "Lime", "Cilantro"],
+    "nutritionPerServing": { "calories": 330, "protein": 28, "carbs": 34, "fat": 8, "fiber": 3, "sugar": 10 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2024/08/Slow-Cooker-BBQ-Chicken-Tacos-5-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/slow-cooker-bbq-chicken-tacos/" }
+  },
+  {
+    "name": "BBQ Pulled Pork Bowls",
+    "servings": 6,
+    "servingGrams": 380,
+    "ingredients": ["Pork shoulder", "BBQ sauce", "Apple cider vinegar", "Sweet potato", "Coleslaw mix", "Red onion", "Cilantro"],
+    "nutritionPerServing": { "calories": 440, "protein": 30, "carbs": 36, "fat": 18, "fiber": 5, "sugar": 14 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2024/02/240209_apple-cider-vinegar-pulled-pork-bowls-17.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/bbq-pulled-pork-bowls/" }
+  },
+  {
+    "name": "Grilled Cajun Chicken",
+    "servings": 4,
+    "servingGrams": 200,
+    "ingredients": ["Chicken breasts", "Cajun seasoning", "Olive oil", "Garlic", "Lemon juice", "Paprika", "Cayenne pepper"],
+    "nutritionPerServing": { "calories": 260, "protein": 36, "carbs": 2, "fat": 12, "fiber": 0, "sugar": 0 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2026/06/Grilled-Cajun-Chicken-4-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/grilled-cajun-chicken/" }
+  },
+  {
+    "name": "Pad Prik King Green Beans",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Green beans", "Red curry paste", "Kaffir lime leaves", "Fish sauce", "Coconut oil", "Garlic", "Coconut aminos", "Jasmine rice"],
+    "nutritionPerServing": { "calories": 220, "protein": 6, "carbs": 26, "fat": 11, "fiber": 5, "sugar": 6 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2025/12/Pad-Prik-King-6-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/pad-prik-king/" }
+  },
+  {
+    "name": "Whole30 Zuppa Toscana",
+    "servings": 6,
+    "servingGrams": 400,
+    "ingredients": ["Italian sausage", "Bacon", "Cauliflower florets", "Kale", "Chicken broth", "Coconut milk", "Onion", "Garlic"],
+    "nutritionPerServing": { "calories": 340, "protein": 18, "carbs": 12, "fat": 25, "fiber": 3, "sugar": 4 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2023/02/Zuppa-Toscana-2-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/whole30-zuppa-toscana/" }
+  },
+  {
+    "name": "Best Bolognese Sauce",
+    "servings": 6,
+    "servingGrams": 300,
+    "ingredients": ["Ground beef", "Ground pork", "Pancetta", "Carrot", "Celery", "Onion", "Tomato paste", "Crushed tomatoes", "Whole milk", "Red wine", "Parmesan cheese", "Pasta"],
+    "nutritionPerServing": { "calories": 480, "protein": 26, "carbs": 42, "fat": 22, "fiber": 3, "sugar": 8 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2020/09/2020-09-22-03.00.32.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/the-best-bolognese-sauce/" }
+  },
+  {
+    "name": "One-Pot Gluten-Free Mac and Cheese",
+    "servings": 6,
+    "servingGrams": 300,
+    "ingredients": ["Gluten-free pasta", "Chicken broth", "Milk", "Sharp cheddar cheese", "Gruyère cheese", "Cream cheese", "Dijon mustard", "Garlic powder"],
+    "nutritionPerServing": { "calories": 420, "protein": 18, "carbs": 46, "fat": 18, "fiber": 2, "sugar": 4 },
+    "imageUrl": "https://thedefineddish.com/wp-content/uploads/2023/05/One-Pot-Mac-and-Cheese-3-scaled.jpg",
+    "imageCredit": { "label": "The Defined Dish", "sourceUrl": "https://thedefineddish.com/one-pot-gluten-free-mac-and-cheese/" }
+  }
+]

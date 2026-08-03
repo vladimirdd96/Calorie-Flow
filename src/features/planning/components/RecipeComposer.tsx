@@ -22,6 +22,7 @@ export function RecipeComposer({ recipe, userId, onSave }: { recipe?: Recipe; us
   const [step, setStep] = useState<Step>("basics");
   const [name, setName] = useState(recipe?.name || "");
   const [ingredients, setIngredients] = useState(recipe?.ingredients.map((ingredient) => ingredient.name).join("\n") || "");
+  const [instructions, setInstructions] = useState(recipe?.instructions?.join("\n") || "");
   const [servings, setServings] = useState(String(recipe?.servings || 2));
   const [servingGrams, setServingGrams] = useState(String(recipe?.servingGrams ?? 100));
   const [nutrition, setNutrition] = useState<NutritionFields>(recipe ? { calories: String(recipe.nutritionPerServing.calories), protein: String(recipe.nutritionPerServing.protein), carbs: String(recipe.nutritionPerServing.carbs), fat: String(recipe.nutritionPerServing.fat), fiber: String(recipe.nutritionPerServing.fiber), sugar: String(recipe.nutritionPerServing.sugar) } : defaultNutrition);
@@ -34,6 +35,7 @@ export function RecipeComposer({ recipe, userId, onSave }: { recipe?: Recipe; us
 
   const setNutrient = (key: keyof NutritionFields, value: string) => setNutrition((current) => ({ ...current, [key]: value }));
   const ingredientNames = ingredients.split(/\n|,/).map((item) => item.trim()).filter(Boolean);
+  const instructionSteps = instructions.split("\n").map((item) => item.trim()).filter(Boolean);
   const basicsValid = Boolean(name.trim()) && Number.isFinite(Number(servings)) && Number(servings) > 0 && Number.isFinite(Number(servingGrams)) && Number(servingGrams) > 0 && ingredientNames.length > 0;
 
   const estimate = async () => {
@@ -82,6 +84,7 @@ export function RecipeComposer({ recipe, userId, onSave }: { recipe?: Recipe; us
     const nextRecipe: Recipe = {
       id: recipe?.id || `recipe-${crypto.randomUUID()}`, name: name.trim(), servings: Number(servings), servingGrams: gramsPerServing,
       ingredients: ingredientNames.map((item, index) => ({ ...recipe?.ingredients[index], id: recipe?.ingredients[index]?.id || `ingredient-${crypto.randomUUID()}`, name: item })),
+      instructions: instructionSteps, cuisine: recipe?.cuisine, dietaryTags: recipe?.dietaryTags,
       nutritionPerServing: values, imageUrls, isPublic: recipe?.isPublic, publicRecipeId: recipe?.publicRecipeId,
       createdAt: recipe?.createdAt || now, updatedAt: now,
     };
@@ -100,7 +103,7 @@ export function RecipeComposer({ recipe, userId, onSave }: { recipe?: Recipe; us
         }
       }
       onSave(finalRecipe);
-      if (!recipe) { setName(""); setIngredients(""); setServings("2"); setServingGrams("100"); setNutrition(defaultNutrition); setImageUrls([]); setShare(false); setEstimateNote(""); setStep("basics"); }
+      if (!recipe) { setName(""); setIngredients(""); setInstructions(""); setServings("2"); setServingGrams("100"); setNutrition(defaultNutrition); setImageUrls([]); setShare(false); setEstimateNote(""); setStep("basics"); }
     } catch (error) {
       setEstimateNote(error instanceof Error ? error.message : "Saved locally, but the catalogue could not be updated.");
       onSave(nextRecipe);
@@ -115,6 +118,7 @@ export function RecipeComposer({ recipe, userId, onSave }: { recipe?: Recipe; us
         <label><span>Servings</span><NumericInput required min="0.5" max="100" step="0.5" value={servings} onChange={(event) => setServings(event.target.value)} /></label>
         <label><span>Grams per serving</span><NumericInput required min="1" max="20000" step="1" value={servingGrams} onChange={(event) => setServingGrams(event.target.value)} /></label>
         <label className="span-two"><span>Ingredients</span><textarea required value={ingredients} maxLength={5000} onChange={(event) => setIngredients(event.target.value)} placeholder="One ingredient per line" /></label>
+        <label className="span-two"><span>Instructions</span><textarea value={instructions} maxLength={5000} onChange={(event) => setInstructions(event.target.value)} placeholder="One step per line" /></label>
       </div>
       <label className="recipe-photo-upload"><input className="visually-hidden-file" type="file" accept="image/*" onChange={(event) => { void addImages(event.target.files); event.currentTarget.value = ""; }} /><span className="action-icon mint"><ImagePlus size={17} /></span><span><strong>Add photo</strong><small>Optional · 1 photo</small></span></label>
       {imageUrls.length > 0 && <div className="recipe-photo-preview" aria-label={`${imageUrls.length} recipe ${imageUrls.length === 1 ? "photo" : "photos"}`}>{imageUrls.map((url, index) => <span key={url}><img src={url} alt={`Recipe photo ${index + 1}`} /><button type="button" onClick={() => setImageUrls((current) => current.filter((candidate) => candidate !== url))} aria-label={`Remove recipe photo ${index + 1}`}><X size={14} /></button></span>)}</div>}

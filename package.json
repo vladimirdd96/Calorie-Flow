@@ -7,6 +7,8 @@
     "build": "next build --webpack",
     "build:cloudflare": "opennextjs-cloudflare build",
     "build:sites": "node scripts/prepare-sites.mjs",
+    "seed:recipes": "node scripts/seed-recipes/insert.mjs",
+    "seed:recipes:update": "node scripts/seed-recipes/update.mjs",
     "preview:cloudflare": "opennextjs-cloudflare preview",
     "start": "next start",
     "typecheck": "tsc --noEmit",
