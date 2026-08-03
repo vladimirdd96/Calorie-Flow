@@ -1397,7 +1397,7 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
    retain their own sizing. */
 @media (max-width: 759px) {
   .coach-page { min-height: calc(100dvh - 92px); display: flex; flex-direction: column; padding-bottom: 12px; }
-  .coach-header { min-height: 72px; display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: end; padding-top: 16px; padding-bottom: 10px; }
+  .coach-header { min-height: 72px; display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: end; padding-top: max(16px, env(safe-area-inset-top)); padding-bottom: 10px; }
   .coach-mobile-menu { width: 34px; height: 34px; display: grid; place-items: center; align-self: end; color: var(--text); background: transparent; border: 1px solid transparent; border-radius: 11px; }
   .coach-mobile-menu:hover, .coach-mobile-menu:focus-visible { color: var(--mint-strong); background: color-mix(in oklch, var(--mint) 8%, transparent); border-color: var(--border-strong); }
   .coach-mobile-backdrop { position: fixed; inset: 0; z-index: 30; display: block; padding: 0; border: 0; background: rgba(4, 10, 9, .46); }
@@ -1475,7 +1475,7 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 }
 
 /* Mobile handoff — Today */
-.today-page { width: 100%; max-width: clamp(420px, 62vw, 780px); margin: 0 auto; padding: clamp(16px, 4vw, 32px) 18px calc(28px + env(safe-area-inset-bottom)); }
+.today-page { width: 100%; max-width: clamp(420px, 62vw, 780px); margin: 0 auto; padding: max(clamp(16px, 4vw, 32px), env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom)); }
 .today-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
 .today-brand { min-width: 0; display: flex; align-items: center; gap: 9px; }
 .today-brand .brand-mark { width: 40px; height: 40px; border: 2px solid var(--panel); border-radius: 12px; box-shadow: 0 2px 6px color-mix(in oklch, var(--text) 15%, transparent); }
@@ -1870,7 +1870,7 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 }
 
 /* Profile handoff */
-.profile-page { width: min(100%, clamp(420px, 62vw, 780px)); max-width: none; margin: 0 auto; padding: clamp(20px, 5vw, 40px) 16px calc(110px + env(safe-area-inset-bottom)); }
+.profile-page { width: min(100%, clamp(420px, 62vw, 780px)); max-width: none; margin: 0 auto; padding: max(clamp(20px, 5vw, 40px), env(safe-area-inset-top)) 16px calc(110px + env(safe-area-inset-bottom)); }
 .profile-handoff-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
 .profile-handoff-avatar { width: 56px; height: 56px; flex: 0 0 auto; display: grid; place-items: center; overflow: hidden; color: var(--panel); background: var(--mint); border-radius: 16px; font-size: 20px; font-weight: 700; }
 .profile-handoff-avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -1939,7 +1939,7 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 .profile-page #customize-panel .segmented button.active, .profile-page #customize-panel .theme-choice button.active { color: var(--bg); background: var(--text); }
 
 /* Foods and Plan handoff */
-.food-library-page, .plan-page { width: min(100%, clamp(420px, 62vw, 780px)); max-width: none; margin: 0 auto; padding: clamp(20px, 5vw, 40px) 16px calc(110px + env(safe-area-inset-bottom)); }
+.food-library-page, .plan-page { width: min(100%, clamp(420px, 62vw, 780px)); max-width: none; margin: 0 auto; padding: max(clamp(20px, 5vw, 40px), env(safe-area-inset-top)) 16px calc(110px + env(safe-area-inset-bottom)); }
 .library-handoff-header, .plan-handoff-header { margin-bottom: 16px; }
 .library-handoff-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .library-handoff-header > span, .plan-handoff-header > span { display: block; margin-bottom: 2px; color: var(--carbs); font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
@@ -1994,7 +1994,7 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 .plan-page .recipe-create, .plan-page .recipe-card, .plan-page .planned-groceries { background: var(--panel); border: 0; border-radius: 16px; box-shadow: 0 6px 16px color-mix(in oklch, var(--text) 8%, transparent); }
 
 /* Insights handoff */
-.insights-page { width: min(100%, clamp(420px, 62vw, 780px)); max-width: none; margin: 0 auto; padding: clamp(20px, 5vw, 40px) 16px calc(110px + env(safe-area-inset-bottom)); }
+.insights-page { width: min(100%, clamp(420px, 62vw, 780px)); max-width: none; margin: 0 auto; padding: max(clamp(20px, 5vw, 40px), env(safe-area-inset-top)) 16px calc(110px + env(safe-area-inset-bottom)); }
 .insights-handoff-header { margin-bottom: 16px; }
 .insights-handoff-header span { display: block; color: var(--carbs); font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .insights-handoff-header h1 { margin: 2px 0 0; font-size: 20px; }
