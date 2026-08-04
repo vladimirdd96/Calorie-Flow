@@ -38,10 +38,12 @@ export function WeekStrip({ date, entries, recipes, foods, onSelect }: {
       }, 0);
       const dayDate = new Date(`${dayKey}T12:00:00`);
       const className = ["week-strip-day", dayKey === date && "active", dayKey === today && "today"].filter(Boolean).join(" ");
-      return <button key={dayKey} type="button" role="tab" aria-selected={dayKey === date} className={className} onClick={() => onSelect(dayKey)}>
-        <small>{dayDate.toLocaleDateString(undefined, { weekday: "short" }).slice(0, 2)}</small>
-        <strong>{dayDate.getDate()}</strong>
-        {dayEntries.length ? <span className="week-strip-total">{Math.round(calories)}</span> : <span className="week-strip-dot" aria-hidden="true" />}
+      const fullLabel = dayDate.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+      const label = dayKey === today ? `${fullLabel} (today)` : fullLabel;
+      return <button key={dayKey} type="button" role="tab" aria-selected={dayKey === date} aria-label={dayEntries.length ? `${label}, ${Math.round(calories)} calories planned` : label} className={className} onClick={() => onSelect(dayKey)}>
+        <small aria-hidden="true">{dayDate.toLocaleDateString(undefined, { weekday: "short" }).slice(0, 2)}</small>
+        <strong aria-hidden="true">{dayDate.getDate()}</strong>
+        {dayEntries.length ? <span className="week-strip-total" aria-hidden="true">{Math.round(calories)}</span> : <span className="week-strip-dot" aria-hidden="true" />}
       </button>;
     })}
   </div>;

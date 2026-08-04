@@ -1871,7 +1871,7 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 }
 
 /* Profile handoff */
-.profile-page { width: min(100%, clamp(420px, 62vw, 780px)); max-width: none; margin: 0 auto; padding: max(clamp(20px, 5vw, 40px), env(safe-area-inset-top)) 16px calc(110px + env(safe-area-inset-bottom)); }
+.profile-page { width: min(100%, clamp(420px, 62vw, 780px)); max-width: none; margin: 0 auto; padding: max(clamp(20px, 5vw, 40px), env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); }
 .profile-handoff-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
 .profile-handoff-avatar { width: 56px; height: 56px; flex: 0 0 auto; display: grid; place-items: center; overflow: hidden; color: var(--panel); background: var(--mint); border-radius: 16px; font-size: 20px; font-weight: 700; }
 .profile-handoff-avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -1940,7 +1940,7 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 .profile-page #customize-panel .segmented button.active, .profile-page #customize-panel .theme-choice button.active { color: var(--bg); background: var(--text); }
 
 /* Foods and Plan handoff */
-.food-library-page, .plan-page { width: min(100%, clamp(420px, 62vw, 780px)); max-width: none; margin: 0 auto; padding: max(clamp(20px, 5vw, 40px), env(safe-area-inset-top)) 16px calc(110px + env(safe-area-inset-bottom)); }
+.food-library-page, .plan-page { width: min(100%, clamp(420px, 62vw, 780px)); max-width: none; margin: 0 auto; padding: max(clamp(20px, 5vw, 40px), env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); }
 .library-handoff-header, .plan-handoff-header { margin-bottom: 16px; }
 .library-handoff-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .library-handoff-header > span, .plan-handoff-header > span { display: block; margin-bottom: 2px; color: var(--carbs); font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
@@ -1995,7 +1995,7 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 .plan-page .recipe-create, .plan-page .recipe-card, .plan-page .planned-groceries { background: var(--panel); border: 0; border-radius: 16px; box-shadow: 0 6px 16px color-mix(in oklch, var(--text) 8%, transparent); }
 
 /* Insights handoff */
-.insights-page { width: min(100%, clamp(420px, 62vw, 780px)); max-width: none; margin: 0 auto; padding: max(clamp(20px, 5vw, 40px), env(safe-area-inset-top)) 16px calc(110px + env(safe-area-inset-bottom)); }
+.insights-page { width: min(100%, clamp(420px, 62vw, 780px)); max-width: none; margin: 0 auto; padding: max(clamp(20px, 5vw, 40px), env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); }
 .insights-handoff-header { margin-bottom: 16px; }
 .insights-handoff-header span { display: block; color: var(--carbs); font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .insights-handoff-header h1 { margin: 2px 0 0; font-size: 20px; }
@@ -2793,10 +2793,11 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 .catalogue-detail-ingredients li { padding: 9px 12px; color: var(--text); background: var(--control-surface); border-radius: 11px; font-size: 12.5px; }
 
 .catalogue-rows { display: grid; gap: 22px; min-width: 0; }
-.catalogue-row { min-width: 0; }
+.catalogue-row { position: relative; min-width: 0; }
 .catalogue-row h3 { margin: 0 0 8px; color: var(--text); font-size: 13.5px; font-weight: 800; }
 .catalogue-row-track { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; min-width: 0; }
 .catalogue-row-track::-webkit-scrollbar { display: none; }
+.catalogue-row::after { content: ""; position: absolute; top: 0; right: 0; bottom: 4px; width: 36px; background: linear-gradient(to right, transparent, var(--bg)); pointer-events: none; }
 .poster-tile { display: flex; flex-direction: column; overflow: hidden; flex: 0 0 auto; width: 148px; text-align: left; background: var(--panel); border: 1px solid var(--border); border-radius: 18px; box-shadow: 0 6px 16px color-mix(in oklch, var(--text) 8%, transparent); }
 .poster-tile img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; }
 .poster-tile-icon { display: grid; place-items: center; aspect-ratio: 2 / 3; color: var(--mint-strong); background: color-mix(in oklch, var(--mint) 10%, var(--control-surface)); }
