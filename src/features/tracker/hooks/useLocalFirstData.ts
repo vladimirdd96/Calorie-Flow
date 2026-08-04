@@ -46,6 +46,8 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
   const remoteDeletedMealIdsRef = useRef(new Set<string>());
   const cloudSyncInFlightRef = useRef(false);
   const cloudSyncQueuedRef = useRef(false);
+  const cloudWriteInFlightRef = useRef(false);
+  const suppressRealtimeSyncUntilRef = useRef(0);
 
   const requestCloudSync = useCallback(() => {
     if (cloudSyncInFlightRef.current) {
@@ -189,6 +191,9 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
       if (shouldPush) {
         if (mutationAtStart !== syncMutationRef.current) return;
         const mutationAtPush = syncMutationRef.current;
+        // Our own snapshot upserts emit Realtime events for every changed row.
+        // Ignore that burst so it cannot recursively restart this sync forever.
+        suppressRealtimeSyncUntilRef.current = Date.now() + 2_000;
         await pushCloudSnapshot(userId, next);
         if (mutationAtPush === syncMutationRef.current) await setSetting(`cloudDirty:${userId}`, false);
       }
@@ -218,6 +223,7 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
 
     let syncTimer: number | undefined;
     const scheduleSync = (mealId?: string, event?: string) => {
+      if (cloudWriteInFlightRef.current || Date.now() < suppressRealtimeSyncUntilRef.current) return;
       if (event === "DELETE" && mealId) remoteDeletedMealIdsRef.current.add(mealId);
       if (syncTimer !== undefined) window.clearTimeout(syncTimer);
       syncTimer = window.setTimeout(() => {
@@ -257,7 +263,15 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
     setSyncState("syncing");
     void setSetting(`cloudDirty:${userId}`, true)
       .then(() => {
-        cloudWriteQueueRef.current = cloudWriteQueueRef.current.catch(() => undefined).then(() => work(userId));
+        cloudWriteQueueRef.current = cloudWriteQueueRef.current.catch(() => undefined).then(async () => {
+          cloudWriteInFlightRef.current = true;
+          suppressRealtimeSyncUntilRef.current = Date.now() + 2_000;
+          try {
+            await work(userId);
+          } finally {
+            cloudWriteInFlightRef.current = false;
+          }
+        });
         return cloudWriteQueueRef.current;
       })
       .then(async () => {
