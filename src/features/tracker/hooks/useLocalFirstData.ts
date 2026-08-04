@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { deleteCloudMeal, getCloudSnapshot, mergeSnapshots, pushCloudSnapshot, upsertCloudProfile } from "@/lib/cloud";
 import { getAll, getLocalSnapshot, getSetting, initializeFoods, replaceLocalSnapshot, setSetting } from "@/lib/db";
 import { syncAutomaticFasting } from "@/lib/fasting";
-import type { CloudUser } from "@/lib/supabase";
+import { getSupabase, type CloudUser } from "@/lib/supabase";
 import type { Food, Meal, Profile } from "@/lib/types";
 import { defaultHabitFeatures } from "@/lib/types";
 
@@ -43,6 +43,12 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
   const syncMutationRef = useRef(0);
   const cloudWriteQueueRef = useRef<Promise<void>>(Promise.resolve());
   const cloudWriteFailedRef = useRef(false);
+  const remoteDeletedMealIdsRef = useRef(new Set<string>());
+
+  const requestCloudSync = useCallback(() => {
+    syncIdentityRef.current = "";
+    setSyncAttempt((value) => value + 1);
+  }, []);
 
   const refresh = useCallback(async () => {
     await initializeFoods();
@@ -113,10 +119,10 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
   }, [ready, setShowHomeScreenPrompt]);
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
   useEffect(() => {
-    const retry = () => { cloudWriteFailedRef.current = false; syncIdentityRef.current = ""; setSyncAttempt((value) => value + 1); };
+    const retry = () => { cloudWriteFailedRef.current = false; requestCloudSync(); };
     window.addEventListener("online", retry);
     return () => window.removeEventListener("online", retry);
-  }, []);
+  }, [requestCloudSync]);
   useEffect(() => {
     if (!ready || !auth.ready || !auth.user) return;
     const user = auth.user;
@@ -162,6 +168,11 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
         await setSetting(`deletedMealIds:${userId}`, []);
         shouldPush = true;
       }
+      const remoteDeletedIds = remoteDeletedMealIdsRef.current;
+      if (remoteDeletedIds.size) {
+        next.meals = next.meals.filter((meal) => !remoteDeletedIds.has(meal.id));
+        shouldPush = true;
+      }
       if (shouldPush) {
         if (mutationAtStart !== syncMutationRef.current) return;
         const mutationAtPush = syncMutationRef.current;
@@ -170,6 +181,7 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
       }
       if (mutationAtStart !== syncMutationRef.current) return;
       await replaceLocalSnapshot(next);
+      remoteDeletedMealIdsRef.current.clear();
       await setSetting("dataOwner", identity);
       if (active) { cloudWriteFailedRef.current = false; await refresh(); setSyncState("synced"); }
     };
@@ -178,6 +190,46 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
     });
     return () => { active = false; };
   }, [auth.configured, auth.ready, auth.user, ready, refresh, syncAttempt]);
+
+  useEffect(() => {
+    if (!ready || !auth.ready || !auth.user || !auth.configured) return;
+    const userId = auth.user.id;
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    let syncTimer: number | undefined;
+    const scheduleSync = (mealId?: string, event?: string) => {
+      if (event === "DELETE" && mealId) remoteDeletedMealIdsRef.current.add(mealId);
+      if (syncTimer !== undefined) window.clearTimeout(syncTimer);
+      syncTimer = window.setTimeout(() => {
+        syncTimer = undefined;
+        requestCloudSync();
+      }, 250);
+    };
+    const channel = supabase
+      .channel(`diary-sync:${userId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_meals", filter: `user_id=eq.${userId}` }, (payload) => {
+        const row = payload.eventType === "DELETE" ? payload.old : payload.new;
+        scheduleSync(typeof row?.id === "string" ? row.id : undefined, payload.eventType);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_foods", filter: `user_id=eq.${userId}` }, () => scheduleSync())
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_profiles", filter: `user_id=eq.${userId}` }, () => scheduleSync())
+      .subscribe();
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") scheduleSync();
+    };
+    const poll = window.setInterval(refreshWhenVisible, 30_000);
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      if (syncTimer !== undefined) window.clearTimeout(syncTimer);
+      window.clearInterval(poll);
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+      void supabase.removeChannel(channel);
+    };
+  }, [auth.configured, auth.ready, auth.user, ready, requestCloudSync]);
 
   const syncWrite = (work: (userId: string) => Promise<void>) => {
     if (!auth.user) return;
