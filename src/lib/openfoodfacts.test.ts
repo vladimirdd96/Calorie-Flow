@@ -62,6 +62,19 @@ describe("searchOpenFoodFacts", () => {
     }));
   });
 
+  it("retries a transient catalogue request before showing an unavailable error", async () => {
+    const fetchMock = vi.fn()
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ products: [{ code: "retry-1", product_name: "Recovered food", nutriments: { "energy-kcal_100g": 100 } }] }),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(searchOpenFoodFacts("recovered food")).resolves.toEqual([expect.objectContaining({ name: "Recovered food" })]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it("maps restaurant menu items into a serving-aware food result", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true,

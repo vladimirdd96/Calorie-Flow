@@ -46,6 +46,22 @@ type RestaurantProduct = {
 
 const searchCache = new Map<string, { expiresAt: number; foods: Food[] }>();
 const SEARCH_CACHE_TTL_MS = 2 * 60_000;
+const SEARCH_RETRY_DELAY_MS = 250;
+
+async function fetchFoodSearch(path: string) {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const response = await fetch(path);
+      if (response.ok) return response;
+      lastError = new Error(`Food search failed with status ${response.status}`);
+    } catch (error) {
+      lastError = error;
+    }
+    if (attempt === 0) await new Promise((resolve) => globalThis.setTimeout(resolve, SEARCH_RETRY_DELAY_MS));
+  }
+  throw lastError instanceof Error ? lastError : new Error("Food search failed");
+}
 
 function numberValue(value: unknown) {
   const parsed = typeof value === "number" ? value : Number.parseFloat(String(value || "0"));
@@ -179,8 +195,7 @@ function mapProduct(product: OffProduct | FdcProduct | RestaurantProduct): Food 
 }
 
 export async function findByBarcode(barcode: string): Promise<Food | null> {
-  const response = await fetch(`/api/food-search?barcode=${encodeURIComponent(barcode)}`);
-  if (!response.ok) throw new Error("Product lookup failed");
+  const response = await fetchFoodSearch(`/api/food-search?barcode=${encodeURIComponent(barcode)}`);
   const data: unknown = await response.json();
   if (!data || typeof data !== "object") return null;
   const record = data as { products?: unknown; product?: unknown };
@@ -195,8 +210,7 @@ export async function searchOpenFoodFacts(query: string): Promise<Food[]> {
   const cached = searchCache.get(cacheKey);
   if (cached && cached.expiresAt > Date.now()) return cached.foods;
 
-  const response = await fetch(`/api/food-search?q=${encodeURIComponent(normalizedQuery)}`);
-  if (!response.ok) throw new Error("Food search failed");
+  const response = await fetchFoodSearch(`/api/food-search?q=${encodeURIComponent(normalizedQuery)}`);
   const data = await response.json();
   const foods = (data.products || []).map(mapProduct).filter(Boolean) as Food[];
   searchCache.set(cacheKey, { foods, expiresAt: Date.now() + SEARCH_CACHE_TTL_MS });
