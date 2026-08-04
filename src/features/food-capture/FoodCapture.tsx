@@ -42,19 +42,17 @@ function RecentFoodRow({ food, hideCalories, onSelect }: { food: Food; hideCalor
   </button>;
 }
 
-function RepeatItemCard({ repeatItem, hideCalories, onSelect }: { repeatItem: RepeatItem; hideCalories: boolean; onSelect: () => void }) {
+function RepeatItemRow({ repeatItem, hideCalories, onSelect }: { repeatItem: RepeatItem; hideCalories: boolean; onSelect: () => void }) {
   const isRecipe = repeatItem.kind === "recipe";
   const food = repeatItem.kind === "food" ? repeatItem.item : undefined;
   const recipe = repeatItem.kind === "recipe" ? repeatItem.item : undefined;
   const servingGrams = food?.servingGrams || 100;
   const servingCalories = food ? Math.round(food.nutrientsPer100.calories * servingGrams / 100) : Math.round(recipe?.nutritionPerServing.calories || 0);
-  return <button className="repeat-item-card" type="button" onClick={onSelect}>
-    <span className="repeat-item-top">
-      {isRecipe ? (recipe?.imageUrls?.[0] ? <img className="food-avatar" src={recipe.imageUrls[0]} alt="" /> : <span className="recipe-row-icon"><BookOpen size={17} /></span>) : food?.imageUrl ? <img className="food-avatar" src={food.imageUrl} alt="" /> : <span className="food-avatar fallback">{food?.name.slice(0, 1).toUpperCase()}</span>}
-      <span className="most-picked-plus" aria-hidden="true"><Plus size={14} /></span>
-    </span>
-    <strong>{repeatItem.item.name}</strong>
-    <small>{isRecipe ? "Recipe" : food?.brand || "Food"} · {repeatItem.uses} {repeatItem.uses === 1 ? "time" : "times"}{!hideCalories && ` · ${servingCalories} kcal`}</small>
+  return <button className="food-row recent-food-row" type="button" onClick={onSelect}>
+    {isRecipe ? (recipe?.imageUrls?.[0] ? <img className="food-avatar" src={recipe.imageUrls[0]} alt="" /> : <span className="recipe-row-icon"><BookOpen size={17} /></span>) : food?.imageUrl ? <img className="food-avatar" src={food.imageUrl} alt="" /> : <span className="food-avatar fallback">{food?.name.slice(0, 1).toUpperCase()}</span>}
+    <span className="food-copy"><strong>{repeatItem.item.name}</strong><small>{isRecipe ? "Recipe" : food?.brand || "Food"} · used {repeatItem.uses} {repeatItem.uses === 1 ? "time" : "times"}</small></span>
+    {!hideCalories && <span className="food-calories"><strong>{servingCalories}</strong><small>kcal</small></span>}
+    <span className="recent-food-add" aria-hidden="true"><Plus size={15} /></span>
   </button>;
 }
 
@@ -303,7 +301,7 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
         <SearchResultGroup title="Search results" detail="Open Food Facts" empty={!remoteResults.length && !loading}><div className="add-food-row-list">{remoteResults.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div></SearchResultGroup>
         {!loading && matchingRecipes.length + matchingDiaryRecipes.length + matchingOwnFoods.length + remoteResults.length === 0 && <div className="search-empty"><Database /><strong>No match yet</strong><p>Create the food once and it will be ready next time.</p></div>}
       </div> : <>
-        {!!repeatHistory.length && <section className="most-picked"><h3><Repeat size={12} />Repeat a favorite</h3><div>{repeatHistory.map((repeatItem) => <RepeatItemCard key={`${repeatItem.kind}-${repeatItem.item.id}`} repeatItem={repeatItem} hideCalories={hideCalories} onSelect={() => repeatItem.kind === "recipe" ? onSelectRecipe(repeatItem.item) : pick(repeatItem.item)} />)}</div></section>}
+        {!!repeatHistory.length && <section className="add-food-recent"><h3><Repeat size={12} />Repeat from your diary</h3><div className="add-food-row-list">{repeatHistory.map((repeatItem) => <RepeatItemRow key={`${repeatItem.kind}-${repeatItem.item.id}`} repeatItem={repeatItem} hideCalories={hideCalories} onSelect={() => repeatItem.kind === "recipe" ? onSelectRecipe(repeatItem.item) : pick(repeatItem.item)} />)}</div></section>}
         {!!fallbackRecent.length && <section className="add-food-recent"><h3>{repeatHistory.length ? "More saved foods" : "Your foods"}</h3><div className="add-food-row-list">{fallbackRecent.map((food) => <RecentFoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div></section>}
       </>}
       <button className="add-custom-food" type="button" onClick={() => changeView("manual")}><Pencil size={16} />Create a new food</button>
