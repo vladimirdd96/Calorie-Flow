@@ -27,3 +27,9 @@ This is the durable record of product requirements stated in user requests. Read
 
 - Meal plans can contain either saved recipes or saved foods. Existing recipe-based plan entries remain valid, and shopping lists continue to use recipe ingredients only.
 - When Foods is opened from Plan, the Food Library provides an explicit return action to Plan in addition to the primary navigation.
+
+## Add food quick reuse — 2026-08-04
+
+- The Add Food sheet exposes saved recipes and foods already used in the diary before the user searches.
+- Quick-reuse items are ranked by diary usage, with recipe logs counted once even when a recipe creates multiple ingredient rows.
+- Selecting a quick-reuse recipe follows the existing recipe portion/logging flow; selecting a food follows the existing food portion flow.

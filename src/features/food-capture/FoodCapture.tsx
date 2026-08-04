@@ -9,6 +9,7 @@ import { localDateKey } from "@/lib/nutrition";
 import { findByBarcode, searchOpenFoodFacts } from "@/lib/openfoodfacts";
 import { normalizeVoiceFoodQuery } from "@/lib/voice";
 import type { Food, Meal, MealPhotoAnalysis, MealType, Recipe } from "@/lib/types";
+import { repeatItems, type RepeatItem } from "@/features/recipes/repeatItems";
 import { BarcodeScanner } from "./components/BarcodeScanner";
 import { FoodRow, ManualFood, PortionSheet, QuickMacroSheet } from "./components/FoodEntrySheets";
 import { LabelReader } from "./components/LabelReader";
@@ -38,6 +39,22 @@ function RecentFoodRow({ food, hideCalories, onSelect }: { food: Food; hideCalor
     <span className="food-copy"><strong>{food.name}</strong><small>1 serving · {servingGrams} g</small></span>
     {!hideCalories && <span className="food-calories"><strong>{servingCalories}</strong><small>kcal</small></span>}
     <span className="recent-food-add" aria-hidden="true"><Plus size={15} /></span>
+  </button>;
+}
+
+function RepeatItemCard({ repeatItem, hideCalories, onSelect }: { repeatItem: RepeatItem; hideCalories: boolean; onSelect: () => void }) {
+  const isRecipe = repeatItem.kind === "recipe";
+  const food = repeatItem.kind === "food" ? repeatItem.item : undefined;
+  const recipe = repeatItem.kind === "recipe" ? repeatItem.item : undefined;
+  const servingGrams = food?.servingGrams || 100;
+  const servingCalories = food ? Math.round(food.nutrientsPer100.calories * servingGrams / 100) : Math.round(recipe?.nutritionPerServing.calories || 0);
+  return <button className="repeat-item-card" type="button" onClick={onSelect}>
+    <span className="repeat-item-top">
+      {isRecipe ? (recipe?.imageUrls?.[0] ? <img className="food-avatar" src={recipe.imageUrls[0]} alt="" /> : <span className="recipe-row-icon"><BookOpen size={17} /></span>) : food?.imageUrl ? <img className="food-avatar" src={food.imageUrl} alt="" /> : <span className="food-avatar fallback">{food?.name.slice(0, 1).toUpperCase()}</span>}
+      <span className="most-picked-plus" aria-hidden="true"><Plus size={14} /></span>
+    </span>
+    <strong>{repeatItem.item.name}</strong>
+    <small>{isRecipe ? "Recipe" : food?.brand || "Food"} · {repeatItem.uses} {repeatItem.uses === 1 ? "time" : "times"}{!hideCalories && ` · ${servingCalories} kcal`}</small>
   </button>;
 }
 
@@ -84,7 +101,9 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
     const used = [...foods].filter((food) => food.lastUsedAt).sort((a, b) => (b.lastUsedAt || "").localeCompare(a.lastUsedAt || ""));
     return (used.length ? used : foods).slice(0, 6);
   }, [foods]);
-  const mostPicked = recent.slice(0, 4);
+  const repeatHistory = useMemo(() => repeatItems(foods, recipes, meals, 8), [foods, meals, recipes]);
+  const repeatIds = useMemo(() => new Set(repeatHistory.map(({ item }) => item.id)), [repeatHistory]);
+  const fallbackRecent = recent.filter((food) => !repeatIds.has(food.id)).slice(0, 6);
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const diaryFoodIds = useMemo(() => new Set(meals.map((meal) => meal.foodId).filter((id): id is string => Boolean(id))), [meals]);
   const matchingRecipes = useMemo(() => recipes.filter((recipe) => normalizedQuery && `${recipe.name} ${recipe.ingredients.map((ingredient) => ingredient.name).join(" ")}`.toLocaleLowerCase().includes(normalizedQuery)), [recipes, normalizedQuery]);
@@ -284,8 +303,8 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
         <SearchResultGroup title="Search results" detail="Open Food Facts" empty={!remoteResults.length && !loading}><div className="add-food-row-list">{remoteResults.map((food) => <FoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div></SearchResultGroup>
         {!loading && matchingRecipes.length + matchingDiaryRecipes.length + matchingOwnFoods.length + remoteResults.length === 0 && <div className="search-empty"><Database /><strong>No match yet</strong><p>Create the food once and it will be ready next time.</p></div>}
       </div> : <>
-        {!!mostPicked.length && <section className="most-picked"><h3><Repeat size={12} />Most picked</h3><div>{mostPicked.map((food) => <button key={food.id} type="button" onClick={() => pick(food)}><span className="most-picked-top"><span className="food-avatar fallback">{food.name.slice(0, 1).toUpperCase()}</span><span className="most-picked-plus"><Plus size={14} /></span></span><strong>{food.name}</strong><small>{food.brand || "Picked recently"}</small></button>)}</div></section>}
-        {!!recent.length && <section className="add-food-recent"><h3>Recent</h3><div className="add-food-row-list">{recent.map((food) => <RecentFoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div></section>}
+        {!!repeatHistory.length && <section className="most-picked"><h3><Repeat size={12} />Repeat a favorite</h3><div>{repeatHistory.map((repeatItem) => <RepeatItemCard key={`${repeatItem.kind}-${repeatItem.item.id}`} repeatItem={repeatItem} hideCalories={hideCalories} onSelect={() => repeatItem.kind === "recipe" ? onSelectRecipe(repeatItem.item) : pick(repeatItem.item)} />)}</div></section>}
+        {!!fallbackRecent.length && <section className="add-food-recent"><h3>{repeatHistory.length ? "More saved foods" : "Your foods"}</h3><div className="add-food-row-list">{fallbackRecent.map((food) => <RecentFoodRow key={food.id} food={food} hideCalories={hideCalories} onSelect={() => pick(food)} />)}</div></section>}
       </>}
       <button className="add-custom-food" type="button" onClick={() => changeView("manual")}><Pencil size={16} />Create a new food</button>
       <p className="add-food-credit"><Star size={13} />Save a food with its per-100 g values so you can reuse it. For a one-off entry, use Quick add.</p>
