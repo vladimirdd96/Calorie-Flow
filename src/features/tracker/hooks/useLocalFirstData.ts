@@ -144,7 +144,13 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
       let next;
       let shouldPush = false;
       if (owner === identity && !dirty) {
-        next = remote;
+        next = mergeSnapshots(local, remote);
+        next.profile = remote.profile || local.profile;
+        const remoteMealIds = new Set(remote.meals.map((meal) => meal.id));
+        const remoteFoodIds = new Set(remote.foods.map((food) => food.id));
+        shouldPush = local.meals.some((meal) => !remoteMealIds.has(meal.id))
+          || local.foods.some((food) => food.source !== "seed" && !remoteFoodIds.has(food.id))
+          || (!remote.profile && Boolean(local.profile));
       } else if (owner === identity) {
         next = mergeSnapshots(remote, local);
         next.profile = local.profile || remote.profile;
