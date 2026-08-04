@@ -1,0 +1,290 @@
+[
+  {
+    "name": "Spicy Mushroom Lasagne",
+    "servings": 6,
+    "servingGrams": 320,
+    "ingredients": ["Mixed mushrooms", "Lasagne sheets", "Ricotta cheese", "Parmesan cheese", "Crushed tomatoes", "Chilli flakes", "Garlic", "Onion", "Fresh thyme", "Olive oil"],
+    "nutritionPerServing": { "calories": 420, "protein": 18, "carbs": 40, "fat": 20, "fiber": 4, "sugar": 6 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Spicy_mushroom_lasagne.jpg?v=1716188132&width=1000",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/spicy-mushroom-lasagne" }
+  },
+  {
+    "name": "Ginger Egg Fried Rice",
+    "servings": 4,
+    "servingGrams": 300,
+    "ingredients": ["Cooked rice", "Eggs", "Fresh ginger", "Garlic", "Scallions", "Soy sauce", "Sesame oil", "Frozen peas"],
+    "nutritionPerServing": { "calories": 380, "protein": 12, "carbs": 52, "fat": 13, "fiber": 3, "sugar": 3 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Ginger_egg_fried_rice.jpg?v=1716838512&width=735",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/ginger-egg-fried-rice" }
+  },
+  {
+    "name": "Ottolenghi Chicken Soup",
+    "servings": 6,
+    "servingGrams": 400,
+    "ingredients": ["Chicken thighs", "Chicken broth", "Parmesan rind", "Carrots", "Celery", "Onion", "Garlic", "Fresh dill", "Lemon juice"],
+    "nutritionPerServing": { "calories": 280, "protein": 26, "carbs": 10, "fat": 15, "fiber": 2, "sugar": 3 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Ottolenghi_chicken_soup.jpg?v=1722350514&width=735",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/ottolenghi-chicken-soup" }
+  },
+  {
+    "name": "Confit Tandoori Chickpeas",
+    "servings": 4,
+    "servingGrams": 280,
+    "ingredients": ["Chickpeas", "Olive oil", "Tandoori spice blend", "Garlic", "Fresh ginger", "Yogurt", "Cilantro", "Lemon juice"],
+    "nutritionPerServing": { "calories": 320, "protein": 10, "carbs": 26, "fat": 20, "fiber": 7, "sugar": 4 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Confit_tandoori_chickpeas.jpg?v=1716187572&width=735",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/confit-tandoori-chickpeas" }
+  },
+  {
+    "name": "Baked Mint Rice with Pomegranate and Olive Salsa",
+    "servings": 6,
+    "servingGrams": 250,
+    "ingredients": ["Basmati rice", "Vegetable broth", "Fresh mint", "Pomegranate seeds", "Green olives", "Olive oil", "Lemon zest", "Pine nuts"],
+    "nutritionPerServing": { "calories": 300, "protein": 6, "carbs": 46, "fat": 11, "fiber": 3, "sugar": 6 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Baked_mint_rice_with_pomegranate_and_olive_salsa.jpg?v=1716838471&width=1000",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/baked-mint-rice-pomegranate-olive-salsa" }
+  },
+  {
+    "name": "Roast Chicken with Dates, Olives and Capers",
+    "servings": 6,
+    "servingGrams": 300,
+    "ingredients": ["Chicken thighs", "Dates", "Green olives", "Capers", "White wine", "Garlic", "Bay leaves", "Brown sugar", "Olive oil"],
+    "nutritionPerServing": { "calories": 420, "protein": 30, "carbs": 16, "fat": 25, "fiber": 2, "sugar": 10 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Roast_chicken_with_dates_olives_and_capers_recipe.jpg?v=1718278547&width=1000",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/roasted-chicken-legs-dates-olives-capers" }
+  },
+  {
+    "name": "Cauliflower, Pomegranate and Pistachio Salad",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Cauliflower", "Pomegranate seeds", "Pistachios", "Parsley", "Olive oil", "Lemon juice", "Sumac"],
+    "nutritionPerServing": { "calories": 220, "protein": 6, "carbs": 18, "fat": 15, "fiber": 5, "sugar": 8 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Cauliflower-pomegranate-and-pistachio-salad.jpg?v=1716187735&width=735",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/cauliflower-pomegranate-pistachio-salad" }
+  },
+  {
+    "name": "Roasted Lemon and Fregola Salad",
+    "servings": 4,
+    "servingGrams": 260,
+    "ingredients": ["Fregola pasta", "Lemon", "Cherry tomatoes", "Radishes", "Red onion", "Arugula", "Fresh herbs", "Olive oil"],
+    "nutritionPerServing": { "calories": 320, "protein": 9, "carbs": 46, "fat": 12, "fiber": 4, "sugar": 5 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Roasted-lemon-and-fregola-salad.jpg?v=1715244793&width=735",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/roasted-lemon-fregola-salad" }
+  },
+  {
+    "name": "Green Herb Salad",
+    "servings": 4,
+    "servingGrams": 100,
+    "ingredients": ["Parsley", "Cilantro", "Dill", "Mint", "Scallions", "Olive oil", "Lemon juice", "Sea salt"],
+    "nutritionPerServing": { "calories": 90, "protein": 2, "carbs": 5, "fat": 8, "fiber": 2, "sugar": 1 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Green_herb_salad.jpg?v=1716187297&width=1000",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/green-herb-salad" }
+  },
+  {
+    "name": "Green Salad with Preserved Lemon Dressing",
+    "servings": 4,
+    "servingGrams": 150,
+    "ingredients": ["Little gem lettuce", "Yogurt", "Preserved lemon", "Toasted seeds", "Olive oil", "Garlic"],
+    "nutritionPerServing": { "calories": 140, "protein": 4, "carbs": 8, "fat": 11, "fiber": 2, "sugar": 4 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Little_gem_lettruce_with_preserved_lemon_dressing.jpg?v=1746616650&width=735",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/green-salad-preserved-lemon-dressing" }
+  },
+  {
+    "name": "Kejadara with Cucumber and Mint Salad",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Basmati rice", "Brown lentils", "Crispy fried onions", "Cucumber", "Fresh mint", "Yogurt", "Olive oil", "Cumin"],
+    "nutritionPerServing": { "calories": 380, "protein": 13, "carbs": 60, "fat": 10, "fiber": 8, "sugar": 5 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Kejadara_3.jpg?v=1760105753&width=735",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/kejadara-cucumber-mint-salad" }
+  },
+  {
+    "name": "Warm Green Bean and Lentil Salad",
+    "servings": 4,
+    "servingGrams": 240,
+    "ingredients": ["Green beans", "Green lentils", "Greek yogurt", "Fresh herbs", "Garlic", "Lemon juice", "Olive oil"],
+    "nutritionPerServing": { "calories": 260, "protein": 12, "carbs": 28, "fat": 11, "fiber": 8, "sugar": 4 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Green_beans_4.jpg?v=1768596942&width=1000",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/warm-green-bean-and-lentil-salad" }
+  },
+  {
+    "name": "Verena's Potato Salad",
+    "servings": 6,
+    "servingGrams": 220,
+    "ingredients": ["Waxy potatoes", "Vegetable broth", "White wine vinegar", "Dijon mustard", "Red onion", "Chives", "Vegetable oil"],
+    "nutritionPerServing": { "calories": 220, "protein": 4, "carbs": 32, "fat": 9, "fiber": 3, "sugar": 3 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Verena_s_potato_salad.jpg?v=1725453575&width=735",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/verenas-potato-salad" }
+  },
+  {
+    "name": "Roasted Aubergine and Onion Salad",
+    "servings": 4,
+    "servingGrams": 260,
+    "ingredients": ["Eggplant", "Red onion", "Sharp cheese", "Olive oil", "Red wine vinegar", "Fresh herbs"],
+    "nutritionPerServing": { "calories": 230, "protein": 7, "carbs": 14, "fat": 17, "fiber": 5, "sugar": 7 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Aubergine_1.jpg?v=1748613539&width=1000",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/roasted-aubergine-onion-salad" }
+  },
+  {
+    "name": "Burnt Aubergine with Feta and Harissa Oil",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Eggplant", "Feta cheese", "Harissa paste", "Olive oil", "Pine nuts", "Fresh dill"],
+    "nutritionPerServing": { "calories": 260, "protein": 8, "carbs": 12, "fat": 21, "fiber": 5, "sugar": 6 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Burnt_aubergine_with_feta_and_harissa_oil_3.jpg?v=1767800330&width=1000",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/burnt-aubergine-feta-harissa-oil" }
+  },
+  {
+    "name": "Aubergine with Black Garlic",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Eggplant", "Black garlic", "Yogurt", "Olive oil", "Pomegranate seeds", "Fresh mint"],
+    "nutritionPerServing": { "calories": 210, "protein": 5, "carbs": 14, "fat": 15, "fiber": 5, "sugar": 8 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Aubergine_with_black_Garlic_yoghurt.jpg?v=1716187641&width=735",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/aubergine-black-garlic" }
+  },
+  {
+    "name": "Stuffed Aubergine in Curry and Coconut Dal",
+    "servings": 4,
+    "servingGrams": 350,
+    "ingredients": ["Eggplant", "Red lentils", "Coconut milk", "Curry powder", "Garlic", "Fresh ginger", "Cilantro", "Basmati rice"],
+    "nutritionPerServing": { "calories": 380, "protein": 14, "carbs": 46, "fat": 16, "fiber": 9, "sugar": 6 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Stuffed_aubergine_in_curry_and_coconut_dal.jpg?v=1716188134&width=735",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/stuffed-aubergine-curry-coconut-dal" }
+  },
+  {
+    "name": "Puy Lentil and Aubergine Stew",
+    "servings": 6,
+    "servingGrams": 320,
+    "ingredients": ["Puy lentils", "Eggplant", "Crushed tomatoes", "Onion", "Garlic", "Vegetable broth", "Cumin", "Olive oil"],
+    "nutritionPerServing": { "calories": 260, "protein": 13, "carbs": 34, "fat": 9, "fiber": 10, "sugar": 6 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/puy-lentil-and-aubergine-stew.jpg?v=1716187992&width=1000",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/puy-lentil-aubergine-stew" }
+  },
+  {
+    "name": "Vegetable Makloubeh",
+    "servings": 6,
+    "servingGrams": 350,
+    "ingredients": ["Basmati rice", "Eggplant", "Cauliflower", "Carrots", "Tomatoes", "Warm spices", "Vegetable broth", "Pine nuts"],
+    "nutritionPerServing": { "calories": 360, "protein": 8, "carbs": 58, "fat": 11, "fiber": 6, "sugar": 6 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Vegetable_Makloubeh.jpg?v=1716187506&width=735",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/vegetable-makloubeh" }
+  },
+  {
+    "name": "Smoky Creamy Pasta with Aubergine and Tahini",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Pasta", "Eggplant", "Tahini", "Garlic", "Lemon juice", "Olive oil", "Parsley"],
+    "nutritionPerServing": { "calories": 460, "protein": 14, "carbs": 58, "fat": 19, "fiber": 6, "sugar": 5 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Smoky_creamy_pasta_with_burnt_aubergine_and_tahini.jpg?v=1716838598&width=1000",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/smoky-creamy-pasta-burnt-aubergine-tahini" }
+  },
+  {
+    "name": "Aubergine Curry",
+    "servings": 4,
+    "servingGrams": 300,
+    "ingredients": ["Eggplant", "Coconut milk", "Curry powder", "Mustard seeds", "Curry leaves", "Garlic", "Fresh ginger", "Basmati rice"],
+    "nutritionPerServing": { "calories": 340, "protein": 6, "carbs": 38, "fat": 19, "fiber": 6, "sugar": 6 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Aubergine_curry.jpg?v=1716838458&width=735",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/aubergine-curry" }
+  },
+  {
+    "name": "Marinated Chicken Thighs with Fenugreek and Ginger",
+    "servings": 4,
+    "servingGrams": 260,
+    "ingredients": ["Chicken thighs", "Fenugreek leaves", "Fresh ginger", "Garlic", "Yogurt", "Lemon juice", "Flatbreads"],
+    "nutritionPerServing": { "calories": 380, "protein": 32, "carbs": 14, "fat": 22, "fiber": 1, "sugar": 3 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Marinated_chicken_thighs_with_fenugreek_and_ginger.jpg?v=1750248729&width=735",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/marinated-chicken-thighs-with-fenugreek-and-ginger" }
+  },
+  {
+    "name": "Citrusy Chicken, Fennel and Potato Tray Bake",
+    "servings": 4,
+    "servingGrams": 380,
+    "ingredients": ["Chicken thighs", "Fennel bulb", "Baby potatoes", "Orange", "Lemon", "Olive oil", "Fresh thyme"],
+    "nutritionPerServing": { "calories": 460, "protein": 30, "carbs": 30, "fat": 25, "fiber": 4, "sugar": 6 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Citrusy_chicken_fennel_and_potato_tray_bake.jpg?v=1718207823&width=1000",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/citrusy-chicken-fennel-potato-tray-bake" }
+  },
+  {
+    "name": "Roman Fried Chicken with Tomato and Crisp Oregano",
+    "servings": 4,
+    "servingGrams": 300,
+    "ingredients": ["Chicken thighs", "Garlic", "Fresh oregano", "Pancetta", "Tomatoes", "Fennel seeds", "Olive oil"],
+    "nutritionPerServing": { "calories": 440, "protein": 32, "carbs": 8, "fat": 30, "fiber": 2, "sugar": 4 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Photo_29-01-2026_12_02_01.jpg?v=1772122226&width=1000",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/roman-fried-chicken-tomatoes-crisp-oregano" }
+  },
+  {
+    "name": "Roast Chicken with Curry Leaf Dukkah",
+    "servings": 4,
+    "servingGrams": 280,
+    "ingredients": ["Whole chicken", "Curry leaves", "Dukkah spice blend", "Olive oil", "Lemon", "Garlic"],
+    "nutritionPerServing": { "calories": 420, "protein": 34, "carbs": 6, "fat": 28, "fiber": 2, "sugar": 1 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Roast_chicken_with_curry_leaf_dukkah.jpg?v=1733415182&width=1000",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/roast-chicken-curry-leaf-dukkah" }
+  },
+  {
+    "name": "Crispy Chicken with Carlin Peas and Zhoug",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Chicken thighs", "Carlin peas", "Arugula", "Zhoug sauce", "Lime juice", "Olive oil"],
+    "nutritionPerServing": { "calories": 420, "protein": 30, "carbs": 24, "fat": 23, "fiber": 6, "sugar": 3 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Crispy_chicken_with_carlin_peas_and_zhoug.jpg?v=1741192986&width=1000",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/crispy-chicken-carlin-peas-zhoug" }
+  },
+  {
+    "name": "Lamb Shoulder with Broad Beans and Herbs",
+    "servings": 6,
+    "servingGrams": 300,
+    "ingredients": ["Lamb shoulder", "Broad beans", "Fresh herbs", "Garlic", "White wine", "Olive oil", "Lemon zest"],
+    "nutritionPerServing": { "calories": 460, "protein": 34, "carbs": 10, "fat": 30, "fiber": 4, "sugar": 2 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Lamb_and_broad_beans.jpg?v=1716187332&width=1000",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/lamb-shoulder-broad-beans" }
+  },
+  {
+    "name": "Lamb Chops with Pilpelchuma Oil and Herb Salad",
+    "servings": 4,
+    "servingGrams": 260,
+    "ingredients": ["Lamb chops", "Pilpelchuma spice paste", "Tahini", "Yogurt", "Fresh herbs", "Olive oil"],
+    "nutritionPerServing": { "calories": 420, "protein": 32, "carbs": 6, "fat": 30, "fiber": 1, "sugar": 2 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Lamb_chops_with_pilpelchuma_butter_tahini_yoghurt_and_herb_salad_1dea4afb-135c-4d1c-810f-e9c416457162.jpg?v=1716894065&width=1000",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/lamb-chops-pilpelchuma-oil-tahini-yoghurt-herb-salad" }
+  },
+  {
+    "name": "Sticky Lamb Bao with Pickled Chilli and Coriander",
+    "servings": 4,
+    "servingGrams": 260,
+    "ingredients": ["Ground lamb", "Bao buns", "Hoisin sauce", "Pickled chilli", "Fresh cilantro", "Scallions", "Fresh ginger"],
+    "nutritionPerServing": { "calories": 440, "protein": 24, "carbs": 40, "fat": 22, "fiber": 2, "sugar": 10 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Lamb_bao.jpg?v=1735036617&width=1000",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/sticky-lamb-bao-pickled-chilli-coriander" }
+  },
+  {
+    "name": "Lamb Shawarma",
+    "servings": 6,
+    "servingGrams": 260,
+    "ingredients": ["Lamb shoulder", "Shawarma spice blend", "Garlic", "Yogurt", "Pita bread", "Tahini sauce", "Pickles"],
+    "nutritionPerServing": { "calories": 440, "protein": 32, "carbs": 24, "fat": 26, "fiber": 2, "sugar": 3 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Lamb_shawarma.jpg?v=1740056852&width=1000",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/lamb-shawarma" }
+  },
+  {
+    "name": "Braised Lamb with Maftoul and Chickpeas",
+    "servings": 6,
+    "servingGrams": 350,
+    "ingredients": ["Lamb chops", "Maftoul pearls", "Chickpeas", "Lamb stock", "Yogurt", "Warm spices", "Olive oil"],
+    "nutritionPerServing": { "calories": 480, "protein": 30, "carbs": 42, "fat": 22, "fiber": 8, "sugar": 4 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/Braised_lamb_maftoul.jpg?v=1716187204&width=735",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/braised-lamb-maftoul-chickpeas" }
+  },
+  {
+    "name": "Chickpea Stew with Rhubarb and Jaggery",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Chickpeas", "Rhubarb", "Jaggery", "Crushed tomatoes", "Garlic", "Fresh ginger", "Warm spices"],
+    "nutritionPerServing": { "calories": 300, "protein": 10, "carbs": 46, "fat": 9, "fiber": 9, "sugar": 16 },
+    "imageUrl": "https://ottolenghi.co.uk/cdn/shop/files/stew_1_v2.jpg?v=1742573487&width=735",
+    "imageCredit": { "label": "Ottolenghi", "sourceUrl": "https://ottolenghi.co.uk/pages/recipes/chickpea-stew-rhubarb-jaggery" }
+  }
+]

@@ -1,0 +1,182 @@
+[
+  {
+    "name": "Salmon with Cheesy Fonio Grits",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Salmon fillets", "Fonio", "Cheddar cheese", "Vegetable broth", "Garlic", "Butter", "Lemon"],
+    "nutritionPerServing": { "calories": 460, "protein": 34, "carbs": 30, "fat": 24, "fiber": 3, "sugar": 1 },
+    "imageUrl": "https://yolele.com/cdn/shop/articles/Website_2024_3_c5e7a1ea-faf3-4425-94b7-fde9967cd505.png?v=1743576806",
+    "imageCredit": { "label": "Yolélé", "sourceUrl": "https://yolele.com/blogs/recipes/salmon-with-cheesy-fonio-grits" }
+  },
+  {
+    "name": "Fonio Pilaf with Dates, Carrots, and Peanuts",
+    "servings": 8,
+    "servingGrams": 200,
+    "ingredients": ["Fonio", "Dates", "Carrots", "Roasted peanuts", "Onion", "Vegetable broth", "Cinnamon"],
+    "nutritionPerServing": { "calories": 260, "protein": 6, "carbs": 42, "fat": 9, "fiber": 5, "sugar": 14 },
+    "imageUrl": "https://yolele.com/cdn/shop/articles/Website_Recipe_Images_2024_4_e6aa5bf8-d480-4eaf-b11e-565f1b744fd9.png?v=1729166692",
+    "imageCredit": { "label": "Yolélé", "sourceUrl": "https://yolele.com/blogs/recipes/fonio-pilaf-with-dates-carrots-and-peanuts" }
+  },
+  {
+    "name": "Yassa Fonio Pilaf Fritters",
+    "servings": 4,
+    "servingGrams": 180,
+    "ingredients": ["Fonio", "Onion", "Dijon mustard", "Lemon juice", "Egg", "Flour", "Vegetable oil"],
+    "nutritionPerServing": { "calories": 220, "protein": 6, "carbs": 28, "fat": 10, "fiber": 3, "sugar": 3 },
+    "imageUrl": "https://yolele.com/cdn/shop/articles/Website_2024_19.png?v=1727671892",
+    "imageCredit": { "label": "Yolélé", "sourceUrl": "https://yolele.com/blogs/recipes/yassa-fonio-pilaf-fritters" }
+  },
+  {
+    "name": "Fonio Flour Fried Fish",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["White fish fillets", "Fonio flour", "Garlic powder", "Paprika", "Vegetable oil", "Lemon"],
+    "nutritionPerServing": { "calories": 320, "protein": 28, "carbs": 16, "fat": 16, "fiber": 2, "sugar": 0 },
+    "imageUrl": "https://yolele.com/cdn/shop/articles/Website_2024_16.png?v=1743577818",
+    "imageCredit": { "label": "Yolélé", "sourceUrl": "https://yolele.com/blogs/recipes/fonio-flour-fried-fish" }
+  },
+  {
+    "name": "Fonio Greek Salad",
+    "servings": 4,
+    "servingGrams": 240,
+    "ingredients": ["Fonio", "Cucumber", "Cherry tomatoes", "Feta cheese", "Kalamata olives", "Red onion", "Olive oil"],
+    "nutritionPerServing": { "calories": 260, "protein": 8, "carbs": 30, "fat": 13, "fiber": 4, "sugar": 4 },
+    "imageUrl": "https://yolele.com/cdn/shop/articles/Website_2024_13.png?v=1743582343",
+    "imageCredit": { "label": "Yolélé", "sourceUrl": "https://yolele.com/blogs/recipes/fonio-greek-salad" }
+  },
+  {
+    "name": "Turmeric Tahini Roast Chicken and Fonio",
+    "servings": 2,
+    "servingGrams": 380,
+    "ingredients": ["Chicken thighs", "Fonio", "Turmeric", "Tahini", "Garlic", "Lemon juice", "Vegetable broth"],
+    "nutritionPerServing": { "calories": 480, "protein": 32, "carbs": 34, "fat": 24, "fiber": 4, "sugar": 2 },
+    "imageUrl": "https://yolele.com/cdn/shop/articles/Website_2024_11.png?v=1727668870",
+    "imageCredit": { "label": "Yolélé", "sourceUrl": "https://yolele.com/blogs/recipes/turmeric-tahini-roast-chicken-and-fonio" }
+  },
+  {
+    "name": "Pimento Cheese Fonio Grits",
+    "servings": 2,
+    "servingGrams": 220,
+    "ingredients": ["Fonio", "Cheddar cheese", "Roasted red peppers", "Mayonnaise", "Cayenne pepper", "Vegetable broth"],
+    "nutritionPerServing": { "calories": 340, "protein": 11, "carbs": 30, "fat": 20, "fiber": 3, "sugar": 2 },
+    "imageUrl": "https://yolele.com/cdn/shop/articles/Website_2024_8_81da2adf-c03c-4330-a3f5-4e7f42a64f46.png?v=1727666917",
+    "imageCredit": { "label": "Yolélé", "sourceUrl": "https://yolele.com/blogs/recipes/pimento-cheese-fonio-grits" }
+  },
+  {
+    "name": "Easy BBQ Chicken Fonio Bowl",
+    "servings": 2,
+    "servingGrams": 340,
+    "ingredients": ["Chicken breast", "Fonio", "BBQ sauce", "Corn", "Black beans", "Avocado", "Cilantro"],
+    "nutritionPerServing": { "calories": 420, "protein": 30, "carbs": 46, "fat": 13, "fiber": 8, "sugar": 10 },
+    "imageUrl": "https://yolele.com/cdn/shop/articles/Website_2024_10.png?v=1727212294",
+    "imageCredit": { "label": "Yolélé", "sourceUrl": "https://yolele.com/blogs/recipes/easy-bbq-chicken-fonio-bowl" }
+  },
+  {
+    "name": "Fonio Frico",
+    "servings": 4,
+    "servingGrams": 60,
+    "ingredients": ["Fonio", "Parmesan cheese", "Black pepper"],
+    "nutritionPerServing": { "calories": 140, "protein": 8, "carbs": 10, "fat": 8, "fiber": 1, "sugar": 0 },
+    "imageUrl": "https://yolele.com/cdn/shop/articles/Website_2024_7.png?v=1727210831",
+    "imageCredit": { "label": "Yolélé", "sourceUrl": "https://yolele.com/blogs/recipes/fonio-frico" }
+  },
+  {
+    "name": "Selim Pepper Crusted Salmon",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Salmon fillets", "Selim pepper", "Garlic", "Olive oil", "Lemon", "Fresh thyme"],
+    "nutritionPerServing": { "calories": 380, "protein": 34, "carbs": 2, "fat": 26, "fiber": 0, "sugar": 0 },
+    "imageUrl": "https://yolele.com/cdn/shop/articles/Website_Recipe_Images_2024_56.png?v=1726026593",
+    "imageCredit": { "label": "Yolélé", "sourceUrl": "https://yolele.com/blogs/recipes/selim-pepper-crusted-salmon" }
+  },
+  {
+    "name": "Salmon Fonio Casserole",
+    "servings": 6,
+    "servingGrams": 320,
+    "ingredients": ["Salmon fillets", "Fonio", "Peas", "Cream of mushroom sauce", "Onion", "Breadcrumbs", "Butter"],
+    "nutritionPerServing": { "calories": 380, "protein": 26, "carbs": 32, "fat": 16, "fiber": 3, "sugar": 3 },
+    "imageUrl": "https://yolele.com/cdn/shop/articles/Website_Recipe_Images_2024_24.png?v=1722474814",
+    "imageCredit": { "label": "Yolélé", "sourceUrl": "https://yolele.com/blogs/recipes/salmon-fonio-casserole" }
+  },
+  {
+    "name": "Cast Iron Chicken Fonio Bake",
+    "servings": 4,
+    "servingGrams": 360,
+    "ingredients": ["Chicken thighs", "Fonio", "Carrots", "Onion", "Garlic", "Chicken broth", "Fresh thyme"],
+    "nutritionPerServing": { "calories": 420, "protein": 30, "carbs": 32, "fat": 18, "fiber": 3, "sugar": 3 },
+    "imageUrl": "https://yolele.com/cdn/shop/articles/Website_Recipe_Images_2024_55.png?v=1726026086",
+    "imageCredit": { "label": "Yolélé", "sourceUrl": "https://yolele.com/blogs/recipes/cast-iron-chicken-fonio-bake" }
+  },
+  {
+    "name": "Jollof Plantain Fonio Stuffing",
+    "servings": 8,
+    "servingGrams": 220,
+    "ingredients": ["Fonio", "Ripe plantains", "Tomato paste", "Onion", "Bell pepper", "Vegetable broth", "Warm spices"],
+    "nutritionPerServing": { "calories": 240, "protein": 5, "carbs": 44, "fat": 6, "fiber": 4, "sugar": 10 },
+    "imageUrl": "https://yolele.com/cdn/shop/articles/Website_Recipe_Images_2024_2_2cc2542e-800e-47a1-be82-08c71459d41f.png?v=1725020249",
+    "imageCredit": { "label": "Yolélé", "sourceUrl": "https://yolele.com/blogs/recipes/jollof-plantain-fonio-stuffing" }
+  },
+  {
+    "name": "Fonio Crusted Crab Cakes",
+    "servings": 4,
+    "servingGrams": 160,
+    "ingredients": ["Lump crab meat", "Fonio", "Mayonnaise", "Dijon mustard", "Egg", "Scallions", "Old Bay seasoning"],
+    "nutritionPerServing": { "calories": 240, "protein": 18, "carbs": 12, "fat": 14, "fiber": 1, "sugar": 1 },
+    "imageUrl": "https://yolele.com/cdn/shop/articles/Website_Recipe_Images_2024_54.png?v=1722572088",
+    "imageCredit": { "label": "Yolélé", "sourceUrl": "https://yolele.com/blogs/recipes/fonio-crusted-crab-cakes" }
+  },
+  {
+    "name": "Date and Citrus Fonio Pilaf Salad",
+    "servings": 6,
+    "servingGrams": 220,
+    "ingredients": ["Fonio", "Orange", "Dates", "Almonds", "Arugula", "Olive oil", "Lemon juice"],
+    "nutritionPerServing": { "calories": 260, "protein": 6, "carbs": 40, "fat": 10, "fiber": 5, "sugar": 16 },
+    "imageUrl": "https://yolele.com/cdn/shop/articles/Website_2024_10_8e16410c-0c7d-4af2-a191-59e3a2466c3f.png?v=1743580166",
+    "imageCredit": { "label": "Yolélé", "sourceUrl": "https://yolele.com/blogs/recipes/date-citrus-fonio-pilaf-salad" }
+  },
+  {
+    "name": "Warm Pigeon Pea and Fonio Salad",
+    "servings": 4,
+    "servingGrams": 240,
+    "ingredients": ["Pigeon peas", "Fonio", "Bell pepper", "Red onion", "Olive oil", "Lime juice", "Cilantro"],
+    "nutritionPerServing": { "calories": 260, "protein": 10, "carbs": 42, "fat": 6, "fiber": 8, "sugar": 4 },
+    "imageUrl": "https://yolele.com/cdn/shop/articles/Website_2024_4.png?v=1743577166",
+    "imageCredit": { "label": "Yolélé", "sourceUrl": "https://yolele.com/blogs/recipes/warm-pigeon-pea-fonio-salad" }
+  },
+  {
+    "name": "Yassa Yogurt Dip",
+    "servings": 6,
+    "servingGrams": 80,
+    "ingredients": ["Greek yogurt", "Onion", "Dijon mustard", "Lemon juice", "Garlic", "Fresh parsley"],
+    "nutritionPerServing": { "calories": 60, "protein": 4, "carbs": 4, "fat": 3, "fiber": 0, "sugar": 3 },
+    "imageUrl": "https://yolele.com/cdn/shop/articles/Website_2024_6_c666aee2-863f-400e-bb8d-cbd3d56b79f4.png?v=1743578592",
+    "imageCredit": { "label": "Yolélé", "sourceUrl": "https://yolele.com/blogs/recipes/yassa-yogurt-dip" }
+  },
+  {
+    "name": "Afro-Funk Grilled Vegetables",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Zucchini", "Bell pepper", "Eggplant", "Afro-Funk spice blend", "Olive oil", "Lemon juice"],
+    "nutritionPerServing": { "calories": 140, "protein": 3, "carbs": 14, "fat": 9, "fiber": 4, "sugar": 7 },
+    "imageUrl": "https://yolele.com/cdn/shop/articles/Website_2024_7_2b562e2f-62ab-462d-a623-273919de1329.png?v=1743578717",
+    "imageCredit": { "label": "Yolélé", "sourceUrl": "https://yolele.com/blogs/recipes/afro-funk-grilled-vegetables" }
+  },
+  {
+    "name": "Grilled Whole Fish with Rof",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Whole white fish", "Parsley", "Cilantro", "Garlic", "Habanero pepper", "Lime juice", "Vegetable oil"],
+    "nutritionPerServing": { "calories": 300, "protein": 32, "carbs": 4, "fat": 17, "fiber": 1, "sugar": 1 },
+    "imageUrl": "https://yolele.com/cdn/shop/articles/Website_Recipe_Images_2024_45.png?v=1722568609",
+    "imageCredit": { "label": "Yolélé", "sourceUrl": "https://yolele.com/blogs/recipes/grilled-whole-fish-with-rof" }
+  },
+  {
+    "name": "Peanut Butter Soup with Fonio",
+    "servings": 6,
+    "servingGrams": 350,
+    "ingredients": ["Peanut butter", "Fonio", "Tomato paste", "Onion", "Garlic", "Vegetable broth", "Scotch bonnet pepper"],
+    "nutritionPerServing": { "calories": 320, "protein": 11, "carbs": 30, "fat": 19, "fiber": 4, "sugar": 5 },
+    "imageUrl": "https://yolele.com/cdn/shop/articles/Website_Recipe_Images_2024_44.png?v=1722567387",
+    "imageCredit": { "label": "Yolélé", "sourceUrl": "https://yolele.com/blogs/recipes/peanut-butter-soup-with-fonio" }
+  }
+]

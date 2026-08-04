@@ -1,0 +1,173 @@
+[
+  {
+    "name": "Thai Beef Satay",
+    "servings": 4,
+    "servingGrams": 200,
+    "ingredients": ["Beef sirloin", "Yellow curry paste", "Coconut milk", "Peanut sauce", "Bamboo skewers", "Cucumber relish"],
+    "nutritionPerServing": { "calories": 340, "protein": 28, "carbs": 10, "fat": 21, "fiber": 1, "sugar": 6 },
+    "imageUrl": "https://www.marionskitchen.com/wp-content/uploads/2021/08/20201112_Thai-Beef-Satay-9-scaled-e1628697796715.jpeg",
+    "imageCredit": { "label": "Marion's Kitchen", "sourceUrl": "https://www.marionskitchen.com/thai-beef-satay/" }
+  },
+  {
+    "name": "Spicy Beef and Coconut Stir-fry",
+    "servings": 4,
+    "servingGrams": 300,
+    "ingredients": ["Beef strips", "Coconut cream", "Red curry paste", "Broccolini", "Sugar snap peas", "Asparagus", "Fish sauce"],
+    "nutritionPerServing": { "calories": 360, "protein": 26, "carbs": 12, "fat": 24, "fiber": 3, "sugar": 4 },
+    "imageUrl": "https://www.marionskitchen.com/wp-content/uploads/2018/05/Spicy-Beef-Coconut-Stir-fry-01.jpg",
+    "imageCredit": { "label": "Marion's Kitchen", "sourceUrl": "https://www.marionskitchen.com/spicy-beef-coconut-stir-fry/" }
+  },
+  {
+    "name": "Thai Red Curry Fried Rice",
+    "servings": 4,
+    "servingGrams": 340,
+    "ingredients": ["Cooked rice", "Red curry paste", "Chicken breast", "Egg", "Green beans", "Fish sauce", "Thai basil"],
+    "nutritionPerServing": { "calories": 420, "protein": 22, "carbs": 52, "fat": 14, "fiber": 3, "sugar": 3 },
+    "imageUrl": "https://www.marionskitchen.com/wp-content/uploads/2019/05/Thai-Red-Curry-Fried-Rice-01.jpg",
+    "imageCredit": { "label": "Marion's Kitchen", "sourceUrl": "https://www.marionskitchen.com/thai-red-curry-fried-rice/" }
+  },
+  {
+    "name": "Red Curry Pork Stir Fry",
+    "servings": 4,
+    "servingGrams": 300,
+    "ingredients": ["Pork loin", "Red curry paste", "Green beans", "Kaffir lime leaves", "Fish sauce", "Palm sugar", "Jasmine rice"],
+    "nutritionPerServing": { "calories": 380, "protein": 26, "carbs": 30, "fat": 17, "fiber": 3, "sugar": 5 },
+    "imageUrl": "https://www.marionskitchen.com/wp-content/uploads/2022/10/Red-Curry-Pork-Stir-fry-%E2%80%98Pad-Prik-Gaeng-Moo-01.jpg",
+    "imageCredit": { "label": "Marion's Kitchen", "sourceUrl": "https://www.marionskitchen.com/red-curry-pork-stir-fry-pad-prik-gaeng-moo/" }
+  },
+  {
+    "name": "Thai Green Curry Stir-Fry",
+    "servings": 4,
+    "servingGrams": 300,
+    "ingredients": ["Chicken thighs", "Green curry paste", "Coconut cream", "Eggplant", "Bell pepper", "Thai basil", "Fish sauce"],
+    "nutritionPerServing": { "calories": 380, "protein": 26, "carbs": 12, "fat": 26, "fiber": 3, "sugar": 4 },
+    "imageUrl": "https://www.marionskitchen.com/wp-content/uploads/2021/07/Thai-Green-Curry-Stir-fry-01-1.jpg",
+    "imageCredit": { "label": "Marion's Kitchen", "sourceUrl": "https://www.marionskitchen.com/thai-green-curry-stir-fry/" }
+  },
+  {
+    "name": "Thai Green Curry Fried Rice",
+    "servings": 4,
+    "servingGrams": 340,
+    "ingredients": ["Cooked rice", "Green curry paste", "Shrimp", "Egg", "Green beans", "Fish sauce", "Thai basil"],
+    "nutritionPerServing": { "calories": 400, "protein": 20, "carbs": 52, "fat": 13, "fiber": 3, "sugar": 3 },
+    "imageUrl": "https://www.marionskitchen.com/wp-content/uploads/2018/06/Thai-Green-Curry-Fried-Rice-01.jpg",
+    "imageCredit": { "label": "Marion's Kitchen", "sourceUrl": "https://www.marionskitchen.com/thai-green-curry-fried-rice/" }
+  },
+  {
+    "name": "Japanese Chicken Curry Udon",
+    "servings": 4,
+    "servingGrams": 380,
+    "ingredients": ["Udon noodles", "Chicken thighs", "Japanese curry roux", "Onion", "Carrots", "Chicken broth"],
+    "nutritionPerServing": { "calories": 440, "protein": 24, "carbs": 58, "fat": 13, "fiber": 3, "sugar": 6 },
+    "imageUrl": "https://www.marionskitchen.com/wp-content/uploads/2022/07/Japanese-Chicken-Curry-Udon-01.jpg",
+    "imageCredit": { "label": "Marion's Kitchen", "sourceUrl": "https://www.marionskitchen.com/japanese-chicken-curry-udon/" }
+  },
+  {
+    "name": "Marion's Singapore Noodles",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Rice vermicelli noodles", "Curry powder", "Shrimp", "Char siu pork", "Baby corn", "Egg", "Bean sprouts"],
+    "nutritionPerServing": { "calories": 380, "protein": 20, "carbs": 50, "fat": 11, "fiber": 3, "sugar": 4 },
+    "imageUrl": "https://www.marionskitchen.com/wp-content/uploads/2022/10/Marions-Singapore-Noodles-01-1.jpg",
+    "imageCredit": { "label": "Marion's Kitchen", "sourceUrl": "https://www.marionskitchen.com/marions-singapore-noodles/" }
+  },
+  {
+    "name": "Cantonese Rice Noodles with Egg Gravy",
+    "servings": 4,
+    "servingGrams": 350,
+    "ingredients": ["Flat rice noodles", "Beef slices", "Egg", "Chicken broth", "Bok choy", "Oyster sauce", "Cornstarch"],
+    "nutritionPerServing": { "calories": 400, "protein": 22, "carbs": 52, "fat": 12, "fiber": 2, "sugar": 3 },
+    "imageUrl": "https://www.marionskitchen.com/wp-content/uploads/2022/02/Cantonese-Rice-Noodles-with-Egg-Gravy-01-1.jpg",
+    "imageCredit": { "label": "Marion's Kitchen", "sourceUrl": "https://www.marionskitchen.com/cantonese-rice-noodles-with-egg-gravy/" }
+  },
+  {
+    "name": "Sweet and Sticky Honey Chicken Noodles",
+    "servings": 4,
+    "servingGrams": 340,
+    "ingredients": ["Chicken thighs", "Rice noodles", "Honey", "Soy sauce", "Cucumber", "Carrots", "Green beans"],
+    "nutritionPerServing": { "calories": 420, "protein": 24, "carbs": 56, "fat": 12, "fiber": 3, "sugar": 16 },
+    "imageUrl": "https://www.marionskitchen.com/wp-content/uploads/2020/03/20180217_FB-LIVE_Pad-khee-mao-5.jpg",
+    "imageCredit": { "label": "Marion's Kitchen", "sourceUrl": "https://www.marionskitchen.com/sweet-sticky-honey-chicken-noodles/" }
+  },
+  {
+    "name": "Spicy Seafood Drunken Noodles",
+    "servings": 4,
+    "servingGrams": 360,
+    "ingredients": ["Fresh rice noodles", "Shrimp", "Squid", "Thai basil", "Bird's eye chili", "Fish sauce", "Bell pepper"],
+    "nutritionPerServing": { "calories": 380, "protein": 22, "carbs": 48, "fat": 11, "fiber": 2, "sugar": 4 },
+    "imageUrl": "https://www.marionskitchen.com/wp-content/uploads/2020/02/Spicy-Seafood-Drunken-Noodles4.jpg",
+    "imageCredit": { "label": "Marion's Kitchen", "sourceUrl": "https://www.marionskitchen.com/spicy-seafood-drunken-noodles/" }
+  },
+  {
+    "name": "Classic Tom Yum Soup",
+    "servings": 4,
+    "servingGrams": 350,
+    "ingredients": ["Shrimp", "Lemongrass", "Galangal", "Kaffir lime leaves", "Mushrooms", "Fish sauce", "Lime juice", "Chili paste"],
+    "nutritionPerServing": { "calories": 160, "protein": 16, "carbs": 8, "fat": 7, "fiber": 1, "sugar": 3 },
+    "imageUrl": "https://www.marionskitchen.com/wp-content/uploads/2021/06/20180220_Tomyumkung_7-scaled.jpg",
+    "imageCredit": { "label": "Marion's Kitchen", "sourceUrl": "https://www.marionskitchen.com/classic-tom-yum-soup/" }
+  },
+  {
+    "name": "Thai Papaya Salad",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Green papaya", "Cherry tomatoes", "Green beans", "Dried shrimp", "Peanuts", "Fish sauce", "Lime juice", "Palm sugar"],
+    "nutritionPerServing": { "calories": 140, "protein": 5, "carbs": 20, "fat": 6, "fiber": 3, "sugar": 12 },
+    "imageUrl": "https://www.marionskitchen.com/wp-content/uploads/2018/03/Som-tum-thai-papaya-salad-5-e1551244735156.jpg",
+    "imageCredit": { "label": "Marion's Kitchen", "sourceUrl": "https://www.marionskitchen.com/som-tum-thai-papaya-salad/" }
+  },
+  {
+    "name": "Thai Glass Noodle Salad",
+    "servings": 4,
+    "servingGrams": 260,
+    "ingredients": ["Glass noodles", "Ground pork", "Shrimp", "Fish sauce", "Lime juice", "Sugar", "Celery", "Bird's eye chili"],
+    "nutritionPerServing": { "calories": 280, "protein": 16, "carbs": 32, "fat": 9, "fiber": 1, "sugar": 6 },
+    "imageUrl": "https://www.marionskitchen.com/wp-content/uploads/2021/06/20170913_Thai-salad-4.jpeg",
+    "imageCredit": { "label": "Marion's Kitchen", "sourceUrl": "https://www.marionskitchen.com/thai-glass-noodle-salad-yum-woon-sen/" }
+  },
+  {
+    "name": "Traditional Thai Chicken Satay",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Chicken thighs", "Yellow curry paste", "Coconut milk", "Peanut butter", "Fish sauce", "Sugar", "Bamboo skewers"],
+    "nutritionPerServing": { "calories": 360, "protein": 28, "carbs": 12, "fat": 23, "fiber": 1, "sugar": 8 },
+    "imageUrl": "https://www.marionskitchen.com/wp-content/uploads/2019/04/Traditional-Thai-Chicken-Satay1.jpg",
+    "imageCredit": { "label": "Marion's Kitchen", "sourceUrl": "https://www.marionskitchen.com/traditional-thai-chicken-satay/" }
+  },
+  {
+    "name": "Thai Chicken Laab",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Ground chicken", "Toasted rice powder", "Lime juice", "Fish sauce", "Shallots", "Mint", "Bird's eye chili"],
+    "nutritionPerServing": { "calories": 240, "protein": 24, "carbs": 10, "fat": 12, "fiber": 1, "sugar": 3 },
+    "imageUrl": "https://www.marionskitchen.com/wp-content/uploads/2019/05/Thai-Chicken-Laab3.jpg",
+    "imageCredit": { "label": "Marion's Kitchen", "sourceUrl": "https://www.marionskitchen.com/thai-chicken-laab/" }
+  },
+  {
+    "name": "Thai Pork Laab Salad",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Ground pork", "Toasted rice powder", "Lime juice", "Fish sauce", "Shallots", "Mint", "Cilantro"],
+    "nutritionPerServing": { "calories": 280, "protein": 22, "carbs": 8, "fat": 18, "fiber": 1, "sugar": 3 },
+    "imageUrl": "https://www.marionskitchen.com/wp-content/uploads/2017/10/Thai-Laab-Salad-5-e1551244958752.jpg",
+    "imageCredit": { "label": "Marion's Kitchen", "sourceUrl": "https://www.marionskitchen.com/thai-pork-laab-salad/" }
+  },
+  {
+    "name": "Mum's Thai Red Curry Pork Stir-fry",
+    "servings": 4,
+    "servingGrams": 300,
+    "ingredients": ["Pork loin", "Red curry paste", "Coconut cream", "Green beans", "Kaffir lime leaves", "Jasmine rice"],
+    "nutritionPerServing": { "calories": 380, "protein": 26, "carbs": 28, "fat": 18, "fiber": 3, "sugar": 4 },
+    "imageUrl": "https://www.marionskitchen.com/wp-content/uploads/2021/06/Mums-Thai-Red-Curry-Pork-Stir-fry-01-scaled.jpg",
+    "imageCredit": { "label": "Marion's Kitchen", "sourceUrl": "https://www.marionskitchen.com/mums-thai-red-curry-pork-stir-fry/" }
+  },
+  {
+    "name": "Tom Yum Fried Rice",
+    "servings": 4,
+    "servingGrams": 340,
+    "ingredients": ["Cooked rice", "Shrimp", "Tom yum paste", "Lemongrass", "Kaffir lime leaves", "Egg", "Fish sauce"],
+    "nutritionPerServing": { "calories": 400, "protein": 20, "carbs": 54, "fat": 12, "fiber": 2, "sugar": 3 },
+    "imageUrl": "https://www.marionskitchen.com/wp-content/uploads/2019/06/Tom-Yum-Fried-Rice4.jpg",
+    "imageCredit": { "label": "Marion's Kitchen", "sourceUrl": "https://www.marionskitchen.com/tom-yum-fried-rice/" }
+  }
+]

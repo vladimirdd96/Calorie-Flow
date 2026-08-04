@@ -7,8 +7,12 @@ const dairyWords = /\b(cheese|butter|cream|milk|yogurt|ricotta|mozzarella|parmes
 const eggWords = /\b(eggs?|egg wash|egg yolk)\b/i;
 const honeyWords = /\bhoney\b/i;
 const glutenWords = /\b(pasta|noodles|spaghetti|penne|rigatoni|bread|breadcrumbs|flour|tortilla|buns?|pie crust|puff pastry|shortcrust|pizza dough|couscous|panko|hokkien|vermicelli|risoni|pastina|orzo|wonton|dumpling wrapper|egg roll wrapper|ciabatta|graham cracker)\b/i;
+// Grains/starches/sugars/legumes that disqualify a dish from keto or paleo, even if it happens to be low-carb overall.
+const starchyWords = /\b(rice|potato|corn|oats?|quinoa|grits|fonio|barley|bulgur|couscous|beans?|lentils?|chickpeas|peas\b)\b/i;
+const refinedSugarWords = /\b(sugar|honey|maple syrup|agave|jam|jaggery|condensed milk|brown sugar)\b/i;
+const legumeWords = /\b(beans?|lentils?|chickpeas|peanuts?|peanut butter|tofu|edamame|soy)\b/i;
 
-function dietaryTagsFor(ingredientNames) {
+function dietaryTagsFor(ingredientNames, nutritionPerServing) {
   const text = ingredientNames.join(", ").toLowerCase();
   const hasMeat = meatWords.test(text);
   const hasFish = fishWords.test(text);
@@ -16,12 +20,19 @@ function dietaryTagsFor(ingredientNames) {
   const hasEgg = eggWords.test(text);
   const hasHoney = honeyWords.test(text);
   const hasGluten = glutenWords.test(text);
+  const hasStarch = starchyWords.test(text);
+  const hasRefinedSugar = refinedSugarWords.test(text);
+  const hasLegumes = legumeWords.test(text);
   const tags = [];
   if (!hasMeat && !hasFish) tags.push("vegetarian");
   if (!hasMeat && !hasFish && !hasDairy && !hasEgg && !hasHoney) tags.push("vegan");
   if (!hasMeat && hasFish) tags.push("pescatarian");
   if (!hasGluten) tags.push("glutenFree");
   if (!hasDairy) tags.push("dairyFree");
+  // Keto: low-carb per serving (<=12g) and no grains/starch/refined sugar.
+  if (nutritionPerServing && nutritionPerServing.carbs <= 12 && !hasStarch && !hasGluten && !hasRefinedSugar) tags.push("keto");
+  // Paleo: whole-food, no dairy/grains/legumes/refined sugar (fruit sugar is fine, so no blanket sugar check here beyond refined).
+  if (!hasDairy && !hasGluten && !hasStarch && !hasLegumes && !hasRefinedSugar) tags.push("paleo");
   return tags;
 }
 
@@ -199,6 +210,6 @@ export function enrichEntry(entry) {
     ...entry,
     ingredients: enrichIngredients(names, entry.servings),
     instructions: instructionsFor(entry.name, names, entry.servings),
-    dietaryTags: dietaryTagsFor(names),
+    dietaryTags: dietaryTagsFor(names, entry.nutritionPerServing),
   };
 }

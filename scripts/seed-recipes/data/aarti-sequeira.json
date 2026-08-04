@@ -1,0 +1,155 @@
+[
+  {
+    "name": "Tandoori Chicken",
+    "servings": 4,
+    "servingGrams": 260,
+    "ingredients": ["Chicken thighs", "Greek yogurt", "Tandoori masala", "Garlic", "Fresh ginger", "Lemon juice", "Cayenne pepper"],
+    "nutritionPerServing": { "calories": 320, "protein": 34, "carbs": 6, "fat": 17, "fiber": 1, "sugar": 3 },
+    "imageUrl": "https://aartisequeira.com/wp-content/uploads/2019/04/tandorism.jpg",
+    "imageCredit": { "label": "Aarti Sequeira", "sourceUrl": "https://aartisequeira.com/recipes/tandoori-chicken/" }
+  },
+  {
+    "name": "Monsoon Black-Eyed Pea Curry",
+    "servings": 4,
+    "servingGrams": 300,
+    "ingredients": ["Black-eyed peas", "Tomato", "Onion", "Garlic", "Fresh ginger", "Turmeric", "Cumin seeds", "Cilantro"],
+    "nutritionPerServing": { "calories": 260, "protein": 12, "carbs": 40, "fat": 6, "fiber": 9, "sugar": 5 },
+    "imageUrl": "https://aartisequeira.com/wp-content/uploads/2019/04/monsoonsm.jpg",
+    "imageCredit": { "label": "Aarti Sequeira", "sourceUrl": "https://aartisequeira.com/recipes/monsoon-black-eyed-pea-curry/" }
+  },
+  {
+    "name": "Lucia-Lucica Fried Rice",
+    "servings": 4,
+    "servingGrams": 340,
+    "ingredients": ["Basmati rice", "Chorizo", "Bell pepper", "Peanuts", "Peas", "Turmeric", "Onion"],
+    "nutritionPerServing": { "calories": 420, "protein": 16, "carbs": 52, "fat": 17, "fiber": 4, "sugar": 4 },
+    "imageUrl": "https://aartisequeira.com/wp-content/uploads/2019/04/luciasm.jpg",
+    "imageCredit": { "label": "Aarti Sequeira", "sourceUrl": "https://aartisequeira.com/recipes/lucia-lucica-fried-rice/" }
+  },
+  {
+    "name": "Curry Leaf Carbonara",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Spaghetti", "Curry leaves", "Bacon", "Eggs", "Parmesan cheese", "Black pepper", "Garlic"],
+    "nutritionPerServing": { "calories": 460, "protein": 20, "carbs": 50, "fat": 20, "fiber": 2, "sugar": 2 },
+    "imageUrl": "https://aartisequeira.com/wp-content/uploads/2021/04/aarti-carbonara.jpg",
+    "imageCredit": { "label": "Aarti Sequeira", "sourceUrl": "https://aartisequeira.com/recipes/curry-leaf-carbonara/" }
+  },
+  {
+    "name": "Indian Donuts",
+    "servings": 12,
+    "servingGrams": 60,
+    "ingredients": ["Flour", "Yogurt", "Sugar", "Cardamom", "Saffron", "Vegetable oil", "Sugar syrup"],
+    "nutritionPerServing": { "calories": 180, "protein": 3, "carbs": 26, "fat": 8, "fiber": 1, "sugar": 14 },
+    "imageUrl": "https://aartisequeira.com/wp-content/uploads/2020/05/INDIAN_DONUTS_.jpg",
+    "imageCredit": { "label": "Aarti Sequeira", "sourceUrl": "https://aartisequeira.com/recipes/indian-donuts/" }
+  },
+  {
+    "name": "Masala Shrimp 'n' Grits",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Shrimp", "Grits", "Garam masala", "Tomato", "Onion", "Cheddar cheese", "Butter"],
+    "nutritionPerServing": { "calories": 420, "protein": 26, "carbs": 40, "fat": 18, "fiber": 2, "sugar": 3 },
+    "imageUrl": "https://aartisequeira.com/wp-content/uploads/2019/04/shrimpsm.jpg",
+    "imageCredit": { "label": "Aarti Sequeira", "sourceUrl": "https://aartisequeira.com/recipes/masala-shrimp-n-grits/" }
+  },
+  {
+    "name": "Kulfi Pops",
+    "servings": 8,
+    "servingGrams": 90,
+    "ingredients": ["Whole milk", "Sweetened condensed milk", "Pistachios", "Cardamom", "Saffron"],
+    "nutritionPerServing": { "calories": 160, "protein": 4, "carbs": 20, "fat": 7, "fiber": 0, "sugar": 18 },
+    "imageUrl": "https://aartisequeira.com/wp-content/uploads/2019/04/kulfism.jpg",
+    "imageCredit": { "label": "Aarti Sequeira", "sourceUrl": "https://aartisequeira.com/recipes/kulfi-pops/" }
+  },
+  {
+    "name": "Kheema",
+    "servings": 4,
+    "servingGrams": 280,
+    "ingredients": ["Ground lamb", "Onion", "Tomato", "Garam masala", "Garlic", "Fresh ginger", "Peas"],
+    "nutritionPerServing": { "calories": 380, "protein": 26, "carbs": 12, "fat": 26, "fiber": 3, "sugar": 4 },
+    "imageUrl": "https://aartisequeira.com/wp-content/uploads/2022/03/aarti-kheema.png",
+    "imageCredit": { "label": "Aarti Sequeira", "sourceUrl": "https://aartisequeira.com/recipes/kheema/" }
+  },
+  {
+    "name": "Tiger vs Dragon Soup",
+    "servings": 4,
+    "servingGrams": 350,
+    "ingredients": ["Chicken leg quarters", "Creamed corn", "Leeks", "Carrots", "Fresh ginger", "Chicken broth"],
+    "nutritionPerServing": { "calories": 260, "protein": 20, "carbs": 22, "fat": 11, "fiber": 3, "sugar": 6 },
+    "imageUrl": "https://aartisequeira.com/wp-content/uploads/2023/07/tiger-v-dragon-soup.jpg",
+    "imageCredit": { "label": "Aarti Sequeira", "sourceUrl": "https://aartisequeira.com/recipes/tiger-vs-dragon-soup/" }
+  },
+  {
+    "name": "Mum's Roast Chicken",
+    "servings": 4,
+    "servingGrams": 280,
+    "ingredients": ["Whole chicken", "Red chile powder", "Turmeric", "Garam masala", "Garlic", "Lemon juice", "Yogurt"],
+    "nutritionPerServing": { "calories": 380, "protein": 32, "carbs": 4, "fat": 25, "fiber": 1, "sugar": 1 },
+    "imageUrl": "https://aartisequeira.com/wp-content/uploads/2021/10/mums-roast-chicken.jpg",
+    "imageCredit": { "label": "Aarti Sequeira", "sourceUrl": "https://aartisequeira.com/recipes/mums-roast-chicken/" }
+  },
+  {
+    "name": "One Pot Date, Chestnut and Chicken with Orzo",
+    "servings": 4,
+    "servingGrams": 360,
+    "ingredients": ["Chicken thighs", "Orzo pasta", "Chicken broth", "Heavy cream", "Dates", "Chestnuts", "Onion"],
+    "nutritionPerServing": { "calories": 460, "protein": 26, "carbs": 48, "fat": 19, "fiber": 3, "sugar": 12 },
+    "imageUrl": "https://aartisequeira.com/wp-content/uploads/2022/08/date-chestnut-chicken.jpg",
+    "imageCredit": { "label": "Aarti Sequeira", "sourceUrl": "https://aartisequeira.com/recipes/one-pot-date-chestnut-and-chicken-with-orzo/" }
+  },
+  {
+    "name": "Aloo Tikki Eggs Benny",
+    "servings": 4,
+    "servingGrams": 260,
+    "ingredients": ["Potatoes", "Green peas", "Cumin", "Poached eggs", "English muffins", "Hollandaise sauce", "Cilantro chutney"],
+    "nutritionPerServing": { "calories": 420, "protein": 15, "carbs": 40, "fat": 23, "fiber": 4, "sugar": 3 },
+    "imageUrl": "https://aartisequeira.com/wp-content/uploads/2019/04/tikkism.jpg",
+    "imageCredit": { "label": "Aarti Sequeira", "sourceUrl": "https://aartisequeira.com/recipes/aloo-tikki-indian-potato-cake-egg-bennys/" }
+  },
+  {
+    "name": "Springtime Spring Rolls with Date-Tahini Sauce",
+    "servings": 6,
+    "servingGrams": 140,
+    "ingredients": ["Rice paper wrappers", "Carrots", "Cucumber", "Mint", "Cilantro", "Dates", "Tahini"],
+    "nutritionPerServing": { "calories": 160, "protein": 4, "carbs": 24, "fat": 6, "fiber": 3, "sugar": 8 },
+    "imageUrl": "https://aartisequeira.com/wp-content/uploads/2023/04/Springtime-Spring-Rolls-with-Date-Tahini-Sauce.jpg",
+    "imageCredit": { "label": "Aarti Sequeira", "sourceUrl": "https://aartisequeira.com/recipes/springtime-spring-rolls-with-date-tahini-sauce/" }
+  },
+  {
+    "name": "Real Deal Hummus",
+    "servings": 8,
+    "servingGrams": 70,
+    "ingredients": ["Chickpeas", "Tahini", "Garlic", "Lemon juice", "Olive oil", "Cumin", "Ice water"],
+    "nutritionPerServing": { "calories": 140, "protein": 5, "carbs": 12, "fat": 9, "fiber": 3, "sugar": 1 },
+    "imageUrl": "https://aartisequeira.com/wp-content/uploads/2021/03/aarti-hummus.jpg",
+    "imageCredit": { "label": "Aarti Sequeira", "sourceUrl": "https://aartisequeira.com/recipes/real-deal-hummus/" }
+  },
+  {
+    "name": "Aloo Gobi Soup",
+    "servings": 6,
+    "servingGrams": 350,
+    "ingredients": ["Potatoes", "Cauliflower", "Onion", "Garlic", "Turmeric", "Cumin", "Vegetable broth", "Coconut milk"],
+    "nutritionPerServing": { "calories": 220, "protein": 5, "carbs": 28, "fat": 10, "fiber": 5, "sugar": 4 },
+    "imageUrl": "https://aartisequeira.com/wp-content/uploads/2021/09/aloo-gobi-soup.jpg",
+    "imageCredit": { "label": "Aarti Sequeira", "sourceUrl": "https://aartisequeira.com/recipes/aloo-gobi-soup/" }
+  },
+  {
+    "name": "The Girly Salad",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Fennel bulb", "Ruby red grapefruit", "Navel orange", "Black olives", "Olive oil", "Red wine vinegar"],
+    "nutritionPerServing": { "calories": 160, "protein": 2, "carbs": 20, "fat": 9, "fiber": 4, "sugar": 14 },
+    "imageUrl": "https://aartisequeira.com/wp-content/uploads/2019/04/girlysm.jpg",
+    "imageCredit": { "label": "Aarti Sequeira", "sourceUrl": "https://aartisequeira.com/recipes/the-girly-salad/" }
+  },
+  {
+    "name": "Fish Chowder",
+    "servings": 6,
+    "servingGrams": 380,
+    "ingredients": ["White fish fillets", "Potatoes", "Bacon", "Onion", "Heavy cream", "Fish broth", "Fresh thyme"],
+    "nutritionPerServing": { "calories": 320, "protein": 22, "carbs": 24, "fat": 16, "fiber": 2, "sugar": 4 },
+    "imageUrl": "https://aartisequeira.com/wp-content/uploads/2019/04/fishchowdersm.jpg",
+    "imageCredit": { "label": "Aarti Sequeira", "sourceUrl": "https://aartisequeira.com/recipes/fish-chowder/" }
+  }
+]

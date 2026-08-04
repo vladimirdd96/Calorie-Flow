@@ -1,0 +1,128 @@
+[
+  {
+    "name": "Cold Tofu Shirataki Noodles",
+    "servings": 4,
+    "servingGrams": 280,
+    "ingredients": ["Shirataki noodles", "Silken tofu", "Garlic", "White miso paste", "Sesame oil", "Cucumber", "Scallions"],
+    "nutritionPerServing": { "calories": 140, "protein": 10, "carbs": 8, "fat": 8, "fiber": 2, "sugar": 2 },
+    "imageUrl": "https://hettymckinnon.com/wp-content/uploads/Cold-Tofu-Noodles-3-scaled.jpg",
+    "imageCredit": { "label": "Hetty McKinnon", "sourceUrl": "https://hettymckinnon.com/recipe/cold-tofu-shirataki-noodles/" }
+  },
+  {
+    "name": "Gochujang Mushroom Udon",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Udon noodles", "Mixed mushrooms", "Gochujang", "Butter", "Garlic", "Scallions", "Vegetable broth"],
+    "nutritionPerServing": { "calories": 380, "protein": 11, "carbs": 58, "fat": 12, "fiber": 4, "sugar": 5 },
+    "imageUrl": "https://hettymckinnon.com/wp-content/uploads/GochujangMushroomUdon-3.jpg",
+    "imageCredit": { "label": "Hetty McKinnon", "sourceUrl": "https://hettymckinnon.com/recipe/gochujang-mushroom-udon/" }
+  },
+  {
+    "name": "Spicy Eggplant Mazemen",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Ramen noodles", "Eggplant", "Chili oil", "Garlic", "Soy sauce", "Scallions", "Sesame seeds"],
+    "nutritionPerServing": { "calories": 400, "protein": 12, "carbs": 60, "fat": 13, "fiber": 5, "sugar": 6 },
+    "imageUrl": "https://hettymckinnon.com/wp-content/uploads/Spicy-Eggplant-Mazemen-5-scaled.jpg",
+    "imageCredit": { "label": "Hetty McKinnon", "sourceUrl": "https://hettymckinnon.com/recipe/spicy-eggplant-mazemen/" }
+  },
+  {
+    "name": "Spinach Japchae",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Sweet potato starch noodles", "Spinach", "Garlic", "Soy sauce", "Sesame oil", "Carrots", "Sesame seeds"],
+    "nutritionPerServing": { "calories": 280, "protein": 6, "carbs": 42, "fat": 9, "fiber": 3, "sugar": 5 },
+    "imageUrl": "https://hettymckinnon.com/wp-content/uploads/Screenshot-2026-06-13-at-4.11.33-PM-1.jpg",
+    "imageCredit": { "label": "Hetty McKinnon", "sourceUrl": "https://hettymckinnon.com/recipe/spinach-japchae/" }
+  },
+  {
+    "name": "Vegan Nom Banh Chok",
+    "servings": 4,
+    "servingGrams": 340,
+    "ingredients": ["Rice vermicelli noodles", "Lemongrass", "Turmeric", "Coconut milk", "Green beans", "Bean sprouts", "Fresh herbs"],
+    "nutritionPerServing": { "calories": 340, "protein": 8, "carbs": 54, "fat": 11, "fiber": 4, "sugar": 4 },
+    "imageUrl": "https://hettymckinnon.com/wp-content/uploads/Vegan-Nom-Banh-Chok-8-scaled.jpg",
+    "imageCredit": { "label": "Hetty McKinnon", "sourceUrl": "https://hettymckinnon.com/recipe/vegan-nom-banh-chok-khmer-noodles/" }
+  },
+  {
+    "name": "Lime Turmeric Rice Noodles Salad with Asparagus",
+    "servings": 4,
+    "servingGrams": 260,
+    "ingredients": ["Rice noodles", "Asparagus", "Turmeric", "Lime juice", "Fish sauce", "Peanuts", "Fresh herbs"],
+    "nutritionPerServing": { "calories": 280, "protein": 7, "carbs": 46, "fat": 8, "fiber": 3, "sugar": 5 },
+    "imageUrl": "https://hettymckinnon.com/wp-content/uploads/LimeTurmericNoodlesAsparagus-4-scaled.jpg",
+    "imageCredit": { "label": "Hetty McKinnon", "sourceUrl": "https://hettymckinnon.com/recipe/lime-turmeric-rice-noodles-salad-with-asparagus/" }
+  },
+  {
+    "name": "Wood Ear Mushroom, Tofu Skin and Edamame Salad",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Wood ear mushrooms", "Tofu skin", "Edamame", "Sesame oil", "Rice vinegar", "Soy sauce", "Chili oil"],
+    "nutritionPerServing": { "calories": 180, "protein": 12, "carbs": 14, "fat": 9, "fiber": 4, "sugar": 2 },
+    "imageUrl": "https://hettymckinnon.com/wp-content/uploads/Wood-Ear-Mushroom-beancurd-skin-and-edamame-6-scaled.jpg",
+    "imageCredit": { "label": "Hetty McKinnon", "sourceUrl": "https://hettymckinnon.com/recipe/wood-ear-mushroom-tofu-skin-and-edamame-salad/" }
+  },
+  {
+    "name": "Garlicky Braised Greens with Polenta",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Polenta", "Kale", "Swiss chard", "Garlic", "Vegetable broth", "Parmesan cheese", "Olive oil"],
+    "nutritionPerServing": { "calories": 280, "protein": 9, "carbs": 38, "fat": 10, "fiber": 5, "sugar": 2 },
+    "imageUrl": "https://hettymckinnon.com/wp-content/uploads/GarlickyGreensPolenta-13-scaled.jpg",
+    "imageCredit": { "label": "Hetty McKinnon", "sourceUrl": "https://hettymckinnon.com/recipe/garlicky-braised-greens-with-polenta/" }
+  },
+  {
+    "name": "Chili Tofu",
+    "servings": 4,
+    "servingGrams": 280,
+    "ingredients": ["Firm tofu", "Broccoli", "Chili bean sauce", "Garlic", "Fresh ginger", "Cornstarch", "Scallions"],
+    "nutritionPerServing": { "calories": 260, "protein": 14, "carbs": 18, "fat": 15, "fiber": 4, "sugar": 4 },
+    "imageUrl": "https://hettymckinnon.com/wp-content/uploads/ChiliTofu-9-scaled.jpg",
+    "imageCredit": { "label": "Hetty McKinnon", "sourceUrl": "https://hettymckinnon.com/recipe/chili-tofu/" }
+  },
+  {
+    "name": "Kohlrabi, Tofu and Mango Salad",
+    "servings": 4,
+    "servingGrams": 240,
+    "ingredients": ["Kohlrabi", "Firm tofu", "Mango", "Lacinato kale", "Lime juice", "Fish sauce", "Peanuts"],
+    "nutritionPerServing": { "calories": 200, "protein": 9, "carbs": 24, "fat": 9, "fiber": 5, "sugar": 14 },
+    "imageUrl": "https://hettymckinnon.com/wp-content/uploads/KohlrabiTofuMangoSalad-9-scaled.jpg",
+    "imageCredit": { "label": "Hetty McKinnon", "sourceUrl": "https://hettymckinnon.com/recipe/kohlrabi-tofu-and-mango-salad/" }
+  },
+  {
+    "name": "Mapo Tofu Fried Rice",
+    "servings": 4,
+    "servingGrams": 340,
+    "ingredients": ["Cooked rice", "Firm tofu", "Fresh ginger", "Garlic", "Broccoli", "Mushrooms", "Doubanjiang"],
+    "nutritionPerServing": { "calories": 380, "protein": 14, "carbs": 54, "fat": 12, "fiber": 4, "sugar": 3 },
+    "imageUrl": "https://hettymckinnon.com/wp-content/uploads/Mapo-Tofu-Fried-Rice-14-scaled.jpg",
+    "imageCredit": { "label": "Hetty McKinnon", "sourceUrl": "https://hettymckinnon.com/recipe/mapo-tofu-fried-rice/" }
+  },
+  {
+    "name": "Cabbage and Tofu Mei Fun",
+    "servings": 4,
+    "servingGrams": 300,
+    "ingredients": ["Rice vermicelli", "Smoked tofu", "Cabbage", "Carrots", "Soy sauce", "Sesame oil", "Garlic"],
+    "nutritionPerServing": { "calories": 320, "protein": 12, "carbs": 48, "fat": 9, "fiber": 4, "sugar": 4 },
+    "imageUrl": "https://hettymckinnon.com/wp-content/uploads/Cabbage-and-Tofu-Mei-Fun-3-scaled.jpg",
+    "imageCredit": { "label": "Hetty McKinnon", "sourceUrl": "https://hettymckinnon.com/recipe/cabbage-and-tofu-mei-fun/" }
+  },
+  {
+    "name": "Turmeric Broccoli, Tofu and Rice Soup",
+    "servings": 4,
+    "servingGrams": 380,
+    "ingredients": ["Broccoli", "Silken tofu", "Rice", "Leek", "Fresh ginger", "Garlic", "Turmeric", "Vegetable broth"],
+    "nutritionPerServing": { "calories": 220, "protein": 9, "carbs": 32, "fat": 6, "fiber": 4, "sugar": 3 },
+    "imageUrl": "https://hettymckinnon.com/wp-content/uploads/Turmeric-Rice-and-Broccoli-Soup-6-scaled.jpg",
+    "imageCredit": { "label": "Hetty McKinnon", "sourceUrl": "https://hettymckinnon.com/recipe/turmeric-broccoli-tofu-and-rice-soup/" }
+  },
+  {
+    "name": "Lo Han Jai",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Napa cabbage", "Shiitake mushrooms", "Wood ear mushrooms", "Bean thread noodles", "Tofu skin", "Soy sauce", "Sesame oil"],
+    "nutritionPerServing": { "calories": 240, "protein": 8, "carbs": 34, "fat": 8, "fiber": 4, "sugar": 3 },
+    "imageUrl": "https://hettymckinnon.com/wp-content/uploads/LoHanJai-8-scaled.jpg",
+    "imageCredit": { "label": "Hetty McKinnon", "sourceUrl": "https://hettymckinnon.com/recipe/lo-han-jai-buddhas-delight/" }
+  }
+]

@@ -14,15 +14,18 @@ function persistRefreshToken(newToken) {
 
 const supabaseUrl = requireEnv("NEXT_PUBLIC_SUPABASE_URL").replace(/\/$/, "");
 const publishableKey = requireEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
+const serviceRoleKey = optionalEnv("SUPABASE_SERVICE_ROLE_KEY");
 
+// Service-role key bypasses RLS entirely and never expires in practice — no user
+// session, no token rotation, nothing to babysit. Preferred whenever it's set.
 let refreshToken = optionalEnv("SEED_USER_REFRESH_TOKEN");
 const staticAccessToken = optionalEnv("SEED_USER_ACCESS_TOKEN");
-if (!refreshToken && !staticAccessToken) {
-  throw new Error("Set SEED_USER_REFRESH_TOKEN (preferred, auto-renews) or SEED_USER_ACCESS_TOKEN in .env.local");
+if (!serviceRoleKey && !refreshToken && !staticAccessToken) {
+  throw new Error("Set SUPABASE_SERVICE_ROLE_KEY (preferred), or SEED_USER_REFRESH_TOKEN / SEED_USER_ACCESS_TOKEN, in .env.local");
 }
 
-let cachedAccessToken = staticAccessToken ?? null;
-let cachedExpiresAt = staticAccessToken ? Infinity : 0;
+let cachedAccessToken = serviceRoleKey ?? staticAccessToken ?? null;
+let cachedExpiresAt = serviceRoleKey || staticAccessToken ? Infinity : 0;
 
 async function refresh() {
   if (!refreshToken) {
@@ -52,9 +55,12 @@ async function refresh() {
 }
 
 export async function getAccessToken({ forceRefresh = false } = {}) {
+  if (serviceRoleKey) return serviceRoleKey;
   if (!forceRefresh && cachedAccessToken && Date.now() < cachedExpiresAt) return cachedAccessToken;
   return refresh();
 }
 
 export const supabaseRestUrl = `${supabaseUrl}/rest/v1`;
+// The apikey header must match the auth mode: service_role when bypassing RLS, else the anon/publishable key.
+export const restApiKey = serviceRoleKey || publishableKey;
 export { publishableKey };

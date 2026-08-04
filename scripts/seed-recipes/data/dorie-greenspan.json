@@ -1,0 +1,200 @@
+[
+  {
+    "name": "Marinated Swordfish with Avocado-Tomato Salsa",
+    "servings": 4,
+    "servingGrams": 260,
+    "ingredients": ["Swordfish steaks", "Olive oil", "Lime juice", "Avocado", "Cherry tomatoes", "Red onion", "Cilantro"],
+    "nutritionPerServing": { "calories": 340, "protein": 30, "carbs": 8, "fat": 22, "fiber": 4, "sugar": 3 },
+    "imageUrl": "https://doriegreenspan.com/wp-content/uploads/2016/01/swordfish-by-deb-lindsey-thumb-550x366-2290.jpg",
+    "imageCredit": { "label": "Dorie Greenspan", "sourceUrl": "https://doriegreenspan.com/recipe/marinated-swordfish-with-avocado-tomato-salsa/" }
+  },
+  {
+    "name": "Balsamic Chicken Sheet-Pan Supper",
+    "servings": 4,
+    "servingGrams": 340,
+    "ingredients": ["Chicken legs", "Baby potatoes", "Mushrooms", "Shallots", "Balsamic vinegar", "Olive oil", "Fresh thyme"],
+    "nutritionPerServing": { "calories": 420, "protein": 28, "carbs": 30, "fat": 21, "fiber": 4, "sugar": 5 },
+    "imageUrl": "https://doriegreenspan.com/wp-content/uploads/2019/01/3-08-SheetPanSupper_BalsamicChickenwithTatersandMushrooms-826984-751x1000.jpg",
+    "imageCredit": { "label": "Dorie Greenspan", "sourceUrl": "https://doriegreenspan.com/recipe/everyday-dorie-balsamic-chicken-sheet-pan-supper/" }
+  },
+  {
+    "name": "Curried Chicken Parmentier",
+    "servings": 6,
+    "servingGrams": 320,
+    "ingredients": ["Chicken thighs", "Sausage", "Curry powder", "Mashed potatoes", "Onion", "Garlic", "Chicken broth"],
+    "nutritionPerServing": { "calories": 420, "protein": 24, "carbs": 32, "fat": 22, "fiber": 3, "sugar": 3 },
+    "imageUrl": "https://doriegreenspan.com/wp-content/uploads/2016/01/parmentier.jpg",
+    "imageCredit": { "label": "Dorie Greenspan", "sourceUrl": "https://doriegreenspan.com/recipe/everyday-dorie-curried-chicken-parmentier/" }
+  },
+  {
+    "name": "Ginger Fried Rice",
+    "servings": 4,
+    "servingGrams": 300,
+    "ingredients": ["Cooked rice", "Fresh ginger", "Egg", "Scallions", "Soy sauce", "Sesame oil", "Shredded chicken"],
+    "nutritionPerServing": { "calories": 340, "protein": 14, "carbs": 46, "fat": 11, "fiber": 2, "sugar": 2 },
+    "imageUrl": "https://doriegreenspan.com/wp-content/uploads/2020/04/unnamed-10-750x1000.jpg",
+    "imageCredit": { "label": "Dorie Greenspan", "sourceUrl": "https://doriegreenspan.com/recipe/ginger-fried-rice-from-everyday-dorie/" }
+  },
+  {
+    "name": "Gingered-Turkey Meatball Soup",
+    "servings": 6,
+    "servingGrams": 380,
+    "ingredients": ["Ground turkey", "Fresh ginger", "Dark greens", "Carrots", "Chicken broth", "Scallions", "Egg"],
+    "nutritionPerServing": { "calories": 260, "protein": 22, "carbs": 14, "fat": 13, "fiber": 3, "sugar": 3 },
+    "imageUrl": "https://doriegreenspan.com/wp-content/uploads/2018/11/2-10-GingeredTurkeyMeatballSoup-826984-e1541364060406-1152x1000.jpg",
+    "imageCredit": { "label": "Dorie Greenspan", "sourceUrl": "https://doriegreenspan.com/recipe/gingered-turkey-meatball-soup-from-everyday-dorie/" }
+  },
+  {
+    "name": "Hummus Pancakes",
+    "servings": 4,
+    "servingGrams": 180,
+    "ingredients": ["Hummus", "Flour", "Egg", "Cumin", "Arugula", "Cucumber", "Cherry tomatoes"],
+    "nutritionPerServing": { "calories": 260, "protein": 9, "carbs": 30, "fat": 12, "fiber": 5, "sugar": 3 },
+    "imageUrl": "https://doriegreenspan.com/wp-content/uploads/2016/04/food0131430404634.jpg",
+    "imageCredit": { "label": "Dorie Greenspan", "sourceUrl": "https://doriegreenspan.com/recipe/hummus-pancakes/" }
+  },
+  {
+    "name": "Potato Rosettes",
+    "servings": 6,
+    "servingGrams": 180,
+    "ingredients": ["Yukon gold potatoes", "Butter", "Heavy cream", "Egg yolk", "Nutmeg", "Gruyère cheese"],
+    "nutritionPerServing": { "calories": 260, "protein": 6, "carbs": 24, "fat": 16, "fiber": 2, "sugar": 2 },
+    "imageUrl": "https://doriegreenspan.com/wp-content/uploads/2016/01/food051435199347.jpg",
+    "imageCredit": { "label": "Dorie Greenspan", "sourceUrl": "https://doriegreenspan.com/recipe/potato-rosettes/" }
+  },
+  {
+    "name": "Ginger-Basil Turkey Meatball Soup",
+    "servings": 6,
+    "servingGrams": 380,
+    "ingredients": ["Ground turkey", "Fresh ginger", "Fresh basil", "Dark greens", "Carrots", "Chicken broth"],
+    "nutritionPerServing": { "calories": 250, "protein": 21, "carbs": 13, "fat": 12, "fiber": 3, "sugar": 3 },
+    "imageUrl": "https://doriegreenspan.com/wp-content/uploads/2016/04/Food0261426767923.jpg",
+    "imageCredit": { "label": "Dorie Greenspan", "sourceUrl": "https://doriegreenspan.com/recipe/ginger-basil-turkey-meatball-soup/" }
+  },
+  {
+    "name": "Sheet Pan Chicken with Apples and Kale",
+    "servings": 4,
+    "servingGrams": 340,
+    "ingredients": ["Chicken thighs", "Apples", "Kale", "Shallots", "Olive oil", "Apple cider vinegar", "Fresh thyme"],
+    "nutritionPerServing": { "calories": 400, "protein": 28, "carbs": 24, "fat": 21, "fiber": 4, "sugar": 12 },
+    "imageUrl": "https://doriegreenspan.com/wp-content/uploads/2016/01/sheetpan1.jpg",
+    "imageCredit": { "label": "Dorie Greenspan", "sourceUrl": "https://doriegreenspan.com/recipe/sheet-pan-chicken-with-apples-and-kale/" }
+  },
+  {
+    "name": "Quinoa Bowls with Lots of Choices",
+    "servings": 4,
+    "servingGrams": 320,
+    "ingredients": ["Quinoa", "Radishes", "Carrots", "Cucumber", "Chickpeas", "Olive oil", "Lemon juice"],
+    "nutritionPerServing": { "calories": 340, "protein": 11, "carbs": 48, "fat": 12, "fiber": 7, "sugar": 4 },
+    "imageUrl": "https://doriegreenspan.com/wp-content/uploads/2016/07/Quinoa-Bowl.jpg",
+    "imageCredit": { "label": "Dorie Greenspan", "sourceUrl": "https://doriegreenspan.com/recipe/quinoa-bowls-with-lots-of-choices/" }
+  },
+  {
+    "name": "Fresh-Off-The-Cob Corn Chowder",
+    "servings": 6,
+    "servingGrams": 350,
+    "ingredients": ["Fresh corn", "Potatoes", "Bacon", "Onion", "Heavy cream", "Chicken broth", "Fresh thyme"],
+    "nutritionPerServing": { "calories": 320, "protein": 10, "carbs": 34, "fat": 17, "fiber": 3, "sugar": 6 },
+    "imageUrl": "https://doriegreenspan.com/wp-content/uploads/2021/08/corn-chowder-e1630345922325-1540x1000.png",
+    "imageCredit": { "label": "Dorie Greenspan", "sourceUrl": "https://doriegreenspan.com/recipe/fresh-off-the-cob-corn-chowder-from-everyday-dorie/" }
+  },
+  {
+    "name": "Hot and Sour Soup",
+    "servings": 4,
+    "servingGrams": 340,
+    "ingredients": ["Chicken broth", "Tofu", "Shiitake mushrooms", "Rice vinegar", "White pepper", "Egg", "Cornstarch"],
+    "nutritionPerServing": { "calories": 180, "protein": 12, "carbs": 12, "fat": 9, "fiber": 1, "sugar": 2 },
+    "imageUrl": "https://doriegreenspan.com/wp-content/uploads/2016/03/hot-and-sour-soup-thumb-550x531-2355.jpg",
+    "imageCredit": { "label": "Dorie Greenspan", "sourceUrl": "https://doriegreenspan.com/recipe/hot-and-sour-soup-from-lucky-peachs-101-easy-asian-recipes-i-made-the-soup-i-almost-cured-a-cold-i-bought-the-book/" }
+  },
+  {
+    "name": "Raspberry and Meyer Lemon Squares",
+    "servings": 12,
+    "servingGrams": 70,
+    "ingredients": ["Flour", "Butter", "Sugar", "Meyer lemon", "Raspberries", "Eggs", "Cornstarch"],
+    "nutritionPerServing": { "calories": 220, "protein": 3, "carbs": 30, "fat": 10, "fiber": 1, "sugar": 20 },
+    "imageUrl": "https://doriegreenspan.com/wp-content/uploads/2016/04/recipe_detail_038aa82f84c22d7f2738db474bbe38cf.jpg",
+    "imageCredit": { "label": "Dorie Greenspan", "sourceUrl": "https://doriegreenspan.com/recipe/raspberry-and-meyer-lemon-squares/" }
+  },
+  {
+    "name": "Buttermilk-Biscuit Shortcakes",
+    "servings": 8,
+    "servingGrams": 90,
+    "ingredients": ["Flour", "Buttermilk", "Butter", "Sugar", "Baking powder", "Strawberries", "Whipped cream"],
+    "nutritionPerServing": { "calories": 280, "protein": 5, "carbs": 34, "fat": 14, "fiber": 1, "sugar": 12 },
+    "imageUrl": "https://doriegreenspan.com/wp-content/uploads/2017/05/Screen-Shot-2017-05-04-at-3.24.30-AM.png",
+    "imageCredit": { "label": "Dorie Greenspan", "sourceUrl": "https://doriegreenspan.com/recipe/baking-is-all-in-the-hands-buttermilk-biscuit-shortcakes/" }
+  },
+  {
+    "name": "Blueberry-Buttermilk Pie Bars",
+    "servings": 12,
+    "servingGrams": 80,
+    "ingredients": ["Cornmeal", "Flour", "Butter", "Buttermilk", "Eggs", "Sugar", "Blueberries"],
+    "nutritionPerServing": { "calories": 240, "protein": 4, "carbs": 32, "fat": 11, "fiber": 1, "sugar": 18 },
+    "imageUrl": "https://doriegreenspan.com/wp-content/uploads/2016/07/Blueberry-Buttermilk-Pie-Bars3980.jpeg",
+    "imageCredit": { "label": "Dorie Greenspan", "sourceUrl": "https://doriegreenspan.com/recipe/dories-cookies-blueberry-buttermilk-pie-bars-a-sneak-peek/" }
+  },
+  {
+    "name": "Coco-Almond Thumbprints",
+    "servings": 16,
+    "servingGrams": 30,
+    "ingredients": ["Almond flour", "Shredded coconut", "Sugar", "Egg whites", "Vanilla extract", "Jam"],
+    "nutritionPerServing": { "calories": 100, "protein": 2, "carbs": 10, "fat": 6, "fiber": 1, "sugar": 8 },
+    "imageUrl": "https://doriegreenspan.com/wp-content/uploads/2021/03/Coco-Almond-Thumbprints4426-1.jpg",
+    "imageCredit": { "label": "Dorie Greenspan", "sourceUrl": "https://doriegreenspan.com/recipe/coco-almond-thumbprints-a-passover-treat-thats-good-anytime/" }
+  },
+  {
+    "name": "World Peace Cookies",
+    "servings": 36,
+    "servingGrams": 25,
+    "ingredients": ["Flour", "Cocoa powder", "Butter", "Brown sugar", "Bittersweet chocolate", "Fleur de sel"],
+    "nutritionPerServing": { "calories": 90, "protein": 1, "carbs": 11, "fat": 5, "fiber": 1, "sugar": 7 },
+    "imageUrl": "https://doriegreenspan.com/wp-content/uploads/2016/08/World-Peace5087.jpg",
+    "imageCredit": { "label": "Dorie Greenspan", "sourceUrl": "https://doriegreenspan.com/recipe/world-peace-cookies-the-newest-version-from-dories-cookies-sneak-peek/" }
+  },
+  {
+    "name": "Moka Dupont",
+    "servings": 10,
+    "servingGrams": 100,
+    "ingredients": ["Ladyfinger cookies", "Butter", "Sugar", "Egg yolks", "Instant coffee", "Chocolate", "Heavy cream"],
+    "nutritionPerServing": { "calories": 320, "protein": 4, "carbs": 30, "fat": 20, "fiber": 1, "sugar": 22 },
+    "imageUrl": "https://doriegreenspan.com/wp-content/uploads/2016/04/Moka-Dupont-06.jpg",
+    "imageCredit": { "label": "Dorie Greenspan", "sourceUrl": "https://doriegreenspan.com/recipe/baking-chez-moi-moka-dupont/" }
+  },
+  {
+    "name": "Cardamom Snickerdoodles",
+    "servings": 24,
+    "servingGrams": 30,
+    "ingredients": ["Flour", "Butter", "Sugar", "Eggs", "Cardamom", "Cinnamon", "Cream of tartar"],
+    "nutritionPerServing": { "calories": 110, "protein": 1, "carbs": 15, "fat": 5, "fiber": 0, "sugar": 9 },
+    "imageUrl": "https://doriegreenspan.com/wp-content/uploads/2016/05/cookies017_1319243580.jpg",
+    "imageCredit": { "label": "Dorie Greenspan", "sourceUrl": "https://doriegreenspan.com/recipe/cardamon-snickerdoodles-baking-at-home-with-joe-yonan/" }
+  },
+  {
+    "name": "Beef and Beer Stew",
+    "servings": 6,
+    "servingGrams": 380,
+    "ingredients": ["Beef chuck", "Belgian beer", "Onion", "Carrots", "Mustard", "Bay leaves", "Beef broth"],
+    "nutritionPerServing": { "calories": 420, "protein": 30, "carbs": 16, "fat": 24, "fiber": 2, "sugar": 4 },
+    "imageUrl": "https://doriegreenspan.com/wp-content/uploads/2016/05/BelgianBeerStew-3658B1455824466.jpg",
+    "imageCredit": { "label": "Dorie Greenspan", "sourceUrl": "https://doriegreenspan.com/recipe/beef-and-beer-stew-a-belgian-inspired-carbonnade/" }
+  },
+  {
+    "name": "Tri-Pepper Burgers",
+    "servings": 4,
+    "servingGrams": 260,
+    "ingredients": ["Ground beef", "Bell pepper", "Poblano pepper", "Jalapeño", "Onion", "Burger buns", "Cheddar cheese"],
+    "nutritionPerServing": { "calories": 460, "protein": 28, "carbs": 30, "fat": 26, "fiber": 3, "sugar": 5 },
+    "imageUrl": "https://doriegreenspan.com/wp-content/uploads/2016/01/burger.jpg",
+    "imageCredit": { "label": "Dorie Greenspan", "sourceUrl": "https://doriegreenspan.com/recipe/tri-pepper-burgers/" }
+  },
+  {
+    "name": "Franco-Asian Salmon Rillettes",
+    "servings": 6,
+    "servingGrams": 100,
+    "ingredients": ["Salmon fillets", "Butter", "Fresh ginger", "Soy sauce", "Scallions", "Lime juice", "Crème fraîche"],
+    "nutritionPerServing": { "calories": 220, "protein": 14, "carbs": 2, "fat": 18, "fiber": 0, "sugar": 1 },
+    "imageUrl": "https://doriegreenspan.com/wp-content/uploads/2016/05/Franco-Asian-Salmon-Rillettes.jpg",
+    "imageCredit": { "label": "Dorie Greenspan", "sourceUrl": "https://doriegreenspan.com/recipe/a-delicious-mash-up-franco-asian-salmon-rillettes/" }
+  }
+]

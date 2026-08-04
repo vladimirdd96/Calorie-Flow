@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync, appendFileSync, existsSync, mkdirSync } from "node:fs";
 import { randomUUID } from "node:crypto";
-import { getAccessToken, supabaseRestUrl, publishableKey } from "./auth.mjs";
+import { getAccessToken, supabaseRestUrl, restApiKey } from "./auth.mjs";
 
 const dataDir = new URL("./data/", import.meta.url);
 const failuresPath = new URL("./failures.jsonl", import.meta.url);
@@ -15,7 +15,7 @@ async function supabaseFetch(path, init, { retry = true } = {}) {
     ...init,
     headers: {
       ...init.headers,
-      apikey: publishableKey,
+      apikey: restApiKey,
       Authorization: `Bearer ${token}`,
     },
   });

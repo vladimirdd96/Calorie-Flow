@@ -1,0 +1,272 @@
+[
+  {
+    "name": "Habanero Pork Belly Tacos",
+    "servings": 6,
+    "servingGrams": 220,
+    "ingredients": ["Pork belly", "Habanero pepper", "Garlic", "Orange juice", "Corn tortillas", "White onion", "Cilantro", "Lime"],
+    "nutritionPerServing": { "calories": 420, "protein": 18, "carbs": 20, "fat": 30, "fiber": 2, "sugar": 4 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2023/10/1206-Castacan-Habanero-Pork-Belly-Tacos.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/castacan-habanero-pork-belly-taco/" }
+  },
+  {
+    "name": "Steak Tacos with Jamaica and Jalapeño Syrup",
+    "servings": 4,
+    "servingGrams": 240,
+    "ingredients": ["Skirt steak", "Dried hibiscus flowers", "Jalapeño", "Corn tortillas", "Avocado", "Queso fresco", "Lime"],
+    "nutritionPerServing": { "calories": 400, "protein": 28, "carbs": 24, "fat": 22, "fiber": 3, "sugar": 8 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2016/03/151118_PatiJinich_SteackTacoJamaicaJalape%C3%B1oSyrup_349.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/steak-tacos-with-jamaica-and-jalapeno-syrup/" }
+  },
+  {
+    "name": "Potato, Scallion and Chorizo Crispy Tacos",
+    "servings": 6,
+    "servingGrams": 200,
+    "ingredients": ["Yukon gold potatoes", "Mexican chorizo", "Scallions", "Corn tortillas", "Vegetable oil", "Salsa verde"],
+    "nutritionPerServing": { "calories": 340, "protein": 12, "carbs": 30, "fat": 20, "fiber": 3, "sugar": 2 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2016/03/151120_PatiJinich_TacosChorizoPotato_703.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/potato-scallion-chorizo-crispy-tacos/" }
+  },
+  {
+    "name": "Sonora Style Carne Asada Tacos",
+    "servings": 6,
+    "servingGrams": 260,
+    "ingredients": ["Flank steak", "Flour tortillas", "Refried beans", "Guacamole", "Salsa", "Lime", "Garlic"],
+    "nutritionPerServing": { "calories": 460, "protein": 30, "carbs": 32, "fat": 24, "fiber": 5, "sugar": 3 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2020/10/904-sonora-style-carne-asada-tacos.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/sonora-style-carne-asada-tacos/" }
+  },
+  {
+    "name": "Tacos de Suadero con Salsa Verde",
+    "servings": 6,
+    "servingGrams": 230,
+    "ingredients": ["Beef brisket", "Mixed chiles", "Tomatillos", "Corn tortillas", "White onion", "Cilantro", "Lime"],
+    "nutritionPerServing": { "calories": 400, "protein": 26, "carbs": 22, "fat": 24, "fiber": 3, "sugar": 3 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2025/08/1404-Tacos-De-Suadero.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/tacos-de-suadero-con-salsa-verde-con-chiles-mixtos/" }
+  },
+  {
+    "name": "Tacos de Canasta",
+    "servings": 8,
+    "servingGrams": 160,
+    "ingredients": ["Corn tortillas", "Refried beans", "Fresh cheese", "Vegetable oil", "Pickled jalapeños", "Salsa"],
+    "nutritionPerServing": { "calories": 260, "protein": 8, "carbs": 30, "fat": 12, "fiber": 4, "sugar": 1 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2015/04/012716_PattiJ_S4_TacosDeCanasta_380_Cropped.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/basket-tacos-fresh-cheese-basket-a-k-a-sweaty-tacos/" }
+  },
+  {
+    "name": "Tacos al Pastor",
+    "servings": 6,
+    "servingGrams": 240,
+    "ingredients": ["Pork shoulder", "Guajillo chiles", "Pineapple", "Achiote paste", "Corn tortillas", "White onion", "Cilantro"],
+    "nutritionPerServing": { "calories": 380, "protein": 26, "carbs": 26, "fat": 19, "fiber": 3, "sugar": 8 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2015/04/012716_PattiJ_S4_TacosPastor_030_Cropped.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/tacos-al-pastor/" }
+  },
+  {
+    "name": "Tacos Árabes",
+    "servings": 6,
+    "servingGrams": 240,
+    "ingredients": ["Pork shoulder", "Garlic", "Dried oregano", "Pita bread", "Tahini sauce", "Salsa"],
+    "nutritionPerServing": { "calories": 400, "protein": 26, "carbs": 30, "fat": 21, "fiber": 2, "sugar": 2 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2024/12/Tacos-Arabes.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/tacos-arabes/" }
+  },
+  {
+    "name": "Potato and Poblano Rajas Salad",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Yukon gold potatoes", "Poblano peppers", "Rice vinegar", "Sesame oil", "Sesame seeds", "Fresh tarragon"],
+    "nutritionPerServing": { "calories": 220, "protein": 5, "carbs": 32, "fat": 9, "fiber": 4, "sugar": 3 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2014/03/potato-rajas-salad-main.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/potato-and-poblano-rajas-salad/" }
+  },
+  {
+    "name": "Veggie Loaded Mexican Lasagna",
+    "servings": 8,
+    "servingGrams": 300,
+    "ingredients": ["Corn tortillas", "Zucchini", "Corn kernels", "Black beans", "Salsa roja", "Monterey Jack cheese", "Sour cream"],
+    "nutritionPerServing": { "calories": 340, "protein": 15, "carbs": 34, "fat": 16, "fiber": 6, "sugar": 4 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2018/08/Ep-709-Veggie-Loaded-Mexican-Lasagna.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/veggie-loaded-mexican-lasagna/" }
+  },
+  {
+    "name": "Avocado Chop Chop Salad",
+    "servings": 4,
+    "servingGrams": 260,
+    "ingredients": ["Avocado", "Tomato", "Cucumber", "Red onion", "Cilantro", "Lime juice", "Olive oil"],
+    "nutritionPerServing": { "calories": 240, "protein": 4, "carbs": 16, "fat": 20, "fiber": 8, "sugar": 4 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2011/03/DSC_0392.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/national_public_television_series_chop_chop_salad/" }
+  },
+  {
+    "name": "Lima Soup",
+    "servings": 6,
+    "servingGrams": 350,
+    "ingredients": ["Chicken breast", "Chicken broth", "Lima pepper", "Tomato", "Corn tortilla strips", "Avocado", "Lime"],
+    "nutritionPerServing": { "calories": 260, "protein": 22, "carbs": 18, "fat": 12, "fiber": 3, "sugar": 3 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2019/03/508-Lima-Soup.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/lima-soup/" }
+  },
+  {
+    "name": "Caldo de Oso",
+    "servings": 6,
+    "servingGrams": 380,
+    "ingredients": ["White fish fillets", "Carrots", "Potatoes", "Celery", "Fish broth", "Garlic", "Cilantro", "Lime"],
+    "nutritionPerServing": { "calories": 240, "protein": 24, "carbs": 20, "fat": 7, "fiber": 3, "sugar": 3 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2017/02/pati-jinich-caldo-de-oso-bear-soup.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/caldo-de-oso/" }
+  },
+  {
+    "name": "Mole de Olla",
+    "servings": 6,
+    "servingGrams": 380,
+    "ingredients": ["Beef shank", "Guajillo chiles", "Zucchini", "Corn on the cob", "Green beans", "Chayote", "Epazote"],
+    "nutritionPerServing": { "calories": 340, "protein": 26, "carbs": 24, "fat": 16, "fiber": 5, "sugar": 4 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2014/08/mole-de-olla-main.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/mole-de-olla/" }
+  },
+  {
+    "name": "Creamy Poblano Soup",
+    "servings": 6,
+    "servingGrams": 320,
+    "ingredients": ["Poblano peppers", "Onion", "Garlic", "Chicken broth", "Heavy cream", "Corn kernels"],
+    "nutritionPerServing": { "calories": 260, "protein": 6, "carbs": 18, "fat": 19, "fiber": 3, "sugar": 5 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2012/05/PoblanoSoupMain22.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/creamy_poblano_soup/" }
+  },
+  {
+    "name": "Tortilla Soup",
+    "servings": 6,
+    "servingGrams": 380,
+    "ingredients": ["Corn tortillas", "Tomato", "Chicken broth", "Chicken breast", "Pasilla chile", "Avocado", "Queso fresco"],
+    "nutritionPerServing": { "calories": 300, "protein": 20, "carbs": 24, "fat": 15, "fiber": 4, "sugar": 4 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2014/01/tortilla-soup.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/tortilla-soup/" }
+  },
+  {
+    "name": "Chicken in a Pecan and Ancho Chile Sauce",
+    "servings": 6,
+    "servingGrams": 300,
+    "ingredients": ["Chicken thighs", "Pecans", "Ancho chiles", "Chicken broth", "Garlic", "Cinnamon"],
+    "nutritionPerServing": { "calories": 420, "protein": 30, "carbs": 12, "fat": 28, "fiber": 3, "sugar": 4 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2020/10/909-Chicken-in-a-Pecan-and-Ancho-Chile-Sauce.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/chicken-in-a-pecan-and-ancho-chile-sauce/" }
+  },
+  {
+    "name": "Sanborns Swiss Chicken Enchiladas",
+    "servings": 6,
+    "servingGrams": 320,
+    "ingredients": ["Chicken breast", "Corn tortillas", "Tomatillos", "Swiss cheese", "Sour cream", "Onion"],
+    "nutritionPerServing": { "calories": 420, "protein": 26, "carbs": 30, "fat": 22, "fiber": 3, "sugar": 4 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2018/08/Ep-712-Sanborns-Swiss-Chicken-Enchiladas.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/sanborns-swiss-chicken-enchiladas/" }
+  },
+  {
+    "name": "Three-Cheese Chicken Enchiladas",
+    "servings": 6,
+    "servingGrams": 320,
+    "ingredients": ["Chicken breast", "Corn tortillas", "Red chile sauce", "Monterey Jack cheese", "Cheddar cheese", "Queso fresco"],
+    "nutritionPerServing": { "calories": 460, "protein": 28, "carbs": 30, "fat": 26, "fiber": 3, "sugar": 4 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2021/04/Tres-Quesos-Chile-Colorado-Chicken-Enchiladas-2.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/three-cheese-chicken-enchiladas/" }
+  },
+  {
+    "name": "Chicken with Tamarind, Apricots and Chipotle Sauce",
+    "servings": 6,
+    "servingGrams": 300,
+    "ingredients": ["Chicken thighs", "Tamarind paste", "Dried apricots", "Chipotle peppers in adobo", "Chicken broth", "Onion"],
+    "nutritionPerServing": { "calories": 380, "protein": 28, "carbs": 26, "fat": 18, "fiber": 2, "sugar": 16 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2010/09/DSC_0235.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/chicken_with_tamarind_apricots_and_chipotle_sauce/" }
+  },
+  {
+    "name": "Enmoladas de Pollo de Milpa Alta",
+    "servings": 6,
+    "servingGrams": 320,
+    "ingredients": ["Chicken breast", "Corn tortillas", "Mole sauce", "Sesame seeds", "Queso fresco", "Onion"],
+    "nutritionPerServing": { "calories": 440, "protein": 26, "carbs": 34, "fat": 24, "fiber": 4, "sugar": 6 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2025/08/1407-Enmoladas-De-Pollo.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/enmoladas-de-pollo-de-milpa-alta/" }
+  },
+  {
+    "name": "Enchiladas Verdes in a Tomatillo Sauce",
+    "servings": 6,
+    "servingGrams": 320,
+    "ingredients": ["Chicken breast", "Corn tortillas", "Tomatillos", "Serrano chile", "Sour cream", "Queso fresco"],
+    "nutritionPerServing": { "calories": 400, "protein": 26, "carbs": 30, "fat": 20, "fiber": 3, "sugar": 4 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2011/05/DSC_0036.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/enchiladas_in_a_green_tomatillo_sauce/" }
+  },
+  {
+    "name": "Shrimp Enchiladas in a Rich Tomato Sauce",
+    "servings": 6,
+    "servingGrams": 320,
+    "ingredients": ["Shrimp", "Corn tortillas", "Tomato sauce", "Chipotle peppers in adobo", "Monterey Jack cheese", "Onion"],
+    "nutritionPerServing": { "calories": 400, "protein": 24, "carbs": 32, "fat": 20, "fiber": 3, "sugar": 5 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2018/08/Ep-711-Shrimp-Enchiladas-Rich-Tomato-Sauce.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/shrimp-enchiladas-in-a-rich-tomato-sauce/" }
+  },
+  {
+    "name": "Enchiladas in Red Tomato Sauce",
+    "servings": 6,
+    "servingGrams": 300,
+    "ingredients": ["Corn tortillas", "Tomato", "Guajillo chiles", "Queso fresco", "Sour cream", "Onion"],
+    "nutritionPerServing": { "calories": 360, "protein": 12, "carbs": 34, "fat": 20, "fiber": 4, "sugar": 5 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2012/08/17_EnchiladasRedTomatoSauce_370_Cropped.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/enchiladas-in-red-tomato-sauce/" }
+  },
+  {
+    "name": "Chicken and Shrimp Fried Rice Mexicano",
+    "servings": 6,
+    "servingGrams": 340,
+    "ingredients": ["Cooked rice", "Chicken breast", "Shrimp", "Eggs", "Soy sauce", "Scallions", "Garlic"],
+    "nutritionPerServing": { "calories": 420, "protein": 28, "carbs": 46, "fat": 14, "fiber": 2, "sugar": 3 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2021/08/chicken-and-shrimp-fried-rice-mexicano-scaled.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/chicken-and-shrimp-fried-rice-mexicano/" }
+  },
+  {
+    "name": "Mexican Rice with Prawns",
+    "servings": 6,
+    "servingGrams": 320,
+    "ingredients": ["Prawns", "White rice", "Tomato", "Garlic", "Onion", "Chicken broth", "Cilantro"],
+    "nutritionPerServing": { "calories": 360, "protein": 22, "carbs": 48, "fat": 9, "fiber": 2, "sugar": 3 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2013/12/Mexican-Red-Rice-with-Prawns.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/mexican-rice-with-prawns/" }
+  },
+  {
+    "name": "Everything But The Kitchen Sink Rice",
+    "servings": 6,
+    "servingGrams": 350,
+    "ingredients": ["White rice", "Shrimp", "Mussels", "Chorizo", "Tomato", "Garlic", "Fish broth"],
+    "nutritionPerServing": { "calories": 420, "protein": 24, "carbs": 46, "fat": 15, "fiber": 2, "sugar": 3 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2019/03/503-seafood-rice-stew.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/seafood-rice-stew/" }
+  },
+  {
+    "name": "My Favorite Green Rice",
+    "servings": 6,
+    "servingGrams": 220,
+    "ingredients": ["White rice", "Poblano pepper", "Spinach", "Cilantro", "Garlic", "Vegetable broth"],
+    "nutritionPerServing": { "calories": 240, "protein": 5, "carbs": 46, "fat": 4, "fiber": 3, "sugar": 2 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2021/07/green-rice-scaled.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/my-favorite-green-rice/" }
+  },
+  {
+    "name": "Red Rice",
+    "servings": 6,
+    "servingGrams": 200,
+    "ingredients": ["White rice", "Tomato", "Garlic", "Onion", "Chicken broth", "Carrots", "Peas"],
+    "nutritionPerServing": { "calories": 220, "protein": 4, "carbs": 44, "fat": 4, "fiber": 2, "sugar": 3 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2021/09/red-rice-scaled.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/red-rice/" }
+  },
+  {
+    "name": "Chiles Rellenos",
+    "servings": 6,
+    "servingGrams": 260,
+    "ingredients": ["Poblano peppers", "Monterey Jack cheese", "Eggs", "Flour", "Tomato sauce", "Vegetable oil"],
+    "nutritionPerServing": { "calories": 380, "protein": 16, "carbs": 20, "fat": 27, "fiber": 3, "sugar": 5 },
+    "imageUrl": "https://patijinich.com/wp-content/uploads/2015/04/chile-rellenos.jpg",
+    "imageCredit": { "label": "Pati Jinich", "sourceUrl": "https://patijinich.com/chiles-rellenos/" }
+  }
+]

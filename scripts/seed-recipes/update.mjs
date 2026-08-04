@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync, appendFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
-import { getAccessToken, supabaseRestUrl, publishableKey } from "./auth.mjs";
+import { getAccessToken, supabaseRestUrl, restApiKey } from "./auth.mjs";
 import { enrichEntry } from "./enrich.mjs";
 
 const dataDir = new URL("./data/", import.meta.url);
@@ -14,7 +14,7 @@ async function supabaseFetch(path, init, { retry = true } = {}) {
   const token = await getAccessToken();
   const response = await fetch(`${supabaseRestUrl}${path}`, {
     ...init,
-    headers: { ...init.headers, apikey: publishableKey, Authorization: `Bearer ${token}` },
+    headers: { ...init.headers, apikey: restApiKey, Authorization: `Bearer ${token}` },
   });
   if (response.status === 401 && retry) {
     await getAccessToken({ forceRefresh: true });
@@ -50,6 +50,14 @@ const cuisineByFile = {
   "alex-snodgrass-3.json": "american",
   "recipetin-eats.json": "australian",
   "recipetin-eats-2.json": "australian",
+  "ottolenghi.json": "middleEastern",
+  "pati-jinich.json": "mexican",
+  "maangchi.json": "korean",
+  "marions-kitchen.json": "thai",
+  "hetty-mckinnon.json": "vegetarianFusion",
+  "yolele.json": "westAfrican",
+  "dorie-greenspan.json": "french",
+  "aarti-sequeira.json": "indian",
 };
 
 async function main() {

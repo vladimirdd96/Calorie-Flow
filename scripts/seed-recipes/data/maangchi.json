@@ -1,0 +1,263 @@
+[
+  {
+    "name": "Spicy Beef Bulgogi",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Thinly sliced beef", "Gochujang", "Soy sauce", "Garlic", "Fresh ginger", "Sugar", "Sesame oil", "Onion"],
+    "nutritionPerServing": { "calories": 380, "protein": 28, "carbs": 14, "fat": 22, "fiber": 1, "sugar": 8 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2023/01/spicybulgogi-table-650x437.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/spicy-bulgogi" }
+  },
+  {
+    "name": "Easy Bulgogi",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Thinly sliced beef", "Soy sauce", "Sugar", "Garlic", "Sesame oil", "Onion", "Scallions"],
+    "nutritionPerServing": { "calories": 360, "protein": 26, "carbs": 12, "fat": 22, "fiber": 1, "sugar": 8 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2008/03/bulgogi-table-650x433.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/easy-bulgogi" }
+  },
+  {
+    "name": "Dwaeji Bulgogi",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Pork shoulder", "Gochujang", "Soy sauce", "Garlic", "Fresh ginger", "Onion", "Sesame oil"],
+    "nutritionPerServing": { "calories": 400, "protein": 26, "carbs": 14, "fat": 26, "fiber": 1, "sugar": 8 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2012/11/spicy-pork_plate-590x317.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/dwaeji-bulgogi" }
+  },
+  {
+    "name": "Kkakdugi",
+    "servings": 8,
+    "servingGrams": 100,
+    "ingredients": ["Korean radish", "Gochugaru", "Fish sauce", "Garlic", "Fresh ginger", "Sugar", "Scallions"],
+    "nutritionPerServing": { "calories": 40, "protein": 1, "carbs": 9, "fat": 0, "fiber": 2, "sugar": 5 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2011/08/freish-kkakdugi-590x479.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/kkakdugi" }
+  },
+  {
+    "name": "Soybean Paste Stew with Beef",
+    "servings": 4,
+    "servingGrams": 350,
+    "ingredients": ["Beef brisket", "Doenjang", "Zucchini", "Potato", "Onion", "Garlic", "Tofu"],
+    "nutritionPerServing": { "calories": 280, "protein": 20, "carbs": 20, "fat": 13, "fiber": 4, "sugar": 4 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2022/03/doenjangjjigae-breakfast-insta-650x650.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/sogogi-doenjang-jjigae" }
+  },
+  {
+    "name": "Haemul Sundubu-jjigae",
+    "servings": 4,
+    "servingGrams": 380,
+    "ingredients": ["Soft tofu", "Shrimp", "Mussels", "Gochugaru", "Garlic", "Egg", "Scallions", "Anchovy broth"],
+    "nutritionPerServing": { "calories": 260, "protein": 22, "carbs": 10, "fat": 15, "fiber": 2, "sugar": 2 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2008/02/sundubujjigae-table-650x366.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/haemul-sundubu-jjigae" }
+  },
+  {
+    "name": "Gogi Sundubu-jjigae",
+    "servings": 4,
+    "servingGrams": 380,
+    "ingredients": ["Soft tofu", "Ground beef", "Gochugaru", "Garlic", "Egg", "Scallions", "Sesame oil"],
+    "nutritionPerServing": { "calories": 300, "protein": 22, "carbs": 8, "fat": 20, "fiber": 2, "sugar": 2 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2020/11/sundubu-jjigae-tablesetting-650x407.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/gogi-sundubu-jjigae" }
+  },
+  {
+    "name": "Doenjang-jjigae",
+    "servings": 4,
+    "servingGrams": 350,
+    "ingredients": ["Doenjang", "Tofu", "Zucchini", "Potato", "Onion", "Garlic", "Anchovy broth"],
+    "nutritionPerServing": { "calories": 180, "protein": 12, "carbs": 18, "fat": 7, "fiber": 4, "sugar": 4 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2016/01/doenjangjjigae-590x431.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/doenjang-jjigae" }
+  },
+  {
+    "name": "Budae-jjigae",
+    "servings": 6,
+    "servingGrams": 400,
+    "ingredients": ["Spam", "Sausages", "Kimchi", "Instant ramen noodles", "Baked beans", "Gochujang", "Tofu", "American cheese"],
+    "nutritionPerServing": { "calories": 420, "protein": 20, "carbs": 32, "fat": 24, "fiber": 3, "sugar": 6 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2014/10/budaejjigae1-590x409.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/budae-jjigae" }
+  },
+  {
+    "name": "Kimchi-jjigae",
+    "servings": 4,
+    "servingGrams": 380,
+    "ingredients": ["Well-fermented kimchi", "Pork belly", "Tofu", "Gochugaru", "Garlic", "Scallions", "Anchovy broth"],
+    "nutritionPerServing": { "calories": 320, "protein": 18, "carbs": 12, "fat": 22, "fiber": 3, "sugar": 3 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2007/11/kimchijjigae-590x411.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/kimchi-jjigae" }
+  },
+  {
+    "name": "Japchae",
+    "servings": 6,
+    "servingGrams": 220,
+    "ingredients": ["Sweet potato starch noodles", "Beef", "Shiitake mushrooms", "Spinach", "Carrots", "Onion", "Soy sauce", "Sesame oil"],
+    "nutritionPerServing": { "calories": 300, "protein": 12, "carbs": 42, "fat": 10, "fiber": 3, "sugar": 6 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2007/07/japchae_plate-590x446.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/japchae" }
+  },
+  {
+    "name": "Easy Japchae",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Sweet potato starch noodles", "Ground pork", "Carrots", "Spinach", "Onion", "Soy sauce", "Sesame oil"],
+    "nutritionPerServing": { "calories": 320, "protein": 13, "carbs": 42, "fat": 12, "fiber": 3, "sugar": 5 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2019/12/japchae-insta-650x650.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/easy-japchae" }
+  },
+  {
+    "name": "Buchu-japchae",
+    "servings": 4,
+    "servingGrams": 220,
+    "ingredients": ["Sweet potato starch noodles", "Pork", "Asian chives", "Shiitake mushrooms", "Dried chili oil", "Soy sauce"],
+    "nutritionPerServing": { "calories": 320, "protein": 14, "carbs": 40, "fat": 12, "fiber": 3, "sugar": 4 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2018/10/buchu-japchae-insta-650x650.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/buchu-japchae" }
+  },
+  {
+    "name": "Bibimbap",
+    "servings": 4,
+    "servingGrams": 380,
+    "ingredients": ["Cooked rice", "Beef", "Bean sprouts", "Spinach", "Carrots", "Shiitake mushrooms", "Fried egg", "Gochujang"],
+    "nutritionPerServing": { "calories": 440, "protein": 22, "carbs": 56, "fat": 15, "fiber": 5, "sugar": 5 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2008/01/bibimbap-bowl-590x422.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/bibimbap" }
+  },
+  {
+    "name": "Bibim-guksu",
+    "servings": 4,
+    "servingGrams": 300,
+    "ingredients": ["Wheat noodles", "Gochujang", "Rice vinegar", "Sugar", "Cucumber", "Kimchi", "Sesame seeds"],
+    "nutritionPerServing": { "calories": 380, "protein": 10, "carbs": 68, "fat": 7, "fiber": 3, "sugar": 12 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2012/01/bibimguksu-insta-650x650.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/bibim-guksu" }
+  },
+  {
+    "name": "Kimchijeon",
+    "servings": 4,
+    "servingGrams": 150,
+    "ingredients": ["Well-fermented kimchi", "Flour", "Kimchi brine", "Scallions", "Sugar", "Vegetable oil"],
+    "nutritionPerServing": { "calories": 220, "protein": 5, "carbs": 30, "fat": 9, "fiber": 2, "sugar": 3 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2020/02/kimchipancake-scaled-620x349.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/kimchijeon" }
+  },
+  {
+    "name": "Yangnyeom-tongdak",
+    "servings": 4,
+    "servingGrams": 260,
+    "ingredients": ["Chicken drumettes", "Potato starch", "Gochujang", "Ketchup", "Garlic", "Honey", "Soy sauce"],
+    "nutritionPerServing": { "calories": 460, "protein": 26, "carbs": 34, "fat": 24, "fiber": 1, "sugar": 14 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2011/01/yangnyeomtongdak-insta-650x650.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/yangnyeom-tongdak" }
+  },
+  {
+    "name": "Kkanpunggi",
+    "servings": 4,
+    "servingGrams": 260,
+    "ingredients": ["Chicken thighs", "Potato starch", "Garlic", "Leek", "Soy sauce", "Vinegar", "Sugar"],
+    "nutritionPerServing": { "calories": 420, "protein": 26, "carbs": 26, "fat": 24, "fiber": 1, "sugar": 8 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2016/02/kkanpunggi-1-590x358.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/kkanpunggi" }
+  },
+  {
+    "name": "Kimchi-bokkeum",
+    "servings": 4,
+    "servingGrams": 180,
+    "ingredients": ["Well-fermented kimchi", "Pork belly", "Sugar", "Sesame oil", "Scallions", "Sesame seeds"],
+    "nutritionPerServing": { "calories": 240, "protein": 10, "carbs": 8, "fat": 18, "fiber": 2, "sugar": 4 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2019/02/kimchibokkeum-insta-650x650.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/kimchi-bokkeum" }
+  },
+  {
+    "name": "Dakgangjeong",
+    "servings": 4,
+    "servingGrams": 260,
+    "ingredients": ["Chicken thighs", "Potato starch", "Garlic", "Soy sauce", "Honey", "Gochugaru", "Peanuts"],
+    "nutritionPerServing": { "calories": 440, "protein": 26, "carbs": 30, "fat": 24, "fiber": 1, "sugar": 12 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2014/01/crispy-fried-chicken-590x412.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/easy-dakgangjeong" }
+  },
+  {
+    "name": "Grandma Style Kimchi Pancake",
+    "servings": 4,
+    "servingGrams": 150,
+    "ingredients": ["Well-fermented kimchi leaves", "Flour", "Ground pork", "Tofu", "Egg", "Scallions"],
+    "nutritionPerServing": { "calories": 240, "protein": 10, "carbs": 24, "fat": 12, "fiber": 2, "sugar": 3 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2010/07/kimchi-jeon-590x393.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/grandma-kimchijeon" }
+  },
+  {
+    "name": "Bulgogi Samgak-gimbap",
+    "servings": 4,
+    "servingGrams": 140,
+    "ingredients": ["Cooked rice", "Ground beef", "Soy sauce", "Sugar", "Sesame oil", "Roasted seaweed", "Kimchi"],
+    "nutritionPerServing": { "calories": 260, "protein": 10, "carbs": 40, "fat": 8, "fiber": 1, "sugar": 4 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2022/12/samgakgimbap-650x366.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/triangle-gimbap" }
+  },
+  {
+    "name": "Soybean Paste Stew with Scallops",
+    "servings": 4,
+    "servingGrams": 350,
+    "ingredients": ["Scallops", "Doenjang", "Zucchini", "Onion", "Garlic", "Tofu", "Anchovy broth"],
+    "nutritionPerServing": { "calories": 220, "protein": 18, "carbs": 18, "fat": 9, "fiber": 3, "sugar": 3 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2016/10/scallop-doenjangjjigae-insta-590x590.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/paeju-doenjang-jjigae" }
+  },
+  {
+    "name": "Bulgogi-jeongol",
+    "servings": 6,
+    "servingGrams": 380,
+    "ingredients": ["Thinly sliced beef", "Sweet potato starch noodles", "Napa cabbage", "Enoki mushrooms", "Soy sauce", "Beef broth"],
+    "nutritionPerServing": { "calories": 340, "protein": 22, "carbs": 30, "fat": 14, "fiber": 3, "sugar": 6 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2007/07/bulgogi-jeongol-table-620x348.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/bulgogi-jeongol" }
+  },
+  {
+    "name": "Dubu-jorim",
+    "servings": 4,
+    "servingGrams": 180,
+    "ingredients": ["Firm tofu", "Soy sauce", "Gochugaru", "Garlic", "Scallions", "Vegetable oil", "Sesame seeds"],
+    "nutritionPerServing": { "calories": 180, "protein": 12, "carbs": 8, "fat": 12, "fiber": 2, "sugar": 3 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2016/02/braised-tofu-590x429.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/dubu-jorim" }
+  },
+  {
+    "name": "Dubu-gangjeong",
+    "servings": 4,
+    "servingGrams": 180,
+    "ingredients": ["Firm tofu", "Potato starch", "Gochujang", "Honey", "Garlic", "Sesame seeds"],
+    "nutritionPerServing": { "calories": 240, "protein": 12, "carbs": 22, "fat": 12, "fiber": 2, "sugar": 10 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2020/04/dubugangjeong-insta-650x650.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/dubu-gangjeong" }
+  },
+  {
+    "name": "Dubu-ganjangjorim",
+    "servings": 4,
+    "servingGrams": 160,
+    "ingredients": ["Firm tofu", "Soy sauce", "Garlic", "Scallions", "Sesame oil", "Vegetable oil"],
+    "nutritionPerServing": { "calories": 160, "protein": 11, "carbs": 6, "fat": 11, "fiber": 1, "sugar": 2 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2009/09/dubuganjangjorim-590x474.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/dubu-ganjangjorim" }
+  },
+  {
+    "name": "Cheonggukjang-jjigae",
+    "servings": 4,
+    "servingGrams": 350,
+    "ingredients": ["Cheonggukjang fermented soybean paste", "Tofu", "Kimchi", "Zucchini", "Onion", "Garlic"],
+    "nutritionPerServing": { "calories": 200, "protein": 14, "carbs": 16, "fat": 9, "fiber": 5, "sugar": 3 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2019/01/cheonggukjang-insta-1-650x650.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/cheonggukjang-jjigae" }
+  },
+  {
+    "name": "Bibim-naengmyeon",
+    "servings": 4,
+    "servingGrams": 300,
+    "ingredients": ["Buckwheat noodles", "Gochujang", "Rice vinegar", "Sugar", "Korean pear", "Cucumber", "Hard-boiled egg"],
+    "nutritionPerServing": { "calories": 340, "protein": 9, "carbs": 62, "fat": 6, "fiber": 3, "sugar": 14 },
+    "imageUrl": "https://www.maangchi.com/wp-content/uploads/2008/06/bibim-naengmyeon-590x394.jpg",
+    "imageCredit": { "label": "Maangchi", "sourceUrl": "https://www.maangchi.com/recipe/bibim-naengmyeon" }
+  }
+]
