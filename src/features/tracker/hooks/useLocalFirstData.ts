@@ -44,8 +44,14 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
   const cloudWriteQueueRef = useRef<Promise<void>>(Promise.resolve());
   const cloudWriteFailedRef = useRef(false);
   const remoteDeletedMealIdsRef = useRef(new Set<string>());
+  const cloudSyncInFlightRef = useRef(false);
+  const cloudSyncQueuedRef = useRef(false);
 
   const requestCloudSync = useCallback(() => {
+    if (cloudSyncInFlightRef.current) {
+      cloudSyncQueuedRef.current = true;
+      return;
+    }
     syncIdentityRef.current = "";
     setSyncAttempt((value) => value + 1);
   }, []);
@@ -130,6 +136,7 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
     if (syncIdentityRef.current === identity) return;
     syncIdentityRef.current = identity;
     let active = true;
+    cloudSyncInFlightRef.current = true;
     const synchronize = async () => {
       const mutationAtStart = syncMutationRef.current;
       const owner = await getSetting<string>("dataOwner");
@@ -193,9 +200,15 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
     };
     synchronize().catch(() => {
       if (active) setSyncState(navigator.onLine ? "error" : "offline");
+    }).finally(() => {
+      cloudSyncInFlightRef.current = false;
+      if (cloudSyncQueuedRef.current) {
+        cloudSyncQueuedRef.current = false;
+        requestCloudSync();
+      }
     });
     return () => { active = false; };
-  }, [auth.configured, auth.ready, auth.user, ready, refresh, syncAttempt]);
+  }, [auth.configured, auth.ready, auth.user, ready, refresh, requestCloudSync, syncAttempt]);
 
   useEffect(() => {
     if (!ready || !auth.ready || !auth.user || !auth.configured) return;
