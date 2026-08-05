@@ -25,6 +25,21 @@ describe("external data schemas", () => {
     expect(meal.loggedDate).toBe("2026-07-21");
   });
 
+  it("accepts the legacy micronutrient-completeness flag from synced meals", () => {
+    const meal = mealSchema.parse({
+      id: "meal-with-micros",
+      name: "Recipe meal",
+      mealType: "dinner",
+      amount: 1,
+      unit: "serving",
+      grams: 300,
+      nutrition: { ...nutrition, micronutrientsIncomplete: true },
+      createdAt: "2026-07-20T22:30:00.000Z",
+      source: "custom",
+    });
+    expect(meal.nutrition.micronutrientsIncomplete).toBe(true);
+  });
+
   it("rejects negative nutrition from cloud or AI boundaries", () => {
     expect(() => labelAnalysisSchema.parse({
       productName: "Broken label",

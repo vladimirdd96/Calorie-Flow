@@ -33,6 +33,7 @@ export const nutritionSchema = z.object({
   fat: finiteNonNegative,
   fiber: finiteNonNegative,
   sugar: finiteNonNegative,
+  micronutrientsIncomplete: z.boolean().optional(),
   micronutrients: z.object({
     sodiumMg: finiteNonNegative, cholesterolMg: finiteNonNegative, saturatedFatG: finiteNonNegative,
     potassiumMg: finiteNonNegative, calciumMg: finiteNonNegative, ironMg: finiteNonNegative,
