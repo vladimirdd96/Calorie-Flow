@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  :root{--cf-bg:#efe9dc;--cf-card:#fffdf8;--cf-input-bg:#fff;--cf-text:#332b1f;--cf-muted:#756346;--cf-muted-2:#6a563f;--cf-border:#ece3cd;--cf-border-strong:#e0d5ba;--cf-icon-muted:#7d6a49;--cf-solid-bg:#332b1f;--cf-solid-text:#f2ead9;--cf-green:#326D36;--cf-amber:#8a5f18;--cf-terracotta:#AC543F;--cf-blue:#3371A2;--cf-orange:#93641a;}
+  html[data-theme="dark"]{--cf-bg:#1c1712;--cf-card:#26201a;--cf-input-bg:#211b15;--cf-text:#f2ead9;--cf-muted:#a89678;--cf-muted-2:#c2b393;--cf-border:#3a3226;--cf-border-strong:#857458;--cf-icon-muted:#9c8a68;--cf-solid-bg:#f2ead9;--cf-solid-text:#332b1f;--cf-green:#4CAF50;--cf-amber:#c08a26;--cf-terracotta:#d1755e;--cf-blue:#5393c7;--cf-orange:#c78d2c;}
+</style>
+<script>(function(){try{var t=localStorage.getItem("cf-theme")||"light";document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  body{margin:0;}
+  .cf-navbtn:active{opacity:.6;}
+  .cf-tab{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 4px;border:0;background:transparent;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;border-radius:11px;}
+  .cf-bubble-user{background:var(--cf-solid-bg);color:var(--cf-solid-text);border-radius:16px 16px 4px 16px;}
+  .cf-bubble-assistant{background:var(--cf-card);color:var(--cf-text);border-radius:16px 16px 16px 4px;box-shadow:0 4px 12px rgba(60,40,20,.08);}
+  .cf-typing span{width:6px;height:6px;border-radius:50%;background:var(--cf-icon-muted);display:inline-block;animation:cfBounce 1.2s infinite ease-in-out;}
+  .cf-typing span:nth-child(2){animation-delay:.15s;} .cf-typing span:nth-child(3){animation-delay:.3s;}
+  @keyframes cfBounce{0%,80%,100%{transform:translateY(0);opacity:.5;}40%{transform:translateY(-4px);opacity:1;}}
+</style>
+</helmet>
+
+<div style="height:100vh;background:var(--cf-bg);display:flex;justify-content:center;font-family:'Quicksand',system-ui,sans-serif;color:var(--cf-text);overflow:hidden;">
+  <div id="cf-coach-shell" style="width:100%;max-width:clamp(420px, 62vw, 780px);display:flex;flex-direction:column;height:100%;box-sizing:border-box;position:relative;">
+
+    <div style="padding:clamp(16px,4vw,28px) 16px 0;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <button type="button" onClick="{{ goToday }}" aria-label="Back to Today" style="width:40px;height:40px;border-radius:12px;border:0;background:var(--cf-card);box-shadow:0 4px 10px rgba(60,40,20,.08);color:#5a4e3a;display:grid;place-items:center;cursor:pointer;flex:0 0 auto;"><i data-lucide="arrow-left" style="width:15px;height:15px;"></i></button>
+        <span style="font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--cf-amber);flex:1;">Your food companion</span>
+        <button type="button" onClick="{{ newChat }}" aria-label="New chat" style="display:flex;align-items:center;gap:5px;padding:7px 11px;border:0;border-radius:10px;background:var(--cf-card);box-shadow:0 4px 10px rgba(60,40,20,.08);color:#5a4e3a;font-family:inherit;font-weight:700;font-size:12.5px;cursor:pointer;"><i data-lucide="plus" style="width:13px;height:13px;"></i>New chat</button>
+        <button type="button" onClick="{{ toggleHistory }}" aria-label="Chat history" style="position:relative;z-index:23;width:40px;height:40px;border-radius:12px;border:0;background:var(--cf-card);box-shadow:0 4px 10px rgba(60,40,20,.08);color:#5a4e3a;display:grid;place-items:center;cursor:pointer;transition:transform .2s ease;transform:rotate({{ menuRotation }}deg);flex:0 0 auto;"><i data-lucide="menu" style="width:15px;height:15px;"></i></button>
+      </div>
+      <h1 style="margin:0 0 14px;font-size:19px;font-weight:700;">{{ activeChatTitle }}</h1>
+
+    </div>
+
+    <!-- CHAT TAB -->
+    <sc-if value="{{ isChatTab }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:1;overflow-y:auto;padding:0 16px;">
+        <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--cf-muted-2);background:rgba(50,109,54,.08);border-radius:10px;padding:10px 12px;margin-bottom:14px;"><i data-lucide="shield-check" style="width:14px;height:14px;color:var(--cf-green);flex:0 0 auto;"></i><span>Food, calories &amp; nutrition only &middot; recipes and lists saved only when you choose</span></div>
+        </sc-if>
+
+        <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="text-align:center;padding:20px 10px;">
+            <div style="width:48px;height:48px;border-radius:14px;background:#f2ead9;color:var(--cf-amber);display:grid;place-items:center;margin:0 auto 12px;"><i data-lucide="sparkles" style="width:22px;height:22px;"></i></div>
+            <strong style="display:block;font-size:16px;margin-bottom:6px;">What should we make?</strong>
+            <p style="margin:0 0 16px;font-size:13px;color:var(--cf-muted-2);line-height:1.5;">Talk through dinner, use up what you have, or log a food by scanning it.</p>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <sc-for list="{{ starters }}" as="s" hint-placeholder-count="3">
+                <button type="button" onClick="{{ s.onClick }}" style="text-align:left;padding:11px 14px;border:1px solid var(--cf-border);border-radius:12px;background:var(--cf-card);font-family:inherit;font-size:13px;color:var(--cf-text);cursor:pointer;">{{ s.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-for list="{{ messages }}" as="m" hint-placeholder-count="3">
+          <div style="display:grid;justify-items:{{ m.itemsAlign }};margin-bottom:12px;">
+            <div class="{{ m.bubbleClass }}" style="max-width:82%;padding:11px 14px;">
+              <span style="display:block;font-size:11px;font-weight:800;opacity:.6;margin-bottom:3px;">{{ m.roleLabel }}</span>
+              <p style="margin:0;font-size:14px;line-height:1.55;white-space:pre-wrap;">{{ m.content }}</p>
+            </div>
+            <sc-if value="{{ m.hasSources }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
+                <sc-for list="{{ m.sources }}" as="src" hint-placeholder-count="2">
+                  <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border:1px solid var(--cf-border);border-radius:999px;background:var(--cf-card);font-size:11.5px;font-weight:700;color:var(--cf-muted-2);"><i data-lucide="{{ src.icon }}" style="width:12px;height:12px;"></i>{{ src.label }}</span>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ m.showLogChoice }}" hint-placeholder-val="{{ false }}">
+              <div style="width:82%;margin-top:10px;padding:12px 14px;border:1px solid var(--cf-border);border-radius:14px;background:var(--cf-card);">
+                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px;">
+                  <strong style="font-size:13.5px;">{{ m.logName }}</strong>
+                  <span style="font-size:13px;font-weight:700;white-space:nowrap;">{{ m.logKcal }} kcal</span>
+                </div>
+                <span style="display:block;font-size:12px;font-weight:800;color:var(--cf-muted-2);margin-bottom:6px;">Log it to</span>
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;border:1px solid var(--cf-border);border-radius:11px;margin-bottom:10px;">
+                  <sc-for list="{{ m.mealChoices }}" as="mc" hint-placeholder-count="4">
+                    <button type="button" onClick="{{ mc.onClick }}" style="min-height:42px;border:0;border-radius:8px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;background:{{ mc.bg }};color:{{ mc.color }};">{{ mc.label }}</button>
+                  </sc-for>
+                </div>
+                <button type="button" onClick="{{ m.onLog }}" style="width:100%;min-height:44px;border:0;border-radius:11px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:13.5px;cursor:pointer;">Log to {{ m.chosenMeal }}</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ m.logged }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:10px 14px;border-radius:12px;background:rgba(50,109,54,.1);color:var(--cf-green);font-size:13px;font-weight:700;">
+                <i data-lucide="check" style="width:16px;height:16px;"></i>
+                <span>Logged to {{ m.chosenMeal }}</span>
+                <button type="button" onClick="{{ goToday }}" style="border:0;background:transparent;padding:0;font-family:inherit;font-weight:800;font-size:13px;color:var(--cf-amber);cursor:pointer;text-decoration:underline;">View in diary</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ m.showListAction }}" hint-placeholder-val="{{ false }}">
+              <button type="button" onClick="{{ m.onAddToList }}" style="display:flex;align-items:center;gap:8px;min-height:44px;margin-top:8px;padding:0 14px;border:1px solid var(--cf-border);border-radius:12px;background:var(--cf-card);color:var(--cf-green);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;"><i data-lucide="list-plus" style="width:16px;height:16px;"></i>Add ingredients to grocery list</button>
+            </sc-if>
+            <sc-if value="{{ m.listAdded }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:10px 14px;border-radius:12px;background:rgba(50,109,54,.1);color:var(--cf-green);font-size:13px;font-weight:700;">
+                <i data-lucide="check" style="width:16px;height:16px;"></i>
+                <span>Added to your grocery list</span>
+                <button type="button" onClick="{{ openPlan }}" style="border:0;background:transparent;padding:0;font-family:inherit;font-weight:800;font-size:13px;color:var(--cf-amber);cursor:pointer;text-decoration:underline;">View in Plan</button>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+
+        <sc-if value="{{ isTyping }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;margin-bottom:12px;">
+            <div class="cf-bubble-assistant" style="padding:14px 16px;"><div class="cf-typing"><span></span><span></span><span></span></div></div>
+          </div>
+        </sc-if>
+        <div style="height:8px;"></div>
+      </div>
+
+      <div style="padding:10px 16px calc(94px + env(safe-area-inset-bottom));background:var(--cf-bg);flex:0 0 auto;">
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <button type="button" onClick="{{ openAddFood }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;border:1px solid var(--cf-border);border-radius:11px;background:var(--cf-card);color:var(--cf-blue);font-family:inherit;font-weight:700;font-size:12.5px;cursor:pointer;"><i data-lucide="scan-line" style="width:15px;height:15px;"></i>Scan barcode</button>
+          <button type="button" onClick="{{ openAddFood }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;border:1px solid var(--cf-border);border-radius:11px;background:var(--cf-card);color:var(--cf-orange);font-family:inherit;font-weight:700;font-size:12.5px;cursor:pointer;"><i data-lucide="camera" style="width:15px;height:15px;"></i>Read label</button>
+        </div>
+        <sc-if value="{{ hasAttachment }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:10px;background:var(--cf-card);border:1px solid var(--cf-border);border-radius:14px;padding:10px 12px;margin-bottom:8px;box-shadow:0 6px 16px rgba(60,40,20,.08);">
+            <span style="width:38px;height:38px;border-radius:10px;background:rgba(51,113,162,.12);color:var(--cf-blue);display:grid;place-items:center;flex:0 0 auto;"><i data-lucide="image" style="width:18px;height:18px;"></i></span>
+            <span style="flex:1;min-width:0;display:grid;gap:1px;"><strong style="font-size:13px;">Photo attached</strong><small style="font-size:12px;color:var(--cf-muted);">Coach will estimate what's on the plate</small></span>
+            <button type="button" onClick="{{ removeAttachment }}" aria-label="Remove photo" style="width:40px;height:40px;border:0;background:transparent;color:var(--cf-icon-muted);display:grid;place-items:center;cursor:pointer;flex:0 0 auto;"><i data-lucide="x" style="width:16px;height:16px;"></i></button>
+          </div>
+        </sc-if>
+        <div style="display:flex;align-items:center;gap:8px;background:var(--cf-card);border-radius:16px;padding:6px 6px 6px 8px;box-shadow:0 6px 16px rgba(60,40,20,.08);">
+          <button type="button" onClick="{{ attachPhoto }}" aria-label="Attach photo" style="width:40px;height:40px;border-radius:12px;border:0;background:#f2ead9;color:var(--cf-muted-2);display:grid;place-items:center;cursor:pointer;flex:0 0 auto;"><i data-lucide="plus" style="width:15px;height:15px;"></i></button>
+          <input value="{{ draft }}" onInput="{{ onDraftInput }}" placeholder="Ask about dinner, recipes, or your food log…" style="flex:1;min-width:0;border:0;background:transparent;font-family:inherit;font-size:13px;color:var(--cf-text);padding:8px 0;outline:none;">
+          <button type="button" onClick="{{ send }}" aria-label="Send" disabled="{{ sendDisabled }}" style="width:36px;height:36px;border-radius:11px;border:0;background:var(--cf-solid-bg);color:var(--cf-solid-text);display:grid;place-items:center;cursor:pointer;flex:0 0 auto;opacity:{{ sendOpacity }};"><i data-lucide="send" style="width:15px;height:15px;"></i></button>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+
+  <sc-if value="{{ historyOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(30,24,14,.35);z-index:20;" onClick="{{ toggleHistory }}"></div>
+    <div style="position:fixed;top:0;bottom:0;right:{{ drawerRight }}px;width:{{ drawerWidth }}px;background:var(--cf-card);z-index:21;box-shadow:-8px 0 24px rgba(60,40,20,.15);padding:70px 14px 18px;overflow-y:auto;">
+      <strong style="display:block;font-size:13px;margin-bottom:10px;">Chats</strong>
+      <div style="display:flex;align-items:center;gap:8px;background:var(--cf-input-bg);border:1px solid var(--cf-border);border-radius:11px;padding:0 10px;margin-bottom:12px;">
+        <i data-lucide="search" style="width:13px;height:13px;color:var(--cf-muted);flex:0 0 auto;"></i>
+        <input value="{{ chatSearch }}" onInput="{{ onChatSearchInput }}" placeholder="Search chats" style="flex:1;min-width:0;border:0;background:transparent;font-family:inherit;font-size:13px;color:var(--cf-text);padding:9px 0;outline:none;">
+      </div>
+      <sc-for list="{{ chatHistory }}" as="c" hint-placeholder-count="4">
+        <div style="position:relative;display:flex;align-items:center;gap:2px;margin-bottom:2px;border-radius:11px;background:{{ c.bg }};">
+          <sc-if value="{{ c.isRenaming }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:1;display:flex;align-items:center;gap:6px;padding:6px 6px 6px 12px;">
+              <input value="{{ c.renameValue }}" onInput="{{ c.onRenameInput }}" autoFocus="true" style="flex:1;min-width:0;min-height:40px;border:1px solid var(--cf-border);border-radius:9px;padding:0 8px;font-family:inherit;font-size:13px;background:var(--cf-input-bg);">
+              <button type="button" onClick="{{ c.onRenameSave }}" aria-label="Save name" style="width:28px;height:28px;border-radius:8px;border:0;background:var(--cf-solid-bg);color:var(--cf-solid-text);display:grid;place-items:center;cursor:pointer;flex:0 0 auto;"><i data-lucide="check" style="width:13px;height:13px;"></i></button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ c.notRenaming }}" hint-placeholder-val="{{ true }}">
+            <button type="button" onClick="{{ c.onClick }}" style="flex:1;min-width:0;text-align:left;padding:11px 4px 11px 12px;border:0;border-radius:11px;background:transparent;cursor:pointer;font-family:inherit;">
+              <strong style="display:block;font-size:13px;color:{{ c.color }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ c.title }}</strong>
+              <small style="font-size:12px;color:var(--cf-muted);">{{ c.date }}</small>
+            </button>
+            <button type="button" onClick="{{ c.onToggleMenu }}" aria-label="Chat options" style="width:28px;height:28px;border-radius:8px;border:0;background:transparent;color:var(--cf-muted-2);display:grid;place-items:center;cursor:pointer;flex:0 0 auto;margin-right:4px;"><i data-lucide="more-horizontal" style="width:15px;height:15px;"></i></button>
+            <sc-if value="{{ c.menuOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;top:40px;right:34px;z-index:5;background:var(--cf-card);border-radius:11px;box-shadow:0 8px 20px rgba(60,40,20,.18);padding:4px;min-width:120px;">
+                <button type="button" onClick="{{ c.onRename }}" style="width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;border:0;background:transparent;font-family:inherit;font-size:13px;font-weight:700;color:var(--cf-text);cursor:pointer;text-align:left;border-radius:8px;"><i data-lucide="pencil" style="width:13px;height:13px;"></i>Rename</button>
+                <button type="button" onClick="{{ c.onDelete }}" style="width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;border:0;background:transparent;font-family:inherit;font-size:13px;font-weight:700;color:var(--cf-terracotta);cursor:pointer;text-align:left;border-radius:8px;"><i data-lucide="trash-2" style="width:13px;height:13px;"></i>Delete</button>
+              </div>
+            </sc-if>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <!-- Bottom nav -->
+  <div style="position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;pointer-events:none;">
+    <div style="position:relative;width:100%;max-width:clamp(420px, 62vw, 780px);pointer-events:auto;">
+      <div style="position:absolute;left:50%;top:-30px;transform:translateX(-50%);width:90px;height:46px;background:var(--cf-card);border-radius:56px 56px 0 0;"></div>
+      <div style="position:relative;background:var(--cf-card);display:grid;grid-template-columns:1fr 1fr auto 1fr 1fr;align-items:end;gap:4px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));">
+        <sc-for list="{{ navItemsLeft }}" as="item" hint-placeholder-count="2">
+          <button type="button" class="cf-navbtn" onClick="{{ item.onClick }}" style="display:grid;justify-items:center;gap:3px;padding:6px 2px;background:transparent;border:0;border-radius:10px;cursor:pointer;color:{{ item.color }};font-family:inherit;">
+            <i data-lucide="{{ item.icon }}" style="width:20px;height:20px;"></i>
+            <span style="font-size:11px;font-weight:{{ item.weight }};">{{ item.label }}</span>
+          </button>
+        </sc-for>
+        <button type="button" onClick="{{ openAddFood }}" aria-label="Add food" style="position:relative;top:-22px;justify-self:center;width:56px;height:56px;border-radius:50%;border:0;background:var(--cf-green);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 8px 16px rgba(50,109,54,.35);">
+          <i data-lucide="plus" style="width:28px;height:28px;"></i>
+        </button>
+        <sc-for list="{{ navItemsRight }}" as="item" hint-placeholder-count="2">
+          <button type="button" class="cf-navbtn" onClick="{{ item.onClick }}" style="display:grid;justify-items:center;gap:3px;padding:6px 2px;background:transparent;border:0;border-radius:10px;cursor:pointer;color:{{ item.color }};font-family:inherit;">
+            <i data-lucide="{{ item.icon }}" style="width:20px;height:20px;"></i>
+            <span style="font-size:11px;font-weight:{{ item.weight }};">{{ item.label }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const STARTERS = ["How am I doing today?", "Plan a quick dinner and make a grocery list", "What can I make with chicken and broccoli?"];
+const INITIAL_CHATS = [
+  { id: "c1", title: "Dinner ideas with chicken", date: "Today" },
+  { id: "c2", title: "New conversation", date: "Yesterday" },
+];
+const TODAY = "Calorie Flow - Today (Mobile).dc.html";
+const LIBRARY = "Calorie Flow - Foods (Mobile).dc.html";
+const PLAN = "Calorie Flow - Foods (Mobile).dc.html#plan";
+const INSIGHTS = "Calorie Flow - Insights (Mobile).dc.html";
+const PROFILE = "Calorie Flow - Profile (Mobile).dc.html";
+const ADDFOOD = "Calorie Flow - Add Food (Mobile).dc.html";
+
+class Component extends DCLogic {
+  state = {
+    tab: "chat", historyOpen: false, activeChatId: "c1", draft: "", listAddedIds: [],
+    attachment: false, logChoices: {}, loggedIds: [],
+    chats: INITIAL_CHATS, menuOpenChatId: null, renamingChatId: null, renameDraft: "",
+    drawerRight: 16, drawerWidth: 300, chatSearch: "",
+    messages: [
+      { id: "m1", role: "user", content: "What can I make with chicken and broccoli?" },
+      { id: "m2", role: "assistant", kind: "recipe", content: "Try a sheet-pan garlic chicken with roasted broccoli — about 420 kcal, 38g protein per serving. Want the full recipe and a grocery list?", sources: [{ icon: "book-open", label: "Your recipes" }, { icon: "notebook-pen", label: "Today's diary" }] },
+    ],
+    typing: false,
+    groceryLists: [{ id: "g1", name: "My groceries" }, { id: "g2", name: "Weekend BBQ" }],
+    activeGroceryListId: "g1",
+    groceryItems: { g1: [{ id: "i1", name: "Chicken thighs", checked: false }, { id: "i2", name: "Broccoli", checked: false }, { id: "i3", name: "Garlic", checked: true }], g2: [] },
+    groceryDraft: "",
+  };
+  nav = (file) => { window.location.href = encodeURI(file); };
+  goToday = () => this.nav(TODAY);
+  componentDidMount() {
+    this.mountIcons();
+    this.measure();
+    this._onResize = () => this.measure();
+    window.addEventListener("resize", this._onResize);
+  }
+  componentWillUnmount() { window.removeEventListener("resize", this._onResize); }
+  componentDidUpdate() { this.mountIcons(); }
+  mountIcons() { if (window.lucide) window.lucide.createIcons(); }
+  measure = () => {
+    const shell = document.getElementById("cf-coach-shell");
+    if (!shell) return;
+    const rect = shell.getBoundingClientRect();
+    const drawerRight = Math.round(window.innerWidth - rect.right);
+    const drawerWidth = Math.round(Math.min(300, rect.width));
+    if (drawerRight !== this.state.drawerRight || drawerWidth !== this.state.drawerWidth) this.setState({ drawerRight, drawerWidth });
+  };
+
+  selectChatTab = () => this.setState({ tab: "chat" });
+  selectGroceriesTab = () => this.setState({ tab: "groceries" });
+  toggleHistory = () => this.setState((s) => ({ historyOpen: !s.historyOpen }), () => window.setTimeout(this.measure, 20));
+  newChat = () => this.setState({ messages: [], activeChatId: `draft-${Date.now()}` });
+  switchChat = (id) => this.setState({ activeChatId: id, historyOpen: false });
+  toggleChatMenu = (id) => this.setState((s) => ({ menuOpenChatId: s.menuOpenChatId === id ? null : id }));
+  onChatSearchInput = (event) => this.setState({ chatSearch: event.target.value });
+  beginRename = (chat) => this.setState({ renamingChatId: chat.id, renameDraft: chat.title, menuOpenChatId: null });
+  onRenameInput = (event) => this.setState({ renameDraft: event.target.value });
+  saveRename = () => this.setState((s) => {
+    const title = s.renameDraft.trim();
+    if (!title) return { renamingChatId: null };
+    return { renamingChatId: null, chats: s.chats.map((c) => c.id === s.renamingChatId ? { ...c, title } : c) };
+  });
+  deleteChat = (id) => this.setState((s) => {
+    const remaining = s.chats.filter((c) => c.id !== id);
+    const nextActive = id === s.activeChatId ? (remaining[0] ? remaining[0].id : `draft-${Date.now()}`) : s.activeChatId;
+    return { chats: remaining, menuOpenChatId: null, activeChatId: nextActive, messages: id === s.activeChatId ? [] : s.messages };
+  });
+  onDraftInput = (event) => this.setState({ draft: event.target.value });
+  sendStarter = (label) => this.send(label);
+  send = (starter) => {
+    const content = (typeof starter === "string" ? starter : this.state.draft).trim();
+    if (!content) return;
+    const withPhoto = this.state.attachment;
+    this.setState((s) => ({
+      messages: [...s.messages, { id: `u-${Date.now()}`, role: "user", content, hadPhoto: withPhoto }],
+      draft: "", typing: true, attachment: false,
+    }));
+    window.setTimeout(() => this.setState((s) => ({
+      typing: false,
+      messages: [...s.messages, withPhoto
+        ? { id: `a-${Date.now()}`, role: "assistant", kind: "log", logName: "Salmon, potatoes and salad", logKcal: 655, content: "From your photo I make that roughly 655 kcal \u2014 salmon, roast potatoes and a dressed salad. Tell me where to log it and I'll add it.", sources: [{ icon: "sparkles", label: "Photo estimate" }] }
+        : { id: `a-${Date.now()}`, role: "assistant", kind: "log", logName: content, logKcal: 480, content: "Got it. I make that about 480 kcal \u2014 pick a meal and I'll add it to your diary.", sources: [{ icon: "notebook-pen", label: "Today's diary" }] }],
+    })), 1200);
+  };
+  onGroceryDraftInput = (event) => this.setState({ groceryDraft: event.target.value });
+  addGroceryItem = () => this.setState((s) => {
+    const name = s.groceryDraft.trim();
+    if (!name) return {};
+    const listId = s.activeGroceryListId;
+    return { groceryDraft: "", groceryItems: { ...s.groceryItems, [listId]: [...(s.groceryItems[listId] || []), { id: `i-${Date.now()}`, name, checked: false }] } };
+  });
+  toggleGroceryItem = (id) => this.setState((s) => {
+    const listId = s.activeGroceryListId;
+    return { groceryItems: { ...s.groceryItems, [listId]: s.groceryItems[listId].map((i) => i.id === id ? { ...i, checked: !i.checked } : i) } };
+  });
+  removeGroceryItem = (id) => this.setState((s) => {
+    const listId = s.activeGroceryListId;
+    return { groceryItems: { ...s.groceryItems, [listId]: s.groceryItems[listId].filter((i) => i.id !== id) } };
+  });
+  clearChecked = () => this.setState((s) => {
+    const listId = s.activeGroceryListId;
+    return { groceryItems: { ...s.groceryItems, [listId]: s.groceryItems[listId].filter((i) => !i.checked) } };
+  });
+  selectGroceryList = (id) => this.setState({ activeGroceryListId: id });
+  addList = () => this.setState((s) => {
+    const id = `g-${Date.now()}`;
+    return { groceryLists: [...s.groceryLists, { id, name: "New list" }], groceryItems: { ...s.groceryItems, [id]: [] }, activeGroceryListId: id };
+  });
+  openAddFood = () => this.nav(ADDFOOD);
+  openPlan = () => this.nav(PLAN);
+  addMessageToList = (id) => this.setState((s) => ({ listAddedIds: [...s.listAddedIds, id] }));
+  attachPhoto = () => this.setState({ attachment: true });
+  removeAttachment = () => this.setState({ attachment: false });
+  setLogChoice = (id, meal) => this.setState((s) => ({ logChoices: { ...s.logChoices, [id]: meal } }));
+  logSuggestion = (id) => this.setState((s) => ({ loggedIds: [...s.loggedIds, id] }));
+
+  renderVals() {
+    const s = this.state;
+    const activeItems = s.groceryItems[s.activeGroceryListId] || [];
+    const remaining = activeItems.filter((i) => !i.checked).length;
+    const activeChat = s.chats.find((c) => c.id === s.activeChatId);
+    return {
+      isChatTab: true, goToday: this.goToday, openPlan: this.openPlan,
+      activeChatTitle: activeChat ? activeChat.title : "New conversation",
+      newChat: this.newChat, toggleHistory: this.toggleHistory, historyOpen: s.historyOpen,
+      menuRotation: s.historyOpen ? 90 : 0, drawerRight: s.drawerRight, drawerWidth: s.drawerWidth,
+      chatSearch: s.chatSearch, onChatSearchInput: this.onChatSearchInput,
+      chatHistory: s.chats.filter((c) => c.title.toLowerCase().includes(s.chatSearch.trim().toLowerCase())).map((c) => ({
+        ...c, onClick: () => this.switchChat(c.id),
+        bg: c.id === s.activeChatId ? "var(--cf-solid-text)" : "transparent", color: c.id === s.activeChatId ? "var(--cf-green)" : "var(--cf-solid-bg)",
+        isRenaming: s.renamingChatId === c.id, notRenaming: s.renamingChatId !== c.id,
+        renameValue: s.renameDraft, onRenameInput: this.onRenameInput, onRenameSave: this.saveRename,
+        onToggleMenu: () => this.toggleChatMenu(c.id), menuOpen: s.menuOpenChatId === c.id,
+        onRename: () => this.beginRename(c), onDelete: () => this.deleteChat(c.id),
+      })),
+
+      isEmpty: s.messages.length === 0,
+      starters: STARTERS.map((label) => ({ label, onClick: () => this.sendStarter(label) })),
+      messages: s.messages.map((m) => ({
+        ...m, align: m.role === "user" ? "flex-end" : "flex-start",
+        itemsAlign: m.role === "user" ? "end" : "start",
+        bubbleClass: m.role === "user" ? "cf-bubble-user" : "cf-bubble-assistant",
+        roleLabel: m.role === "user" ? "You" : "Coach",
+        showListAction: m.kind === "recipe" && !s.listAddedIds.includes(m.id),
+        listAdded: m.kind === "recipe" && s.listAddedIds.includes(m.id),
+        onAddToList: () => this.addMessageToList(m.id),
+        hasSources: !!(m.sources && m.sources.length), sources: m.sources || [],
+        showLogChoice: m.kind === "log" && !s.loggedIds.includes(m.id),
+        logged: m.kind === "log" && s.loggedIds.includes(m.id),
+        chosenMeal: s.logChoices[m.id] || "Dinner",
+        mealChoices: ["Breakfast", "Lunch", "Dinner", "Snack"].map((label) => {
+          const active = (s.logChoices[m.id] || "Dinner") === label;
+          return {
+            label, onClick: () => this.setLogChoice(m.id, label),
+            bg: active ? "var(--cf-solid-bg)" : "transparent",
+            color: active ? "var(--cf-solid-text)" : "var(--cf-muted-2)",
+          };
+        }),
+        onLog: () => this.logSuggestion(m.id),
+      })),
+      hasAttachment: s.attachment, attachPhoto: this.attachPhoto, removeAttachment: this.removeAttachment,
+      isTyping: s.typing,
+      draft: s.draft, onDraftInput: this.onDraftInput, send: this.send,
+      sendDisabled: !s.draft.trim(), sendOpacity: s.draft.trim() ? 1 : 0.5,
+
+      activeListName: (s.groceryLists.find((l) => l.id === s.activeGroceryListId) || {}).name,
+      groceryLists: s.groceryLists.map((l) => ({ label: l.name, onClick: () => this.selectGroceryList(l.id), bg: l.id === s.activeGroceryListId ? "var(--cf-solid-bg)" : "transparent", color: l.id === s.activeGroceryListId ? "var(--cf-solid-text)" : "#5a4e3a" })),
+      addList: this.addList,
+      groceryDraft: s.groceryDraft, onGroceryDraftInput: this.onGroceryDraftInput, addGroceryItem: this.addGroceryItem,
+      hasGroceryItems: activeItems.length > 0, isGroceryEmpty: activeItems.length === 0,
+      groceryItems: activeItems.map((item) => ({
+        ...item, onToggle: () => this.toggleGroceryItem(item.id), onRemove: () => this.removeGroceryItem(item.id),
+        checkColor: item.checked ? "var(--cf-green)" : "#d8cba9", checkBg: item.checked ? "var(--cf-green)" : "transparent",
+        decoration: item.checked ? "line-through" : "none", textColor: item.checked ? "var(--cf-muted)" : "var(--cf-solid-bg)",
+      })),
+      hasCheckedItems: activeItems.some((i) => i.checked), clearChecked: this.clearChecked,
+      openAddFood: this.openAddFood,
+
+      navItemsLeft: [
+        { icon: "sun", label: "Today", color: "var(--cf-muted)", weight: 600, onClick: () => this.nav(TODAY) },
+        { icon: "calendar-range", label: "Plan", color: "var(--cf-muted)", weight: 600, onClick: () => this.nav(PLAN) },
+      ],
+      navItemsRight: [
+        { icon: "trending-up", label: "Insights", color: "var(--cf-muted)", weight: 600, onClick: () => this.nav(INSIGHTS) },
+        { icon: "user-round", label: "Profile", color: "var(--cf-muted)", weight: 600, onClick: () => this.nav(PROFILE) },
+      ],
+    };
+  }
+}
+
+</script>
+</body>
+</html>

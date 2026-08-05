@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  :root{--cf-bg:#efe9dc;--cf-card:#fffdf8;--cf-input-bg:#fff;--cf-text:#332b1f;--cf-muted:#756346;--cf-muted-2:#6a563f;--cf-border:#ece3cd;--cf-border-strong:#e0d5ba;--cf-icon-muted:#7d6a49;--cf-solid-bg:#332b1f;--cf-solid-text:#f2ead9;--cf-green:#326D36;--cf-amber:#8a5f18;--cf-terracotta:#AC543F;--cf-blue:#3371A2;--cf-orange:#93641a;}
+  html[data-theme="dark"]{--cf-bg:#1c1712;--cf-card:#26201a;--cf-input-bg:#211b15;--cf-text:#f2ead9;--cf-muted:#a89678;--cf-muted-2:#c2b393;--cf-border:#3a3226;--cf-border-strong:#857458;--cf-icon-muted:#9c8a68;--cf-solid-bg:#f2ead9;--cf-solid-text:#332b1f;--cf-green:#4CAF50;--cf-amber:#c08a26;--cf-terracotta:#d1755e;--cf-blue:#5393c7;--cf-orange:#c78d2c;}
+</style>
+<script>(function(){try{var t=localStorage.getItem("cf-theme")||"light";document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  body{margin:0;}
+  .cf-input{min-height:46px;border:1px solid var(--cf-border);border-radius:12px;padding:0 12px;font-family:inherit;font-size:13px;background:var(--cf-input-bg);width:100%;box-sizing:border-box;color:var(--cf-text);}
+  .cf-input::placeholder{color:var(--cf-icon-muted);}
+  a{color:var(--cf-green);}
+  a:hover{color:#245026;}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:var(--cf-bg);display:flex;justify-content:center;font-family:'Quicksand',system-ui,sans-serif;color:var(--cf-text);">
+  <div style="width:100%;max-width:clamp(380px, 56vw, 460px);padding:clamp(36px,8vw,64px) 20px 40px;box-sizing:border-box;">
+
+    <div style="text-align:center;margin-bottom:22px;">
+      <div style="width:48px;height:48px;border-radius:14px;background:var(--cf-green);color:#fff;display:grid;place-items:center;margin:0 auto 14px;font-weight:700;font-size:18px;">CF</div>
+      <h1 style="margin:0 0 6px;font-size:21px;font-weight:700;">{{ headline }}</h1>
+      <p style="margin:0;font-size:13px;color:var(--cf-muted-2);">{{ subhead }}</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border:1px solid var(--cf-border);border-radius:13px;margin-bottom:20px;background:var(--cf-input-bg);">
+      <button type="button" onClick="{{ selectSignIn }}" style="min-height:40px;border:0;border-radius:10px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;background:{{ signInTabBg }};color:{{ signInTabColor }};">Sign in</button>
+      <button type="button" onClick="{{ selectSignUp }}" style="min-height:40px;border:0;border-radius:10px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;background:{{ signUpTabBg }};color:{{ signUpTabColor }};">Sign up</button>
+    </div>
+
+    <div style="background:var(--cf-card);border-radius:18px;box-shadow:0 8px 22px rgba(60,40,20,.1);padding:22px;margin-bottom:16px;">
+
+      <sc-if value="{{ formError }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:flex-start;gap:8px;background:rgba(172,84,63,.1);color:var(--cf-terracotta);border-radius:11px;padding:10px 12px;margin-bottom:16px;font-size:13px;font-weight:600;">
+          <i data-lucide="alert-circle" style="width:15px;height:15px;flex:0 0 auto;margin-top:1px;"></i><span>{{ formError }}</span>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ confirmationSent }}" hint-placeholder-val="{{ false }}">
+        <div style="text-align:center;padding:12px 4px;">
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(50,109,54,.12);color:var(--cf-green);display:grid;place-items:center;margin:0 auto 14px;"><i data-lucide="mail-check" style="width:22px;height:22px;"></i></div>
+          <strong style="display:block;font-size:15px;margin-bottom:6px;">Check your inbox</strong>
+          <p style="margin:0;font-size:13px;color:var(--cf-muted-2);line-height:1.5;">We sent a confirmation link to {{ pendingEmail }}. Verify to finish creating your account.</p>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showResetForm }}" hint-placeholder-val="{{ false }}">
+        <p style="margin:0 0 16px;font-size:13px;color:var(--cf-muted-2);">Enter your email and we'll send a reset link.</p>
+        <label style="display:grid;gap:6px;margin-bottom:16px;"><span style="font-size:12px;font-weight:800;color:var(--cf-muted-2);">Email</span><input class="cf-input" type="email" placeholder="you@example.com" value="{{ email }}" onInput="{{ onEmailInput }}"></label>
+        <button type="button" onClick="{{ submitReset }}" style="width:100%;min-height:50px;border:0;border-radius:14px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:12px;">Send reset link</button>
+        <button type="button" onClick="{{ cancelReset }}" style="width:100%;text-align:center;border:0;background:transparent;color:var(--cf-muted-2);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;">Back to sign in</button>
+      </sc-if>
+
+      <sc-if value="{{ showMainForm }}" hint-placeholder-val="{{ true }}">
+        <sc-if value="{{ isSignUp }}" hint-placeholder-val="{{ false }}">
+          <label style="display:grid;gap:6px;margin-bottom:14px;"><span style="font-size:12px;font-weight:800;color:var(--cf-muted-2);">Name</span><input class="cf-input" placeholder="Jamie Ortiz" value="{{ name }}" onInput="{{ onNameInput }}"></label>
+        </sc-if>
+        <label style="display:grid;gap:6px;margin-bottom:14px;"><span style="font-size:12px;font-weight:800;color:var(--cf-muted-2);">Email</span><input class="cf-input" type="email" placeholder="you@example.com" value="{{ email }}" onInput="{{ onEmailInput }}"></label>
+        <label style="display:grid;gap:6px;margin-bottom:8px;position:relative;">
+          <span style="font-size:12px;font-weight:800;color:var(--cf-muted-2);">Password</span>
+          <input class="cf-input" type="{{ passwordFieldType }}" placeholder="{{ passwordPlaceholder }}" value="{{ password }}" onInput="{{ onPasswordInput }}" style="padding-right:40px;">
+          <button type="button" onClick="{{ togglePasswordVisible }}" aria-label="Toggle password visibility" style="position:absolute;right:8px;top:28px;width:28px;height:28px;border:0;background:transparent;color:var(--cf-muted);cursor:pointer;display:grid;place-items:center;"><i data-lucide="{{ passwordEyeIcon }}" style="width:15px;height:15px;"></i></button>
+        </label>
+
+        <sc-if value="{{ isSignIn }}" hint-placeholder-val="{{ true }}">
+          <div style="text-align:right;margin-bottom:16px;"><a href="#" onClick="{{ openReset }}" style="font-size:12.5px;font-weight:700;text-decoration:none;">Forgot password?</a></div>
+        </sc-if>
+        <sc-if value="{{ isSignUp }}" hint-placeholder-val="{{ false }}">
+          <p style="margin:0 0 10px;font-size:12px;color:var(--cf-muted);line-height:1.5;">Use at least 8 characters.</p>
+          <label style="display:grid;gap:6px;margin-bottom:16px;position:relative;">
+            <span style="font-size:12px;font-weight:800;color:var(--cf-muted-2);">Confirm password</span>
+            <input class="cf-input" type="{{ passwordFieldType }}" placeholder="Re-enter your password" value="{{ confirmPassword }}" onInput="{{ onConfirmPasswordInput }}" style="padding-right:40px;">
+          </label>
+        </sc-if>
+
+        <button type="button" onClick="{{ submitMain }}" disabled="{{ submitting }}" style="width:100%;min-height:50px;border:0;border-radius:14px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;opacity:{{ submitOpacity }};margin-bottom:18px;">{{ submitLabel }}<i data-lucide="chevron-right" style="width:16px;height:16px;"></i></button>
+
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+          <div style="flex:1;height:1px;background:var(--cf-border);"></div><span style="font-size:12px;font-weight:700;color:var(--cf-icon-muted);text-transform:uppercase;letter-spacing:.06em;">or continue with</span><div style="flex:1;height:1px;background:var(--cf-border);"></div>
+        </div>
+
+        <button type="button" onClick="{{ signInGoogle }}" style="width:100%;min-height:46px;border:1px solid var(--cf-border);border-radius:12px;background:var(--cf-input-bg);color:var(--cf-text);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 48 48" style="flex:0 0 auto;"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.4-.4-3.5z"></path><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"></path><path fill="#4CAF50" d="M24 44c5.5 0 10.5-2.1 14.3-5.6l-6.6-5.6C29.6 34.6 27 35.5 24 35.5c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.5 39.6 16.2 44 24 44z"></path><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.6 5.6C41.9 35.7 44 30.3 44 24c0-1.2-.1-2.4-.4-3.5z"></path></svg>Continue with Google</button>
+      </sc-if>
+
+    </div>
+
+    <sc-if value="{{ showMainForm }}" hint-placeholder-val="{{ true }}">
+      <p style="text-align:center;margin:0;font-size:13px;color:var(--cf-muted-2);">{{ switchPrompt }} <a href="#" onClick="{{ switchMode }}" style="font-weight:800;text-decoration:none;">{{ switchAction }}</a></p>
+    </sc-if>
+
+    <p style="text-align:center;margin:20px 0 0;font-size:12px;color:var(--cf-icon-muted);line-height:1.6;">By continuing you agree to Calorie Flow's Terms and Privacy Policy.</p>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+class Component extends DCLogic {
+  state = {
+    mode: "signin", name: "", email: "", password: "", confirmPassword: "", passwordVisible: false,
+    formError: null, submitting: false, confirmationSent: false, resetting: false, pendingEmail: "",
+  };
+  nav = (file) => { window.location.href = encodeURI(file); };
+  componentDidMount() { this.mountIcons(); }
+  componentDidUpdate() { this.mountIcons(); }
+  mountIcons() { if (window.lucide) window.lucide.createIcons(); }
+
+  selectSignIn = () => this.setState({ mode: "signin", formError: null, resetting: false, confirmationSent: false });
+  selectSignUp = () => this.setState({ mode: "signup", formError: null, resetting: false, confirmationSent: false });
+  switchMode = (e) => { e.preventDefault(); this.setState((s) => ({ mode: s.mode === "signin" ? "signup" : "signin", formError: null })); };
+  openReset = (e) => { e.preventDefault(); this.setState({ resetting: true, formError: null }); };
+  cancelReset = () => this.setState({ resetting: false, formError: null });
+  togglePasswordVisible = () => this.setState((s) => ({ passwordVisible: !s.passwordVisible }));
+  onNameInput = (e) => this.setState({ name: e.target.value });
+  onEmailInput = (e) => this.setState({ email: e.target.value });
+  onPasswordInput = (e) => this.setState({ password: e.target.value });
+  onConfirmPasswordInput = (e) => this.setState({ confirmPassword: e.target.value });
+
+  submitReset = () => {
+    if (!this.state.email.includes("@")) return this.setState({ formError: "Enter a valid email." });
+    this.setState({ formError: null, pendingEmail: this.state.email, resetting: false, confirmationSent: true });
+  };
+
+  submitMain = () => {
+    const { mode, email, password, confirmPassword, name } = this.state;
+    if (!email.includes("@")) return this.setState({ formError: "Enter a valid email." });
+    if (password.length < 8) return this.setState({ formError: "Password must be at least 8 characters." });
+    if (mode === "signup" && !name.trim()) return this.setState({ formError: "Enter your name." });
+    if (mode === "signup" && password !== confirmPassword) return this.setState({ formError: "Passwords don't match." });
+    this.setState({ submitting: true, formError: null });
+    setTimeout(() => {
+      if (mode === "signup") {
+        this.setState({ submitting: false, confirmationSent: true, pendingEmail: email });
+      } else {
+        this.nav("Calorie Flow - Today (Mobile).dc.html");
+      }
+    }, 500);
+  };
+
+  signInGoogle = () => this.setState({ submitting: true }, () => setTimeout(() => this.nav("Calorie Flow - Today (Mobile).dc.html"), 400));
+
+  renderVals() {
+    const s = this.state;
+    const isSignIn = s.mode === "signin";
+    const isSignUp = s.mode === "signup";
+    return {
+      headline: s.resetting ? "Reset password" : (isSignIn ? "Welcome back" : "Create your account"),
+      subhead: s.resetting ? "We'll email you a link." : (isSignIn ? "Log in to keep your streak going." : "Track meals, macros and progress in one place."),
+      signInTabBg: isSignIn ? "var(--cf-solid-bg)" : "transparent", signInTabColor: isSignIn ? "var(--cf-solid-text)" : "var(--cf-muted-2)",
+      signUpTabBg: isSignUp ? "var(--cf-solid-bg)" : "transparent", signUpTabColor: isSignUp ? "var(--cf-solid-text)" : "var(--cf-muted-2)",
+      selectSignIn: this.selectSignIn, selectSignUp: this.selectSignUp,
+      isSignIn, isSignUp,
+      formError: s.formError,
+      confirmationSent: s.confirmationSent, pendingEmail: s.pendingEmail,
+      showResetForm: s.resetting && !s.confirmationSent,
+      showMainForm: !s.resetting && !s.confirmationSent,
+      name: s.name, email: s.email, password: s.password, confirmPassword: s.confirmPassword,
+      onNameInput: this.onNameInput, onEmailInput: this.onEmailInput, onPasswordInput: this.onPasswordInput, onConfirmPasswordInput: this.onConfirmPasswordInput,
+      passwordFieldType: s.passwordVisible ? "text" : "password",
+      passwordPlaceholder: isSignUp ? "At least 8 characters" : "Your password",
+      passwordEyeIcon: s.passwordVisible ? "eye-off" : "eye",
+      togglePasswordVisible: this.togglePasswordVisible,
+      openReset: this.openReset, cancelReset: this.cancelReset, submitReset: this.submitReset,
+      submitting: s.submitting, submitOpacity: s.submitting ? 0.6 : 1,
+      submitLabel: s.submitting ? "Please wait…" : (isSignIn ? "Sign in" : "Create account"),
+      submitMain: this.submitMain,
+      signInGoogle: this.signInGoogle,
+      switchPrompt: isSignIn ? "New here?" : "Already have an account?",
+      switchAction: isSignIn ? "Create one" : "Sign in",
+      switchMode: this.switchMode,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

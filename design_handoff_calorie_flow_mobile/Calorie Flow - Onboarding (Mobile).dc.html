@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  :root{--cf-bg:#efe9dc;--cf-card:#fffdf8;--cf-input-bg:#fff;--cf-text:#332b1f;--cf-muted:#756346;--cf-muted-2:#6a563f;--cf-border:#ece3cd;--cf-border-strong:#e0d5ba;--cf-icon-muted:#7d6a49;--cf-solid-bg:#332b1f;--cf-solid-text:#f2ead9;--cf-green:#326D36;--cf-amber:#8a5f18;--cf-terracotta:#AC543F;--cf-blue:#3371A2;--cf-orange:#93641a;}
+  html[data-theme="dark"]{--cf-bg:#1c1712;--cf-card:#26201a;--cf-input-bg:#211b15;--cf-text:#f2ead9;--cf-muted:#a89678;--cf-muted-2:#c2b393;--cf-border:#3a3226;--cf-border-strong:#857458;--cf-icon-muted:#9c8a68;--cf-solid-bg:#f2ead9;--cf-solid-text:#332b1f;--cf-green:#4CAF50;--cf-amber:#c08a26;--cf-terracotta:#d1755e;--cf-blue:#5393c7;--cf-orange:#c78d2c;}
+</style>
+<script>(function(){try{var t=localStorage.getItem("cf-theme")||"light";document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  body{margin:0;}
+  .cf-seg{min-height:40px;border:0;border-radius:11px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:var(--cf-bg);display:flex;justify-content:center;font-family:'Quicksand',system-ui,sans-serif;color:var(--cf-text);">
+  <div style="width:100%;max-width:clamp(420px, 62vw, 780px);padding:clamp(28px,6vw,48px) 16px 48px;box-sizing:border-box;">
+
+    <div style="text-align:center;margin-bottom:18px;">
+      <div style="width:44px;height:44px;border-radius:14px;background:var(--cf-green);color:#fff;display:grid;place-items:center;margin:0 auto 12px;font-weight:700;font-size:17px;">CF</div>
+      <span style="display:block;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--cf-amber);margin-bottom:6px;">60-second setup</span>
+      <h1 style="margin:0;font-size:19px;font-weight:700;">{{ stepTitle }}</h1>
+    </div>
+
+    <div style="display:flex;gap:6px;margin-bottom:20px;">
+      <sc-for list="{{ progressDots }}" as="d" hint-placeholder-count="3">
+        <div style="flex:1;height:4px;border-radius:3px;background:{{ d.bg }};"></div>
+      </sc-for>
+    </div>
+
+    <div style="position:relative;background:var(--cf-card);border-radius:18px;box-shadow:0 8px 22px rgba(60,40,20,.1);padding:20px;margin-bottom:16px;min-height:280px;">
+
+      <sc-if value="{{ isStep1 }}" hint-placeholder-val="{{ true }}">
+        <p style="margin:0 0 16px;font-size:13px;color:var(--cf-muted-2);">The basics, used to estimate your baseline energy needs.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <label style="display:grid;gap:6px;position:relative;"><span style="font-size:12px;font-weight:800;color:var(--cf-muted-2);">Sex</span>
+            <button type="button" onClick="{{ toggleSexMenu }}" style="min-height:46px;border:1px solid var(--cf-border);border-radius:12px;padding:0 12px;font-family:inherit;font-size:13px;color:var(--cf-text);background:var(--cf-input-bg);display:flex;align-items:center;justify-content:space-between;cursor:pointer;text-align:left;">{{ sexLabel }}<i data-lucide="chevron-down" style="width:14px;height:14px;color:var(--cf-muted);"></i></button>
+            <sc-if value="{{ sexMenuOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;top:100%;left:0;right:0;margin-top:4px;background:var(--cf-input-bg);border:1px solid var(--cf-border);border-radius:12px;box-shadow:0 10px 24px rgba(60,40,20,.15);z-index:50;overflow:hidden;">
+                <sc-for list="{{ sexOptions }}" as="o" hint-placeholder-count="2">
+                  <button type="button" onClick="{{ o.onClick }}" style="width:100%;text-align:left;padding:10px 12px;border:0;background:{{ o.bg }};color:{{ o.color }};font-family:inherit;font-size:13px;font-weight:{{ o.weight }};cursor:pointer;">{{ o.label }}</button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </label>
+          <label style="display:grid;gap:6px;"><span style="font-size:12px;font-weight:800;color:var(--cf-muted-2);">Age</span><input value="{{ age }}" onInput="{{ onAgeInput }}" style="min-height:46px;border:1px solid var(--cf-border);border-radius:12px;padding:0 12px;font-family:inherit;font-size:13px;background:var(--cf-input-bg);"></label>
+          <label style="display:grid;gap:6px;"><span style="font-size:12px;font-weight:800;color:var(--cf-muted-2);">Height (cm)</span><input value="{{ heightCm }}" onInput="{{ onHeightInput }}" style="min-height:46px;border:1px solid var(--cf-border);border-radius:12px;padding:0 12px;font-family:inherit;font-size:13px;background:var(--cf-input-bg);"></label>
+          <label style="display:grid;gap:6px;"><span style="font-size:12px;font-weight:800;color:var(--cf-muted-2);">Weight (kg)</span><input value="{{ weightKg }}" onInput="{{ onWeightInput }}" style="min-height:46px;border:1px solid var(--cf-border);border-radius:12px;padding:0 12px;font-family:inherit;font-size:13px;background:var(--cf-input-bg);"></label>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isStep2 }}" hint-placeholder-val="{{ false }}">
+        <p style="margin:0 0 16px;font-size:13px;color:var(--cf-muted-2);">How active you are, and what you're working toward.</p>
+        <label style="display:grid;gap:6px;margin-bottom:18px;position:relative;"><span style="font-size:12px;font-weight:800;color:var(--cf-muted-2);">Daily movement</span>
+          <button type="button" onClick="{{ toggleActivityMenu }}" style="min-height:46px;border:1px solid var(--cf-border);border-radius:12px;padding:0 12px;font-family:inherit;font-size:13px;color:var(--cf-text);background:var(--cf-input-bg);display:flex;align-items:center;justify-content:space-between;cursor:pointer;text-align:left;gap:8px;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ activityLabel }}</span><i data-lucide="chevron-down" style="width:14px;height:14px;color:var(--cf-muted);flex:0 0 auto;"></i></button>
+          <sc-if value="{{ activityMenuOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;top:100%;left:0;right:0;margin-top:4px;background:var(--cf-input-bg);border:1px solid var(--cf-border);border-radius:12px;box-shadow:0 10px 24px rgba(60,40,20,.15);z-index:50;overflow:hidden;">
+              <sc-for list="{{ activityOptions }}" as="o" hint-placeholder-count="5">
+                <button type="button" onClick="{{ o.onClick }}" style="width:100%;text-align:left;padding:10px 12px;border:0;border-bottom:1px solid rgba(0,0,0,.04);background:{{ o.bg }};color:{{ o.color }};font-family:inherit;font-size:13px;font-weight:{{ o.weight }};cursor:pointer;">{{ o.label }}</button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </label>
+        <span style="display:block;font-size:12px;font-weight:800;color:var(--cf-muted-2);margin-bottom:6px;">Goal</span>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border:1px solid var(--cf-border);border-radius:13px;">
+          <sc-for list="{{ goalModes }}" as="g" hint-placeholder-count="3">
+            <button type="button" class="cf-seg" onClick="{{ g.onClick }}" style="background:{{ g.bg }};color:{{ g.color }};">{{ g.label }}</button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isStep3 }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;">
+          <span style="font-size:12px;font-weight:800;color:var(--cf-muted-2);">Nutrition style</span>
+          <span style="font-size:11px;color:var(--cf-icon-muted);">optional</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px;">
+          <sc-for list="{{ dietPresets }}" as="dp" hint-placeholder-count="6">
+            <div style="position:relative;">
+              <button type="button" onClick="{{ dp.onSelect }}" style="width:100%;text-align:left;padding:10px 30px 10px 40px;border:1px solid {{ dp.border }};border-radius:12px;background:{{ dp.bg }};color:{{ dp.color }};font-family:inherit;cursor:pointer;position:relative;">
+                <span style="position:absolute;top:10px;left:12px;width:20px;height:20px;display:grid;place-items:center;color:{{ dp.iconColor }};"><i data-lucide="{{ dp.icon }}" style="width:16px;height:16px;"></i></span>
+                <strong style="display:block;font-size:13px;">{{ dp.label }}</strong>
+                <small style="display:block;font-size:12px;opacity:.75;margin:2px 0 4px;">{{ dp.description }}</small>
+                <small style="display:block;font-size:12px;font-weight:700;">P {{ dp.protein }} &middot; C {{ dp.carbs }} &middot; F {{ dp.fat }} g</small>
+              </button>
+              <sc-if value="{{ dp.active }}" hint-placeholder-val="{{ false }}">
+                <i data-lucide="check" style="position:absolute;top:10px;right:10px;width:14px;height:14px;color:var(--cf-green);"></i>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="background:#f2ead9;border-radius:14px;padding:16px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <span style="width:44px;height:44px;border-radius:12px;background:rgba(50,109,54,.12);color:var(--cf-green);display:grid;place-items:center;flex:0 0 auto;"><i data-lucide="flame" style="width:17px;height:17px;"></i></span>
+            <div><span style="display:block;font-size:12px;font-weight:800;color:var(--cf-muted-2);">Starting target</span><strong style="font-size:24px;">{{ calorieTarget }}<small style="font-size:13px;font-weight:600;color:var(--cf-muted);"> kcal</small></strong></div>
+          </div>
+          <sc-if value="{{ isEditingMacros }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+              <label style="display:grid;gap:5px;"><span style="font-size:11px;font-weight:800;color:var(--cf-muted-2);">Protein g</span><input value="{{ proteinTarget }}" onInput="{{ onProteinInput }}" style="min-height:38px;border:1px solid var(--cf-border);border-radius:9px;padding:0 8px;font-family:inherit;font-size:13px;background:var(--cf-input-bg);"></label>
+              <label style="display:grid;gap:5px;"><span style="font-size:11px;font-weight:800;color:var(--cf-muted-2);">Carbs g</span><input value="{{ carbsTarget }}" onInput="{{ onCarbsInput }}" style="min-height:38px;border:1px solid var(--cf-border);border-radius:9px;padding:0 8px;font-family:inherit;font-size:13px;background:var(--cf-input-bg);"></label>
+              <label style="display:grid;gap:5px;"><span style="font-size:11px;font-weight:800;color:var(--cf-muted-2);">Fat g</span><input value="{{ fatTarget }}" onInput="{{ onFatInput }}" style="min-height:38px;border:1px solid var(--cf-border);border-radius:9px;padding:0 8px;font-family:inherit;font-size:13px;background:var(--cf-input-bg);"></label>
+            </div>
+          </sc-if>
+          <sc-if value="{{ showMacroSummary }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;gap:14px;flex-wrap:wrap;">
+              <span style="font-size:13px;white-space:nowrap;display:flex;align-items:center;gap:4px;"><i data-lucide="drumstick" style="width:12px;height:12px;color:var(--cf-green);"></i>P <strong>{{ proteinTarget }} g</strong></span>
+              <span style="font-size:13px;white-space:nowrap;display:flex;align-items:center;gap:4px;"><i data-lucide="wheat" style="width:12px;height:12px;color:var(--cf-orange);"></i>C <strong>{{ carbsTarget }} g</strong></span>
+              <span style="font-size:13px;white-space:nowrap;display:flex;align-items:center;gap:4px;"><i data-lucide="droplet" style="width:12px;height:12px;color:var(--cf-terracotta);"></i>F <strong>{{ fatTarget }} g</strong></span>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <sc-if value="{{ showBack }}" hint-placeholder-val="{{ false }}">
+        <button type="button" onClick="{{ goBack }}" style="flex:0 0 auto;min-height:50px;padding:0 20px;border:1px solid var(--cf-border);border-radius:14px;background:transparent;color:#5a4e3a;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;">Back</button>
+      </sc-if>
+      <button type="button" onClick="{{ primaryAction }}" style="flex:1;min-height:50px;border:0;border-radius:14px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">{{ primaryLabel }}<i data-lucide="chevron-right" style="width:17px;height:17px;"></i></button>
+    </div>
+    <sc-if value="{{ isStep3 }}" hint-placeholder-val="{{ false }}">
+      <p style="text-align:center;margin:12px 0 0;font-size:12px;color:var(--cf-muted);line-height:1.5;">Calculated with Mifflin&ndash;St Jeor. Treat the result as a starting estimate and adjust from your weight trend.</p>
+    </sc-if>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const DIET_PRESETS = [
+  { key: "balanced", label: "Balanced", description: "Flexible everyday split", split: [0.3, 0.4, 0.3], icon: "scale", iconColor: "var(--cf-green)" },
+  { key: "high-protein", label: "High protein", description: "More protein, flexible carbs", split: [0.4, 0.35, 0.25], icon: "drumstick", iconColor: "var(--cf-amber)" },
+  { key: "keto", label: "Keto", description: "25g carbs, higher fat", split: [0.3, 0.08, 0.62], icon: "droplet", iconColor: "var(--cf-terracotta)" },
+  { key: "high-protein-keto", label: "Protein keto", description: "30g carbs, more protein", split: [0.4, 0.1, 0.5], icon: "beef", iconColor: "var(--cf-amber)" },
+  { key: "low-fat", label: "Low fat", description: "20% cal from fat", split: [0.35, 0.45, 0.2], icon: "leaf", iconColor: "var(--cf-green)" },
+  { key: "custom", label: "Custom", description: "Set your own daily split", split: null, icon: "sliders-horizontal", iconColor: "#5a4e3a" },
+];
+const ACTIVITY_MULT = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725, "very-active": 1.9 };
+const SEX_OPTIONS = [{ key: "male", label: "Male" }, { key: "female", label: "Female" }];
+const ACTIVITY_OPTIONS = [
+  { key: "sedentary", label: "Mostly seated" },
+  { key: "light", label: "Light \u00b7 1\u20132 workouts/week" },
+  { key: "moderate", label: "Moderate \u00b7 2\u20134 workouts/week" },
+  { key: "active", label: "Active \u00b7 5\u20136 workouts/week" },
+  { key: "very-active", label: "Very active \u00b7 physical work/training" },
+];
+const STEP_TITLES = ["About you", "Activity & goal", "Nutrition style"];
+const TODAY = "Calorie Flow - Today (Mobile).dc.html";
+
+class Component extends DCLogic {
+  state = {
+    step: 0,
+    sex: "male", age: 30, heightCm: 180, weightKg: 80, activity: "moderate", goalMode: "maintain",
+    dietPreset: "balanced", editingPreset: null,
+    proteinTarget: 0, carbsTarget: 0, fatTarget: 0,
+    sexMenuOpen: false, activityMenuOpen: false,
+  };
+  nav = (file) => { window.location.href = encodeURI(file); };
+  componentDidMount() { this.mountIcons(); this.recalc(true); }
+  componentDidUpdate() { this.mountIcons(); }
+  mountIcons() { if (window.lucide) window.lucide.createIcons(); }
+
+  calorieTarget() {
+    const s = this.state;
+    const weightKg = Number(s.weightKg) || 0, heightCm = Number(s.heightCm) || 0, age = Number(s.age) || 0;
+    const bmr = s.sex === "male"
+      ? 10 * weightKg + 6.25 * heightCm - 5 * age + 5
+      : 10 * weightKg + 6.25 * heightCm - 5 * age - 161;
+    const tdee = bmr * (ACTIVITY_MULT[s.activity] || 1.55);
+    const adjusted = s.goalMode === "lose" ? tdee - 500 : s.goalMode === "gain" ? tdee + 300 : tdee;
+    return Math.max(0, Math.round(adjusted / 10) * 10) || 0;
+  }
+  macrosFor(presetKey, calories) {
+    const preset = DIET_PRESETS.find((p) => p.key === presetKey);
+    if (!preset || !preset.split) return { protein: Number(this.state.proteinTarget) || 0, carbs: Number(this.state.carbsTarget) || 0, fat: Number(this.state.fatTarget) || 0 };
+    const [p, c, f] = preset.split;
+    return { protein: Math.round((calories * p) / 4) || 0, carbs: Math.round((calories * c) / 4) || 0, fat: Math.round((calories * f) / 9) || 0 };
+  }
+  recalc = (force) => {
+    if (this.state.dietPreset === "custom" && !force) return;
+    const calories = this.calorieTarget();
+    const macros = this.macrosFor(this.state.dietPreset, calories);
+    this.setState({ proteinTarget: macros.protein, carbsTarget: macros.carbs, fatTarget: macros.fat });
+  };
+  onAgeInput = (event) => this.setState({ age: Number(event.target.value) || 0 }, this.recalc);
+  onHeightInput = (event) => this.setState({ heightCm: Number(event.target.value) || 0 }, this.recalc);
+  onWeightInput = (event) => this.setState({ weightKg: Number(event.target.value) || 0 }, this.recalc);
+  toggleSexMenu = () => this.setState({ sexMenuOpen: !this.state.sexMenuOpen, activityMenuOpen: false });
+  toggleActivityMenu = () => this.setState({ activityMenuOpen: !this.state.activityMenuOpen, sexMenuOpen: false });
+  selectSex = (sex) => this.setState({ sex, sexMenuOpen: false }, this.recalc);
+  selectActivity = (activity) => this.setState({ activity, activityMenuOpen: false }, this.recalc);
+  setGoalMode = (goalMode) => this.setState({ goalMode }, this.recalc);
+  selectPreset = (key) => {
+    this.setState({ dietPreset: key, editingPreset: key === "custom" ? "custom" : null });
+    if (key !== "custom") {
+      const calories = this.calorieTarget();
+      const macros = this.macrosFor(key, calories);
+      this.setState({ proteinTarget: macros.protein, carbsTarget: macros.carbs, fatTarget: macros.fat });
+    }
+  };
+  onProteinInput = (event) => this.setState({ proteinTarget: Math.max(0, Number(event.target.value) || 0) });
+  onCarbsInput = (event) => this.setState({ carbsTarget: Math.max(0, Number(event.target.value) || 0) });
+  onFatInput = (event) => this.setState({ fatTarget: Math.max(0, Number(event.target.value) || 0) });
+  goBack = () => this.setState({ step: Math.max(0, this.state.step - 1) });
+  goNext = () => this.setState({ step: Math.min(2, this.state.step + 1) });
+  startTracking = () => this.nav(TODAY);
+
+  renderVals() {
+    const s = this.state;
+    const calories = this.calorieTarget();
+    return {
+      stepTitle: STEP_TITLES[s.step], isStep1: s.step === 0, isStep2: s.step === 1, isStep3: s.step === 2,
+      progressDots: [0, 1, 2].map((i) => ({ bg: i <= s.step ? "var(--cf-green)" : "#e6ddc8" })),
+      showBack: s.step > 0, goBack: this.goBack,
+      primaryAction: s.step < 2 ? this.goNext : this.startTracking,
+      primaryLabel: s.step < 2 ? "Next" : "Start tracking",
+
+      age: s.age, onAgeInput: this.onAgeInput,
+      heightCm: s.heightCm, onHeightInput: this.onHeightInput, weightKg: s.weightKg, onWeightInput: this.onWeightInput,
+      sexLabel: SEX_OPTIONS.find((o) => o.key === s.sex).label, sexMenuOpen: s.sexMenuOpen, toggleSexMenu: this.toggleSexMenu,
+      sexOptions: SEX_OPTIONS.map((o) => ({ ...o, onClick: () => this.selectSex(o.key), bg: s.sex === o.key ? "var(--cf-solid-text)" : "#fff", color: s.sex === o.key ? "var(--cf-green)" : "var(--cf-solid-bg)", weight: s.sex === o.key ? 800 : 600 })),
+      activityLabel: ACTIVITY_OPTIONS.find((o) => o.key === s.activity).label, activityMenuOpen: s.activityMenuOpen, toggleActivityMenu: this.toggleActivityMenu,
+      activityOptions: ACTIVITY_OPTIONS.map((o) => ({ ...o, onClick: () => this.selectActivity(o.key), bg: s.activity === o.key ? "var(--cf-solid-text)" : "#fff", color: s.activity === o.key ? "var(--cf-green)" : "var(--cf-solid-bg)", weight: s.activity === o.key ? 800 : 600 })),
+      goalModes: [{ key: "lose", label: "Lose" }, { key: "maintain", label: "Maintain" }, { key: "gain", label: "Gain" }].map((g) => ({ ...g, onClick: () => this.setGoalMode(g.key), bg: s.goalMode === g.key ? "var(--cf-solid-bg)" : "transparent", color: s.goalMode === g.key ? "var(--cf-solid-text)" : "#5a4e3a" })),
+      dietPresets: DIET_PRESETS.map((p) => {
+        const macros = p.key === s.dietPreset ? { protein: s.proteinTarget, carbs: s.carbsTarget, fat: s.fatTarget } : this.macrosFor(p.key, calories);
+        return { ...p, onSelect: () => this.selectPreset(p.key), active: s.dietPreset === p.key, bg: s.dietPreset === p.key ? "rgba(50,109,54,.08)" : "#fff", border: s.dietPreset === p.key ? "var(--cf-green)" : "var(--cf-border)", color: s.dietPreset === p.key ? "#245c28" : "var(--cf-solid-bg)", protein: macros.protein, carbs: macros.carbs, fat: macros.fat };
+      }),
+      calorieTarget: calories,
+      isEditingMacros: s.dietPreset === "custom", showMacroSummary: s.dietPreset !== "custom",
+      proteinTarget: s.proteinTarget, onProteinInput: this.onProteinInput,
+      carbsTarget: s.carbsTarget, onCarbsInput: this.onCarbsInput,
+      fatTarget: s.fatTarget, onFatInput: this.onFatInput,
+      startTracking: this.startTracking,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

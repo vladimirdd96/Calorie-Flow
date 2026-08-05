@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  :root{--cf-bg:#efe9dc;--cf-card:#fffdf8;--cf-input-bg:#fff;--cf-text:#332b1f;--cf-muted:#756346;--cf-muted-2:#6a563f;--cf-border:#ece3cd;--cf-border-strong:#e0d5ba;--cf-icon-muted:#7d6a49;--cf-solid-bg:#332b1f;--cf-solid-text:#f2ead9;--cf-green:#326D36;--cf-amber:#8a5f18;--cf-terracotta:#AC543F;--cf-blue:#3371A2;--cf-orange:#93641a;}
+  html[data-theme="dark"]{--cf-bg:#1c1712;--cf-card:#26201a;--cf-input-bg:#211b15;--cf-text:#f2ead9;--cf-muted:#a89678;--cf-muted-2:#c2b393;--cf-border:#3a3226;--cf-border-strong:#857458;--cf-icon-muted:#9c8a68;--cf-solid-bg:#f2ead9;--cf-solid-text:#332b1f;--cf-green:#4CAF50;--cf-amber:#c08a26;--cf-terracotta:#d1755e;--cf-blue:#5393c7;--cf-orange:#c78d2c;}
+</style>
+<script>(function(){try{var t=localStorage.getItem("cf-theme")||"light";document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="./image-slot.js"></script>
+<style>
+  body{margin:0;}
+  .cf-tile:hover{background:#f2ead9;}
+  .cf-row:hover{background:rgba(50,109,54,.04);}
+  .cf-scan-pulse{animation:cfPulse 1.8s ease-in-out infinite;}
+  @keyframes cfPulse{0%,100%{opacity:.5;}50%{opacity:1;}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:var(--cf-bg);display:flex;justify-content:center;font-family:'Quicksand',system-ui,sans-serif;color:var(--cf-text);">
+  <div style="position:relative;width:100%;max-width:clamp(420px, 62vw, 780px);display:flex;flex-direction:column;min-height:100vh;box-sizing:border-box;min-width:0;background:var(--cf-card);">
+
+    <div style="flex:1;padding:calc(18px + env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom));">
+
+      <!-- START VIEW -->
+      <sc-if value="{{ isStart }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+          <div><span style="display:block;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--cf-amber);margin-bottom:3px;">Add food</span><h2 style="margin:0;font-size:19px;font-weight:700;">Find or log a food</h2></div>
+          <button type="button" onClick="{{ goToday }}" aria-label="Close" style="width:44px;height:44px;border-radius:12px;border:0;background:#f2ead9;color:var(--cf-muted-2);cursor:pointer;display:grid;place-items:center;"><i data-lucide="x" style="width:19px;height:19px;"></i></button>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:4px;padding:4px;border:1px solid var(--cf-border);border-radius:12px;margin-bottom:14px;">
+          <button type="button" onClick="{{ logDatePrev }}" aria-label="Previous day" style="width:40px;height:40px;flex:0 0 auto;border:0;border-radius:9px;background:transparent;color:var(--cf-muted-2);display:grid;place-items:center;cursor:pointer;"><i data-lucide="chevron-left" style="width:16px;height:16px;"></i></button>
+          <span style="flex:1;text-align:center;min-width:0;display:grid;gap:1px;">
+            <strong style="font-size:13.5px;">{{ logDateLabel }}</strong>
+            <small style="font-size:11px;color:var(--cf-muted);">Logging to this day</small>
+          </span>
+          <button type="button" onClick="{{ logDateNext }}" disabled="{{ logDateNextDisabled }}" aria-label="Next day" style="width:40px;height:40px;flex:0 0 auto;border:0;border-radius:9px;background:transparent;color:var(--cf-muted-2);display:grid;place-items:center;cursor:pointer;opacity:{{ logDateNextOpacity }};"><i data-lucide="chevron-right" style="width:16px;height:16px;"></i></button>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:10px;background:var(--cf-input-bg);border:1px solid var(--cf-border-strong);border-radius:14px;padding:0 14px;margin-bottom:14px;">
+          <i data-lucide="search" style="width:18px;height:18px;color:var(--cf-muted);flex:0 0 auto;"></i>
+          <input value="{{ query }}" onInput="{{ onQueryInput }}" placeholder="Search foods and recipes" style="flex:1;min-width:0;border:0;background:transparent;font-family:inherit;font-size:15px;color:var(--cf-text);padding:14px 0;outline:none;">
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px;">
+          <button type="button" class="cf-tile" onClick="{{ goBarcode }}" style="display:flex;align-items:center;gap:10px;padding:14px;background:transparent;border:1px solid var(--cf-border);border-radius:14px;cursor:pointer;text-align:left;font-family:inherit;transition:background .15s ease;">
+            <i data-lucide="scan-line" style="width:19px;height:19px;color:var(--cf-blue);flex:0 0 auto;"></i>
+            <span style="font-size:13px;font-weight:700;">Barcode</span>
+          </button>
+          <button type="button" class="cf-tile" onClick="{{ goLabel }}" style="display:flex;align-items:center;gap:10px;padding:14px;background:transparent;border:1px solid var(--cf-border);border-radius:14px;cursor:pointer;text-align:left;font-family:inherit;transition:background .15s ease;">
+            <i data-lucide="camera" style="width:19px;height:19px;color:var(--cf-orange);flex:0 0 auto;"></i>
+            <span style="font-size:13px;font-weight:700;">Scan label</span>
+          </button>
+          <button type="button" class="cf-tile" onClick="{{ goVoice }}" style="display:flex;align-items:center;gap:10px;padding:14px;background:transparent;border:1px solid var(--cf-border);border-radius:14px;cursor:pointer;text-align:left;font-family:inherit;transition:background .15s ease;">
+            <i data-lucide="mic" style="width:19px;height:19px;color:var(--cf-terracotta);flex:0 0 auto;"></i>
+            <span style="font-size:13px;font-weight:700;">Voice</span>
+          </button>
+          <button type="button" class="cf-tile" onClick="{{ goMealPhoto }}" style="display:flex;align-items:center;gap:10px;padding:14px;background:transparent;border:1px solid var(--cf-border);border-radius:14px;cursor:pointer;text-align:left;font-family:inherit;transition:background .15s ease;">
+            <i data-lucide="image-plus" style="width:19px;height:19px;color:var(--cf-green);flex:0 0 auto;"></i>
+            <span style="font-size:13px;font-weight:700;">Meal photo</span>
+          </button>
+          <button type="button" class="cf-tile" onClick="{{ goQuick }}" style="grid-column:span 2;display:flex;align-items:center;gap:10px;padding:14px;background:transparent;border:1px solid var(--cf-border);border-radius:14px;cursor:pointer;text-align:left;font-family:inherit;transition:background .15s ease;">
+            <i data-lucide="zap" style="width:19px;height:19px;color:var(--cf-amber);flex:0 0 auto;"></i>
+            <span style="display:grid;gap:1px;"><strong style="font-size:13px;">Quick add</strong><small style="font-size:12px;color:var(--cf-muted);">Just calories, no food record</small></span>
+          </button>
+        </div>
+
+        <sc-if value="{{ hasQuery }}" hint-placeholder-val="{{ false }}">
+          <sc-if value="{{ hasOwnResults }}" hint-placeholder-val="{{ false }}">
+            <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--cf-green);margin-bottom:8px;"><i data-lucide="star" style="width:11px;height:11px;"></i>Your foods &amp; recipes</span>
+            <div style="display:grid;gap:2px;margin-bottom:14px;">
+              <sc-for list="{{ ownResults }}" as="food" hint-placeholder-count="2">
+                <button type="button" class="cf-row" onClick="{{ food.onSelect }}" style="display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:10px;padding:11px 6px;background:transparent;border:0;border-radius:10px;cursor:pointer;text-align:left;font-family:inherit;color:var(--cf-text);">
+                  <sc-if value="{{ food.isRecipe }}" hint-placeholder-val="{{ false }}">
+                    <div style="width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:rgba(176,122,32,.12);color:var(--cf-orange);"><i data-lucide="book-open" style="width:16px;height:16px;"></i></div>
+                  </sc-if>
+                  <sc-if value="{{ food.notRecipe }}" hint-placeholder-val="{{ true }}">
+                    <div style="width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-weight:700;font-size:13px;color:#fff;background:{{ food.avatarColor }};">{{ food.initial }}</div>
+                  </sc-if>
+                  <div style="min-width:0;display:grid;gap:2px;">
+                    <strong style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ food.name }}</strong>
+                    <small style="font-size:12px;color:var(--cf-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ food.detail }}</small>
+                  </div>
+                  <div style="text-align:right;"><strong style="display:block;font-size:13px;">{{ food.kcal }}</strong><small style="font-size:11px;color:var(--cf-muted);">{{ food.kcalUnit }}</small></div>
+                  <i data-lucide="chevron-right" style="width:15px;height:15px;color:var(--cf-icon-muted);"></i>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ hasDbResults }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:8px;margin:0 0 10px;">
+              <span style="font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--cf-muted);white-space:nowrap;">Search results</span>
+              <span style="flex:1;height:1px;background:var(--cf-border);"></span>
+              <span style="font-size:11px;color:var(--cf-icon-muted);white-space:nowrap;">Open Food Facts</span>
+            </div>
+            <div style="display:grid;gap:2px;">
+              <sc-for list="{{ dbResults }}" as="food" hint-placeholder-count="3">
+                <button type="button" class="cf-row" onClick="{{ food.onSelect }}" style="display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:10px;padding:11px 6px;background:transparent;border:0;border-radius:10px;cursor:pointer;text-align:left;font-family:inherit;color:var(--cf-text);">
+                  <div style="width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-weight:700;font-size:13px;color:var(--cf-muted-2);background:#f2ead9;">{{ food.initial }}</div>
+                  <div style="min-width:0;display:grid;gap:2px;">
+                    <strong style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ food.name }}</strong>
+                    <small style="font-size:12px;color:var(--cf-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ food.detail }}</small>
+                  </div>
+                  <div style="text-align:right;"><strong style="display:block;font-size:13px;">{{ food.kcal }}</strong><small style="font-size:11px;color:var(--cf-muted);">{{ food.kcalUnit }}</small></div>
+                  <i data-lucide="chevron-right" style="width:15px;height:15px;color:var(--cf-icon-muted);"></i>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </sc-if>
+
+        <sc-if value="{{ isNoQuery }}" hint-placeholder-val="{{ true }}">
+          <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--cf-green);margin-bottom:8px;"><i data-lucide="repeat" style="width:12px;height:12px;"></i>Most picked</span>
+          <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:20px;">
+            <sc-for list="{{ mostPicked }}" as="p" hint-placeholder-count="4">
+              <button type="button" onClick="{{ p.onQuickLog }}" style="flex:0 0 auto;width:132px;text-align:left;border:1px solid var(--cf-border);border-radius:14px;padding:11px 12px;background:transparent;cursor:pointer;font-family:inherit;color:var(--cf-text);">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px;">
+                  <span style="width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-weight:700;font-size:12.5px;color:#fff;background:{{ p.avatarColor }};">{{ p.initial }}</span>
+                  <span style="width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:rgba(50,109,54,.12);color:var(--cf-green);"><i data-lucide="plus" style="width:14px;height:14px;"></i></span>
+                </div>
+                <strong style="display:block;font-size:12.5px;line-height:1.3;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ p.name }}</strong>
+                <small style="font-size:11.5px;color:var(--cf-muted);">{{ p.pickedLabel }}</small>
+              </button>
+            </sc-for>
+          </div>
+
+          <span style="display:block;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--cf-muted);margin-bottom:8px;">Recent</span>
+          <div style="display:grid;gap:2px;">
+            <sc-for list="{{ visibleRecent }}" as="food" hint-placeholder-count="5">
+              <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;border-bottom:1px solid rgba(0,0,0,.05);">
+                <button type="button" class="cf-row" onClick="{{ food.onSelect }}" style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:11px 6px;background:transparent;border:0;border-radius:10px;cursor:pointer;text-align:left;font-family:inherit;color:var(--cf-text);min-width:0;">
+                  <div style="width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-weight:700;font-size:14px;color:#fff;background:{{ food.avatarColor }};">{{ food.initial }}</div>
+                  <div style="min-width:0;display:grid;gap:2px;">
+                    <strong style="font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ food.name }}</strong>
+                    <small style="font-size:12px;color:var(--cf-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ food.lastPortionLabel }}</small>
+                  </div>
+                  <div style="text-align:right;"><strong style="display:block;font-size:14px;">{{ food.lastKcal }}</strong><small style="font-size:11px;color:var(--cf-muted);">kcal</small></div>
+                </button>
+                <button type="button" onClick="{{ food.onQuickLog }}" aria-label="Log {{ food.name }} again" style="width:44px;height:44px;flex:0 0 auto;border:0;border-radius:12px;background:rgba(50,109,54,.12);color:var(--cf-green);display:grid;place-items:center;cursor:pointer;"><i data-lucide="plus" style="width:20px;height:20px;"></i></button>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <button type="button" onClick="{{ goCustom }}" style="display:flex;align-items:center;gap:8px;margin-top:18px;min-height:44px;padding:0;border:0;background:transparent;cursor:pointer;font-family:inherit;font-weight:700;font-size:13px;color:var(--cf-amber);">
+          <i data-lucide="plus-circle" style="width:16px;height:16px;"></i>
+          <span>Create a new food</span>
+        </button>
+        <small style="display:block;margin-top:2px;font-size:12px;color:var(--cf-muted);line-height:1.45;">Save a food with its per-100&nbsp;g values so you can reuse it. For a one-off entry, use Quick add.</small>
+      </sc-if>
+
+      <!-- CREATE FOOD VIEW -->
+      <sc-if value="{{ isCustom }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <button type="button" onClick="{{ goStart }}" aria-label="Back" style="width:44px;height:44px;border-radius:12px;border:0;background:#f2ead9;color:var(--cf-muted-2);cursor:pointer;display:grid;place-items:center;flex:0 0 auto;"><i data-lucide="arrow-left" style="width:17px;height:17px;"></i></button>
+          <div><span style="display:block;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--cf-amber);margin-bottom:2px;">Saved food</span><strong style="font-size:17px;">Create a new food</strong></div>
+        </div>
+
+        <p style="margin:0 0 16px;font-size:13px;color:var(--cf-muted);line-height:1.5;">Enter the values printed on the package. Calorie Flow scales them to whatever amount you log.</p>
+
+        <label style="display:grid;gap:6px;margin-bottom:12px;"><span style="font-size:12px;font-weight:800;color:var(--cf-muted-2);">Name</span><input value="{{ customName }}" onInput="{{ onCustomName }}" placeholder="e.g. Sourdough loaf" style="min-height:48px;box-sizing:border-box;border:1px solid var(--cf-border);border-radius:12px;padding:0 14px;font-family:inherit;font-size:15px;color:var(--cf-text);background:var(--cf-input-bg);"></label>
+        <label style="display:grid;gap:6px;margin-bottom:16px;"><span style="font-size:12px;font-weight:800;color:var(--cf-muted-2);">Brand <small style="font-weight:600;color:var(--cf-muted);">optional</small></span><input value="{{ customBrand }}" onInput="{{ onCustomBrand }}" placeholder="e.g. Village Bakery" style="min-height:48px;box-sizing:border-box;border:1px solid var(--cf-border);border-radius:12px;padding:0 14px;font-family:inherit;font-size:15px;color:var(--cf-text);background:var(--cf-input-bg);"></label>
+
+        <span style="display:block;font-size:12px;font-weight:800;color:var(--cf-muted-2);margin-bottom:6px;">Per 100 g</span>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;min-width:0;">
+          <label style="display:grid;gap:5px;min-width:0;"><span style="font-size:11.5px;font-weight:800;color:var(--cf-muted-2);">Calories</span><input value="{{ customCalories }}" onInput="{{ onCustomCalories }}" placeholder="0" style="min-width:0;box-sizing:border-box;min-height:44px;border:1px solid var(--cf-border-strong);border-radius:10px;padding:0 10px;font-family:inherit;font-size:14px;font-weight:700;background:var(--cf-input-bg);color:var(--cf-text);"></label>
+          <label style="display:grid;gap:5px;min-width:0;"><span style="font-size:11.5px;font-weight:800;color:var(--cf-green);">Protein g</span><input value="{{ customProtein }}" onInput="{{ onCustomProtein }}" placeholder="0" style="min-width:0;box-sizing:border-box;min-height:44px;border:1px solid var(--cf-border);border-radius:10px;padding:0 10px;font-family:inherit;font-size:14px;background:var(--cf-input-bg);color:var(--cf-text);"></label>
+          <label style="display:grid;gap:5px;min-width:0;"><span style="font-size:11.5px;font-weight:800;color:var(--cf-orange);">Carbs g</span><input value="{{ customCarbs }}" onInput="{{ onCustomCarbs }}" placeholder="0" style="min-width:0;box-sizing:border-box;min-height:44px;border:1px solid var(--cf-border);border-radius:10px;padding:0 10px;font-family:inherit;font-size:14px;background:var(--cf-input-bg);color:var(--cf-text);"></label>
+          <label style="display:grid;gap:5px;min-width:0;"><span style="font-size:11.5px;font-weight:800;color:var(--cf-terracotta);">Fat g</span><input value="{{ customFat }}" onInput="{{ onCustomFat }}" placeholder="0" style="min-width:0;box-sizing:border-box;min-height:44px;border:1px solid var(--cf-border);border-radius:10px;padding:0 10px;font-family:inherit;font-size:14px;background:var(--cf-input-bg);color:var(--cf-text);"></label>
+          <label style="display:grid;gap:5px;min-width:0;"><span style="font-size:11.5px;font-weight:800;color:var(--cf-muted-2);">Fibre g</span><input value="{{ customFiber }}" onInput="{{ onCustomFiber }}" placeholder="0" style="min-width:0;box-sizing:border-box;min-height:44px;border:1px solid var(--cf-border);border-radius:10px;padding:0 10px;font-family:inherit;font-size:14px;background:var(--cf-input-bg);color:var(--cf-text);"></label>
+          <label style="display:grid;gap:5px;min-width:0;"><span style="font-size:11.5px;font-weight:800;color:var(--cf-muted-2);">Sugar g</span><input value="{{ customSugar }}" onInput="{{ onCustomSugar }}" placeholder="0" style="min-width:0;box-sizing:border-box;min-height:44px;border:1px solid var(--cf-border);border-radius:10px;padding:0 10px;font-family:inherit;font-size:14px;background:var(--cf-input-bg);color:var(--cf-text);"></label>
+        </div>
+        <sc-if value="{{ customMacroMismatch }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:flex-start;gap:8px;padding:11px 12px;border-radius:12px;background:rgba(176,122,32,.1);color:var(--cf-amber);font-size:12.5px;font-weight:700;line-height:1.45;margin-bottom:14px;">
+            <i data-lucide="info" style="width:15px;height:15px;flex:0 0 auto;margin-top:1px;"></i>
+            <span>Those macros work out to {{ customMacroCalories }} kcal. Double-check the calorie figure.</span>
+          </div>
+        </sc-if>
+
+        <label style="display:grid;gap:6px;margin-bottom:16px;"><span style="font-size:12px;font-weight:800;color:var(--cf-muted-2);">Default serving <small style="font-weight:600;color:var(--cf-muted);">grams in one serving</small></span><input value="{{ customServing }}" onInput="{{ onCustomServing }}" placeholder="100" style="min-height:48px;box-sizing:border-box;border:1px solid var(--cf-border);border-radius:12px;padding:0 14px;font-family:inherit;font-size:15px;color:var(--cf-text);background:var(--cf-input-bg);"></label>
+
+        <button type="button" onClick="{{ saveCustomFood }}" style="width:100%;min-height:50px;border:0;border-radius:13px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i data-lucide="check" style="width:16px;height:16px;"></i>Save and choose amount</button>
+      </sc-if>
+
+      <!-- BARCODE VIEW -->
+      <sc-if value="{{ isBarcode }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <button type="button" onClick="{{ goStart }}" aria-label="Back" style="width:40px;height:40px;border-radius:12px;border:0;background:#f2ead9;color:var(--cf-muted-2);cursor:pointer;"><i data-lucide="arrow-left" style="width:15px;height:15px;"></i></button>
+          <div><span style="display:block;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--cf-amber);margin-bottom:2px;">Barcode</span><strong style="font-size:16px;">Scan a product</strong></div>
+        </div>
+        <div style="position:relative;height:280px;border-radius:18px;background:#1c1712;overflow:hidden;display:grid;place-items:center;margin-bottom:16px;">
+          <div style="width:70%;height:55%;border:2px solid rgba(255,255,255,.5);border-radius:14px;position:relative;">
+            <div class="cf-scan-pulse" style="position:absolute;left:6%;right:6%;top:50%;height:2px;background:#7dffd5;"></div>
+          </div>
+          <span style="position:absolute;bottom:16px;left:0;right:0;text-align:center;color:rgba(255,255,255,.75);font-size:12.5px;">Point your camera at a barcode</span>
+        </div>
+        <sc-if value="{{ barcodeNotFound }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:16px;border:1px solid var(--cf-border-strong);border-radius:16px;margin-bottom:14px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><i data-lucide="circle-help" style="width:16px;height:16px;color:var(--cf-terracotta);"></i><strong style="font-size:14px;">Product not in the database</strong></div>
+            <p style="margin:0 0 14px;font-size:13px;color:var(--cf-muted);line-height:1.5;">Barcode {{ barcodeValue }} isn't recognised. You can read its label instead, or enter the values by hand.</p>
+            <div style="display:grid;gap:8px;">
+              <button type="button" onClick="{{ goLabel }}" style="width:100%;min-height:46px;border:0;border-radius:12px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:13.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i data-lucide="camera" style="width:15px;height:15px;"></i>Scan the nutrition label</button>
+              <button type="button" onClick="{{ goCustom }}" style="width:100%;min-height:46px;border:1px solid var(--cf-border);border-radius:12px;background:transparent;color:var(--cf-text);font-family:inherit;font-weight:700;font-size:13.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i data-lucide="pencil" style="width:15px;height:15px;"></i>Enter it by hand</button>
+            </div>
+          </div>
+        </sc-if>
+        <div style="display:flex;gap:8px;">
+          <button type="button" onClick="{{ mockScan }}" style="flex:1;min-height:46px;border:0;border-radius:13px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;">Simulate a match</button>
+          <button type="button" onClick="{{ mockScanMiss }}" style="flex:1;min-height:46px;border:1px solid var(--cf-border);border-radius:13px;background:transparent;color:var(--cf-muted-2);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;">Simulate no match</button>
+        </div>
+      </sc-if>
+
+      <!-- LABEL VIEW -->
+      <sc-if value="{{ isLabel }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <button type="button" onClick="{{ goStart }}" aria-label="Back" style="width:40px;height:40px;border-radius:12px;border:0;background:#f2ead9;color:var(--cf-muted-2);cursor:pointer;"><i data-lucide="arrow-left" style="width:15px;height:15px;"></i></button>
+          <div><span style="display:block;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--cf-amber);margin-bottom:2px;">AI label reader</span><strong style="font-size:16px;">Scan nutrition label</strong></div>
+        </div>
+        <sc-if value="{{ labelResultReady }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:16px;border:1px solid var(--cf-border);border-radius:16px;margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><i data-lucide="sparkles" style="width:15px;height:15px;color:var(--cf-orange);"></i><strong style="font-size:13px;">Extracted from label</strong></div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+              <div style="padding:10px;border-radius:11px;background:#f2ead9;"><span style="display:block;font-size:11px;color:var(--cf-muted);">Calories</span><strong style="font-size:14px;">210</strong></div>
+              <div style="padding:10px;border-radius:11px;background:#f2ead9;"><span style="display:block;font-size:11px;color:var(--cf-muted);">Protein</span><strong style="font-size:14px;">9g</strong></div>
+              <div style="padding:10px;border-radius:11px;background:#f2ead9;"><span style="display:block;font-size:11px;color:var(--cf-muted);">Carbs</span><strong style="font-size:14px;">24g</strong></div>
+            </div>
+          </div>
+          <button type="button" onClick="{{ goStart }}" style="width:100%;min-height:46px;border:0;border-radius:13px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;">Continue to amount</button>
+        </sc-if>
+        <sc-if value="{{ labelCaptureView }}" hint-placeholder-val="{{ true }}">
+          <div style="position:relative;height:280px;border-radius:18px;background:#1c1712;overflow:hidden;display:grid;place-items:center;margin-bottom:16px;">
+            <div style="width:72%;height:60%;border:2px dashed rgba(255,255,255,.5);border-radius:10px;"></div>
+            <span style="position:absolute;bottom:16px;left:0;right:0;text-align:center;color:rgba(255,255,255,.75);font-size:12.5px;">Frame the whole nutrition panel</span>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button type="button" onClick="{{ mockLabel }}" style="flex:1;min-height:46px;border:0;border-radius:13px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i data-lucide="camera" style="width:15px;height:15px;"></i>Capture</button>
+            <button type="button" onClick="{{ mockLabel }}" style="flex:1;min-height:46px;border:1px solid var(--cf-border);border-radius:13px;background:transparent;color:#5a4e3a;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i data-lucide="upload" style="width:15px;height:15px;"></i>Upload</button>
+          </div>
+        </sc-if>
+      </sc-if>
+
+      <!-- MEAL PHOTO VIEW -->
+      <sc-if value="{{ isMealPhoto }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <button type="button" onClick="{{ goStart }}" aria-label="Back" style="width:44px;height:44px;border-radius:12px;border:0;background:#f2ead9;color:var(--cf-muted-2);cursor:pointer;display:grid;place-items:center;flex:0 0 auto;"><i data-lucide="arrow-left" style="width:17px;height:17px;"></i></button>
+          <div><span style="display:block;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--cf-amber);margin-bottom:2px;">AI meal photo</span><strong style="font-size:17px;">Photograph your plate</strong></div>
+        </div>
+
+        <sc-if value="{{ mealPhotoCapture }}" hint-placeholder-val="{{ true }}">
+          <div style="position:relative;height:280px;border-radius:18px;background:#1c1712;overflow:hidden;display:grid;place-items:center;margin-bottom:16px;">
+            <div style="width:74%;height:62%;border:2px solid rgba(255,255,255,.45);border-radius:16px;"></div>
+            <span style="position:absolute;bottom:16px;left:0;right:0;text-align:center;color:rgba(255,255,255,.75);font-size:12.5px;">Get the whole plate in frame, from above</span>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button type="button" onClick="{{ mockMealPhoto }}" style="flex:1;min-height:48px;border:0;border-radius:13px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:13.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i data-lucide="camera" style="width:16px;height:16px;"></i>Capture</button>
+            <button type="button" onClick="{{ mockMealPhoto }}" style="flex:1;min-height:48px;border:1px solid var(--cf-border);border-radius:13px;background:transparent;color:var(--cf-text);font-family:inherit;font-weight:700;font-size:13.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i data-lucide="upload" style="width:16px;height:16px;"></i>Upload</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ mealPhotoResult }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;background:rgba(176,122,32,.1);color:var(--cf-amber);font-size:12.5px;font-weight:700;margin-bottom:14px;">
+            <i data-lucide="sparkles" style="width:15px;height:15px;flex:0 0 auto;"></i>
+            <span>Estimated from your photo &mdash; check each item before logging.</span>
+          </div>
+          <div style="border:1px solid var(--cf-border);border-radius:16px;overflow:hidden;margin-bottom:14px;">
+            <sc-for list="{{ mealPhotoItems }}" as="item" hint-placeholder-count="3">
+              <div style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:13px 14px;border-top:{{ item.borderTop }};">
+                <button type="button" onClick="{{ item.onToggle }}" aria-label="Include {{ item.name }}" style="width:32px;height:32px;border-radius:9px;border:1.5px solid {{ item.checkColor }};background:{{ item.checkBg }};color:#fff;display:grid;place-items:center;cursor:pointer;flex:0 0 auto;">
+                  <sc-if value="{{ item.checked }}" hint-placeholder-val="{{ true }}"><i data-lucide="check" style="width:15px;height:15px;"></i></sc-if>
+                </button>
+                <div style="min-width:0;">
+                  <strong style="display:block;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ item.name }}</strong>
+                  <small style="font-size:12px;color:var(--cf-muted);">{{ item.portion }} &middot; {{ item.confidence }} confidence</small>
+                </div>
+                <strong style="font-size:14px;white-space:nowrap;">{{ item.kcal }}<small style="font-size:11.5px;font-weight:600;color:var(--cf-muted);"> kcal</small></strong>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
+            <span style="font-size:13px;font-weight:700;color:var(--cf-muted-2);">Selected total</span>
+            <strong style="font-size:19px;">{{ mealPhotoTotal }}<small style="font-size:12.5px;font-weight:600;color:var(--cf-muted);"> kcal</small></strong>
+          </div>
+          <span style="display:block;font-size:12px;font-weight:800;color:var(--cf-muted-2);margin-bottom:6px;">Add to</span>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;border:1px solid var(--cf-border);border-radius:12px;margin-bottom:16px;">
+            <sc-for list="{{ quickMealTypes }}" as="mt" hint-placeholder-count="4">
+              <button type="button" onClick="{{ mt.onClick }}" style="min-height:42px;border:0;border-radius:9px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;background:{{ mt.bg }};color:{{ mt.color }};">{{ mt.label }}</button>
+            </sc-for>
+          </div>
+          <button type="button" onClick="{{ goToday }}" style="width:100%;min-height:50px;border:0;border-radius:13px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i data-lucide="plus" style="width:16px;height:16px;"></i>Log {{ mealPhotoTotal }} kcal</button>
+          <button type="button" onClick="{{ goMealPhoto }}" style="width:100%;min-height:44px;margin-top:6px;border:0;background:transparent;color:var(--cf-muted-2);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;">Retake the photo</button>
+        </sc-if>
+      </sc-if>
+
+      <!-- VOICE VIEW -->
+      <sc-if value="{{ isVoice }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <button type="button" onClick="{{ goStart }}" aria-label="Back" style="width:40px;height:40px;border-radius:12px;border:0;background:#f2ead9;color:var(--cf-muted-2);cursor:pointer;"><i data-lucide="arrow-left" style="width:15px;height:15px;"></i></button>
+          <div><span style="display:block;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--cf-amber);margin-bottom:2px;">Voice logging</span><strong style="font-size:16px;">{{ voiceHeading }}</strong></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:3px;height:60px;margin-bottom:18px;">
+          <sc-for list="{{ voiceBars }}" as="bar" hint-placeholder-count="12">
+            <span style="width:4px;height:{{ bar.height }};border-radius:3px;background:{{ bar.color }};transition:height .3s ease;"></span>
+          </sc-for>
+        </div>
+        <p style="text-align:center;font-size:13px;color:{{ voiceTextColor }};min-height:20px;margin-bottom:20px;">{{ voiceTranscript }}</p>
+        <sc-if value="{{ voiceRecording }}" hint-placeholder-val="{{ false }}">
+          <button type="button" onClick="{{ stopVoice }}" style="width:100%;min-height:46px;border:0;border-radius:13px;background:var(--cf-terracotta);color:#fff;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i data-lucide="square" style="width:13px;height:13px;"></i>Done</button>
+        </sc-if>
+        <sc-if value="{{ voiceIdleView }}" hint-placeholder-val="{{ true }}">
+          <button type="button" onClick="{{ startVoice }}" style="width:100%;min-height:46px;border:0;border-radius:13px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i data-lucide="mic" style="width:15px;height:15px;"></i>Start recording</button>
+        </sc-if>
+      </sc-if>
+
+      <!-- QUICK ADD VIEW -->
+      <sc-if value="{{ isQuick }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <button type="button" onClick="{{ goStart }}" aria-label="Back" style="width:40px;height:40px;border-radius:12px;border:0;background:#f2ead9;color:var(--cf-muted-2);cursor:pointer;"><i data-lucide="arrow-left" style="width:15px;height:15px;"></i></button>
+          <div><span style="display:block;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--cf-amber);margin-bottom:2px;">Fast entry</span><strong style="font-size:16px;">Quick add</strong></div>
+        </div>
+        <label style="display:grid;gap:6px;margin-bottom:12px;"><span style="font-size:12px;font-weight:800;color:var(--cf-muted-2);">Name</span><input value="{{ quickName }}" onInput="{{ onQuickName }}" placeholder="e.g. Protein shake" style="min-height:48px;box-sizing:border-box;border:1px solid var(--cf-border);border-radius:12px;padding:0 14px;font-family:inherit;font-size:15px;color:var(--cf-text);background:var(--cf-input-bg);"></label>
+        <label style="display:grid;gap:6px;margin-bottom:12px;"><span style="font-size:12px;font-weight:800;color:var(--cf-muted-2);">Calories</span><input value="{{ quickCalories }}" onInput="{{ onQuickCalories }}" placeholder="0" style="min-height:56px;box-sizing:border-box;border:1px solid var(--cf-border-strong);border-radius:12px;padding:0 14px;font-family:inherit;font-size:22px;font-weight:700;color:var(--cf-text);background:var(--cf-input-bg);"></label>
+        <button type="button" onClick="{{ toggleQuickMacros }}" style="display:flex;align-items:center;gap:6px;min-height:44px;padding:0;border:0;background:transparent;cursor:pointer;font-family:inherit;font-weight:700;font-size:13px;color:var(--cf-amber);margin-bottom:6px;">
+          <span>{{ quickMacrosLabel }}</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="transform:{{ quickMacrosChevron }};transition:transform .2s ease;"><path d="M6 9l6 6 6-6"></path></svg>
+        </button>
+        <sc-if value="{{ quickMacrosOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;min-width:0;">
+          <label style="display:grid;gap:5px;min-width:0;"><span style="font-size:11px;font-weight:800;color:var(--cf-muted-2);">Protein g</span><input value="{{ quickProtein }}" onInput="{{ onQuickProtein }}" placeholder="0" style="min-width:0;min-height:40px;border:1px solid var(--cf-border);border-radius:10px;padding:0 8px;font-family:inherit;font-size:13px;background:var(--cf-input-bg);"></label>
+          <label style="display:grid;gap:5px;min-width:0;"><span style="font-size:11px;font-weight:800;color:var(--cf-muted-2);">Carbs g</span><input value="{{ quickCarbs }}" onInput="{{ onQuickCarbs }}" placeholder="0" style="min-width:0;min-height:40px;border:1px solid var(--cf-border);border-radius:10px;padding:0 8px;font-family:inherit;font-size:13px;background:var(--cf-input-bg);"></label>
+          <label style="display:grid;gap:5px;min-width:0;"><span style="font-size:11px;font-weight:800;color:var(--cf-muted-2);">Fat g</span><input value="{{ quickFat }}" onInput="{{ onQuickFat }}" placeholder="0" style="min-width:0;min-height:40px;border:1px solid var(--cf-border);border-radius:10px;padding:0 8px;font-family:inherit;font-size:13px;background:var(--cf-input-bg);"></label>
+          <label style="display:grid;gap:5px;min-width:0;"><span style="font-size:11px;font-weight:800;color:var(--cf-muted-2);">Fibre g</span><input value="{{ quickFiber }}" onInput="{{ onQuickFiber }}" placeholder="0" style="min-width:0;min-height:40px;border:1px solid var(--cf-border);border-radius:10px;padding:0 8px;font-family:inherit;font-size:13px;background:var(--cf-input-bg);"></label>
+          <label style="display:grid;gap:5px;min-width:0;"><span style="font-size:11px;font-weight:800;color:var(--cf-muted-2);">Sugar g</span><input value="{{ quickSugar }}" onInput="{{ onQuickSugar }}" placeholder="0" style="min-width:0;min-height:40px;border:1px solid var(--cf-border);border-radius:10px;padding:0 8px;font-family:inherit;font-size:13px;background:var(--cf-input-bg);"></label>
+        </div>
+        <p style="margin:0 0 14px;font-size:12.5px;color:var(--cf-muted-2);">From these macros: <strong style="color:var(--cf-text);">{{ quickMacroCalories }} kcal</strong> &middot; <button type="button" onClick="{{ useMacroCalories }}" style="border:0;background:transparent;padding:0;font-family:inherit;font-weight:700;font-size:12.5px;color:var(--cf-amber);cursor:pointer;">use this</button></p>
+        </sc-if>
+        <span style="display:block;font-size:12px;font-weight:800;color:var(--cf-muted-2);margin-bottom:6px;">Add to</span>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;border:1px solid var(--cf-border);border-radius:12px;margin-bottom:16px;">
+          <sc-for list="{{ quickMealTypes }}" as="mt" hint-placeholder-count="4">
+            <button type="button" onClick="{{ mt.onClick }}" style="min-height:40px;border:0;border-radius:9px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;background:{{ mt.bg }};color:{{ mt.color }};">{{ mt.label }}</button>
+          </sc-for>
+        </div>
+        <button type="button" onClick="{{ goToday }}" style="width:100%;min-height:46px;border:0;border-radius:13px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i data-lucide="plus" style="width:15px;height:15px;"></i>Log food</button>
+      </sc-if>
+
+      <!-- PORTION VIEW -->
+      <sc-if value="{{ isPortion }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <button type="button" onClick="{{ goStart }}" aria-label="Back" style="width:40px;height:40px;border-radius:12px;border:0;background:#f2ead9;color:var(--cf-muted-2);cursor:pointer;"><i data-lucide="arrow-left" style="width:15px;height:15px;"></i></button>
+          <div><span style="display:block;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--cf-amber);margin-bottom:2px;">Confirm amount</span><strong style="font-size:16px;">Log food</strong></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:12px;border:1px solid var(--cf-border);border-radius:14px;margin-bottom:16px;">
+          <sc-if value="{{ portion.food.isRecipe }}" hint-placeholder-val="{{ false }}">
+            <div style="width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:rgba(176,122,32,.12);color:var(--cf-orange);"><i data-lucide="book-open" style="width:18px;height:18px;"></i></div>
+          </sc-if>
+          <sc-if value="{{ portion.food.notRecipe }}" hint-placeholder-val="{{ true }}">
+            <div style="width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:700;font-size:14px;color:#fff;background:{{ portion.food.avatarColor }};">{{ portion.initial }}</div>
+          </sc-if>
+          <div style="min-width:0;"><strong style="display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ portion.food.name }}</strong><span style="font-size:12.5px;color:var(--cf-muted);">{{ portion.food.detail }}</span></div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="text-align:right;"><strong style="display:block;font-size:16px;">{{ portion.nutrition.calories }}</strong><small style="font-size:11px;color:var(--cf-muted);">kcal</small></div>
+            <button type="button" onClick="{{ openEditFood }}" aria-label="Edit food" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--cf-border);background:var(--cf-input-bg);color:var(--cf-amber);cursor:pointer;display:grid;place-items:center;flex:0 0 auto;"><i data-lucide="pencil" style="width:12px;height:12px;"></i></button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">
+          <div style="text-align:center;padding:10px 4px;border-radius:12px;background:rgba(50,109,54,.08);"><span style="display:flex;align-items:center;justify-content:center;gap:3px;font-size:11px;color:var(--cf-green);font-weight:700;margin-bottom:4px;"><i data-lucide="drumstick" style="width:10px;height:10px;"></i>Protein</span><strong style="font-size:18px;color:var(--cf-green);">{{ portion.nutrition.protein }}<small style="font-size:12px;font-weight:600;">g</small></strong></div>
+          <div style="text-align:center;padding:10px 4px;border-radius:12px;background:rgba(176,122,32,.1);"><span style="display:flex;align-items:center;justify-content:center;gap:3px;font-size:11px;color:var(--cf-amber);font-weight:700;margin-bottom:4px;"><i data-lucide="wheat" style="width:10px;height:10px;"></i>Carbs</span><strong style="font-size:18px;color:var(--cf-amber);">{{ portion.nutrition.carbs }}<small style="font-size:12px;font-weight:600;">g</small></strong></div>
+          <div style="text-align:center;padding:10px 4px;border-radius:12px;background:rgba(172,84,63,.09);"><span style="display:flex;align-items:center;justify-content:center;gap:3px;font-size:11px;color:var(--cf-terracotta);font-weight:700;margin-bottom:4px;"><i data-lucide="droplet" style="width:10px;height:10px;"></i>Fat</span><strong style="font-size:18px;color:var(--cf-terracotta);">{{ portion.nutrition.fat }}<small style="font-size:12px;font-weight:600;">g</small></strong></div>
+          <div style="text-align:center;padding:10px 4px;border-radius:12px;background:#f2ead9;"><span style="display:flex;align-items:center;justify-content:center;gap:3px;font-size:11px;color:var(--cf-muted-2);font-weight:700;margin-bottom:4px;"><i data-lucide="leaf" style="width:10px;height:10px;"></i>Fibre</span><strong style="font-size:18px;color:#5a4e3a;">{{ portion.nutrition.fiber }}<small style="font-size:12px;font-weight:600;">g</small></strong></div>
+        </div>
+
+        <span style="display:block;font-size:12px;font-weight:800;color:var(--cf-muted-2);margin-bottom:6px;">Measure in</span>
+        <div style="display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;border:1px solid var(--cf-border);border-radius:12px;margin-bottom:12px;">
+          <sc-for list="{{ portion.units }}" as="u" hint-placeholder-count="3">
+            <button type="button" onClick="{{ u.onClick }}" style="min-height:40px;border:0;border-radius:9px;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer;background:{{ u.bg }};color:{{ u.color }};">{{ u.label }}</button>
+          </sc-for>
+        </div>
+
+        <span style="display:block;font-size:12px;font-weight:800;color:var(--cf-muted-2);margin-bottom:6px;">Amount</span>
+        <div style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;margin-bottom:18px;">
+          <button type="button" onClick="{{ stepPortionDown }}" aria-label="Decrease amount" style="width:48px;height:48px;border-radius:12px;border:1px solid var(--cf-border);background:var(--cf-input-bg);color:var(--cf-text);font-size:20px;cursor:pointer;">&minus;</button>
+          <div style="display:flex;align-items:baseline;justify-content:center;gap:6px;">
+            <input value="{{ portion.amount }}" onInput="{{ onPortionAmount }}" style="width:74px;text-align:center;min-height:48px;border:1px solid var(--cf-border);border-radius:12px;font-family:inherit;font-size:19px;font-weight:700;background:var(--cf-input-bg);color:var(--cf-text);">
+            <span style="font-size:13px;color:var(--cf-muted-2);white-space:nowrap;">{{ portion.unitLabel }}</span>
+          </div>
+          <button type="button" onClick="{{ stepPortionUp }}" aria-label="Increase amount" style="width:48px;height:48px;border-radius:12px;border:1px solid var(--cf-border);background:var(--cf-input-bg);color:var(--cf-text);font-size:20px;cursor:pointer;">+</button>
+        </div>
+
+        <span style="display:block;font-size:12px;font-weight:800;color:var(--cf-muted-2);margin-bottom:6px;">Add to</span>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;border:1px solid var(--cf-border);border-radius:12px;margin-bottom:18px;">
+          <sc-for list="{{ portion.mealTypes }}" as="mt" hint-placeholder-count="4">
+            <button type="button" onClick="{{ mt.onClick }}" style="min-height:40px;border:0;border-radius:9px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;background:{{ mt.bg }};color:{{ mt.color }};">{{ mt.label }}</button>
+          </sc-for>
+        </div>
+
+        <button type="button" onClick="{{ goToday }}" style="width:100%;min-height:46px;border:0;border-radius:13px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i data-lucide="plus" style="width:15px;height:15px;"></i>Log {{ portion.nutrition.calories }} kcal</button>
+        <p style="text-align:center;margin:10px 0 0;font-size:12px;color:var(--cf-muted);">{{ portion.grams }} g total</p>
+        <sc-if value="{{ portion.approxNote }}" hint-placeholder-val="{{ false }}">
+          <p style="text-align:center;margin:4px 0 0;font-size:11.5px;color:var(--cf-icon-muted);">Spoon and millilitre amounts are converted approximately.</p>
+        </sc-if>
+      </sc-if>
+
+      <!-- EDIT FOOD VIEW -->
+      <sc-if value="{{ isEditFood }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <button type="button" onClick="{{ closeEditFood }}" aria-label="Back" style="width:40px;height:40px;border-radius:12px;border:0;background:#f2ead9;color:var(--cf-muted-2);cursor:pointer;"><i data-lucide="arrow-left" style="width:15px;height:15px;"></i></button>
+          <div><span style="display:block;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--cf-amber);margin-bottom:2px;">Edit food</span><strong style="font-size:16px;">{{ portion.food.name }}</strong></div>
+        </div>
+        <label style="display:grid;gap:6px;margin-bottom:14px;"><span style="font-size:12px;font-weight:800;color:var(--cf-muted-2);">Name</span><input value="{{ portion.food.name }}" style="min-height:44px;border:1px solid var(--cf-border);border-radius:11px;padding:0 12px;font-family:inherit;font-size:13px;color:var(--cf-text);background:var(--cf-input-bg);"></label>
+        <span style="display:block;font-size:12px;font-weight:800;color:var(--cf-muted-2);margin-bottom:6px;">Per 100 g</span>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;min-width:0;">
+          <label style="display:grid;gap:5px;min-width:0;"><span style="font-size:11px;font-weight:800;color:var(--cf-muted-2);">Calories</span><input value="{{ portion.food.per100.calories }}" style="min-width:0;min-height:40px;border:1px solid var(--cf-border);border-radius:10px;padding:0 8px;font-family:inherit;font-size:13px;background:var(--cf-input-bg);"></label>
+          <label style="display:grid;gap:5px;min-width:0;"><span style="font-size:11px;font-weight:800;color:var(--cf-muted-2);">Protein g</span><input value="{{ portion.food.per100.protein }}" style="min-width:0;min-height:40px;border:1px solid var(--cf-border);border-radius:10px;padding:0 8px;font-family:inherit;font-size:13px;background:var(--cf-input-bg);"></label>
+          <label style="display:grid;gap:5px;min-width:0;"><span style="font-size:11px;font-weight:800;color:var(--cf-muted-2);">Carbs g</span><input value="{{ portion.food.per100.carbs }}" style="min-width:0;min-height:40px;border:1px solid var(--cf-border);border-radius:10px;padding:0 8px;font-family:inherit;font-size:13px;background:var(--cf-input-bg);"></label>
+          <label style="display:grid;gap:5px;min-width:0;"><span style="font-size:11px;font-weight:800;color:var(--cf-muted-2);">Fat g</span><input value="{{ portion.food.per100.fat }}" style="min-width:0;min-height:40px;border:1px solid var(--cf-border);border-radius:10px;padding:0 8px;font-family:inherit;font-size:13px;background:var(--cf-input-bg);"></label>
+          <label style="display:grid;gap:5px;min-width:0;"><span style="font-size:11px;font-weight:800;color:var(--cf-muted-2);">Fibre g</span><input value="{{ portion.food.per100.fiber }}" style="min-width:0;min-height:40px;border:1px solid var(--cf-border);border-radius:10px;padding:0 8px;font-family:inherit;font-size:13px;background:var(--cf-input-bg);"></label>
+          <label style="display:grid;gap:5px;min-width:0;"><span style="font-size:11px;font-weight:800;color:var(--cf-muted-2);">Serving g</span><input value="{{ portion.food.servingGrams }}" style="min-width:0;min-height:40px;border:1px solid var(--cf-border);border-radius:10px;padding:0 8px;font-family:inherit;font-size:13px;background:var(--cf-input-bg);"></label>
+        </div>
+        <p style="margin:0 0 16px;font-size:12.5px;color:var(--cf-muted-2);">Changes apply to this saved food everywhere it's logged.</p>
+        <button type="button" onClick="{{ closeEditFood }}" style="width:100%;min-height:46px;border:0;border-radius:13px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:10px;">Save changes</button>
+        <button type="button" onClick="{{ closeEditFood }}" style="width:100%;min-height:40px;border:0;background:transparent;color:var(--cf-muted-2);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;">Cancel</button>
+      </sc-if>
+
+    </div>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const RECENT = [
+  { name: "Greek yoghurt and berries", detail: "Your custom food", kcal: 278, avatarColor: "var(--cf-green)", servingGrams: 170, per100: { calories: 164, protein: 13, carbs: 16, fat: 4, fiber: 1 } },
+  { name: "Grilled chicken bowl", detail: "Your custom food", kcal: 187, avatarColor: "var(--cf-orange)", servingGrams: 300, per100: { calories: 187, protein: 16, carbs: 17, fat: 6, fiber: 2 } },
+  { name: "Almonds", detail: "Reference food", kcal: 579, avatarColor: "var(--cf-terracotta)", servingGrams: 30, kind: "spoonable", per100: { calories: 579, protein: 21, carbs: 22, fat: 50, fiber: 12 } },
+  { name: "Apple", detail: "Reference food", kcal: 52, avatarColor: "var(--cf-blue)", servingGrams: 182, kind: "piece", pieceGrams: 182, per100: { calories: 52, protein: 0.3, carbs: 14, fat: 0.2, fiber: 2.4 } },
+  { name: "Oatmeal with banana", detail: "Your custom food", kcal: 96, avatarColor: "var(--cf-green)", servingGrams: 240, per100: { calories: 96, protein: 3, carbs: 17, fat: 2, fiber: 2 } },
+  { name: "Protein shake", detail: "Your custom food", kcal: 121, avatarColor: "var(--cf-orange)", servingGrams: 350, kind: "liquid", per100: { calories: 121, protein: 20, carbs: 6, fat: 2, fiber: 1 } },
+];
+const OWN_LIBRARY = [
+  { name: "Greek yoghurt and berries", detail: "Your custom food", kcal: 278, kcalUnit: "kcal / 100 g", avatarColor: "var(--cf-green)", servingGrams: 170, per100: { calories: 164, protein: 13, carbs: 16, fat: 4, fiber: 1 } },
+  { name: "Weeknight lentil bowl", detail: "5 foods · saved recipe", kcal: 640, kcalUnit: "kcal total", isRecipe: true, servingGrams: 400, per100: { calories: 160, protein: 9, carbs: 20, fat: 5, fiber: 6 } },
+  { name: "Grilled chicken bowl", detail: "Your custom food", kcal: 187, kcalUnit: "kcal / 100 g", avatarColor: "var(--cf-orange)", servingGrams: 300, per100: { calories: 187, protein: 16, carbs: 17, fat: 6, fiber: 2 } },
+];
+const DB_RESULTS = [
+  { name: "Greek Style Yogurt 0%", detail: "Fage · Open Food Facts", kcal: 57, kcalUnit: "kcal / 100 g", servingGrams: 150, kind: "packaged", packageGrams: 500, per100: { calories: 57, protein: 10, carbs: 4, fat: 0.2, fiber: 0 } },
+  { name: "Grilled Chicken Salad", detail: "Restaurant menu", kcal: 165, kcalUnit: "kcal / 100 g", servingGrams: 250, per100: { calories: 165, protein: 18, carbs: 8, fat: 7, fiber: 2 } },
+  { name: "Mixed Berries Frozen", detail: "Generic · USDA", kcal: 44, kcalUnit: "kcal / 100 g", servingGrams: 100, per100: { calories: 44, protein: 0.7, carbs: 11, fat: 0.3, fiber: 3 } },
+];
+const PHOTO_ITEMS = [
+  { name: "Grilled salmon fillet", portion: "about 150 g", confidence: "High", kcal: 310 },
+  { name: "Roast potatoes", portion: "about 180 g", confidence: "Medium", kcal: 260 },
+  { name: "Green salad with dressing", portion: "about 90 g", confidence: "Low", kcal: 85 },
+];
+const MOST_PICKED = ["Greek yoghurt and berries", "Protein shake", "Apple", "Oatmeal with banana"];
+const UNIT_SETS = {
+  packaged: [{ key: "serving", label: "Serving" }, { key: "package", label: "Package" }, { key: "g", label: "Grams" }],
+  liquid: [{ key: "serving", label: "Serving" }, { key: "ml", label: "ml" }, { key: "100g", label: "100 ml" }],
+  piece: [{ key: "piece", label: "Piece" }, { key: "serving", label: "Serving" }, { key: "g", label: "Grams" }],
+  spoonable: [{ key: "serving", label: "Serving" }, { key: "tbsp", label: "Tbsp" }, { key: "tsp", label: "Tsp" }, { key: "g", label: "Grams" }],
+  default: [{ key: "serving", label: "Serving" }, { key: "100g", label: "100 g" }, { key: "g", label: "Grams" }],
+};
+const UNIT_GRAMS = { tbsp: 15, tsp: 5, ml: 1 };
+const MEAL_TYPES = ["Breakfast", "Lunch", "Dinner", "Snack"];
+const TODAY = "Calorie Flow - Today (Mobile).dc.html";
+
+class Component extends DCLogic {
+  state = {
+    query: "", view: "start", logDateOffset: 0, labelResultReady: false, voiceRecording: false, voiceTranscript: "",
+    customName: "", customBrand: "", customCalories: "", customProtein: "", customCarbs: "", customFat: "", customFiber: "", customSugar: "", customServing: "",
+    quickName: "", quickCalories: "", quickMacrosOpen: false, quickProtein: "", quickCarbs: "", quickFat: "", quickFiber: "", quickSugar: "", quickMeal: "Breakfast",
+    selectedFood: undefined, portionUnit: "serving", portionAmount: 1, portionMeal: "Breakfast",
+  };
+  nav = (file) => { window.location.href = encodeURI(file); };
+  goToday = () => this.nav(TODAY);
+  componentDidMount() { this.mountIcons(); }
+  componentDidUpdate() { this.mountIcons(); }
+  mountIcons() { if (window.lucide) window.lucide.createIcons(); }
+  onQueryInput = (event) => this.setState({ query: event.target.value });
+  onQuickName = (event) => this.setState({ quickName: event.target.value });
+  onQuickCalories = (event) => this.setState({ quickCalories: event.target.value });
+  toggleQuickMacros = () => this.setState((s) => ({ quickMacrosOpen: !s.quickMacrosOpen }));
+  useMacroCalories = () => {
+    const qp = Number(this.state.quickProtein) || 0, qc = Number(this.state.quickCarbs) || 0, qf = Number(this.state.quickFat) || 0;
+    this.setState({ quickCalories: String(Math.round(qp * 4 + qc * 4 + qf * 9)) });
+  };
+  onQuickProtein = (event) => this.setState({ quickProtein: event.target.value });
+  onQuickCarbs = (event) => this.setState({ quickCarbs: event.target.value });
+  onQuickFat = (event) => this.setState({ quickFat: event.target.value });
+  onQuickFiber = (event) => this.setState({ quickFiber: event.target.value });
+  onQuickSugar = (event) => this.setState({ quickSugar: event.target.value });
+  goStart = () => this.setState({ view: "start", labelResultReady: false, voiceRecording: false, voiceTranscript: "" });
+  goBarcode = () => this.setState({ view: "barcode", barcodeNotFound: false });
+  goLabel = () => this.setState({ view: "label", labelResultReady: false });
+  goVoice = () => this.setState({ view: "voice", voiceRecording: false, voiceTranscript: "" });
+  goQuick = () => this.setState({ view: "quick" });
+  goCustom = () => this.setState({ view: "custom" });
+  goMealPhoto = () => this.setState({ view: "mealPhoto", mealPhotoReady: false, photoExcluded: [] });
+  mockMealPhoto = () => this.setState({ mealPhotoReady: true });
+  togglePhotoItem = (name) => this.setState((s) => ({
+    photoExcluded: (s.photoExcluded || []).includes(name) ? s.photoExcluded.filter((n) => n !== name) : [...(s.photoExcluded || []), name],
+  }));
+  logDatePrev = () => this.setState((s) => ({ logDateOffset: s.logDateOffset - 1 }));
+  logDateNext = () => this.setState((s) => ({ logDateOffset: Math.min(0, s.logDateOffset + 1) }));
+  onCustomField = (key, value) => this.setState({ [key]: value });
+  saveCustomFood = () => {
+    const s = this.state;
+    const num = (v) => Number(v) || 0;
+    this.selectFood({
+      name: s.customName.trim() || "New food",
+      detail: s.customBrand.trim() ? `${s.customBrand.trim()} \u00b7 your food` : "Your custom food",
+      avatarColor: "var(--cf-green)",
+      servingGrams: num(s.customServing) || 100,
+      per100: { calories: num(s.customCalories), protein: num(s.customProtein), carbs: num(s.customCarbs), fat: num(s.customFat), fiber: num(s.customFiber) },
+    });
+  };
+  mockScan = () => this.selectFood(DB_RESULTS[0]);
+  mockScanMiss = () => this.setState({ barcodeNotFound: true });
+  mockLabel = () => this.setState({ labelResultReady: true });
+  startVoice = () => { this.setState({ voiceRecording: true, voiceTranscript: "" }); window.setTimeout(() => this.setState({ voiceTranscript: "Two eggs and a slice of toast" }), 1400); };
+  stopVoice = () => this.setState({ voiceRecording: false });
+  setQuickMeal = (meal) => this.setState({ quickMeal: meal });
+  selectFood = (food) => {
+    const set = UNIT_SETS[food.kind] || UNIT_SETS.default;
+    this.setState({ view: "portion", selectedFood: food, portionUnit: set[0].key, portionAmount: 1 });
+  };
+  setPortionUnit = (unit) => this.setState({ portionUnit: unit, portionAmount: 1 });
+  stepPortion = (delta) => this.setState((s) => ({ portionAmount: Math.max(s.portionUnit === "g" ? 10 : 0.25, Math.round((s.portionAmount + delta) * 100) / 100) }));
+  onPortionAmount = (event) => this.setState({ portionAmount: Number(event.target.value) || 0 });
+  setPortionMeal = (meal) => this.setState({ portionMeal: meal });
+  openEditFood = () => this.setState({ view: "editFood" });
+  closeEditFood = () => this.setState({ view: "portion" });
+
+  renderVals() {
+    const q = this.state.query.trim().toLowerCase();
+    const view = this.state.view;
+    const ownResults = q ? OWN_LIBRARY.filter((f) => f.name.toLowerCase().includes(q)).map((f) => ({ ...f, notRecipe: !f.isRecipe, initial: f.name.slice(0, 1).toUpperCase(), onSelect: () => this.selectFood(f) })) : [];
+    const dbResults = q ? DB_RESULTS.filter((f) => f.name.toLowerCase().includes(q)).map((f) => ({ ...f, initial: f.name.slice(0, 1).toUpperCase(), onSelect: () => this.selectFood(f) })) : [];
+    const filteredRecent = q ? RECENT.filter((f) => f.name.toLowerCase().includes(q)) : RECENT;
+    const voiceBars = Array.from({ length: 12 }, (_, i) => ({
+      height: this.state.voiceRecording ? `${14 + ((i * 37) % 42)}px` : "6px",
+      color: this.state.voiceRecording ? "var(--cf-terracotta)" : "#e6ddc8",
+    }));
+    const food = this.state.selectedFood;
+    let portion = null;
+    if (food) {
+      const unit = this.state.portionUnit;
+      const amount = Number(this.state.portionAmount) || 0;
+      const serving = food.servingGrams || 100;
+      const grams = unit === "serving" ? amount * serving
+        : unit === "package" ? amount * (food.packageGrams || serving)
+        : unit === "piece" ? amount * (food.pieceGrams || serving)
+        : unit === "100g" ? amount * 100
+        : unit in UNIT_GRAMS ? amount * UNIT_GRAMS[unit]
+        : amount;
+      const scale = grams / 100;
+      const p100 = food.per100 || { calories: food.kcal || 0, protein: 0, carbs: 0, fat: 0, fiber: 0 };
+      const nutrition = {
+        calories: Math.round((p100.calories || 0) * scale) || 0, protein: Math.round((p100.protein || 0) * scale * 10) / 10 || 0,
+        carbs: Math.round((p100.carbs || 0) * scale * 10) / 10 || 0, fat: Math.round((p100.fat || 0) * scale * 10) / 10 || 0, fiber: Math.round((p100.fiber || 0) * scale * 10) / 10 || 0,
+      };
+      const plural = (word) => (amount === 1 ? word : `${word}s`);
+      const unitLabel = unit === "serving" ? plural("serving")
+        : unit === "package" ? plural("package")
+        : unit === "piece" ? plural("piece")
+        : unit === "tbsp" ? "tbsp" : unit === "tsp" ? "tsp" : unit === "ml" ? "ml"
+        : unit === "100g" ? "\u00d7 100 g" : "g";
+      const unitSet = UNIT_SETS[food.kind] || UNIT_SETS.default;
+      portion = {
+        food: { ...food, notRecipe: !food.isRecipe }, grams: Math.round(grams) || 0, nutrition, unitLabel,
+        amount, initial: food.name.slice(0, 1).toUpperCase(),
+        approxNote: unit === "tbsp" || unit === "tsp" || unit === "ml",
+        units: unitSet.map((u) => ({ ...u, onClick: () => this.setPortionUnit(u.key), bg: unit === u.key ? "var(--cf-solid-bg)" : "transparent", color: unit === u.key ? "var(--cf-solid-text)" : "#5a4e3a" })),
+        mealTypes: MEAL_TYPES.map((m) => ({ label: m, onClick: () => this.setPortionMeal(m), bg: this.state.portionMeal === m ? "var(--cf-solid-bg)" : "transparent", color: this.state.portionMeal === m ? "var(--cf-solid-text)" : "#5a4e3a" })),
+      };
+    }
+    const qp = Number(this.state.quickProtein) || 0, qc = Number(this.state.quickCarbs) || 0, qf = Number(this.state.quickFat) || 0;
+    const quickMacroCalories = Math.round(qp * 4 + qc * 4 + qf * 9) || 0;
+    const cp = Number(this.state.customProtein) || 0, cc = Number(this.state.customCarbs) || 0, cf = Number(this.state.customFat) || 0;
+    const customMacroCalories = Math.round(cp * 4 + cc * 4 + cf * 9);
+    const customStated = Number(this.state.customCalories) || 0;
+    const logDate = new Date(); logDate.setDate(logDate.getDate() + this.state.logDateOffset);
+    return {
+      query: this.state.query, onQueryInput: this.onQueryInput, goToday: this.goToday,
+      goCustom: this.goCustom, isCustom: view === "custom",
+      goMealPhoto: this.goMealPhoto, isMealPhoto: view === "mealPhoto",
+      mealPhotoCapture: !this.state.mealPhotoReady, mealPhotoResult: !!this.state.mealPhotoReady,
+      mockMealPhoto: this.mockMealPhoto,
+      mealPhotoItems: PHOTO_ITEMS.map((item, i) => {
+        const checked = !(this.state.photoExcluded || []).includes(item.name);
+        return {
+          ...item, checked, borderTop: i === 0 ? "0" : "1px solid var(--cf-border)",
+          onToggle: () => this.togglePhotoItem(item.name),
+          checkColor: checked ? "var(--cf-green)" : "var(--cf-border-strong)",
+          checkBg: checked ? "var(--cf-green)" : "transparent",
+        };
+      }),
+      mealPhotoTotal: PHOTO_ITEMS.filter((item) => !(this.state.photoExcluded || []).includes(item.name)).reduce((sum, item) => sum + item.kcal, 0),
+      logDatePrev: this.logDatePrev, logDateNext: this.logDateNext,
+      logDateLabel: this.state.logDateOffset === 0 ? "Today" : this.state.logDateOffset === -1 ? "Yesterday" : logDate.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" }),
+      logDateNextDisabled: this.state.logDateOffset >= 0, logDateNextOpacity: this.state.logDateOffset >= 0 ? 0.35 : 1,
+      customName: this.state.customName, onCustomName: (e) => this.onCustomField("customName", e.target.value),
+      customBrand: this.state.customBrand, onCustomBrand: (e) => this.onCustomField("customBrand", e.target.value),
+      customCalories: this.state.customCalories, onCustomCalories: (e) => this.onCustomField("customCalories", e.target.value),
+      customProtein: this.state.customProtein, onCustomProtein: (e) => this.onCustomField("customProtein", e.target.value),
+      customCarbs: this.state.customCarbs, onCustomCarbs: (e) => this.onCustomField("customCarbs", e.target.value),
+      customFat: this.state.customFat, onCustomFat: (e) => this.onCustomField("customFat", e.target.value),
+      customFiber: this.state.customFiber, onCustomFiber: (e) => this.onCustomField("customFiber", e.target.value),
+      customSugar: this.state.customSugar, onCustomSugar: (e) => this.onCustomField("customSugar", e.target.value),
+      customServing: this.state.customServing, onCustomServing: (e) => this.onCustomField("customServing", e.target.value),
+      customMacroCalories, customMacroMismatch: customMacroCalories > 0 && customStated > 0 && Math.abs(customMacroCalories - customStated) > Math.max(25, customStated * 0.15),
+      saveCustomFood: this.saveCustomFood,
+      mostPicked: MOST_PICKED.map((name, i) => {
+        const f = RECENT.find((r) => r.name === name) || RECENT[i];
+        return { ...f, initial: f.name.slice(0, 1).toUpperCase(), pickedLabel: `${18 - i * 4}\u00d7 this month`, onQuickLog: () => this.selectFood(f) };
+      }),
+      isStart: view === "start", isBarcode: view === "barcode", isLabel: view === "label", isVoice: view === "voice", isQuick: view === "quick", isPortion: view === "portion", isEditFood: view === "editFood",
+      goBarcode: this.goBarcode, goLabel: this.goLabel, goVoice: this.goVoice, goQuick: this.goQuick, goStart: this.goStart,
+      hasQuery: !!q, isNoQuery: !q, hasOwnResults: ownResults.length > 0, hasDbResults: dbResults.length > 0,
+      ownResults, dbResults,
+      visibleRecent: filteredRecent.map((food) => {
+        const grams = food.servingGrams || 100;
+        return {
+          ...food, initial: food.name.slice(0, 1).toUpperCase(), onSelect: () => this.selectFood(food),
+          lastKcal: Math.round(((food.per100 && food.per100.calories) || food.kcal || 0) * grams / 100),
+          lastPortionLabel: `1 serving \u00b7 ${grams} g`,
+          onQuickLog: () => this.goToday(),
+        };
+      }),
+      mockScan: this.mockScan, mockScanMiss: this.mockScanMiss,
+      barcodeNotFound: !!this.state.barcodeNotFound, barcodeValue: "5 011021 900007",
+      labelResultReady: this.state.labelResultReady, labelCaptureView: !this.state.labelResultReady, mockLabel: this.mockLabel,
+      voiceRecording: this.state.voiceRecording, voiceIdleView: !this.state.voiceRecording, voiceTranscript: this.state.voiceTranscript || "Your food description will appear here",
+      voiceTextColor: this.state.voiceTranscript ? "var(--cf-solid-bg)" : "var(--cf-muted)",
+      voiceHeading: this.state.voiceRecording ? "Listening\u2026" : "Say what you ate",
+      voiceBars, startVoice: this.startVoice, stopVoice: this.stopVoice,
+      quickName: this.state.quickName, onQuickName: this.onQuickName,
+      quickProtein: this.state.quickProtein, onQuickProtein: this.onQuickProtein,
+      quickCarbs: this.state.quickCarbs, onQuickCarbs: this.onQuickCarbs,
+      quickFat: this.state.quickFat, onQuickFat: this.onQuickFat,
+      quickFiber: this.state.quickFiber, onQuickFiber: this.onQuickFiber,
+      quickSugar: this.state.quickSugar, onQuickSugar: this.onQuickSugar,
+      quickCalories: this.state.quickCalories, onQuickCalories: this.onQuickCalories,
+      quickMacroCalories, useMacroCalories: this.useMacroCalories,
+      quickMacrosOpen: this.state.quickMacrosOpen, toggleQuickMacros: this.toggleQuickMacros,
+      quickMacrosLabel: this.state.quickMacrosOpen ? "Hide macros" : "Add macros (optional)",
+      quickMacrosChevron: this.state.quickMacrosOpen ? "rotate(180deg)" : "rotate(0deg)",
+      quickMealTypes: MEAL_TYPES.map((m) => ({ label: m, onClick: () => this.setQuickMeal(m), bg: this.state.quickMeal === m ? "var(--cf-solid-bg)" : "transparent", color: this.state.quickMeal === m ? "var(--cf-solid-text)" : "#5a4e3a" })),
+      portion, stepPortionDown: () => this.stepPortion(-(this.state.portionUnit === "g" ? 10 : 0.5)), stepPortionUp: () => this.stepPortion(this.state.portionUnit === "g" ? 10 : 0.5),
+      onPortionAmount: this.onPortionAmount, openEditFood: this.openEditFood, closeEditFood: this.closeEditFood,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

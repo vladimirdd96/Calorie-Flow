@@ -9,6 +9,7 @@ coverage
 .env*
 !.env.example
 supabase/.temp/
+.wrangler/
 *.log
 .DS_Store
 upload/

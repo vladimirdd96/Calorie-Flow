@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  :root{--cf-bg:#efe9dc;--cf-card:#fffdf8;--cf-input-bg:#fff;--cf-text:#332b1f;--cf-muted:#756346;--cf-muted-2:#6a563f;--cf-border:#ece3cd;--cf-border-strong:#e0d5ba;--cf-icon-muted:#7d6a49;--cf-solid-bg:#332b1f;--cf-solid-text:#f2ead9;--cf-green:#326D36;--cf-amber:#8a5f18;--cf-terracotta:#AC543F;--cf-blue:#3371A2;--cf-orange:#93641a;}
+  html[data-theme="dark"]{--cf-bg:#1c1712;--cf-card:#26201a;--cf-input-bg:#211b15;--cf-text:#f2ead9;--cf-muted:#a89678;--cf-muted-2:#c2b393;--cf-border:#3a3226;--cf-border-strong:#857458;--cf-icon-muted:#9c8a68;--cf-solid-bg:#f2ead9;--cf-solid-text:#332b1f;--cf-green:#4CAF50;--cf-amber:#c08a26;--cf-terracotta:#d1755e;--cf-blue:#5393c7;--cf-orange:#c78d2c;}
+</style>
+<script>(function(){try{var t=localStorage.getItem("cf-theme")||"light";document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  body{margin:0;}
+  .cf-tab{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;border:0;border-radius:10px;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer;padding:0 4px;}
+  .cf-navbtn:active{opacity:.6;}
+  a{color:#8a5f18;}
+  a:hover{color:#AC543F;}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:var(--cf-bg);display:flex;justify-content:center;font-family:'Quicksand',system-ui,sans-serif;color:var(--cf-text);">
+  <div style="width:100%;max-width:clamp(420px, 62vw, 780px);padding:clamp(20px,5vw,40px) 16px calc(110px + env(safe-area-inset-bottom));box-sizing:border-box;">
+
+    <span style="display:block;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--cf-amber);">Insights</span>
+    <h1 style="margin:2px 0 16px;font-size:20px;font-weight:700;">{{ pageTitle }}</h1>
+
+    <div style="display:flex;gap:4px;padding:4px;background:var(--cf-card);border-radius:14px;box-shadow:0 6px 16px rgba(60,40,20,.08);margin-bottom:16px;">
+      <sc-for list="{{ sections }}" as="s" hint-placeholder-count="4">
+        <button type="button" class="cf-tab" onClick="{{ s.onClick }}" style="min-height:44px;background:{{ s.bg }};color:{{ s.color }};"><i data-lucide="{{ s.icon }}" style="width:15px;height:15px;"></i>{{ s.label }}</button>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{ showRange }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;gap:6px;margin-bottom:16px;">
+        <sc-for list="{{ ranges }}" as="r" hint-placeholder-count="3">
+          <button type="button" onClick="{{ r.onClick }}" style="min-height:40px;padding:0 14px;border:1px solid {{ r.border }};border-radius:999px;background:{{ r.bg }};color:{{ r.color }};font-family:inherit;font-weight:700;font-size:12.5px;cursor:pointer;">{{ r.label }}</button>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- OVERVIEW -->
+    <sc-if value="{{ isOverview }}" hint-placeholder-val="{{ true }}">
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;">
+        <div style="background:var(--cf-card);border-radius:16px;padding:16px;box-shadow:0 6px 16px rgba(60,40,20,.08);">
+          <span style="display:block;font-size:12px;font-weight:800;color:var(--cf-muted);margin-bottom:6px;">Logging streak</span>
+          <strong style="font-size:22px;display:flex;align-items:center;gap:6px;"><i data-lucide="flame" style="width:18px;height:18px;color:var(--cf-terracotta);"></i>{{ streakDays }}<small style="font-size:12.5px;font-weight:600;color:var(--cf-muted);"> days</small></strong>
+        </div>
+        <div style="background:var(--cf-card);border-radius:16px;padding:16px;box-shadow:0 6px 16px rgba(60,40,20,.08);">
+          <span style="display:block;font-size:12px;font-weight:800;color:var(--cf-muted);margin-bottom:6px;">Days logged</span>
+          <strong style="font-size:22px;">{{ daysLogged }}<small style="font-size:12.5px;font-weight:600;color:var(--cf-muted);"> of {{ rangeDays }}</small></strong>
+        </div>
+      </div>
+
+      <div style="background:var(--cf-card);border-radius:16px;padding:18px;box-shadow:0 6px 16px rgba(60,40,20,.08);margin-bottom:14px;">
+        <span style="display:block;font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cf-muted);margin-bottom:14px;">This week</span>
+        <div style="display:flex;justify-content:space-between;gap:6px;">
+          <sc-for list="{{ weekStrip }}" as="d" hint-placeholder-count="7">
+            <div style="display:grid;justify-items:center;gap:8px;">
+              <span style="font-size:11px;font-weight:700;color:var(--cf-muted);">{{ d.label }}</span>
+              <span style="width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:{{ d.bg }};color:{{ d.color }};font-size:12.5px;font-weight:800;">{{ d.mark }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="background:var(--cf-card);border-radius:16px;padding:18px;box-shadow:0 6px 16px rgba(60,40,20,.08);margin-bottom:14px;">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
+          <span style="font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cf-muted);">Calories by day</span>
+          <span style="font-size:12.5px;color:var(--cf-muted);">avg <strong style="color:var(--cf-text);">{{ avgCalories }}</strong></span>
+        </div>
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:6px;height:130px;">
+          <sc-for list="{{ dayBars }}" as="d" hint-placeholder-count="7">
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end;">
+              <span style="font-size:10.5px;font-weight:700;color:var(--cf-muted);">{{ d.value }}</span>
+              <div style="width:100%;max-width:24px;border-radius:6px 6px 3px 3px;background:{{ d.color }};height:{{ d.heightPct }}%;"></div>
+              <span style="font-size:11px;font-weight:700;color:var(--cf-muted);">{{ d.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;margin-top:12px;font-size:11.5px;color:var(--cf-muted);">
+          <span style="display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:3px;background:var(--cf-green);"></span>Within target</span>
+          <span style="display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:3px;background:var(--cf-terracotta);"></span>Over target</span>
+        </div>
+      </div>
+
+      <div style="background:var(--cf-card);border-radius:16px;padding:18px;box-shadow:0 6px 16px rgba(60,40,20,.08);">
+        <span style="display:block;font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cf-muted);margin-bottom:12px;">Patterns</span>
+        <div style="display:grid;gap:12px;">
+          <sc-for list="{{ patterns }}" as="p" hint-placeholder-count="3">
+            <div style="display:grid;grid-template-columns:auto 1fr;align-items:center;gap:12px;">
+              <span style="width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:{{ p.iconBg }};color:{{ p.iconColor }};flex:0 0 auto;"><i data-lucide="{{ p.icon }}" style="width:17px;height:17px;"></i></span>
+              <div style="min-width:0;">
+                <strong style="display:block;font-size:13.5px;">{{ p.title }}</strong>
+                <small style="font-size:12px;color:var(--cf-muted);line-height:1.45;">{{ p.detail }}</small>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- NUTRITION -->
+    <sc-if value="{{ isNutrition }}" hint-placeholder-val="{{ false }}">
+      <div style="background:var(--cf-card);border-radius:16px;padding:18px;box-shadow:0 6px 16px rgba(60,40,20,.08);margin-bottom:14px;">
+        <span style="display:block;font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cf-muted);margin-bottom:14px;">Daily average vs target</span>
+        <div style="display:grid;gap:14px;">
+          <sc-for list="{{ macroRows }}" as="m" hint-placeholder-count="4">
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
+                <span style="font-size:13px;font-weight:700;">{{ m.label }}</span>
+                <span style="font-size:13px;font-weight:700;color:var(--cf-muted-2);white-space:nowrap;">{{ m.value }} / {{ m.target }} g</span>
+              </div>
+              <div style="height:7px;border-radius:4px;background:var(--cf-border);overflow:hidden;"><div style="height:100%;width:{{ m.pct }}%;background:{{ m.color }};border-radius:4px;"></div></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="background:var(--cf-card);border-radius:16px;padding:18px;box-shadow:0 6px 16px rgba(60,40,20,.08);">
+        <span style="display:block;font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cf-muted);margin-bottom:14px;">Where your calories come from</span>
+        <div style="display:flex;height:12px;border-radius:6px;overflow:hidden;margin-bottom:14px;">
+          <sc-for list="{{ mealMix }}" as="m" hint-placeholder-count="4">
+            <span style="width:{{ m.pct }}%;background:{{ m.color }};"></span>
+          </sc-for>
+        </div>
+        <div style="display:grid;gap:10px;">
+          <sc-for list="{{ mealMix }}" as="m" hint-placeholder-count="4">
+            <div style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;">
+              <span style="width:9px;height:9px;border-radius:50%;background:{{ m.color }};"></span>
+              <span style="font-size:13px;font-weight:700;">{{ m.label }}</span>
+              <span style="font-size:12.5px;color:var(--cf-muted-2);font-weight:700;white-space:nowrap;">{{ m.kcal }} kcal &middot; {{ m.pct }}%</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- WEIGHT -->
+    <sc-if value="{{ isWeight }}" hint-placeholder-val="{{ false }}">
+      <div style="background:var(--cf-card);border-radius:16px;padding:18px;box-shadow:0 6px 16px rgba(60,40,20,.08);margin-bottom:14px;">
+        <span style="display:block;font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cf-muted);margin-bottom:12px;">Log a weigh-in</span>
+        <div style="display:flex;gap:8px;align-items:stretch;">
+          <div style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:1px solid var(--cf-border-strong);border-radius:13px;padding:0 14px;background:var(--cf-input-bg);">
+            <input value="{{ weighInValue }}" onInput="{{ onWeighIn }}" placeholder="{{ weighInPlaceholder }}" style="flex:1;min-width:0;border:0;background:transparent;font-family:inherit;font-size:20px;font-weight:700;color:var(--cf-text);padding:13px 0;outline:none;">
+            <span style="font-size:13px;font-weight:700;color:var(--cf-muted);">{{ weightUnit }}</span>
+          </div>
+          <button type="button" onClick="{{ saveWeighIn }}" style="flex:0 0 auto;min-height:50px;padding:0 20px;border:0;border-radius:13px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;">Save</button>
+        </div>
+        <small style="display:block;margin-top:8px;font-size:12px;color:var(--cf-muted);">{{ weighInHint }}</small>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
+        <div style="background:var(--cf-card);border-radius:15px;padding:14px;box-shadow:0 6px 16px rgba(60,40,20,.08);">
+          <span style="display:block;font-size:11.5px;font-weight:800;color:var(--cf-muted);margin-bottom:5px;">Latest</span>
+          <strong style="font-size:18px;">{{ weightLatest }}</strong>
+        </div>
+        <div style="background:var(--cf-card);border-radius:15px;padding:14px;box-shadow:0 6px 16px rgba(60,40,20,.08);">
+          <span style="display:block;font-size:11.5px;font-weight:800;color:var(--cf-muted);margin-bottom:5px;">Change</span>
+          <strong style="font-size:18px;color:{{ weightChangeColor }};">{{ weightChange }}</strong>
+        </div>
+        <div style="background:var(--cf-card);border-radius:15px;padding:14px;box-shadow:0 6px 16px rgba(60,40,20,.08);">
+          <span style="display:block;font-size:11.5px;font-weight:800;color:var(--cf-muted);margin-bottom:5px;">Average</span>
+          <strong style="font-size:18px;">{{ weightAverage }}</strong>
+        </div>
+      </div>
+
+      <div style="background:var(--cf-card);border-radius:16px;padding:18px;box-shadow:0 6px 16px rgba(60,40,20,.08);margin-bottom:14px;">
+        <span style="display:block;font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cf-muted);margin-bottom:14px;">Trend</span>
+        <div style="position:relative;height:120px;">
+          <svg viewBox="0 0 300 120" preserveAspectRatio="none" style="width:100%;height:100%;overflow:visible;">
+            <polyline points="{{ weightPolyline }}" fill="none" stroke="var(--cf-amber)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline>
+          </svg>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;font-weight:700;color:var(--cf-muted);">
+          <span>{{ weightRangeStart }}</span>
+          <span>{{ weightRangeEnd }}</span>
+        </div>
+      </div>
+
+      <div style="background:var(--cf-card);border-radius:16px;box-shadow:0 6px 16px rgba(60,40,20,.08);overflow:hidden;">
+        <div style="padding:16px 18px 10px;"><span style="font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cf-muted);">History</span></div>
+        <sc-for list="{{ weightHistory }}" as="w" hint-placeholder-count="6">
+          <div style="display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px;padding:13px 18px;border-top:1px solid var(--cf-border);">
+            <div style="min-width:0;">
+              <strong style="display:block;font-size:13.5px;">{{ w.dateLabel }}</strong>
+              <small style="font-size:12px;color:var(--cf-muted);">{{ w.relative }}</small>
+            </div>
+            <strong style="font-size:14px;white-space:nowrap;">{{ w.value }}</strong>
+            <small style="font-size:12px;font-weight:700;color:{{ w.deltaColor }};white-space:nowrap;min-width:52px;text-align:right;">{{ w.delta }}</small>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- FASTING -->
+    <sc-if value="{{ isFasting }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;">
+        <div style="background:var(--cf-card);border-radius:16px;padding:16px;box-shadow:0 6px 16px rgba(60,40,20,.08);">
+          <span style="display:block;font-size:12px;font-weight:800;color:var(--cf-muted);margin-bottom:6px;">Average fast</span>
+          <strong style="font-size:22px;">{{ fastAverage }}<small style="font-size:12.5px;font-weight:600;color:var(--cf-muted);"> h</small></strong>
+        </div>
+        <div style="background:var(--cf-card);border-radius:16px;padding:16px;box-shadow:0 6px 16px rgba(60,40,20,.08);">
+          <span style="display:block;font-size:12px;font-weight:800;color:var(--cf-muted);margin-bottom:6px;">Longest</span>
+          <strong style="font-size:22px;">{{ fastLongest }}<small style="font-size:12.5px;font-weight:600;color:var(--cf-muted);"> h</small></strong>
+        </div>
+      </div>
+
+      <div style="background:var(--cf-card);border-radius:16px;box-shadow:0 6px 16px rgba(60,40,20,.08);overflow:hidden;">
+        <div style="padding:16px 18px 10px;display:flex;align-items:baseline;justify-content:space-between;">
+          <span style="font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cf-muted);">Recent fasts</span>
+          <small style="font-size:12px;color:var(--cf-muted);">Goal {{ fastGoal }} h</small>
+        </div>
+        <sc-for list="{{ fastHistory }}" as="f" hint-placeholder-count="6">
+          <div style="padding:13px 18px;border-top:1px solid var(--cf-border);">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:7px;">
+              <strong style="font-size:13.5px;">{{ f.dateLabel }}</strong>
+              <span style="font-size:13px;font-weight:700;color:{{ f.color }};white-space:nowrap;">{{ f.hours }} h</span>
+            </div>
+            <div style="height:7px;border-radius:4px;background:var(--cf-border);overflow:hidden;"><div style="height:100%;width:{{ f.pct }}%;background:{{ f.color }};border-radius:4px;"></div></div>
+            <small style="display:block;margin-top:6px;font-size:12px;color:var(--cf-muted);">{{ f.window }}</small>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+  </div>
+
+  <div style="position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;pointer-events:none;">
+    <div style="position:relative;width:100%;max-width:clamp(420px, 62vw, 780px);pointer-events:auto;filter:drop-shadow(0 -6px 14px rgba(30,20,10,.14));">
+      <div style="position:absolute;left:50%;top:-30px;transform:translateX(-50%);width:90px;height:46px;background:var(--cf-card);border-radius:56px 56px 0 0;"></div>
+      <div style="position:relative;background:var(--cf-card);display:grid;grid-template-columns:1fr 1fr auto 1fr 1fr;align-items:end;gap:4px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));">
+        <sc-for list="{{ navItemsLeft }}" as="item" hint-placeholder-count="2">
+          <button type="button" class="cf-navbtn" onClick="{{ item.onClick }}" style="display:grid;justify-items:center;gap:3px;padding:6px 2px;background:transparent;border:0;border-radius:10px;cursor:pointer;color:{{ item.color }};font-family:inherit;">
+            <i data-lucide="{{ item.icon }}" style="width:20px;height:20px;"></i>
+            <span style="font-size:11px;font-weight:{{ item.weight }};">{{ item.label }}</span>
+          </button>
+        </sc-for>
+        <button type="button" onClick="{{ openAddFood }}" aria-label="Add food" style="position:relative;top:-22px;justify-self:center;width:56px;height:56px;border-radius:50%;border:0;background:var(--cf-green);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 8px 16px rgba(50,109,54,.35);">
+          <i data-lucide="plus" style="width:28px;height:28px;"></i>
+        </button>
+        <sc-for list="{{ navItemsRight }}" as="item" hint-placeholder-count="2">
+          <button type="button" class="cf-navbtn" onClick="{{ item.onClick }}" style="display:grid;justify-items:center;gap:3px;padding:6px 2px;background:transparent;border:0;border-radius:10px;cursor:pointer;color:{{ item.color }};font-family:inherit;">
+            <i data-lucide="{{ item.icon }}" style="width:20px;height:20px;"></i>
+            <span style="font-size:11px;font-weight:{{ item.weight }};">{{ item.label }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const TARGETS = { calories: 2000, protein: 150, carbs: 230, fat: 65, fiber: 30 };
+const PROFILE = "Calorie Flow - Profile (Mobile).dc.html";
+const TODAY = "Calorie Flow - Today (Mobile).dc.html";
+const PLAN = "Calorie Flow - Foods (Mobile).dc.html#plan";
+const ADDFOOD = "Calorie Flow - Add Food (Mobile).dc.html";
+
+const SECTIONS = [
+  { key: "overview", label: "Overview", icon: "activity" },
+  { key: "nutrition", label: "Nutrition", icon: "wheat" },
+  { key: "weight", label: "Weight", icon: "scale" },
+  { key: "fasting", label: "Fasting", icon: "timer" },
+];
+const RANGES = [
+  { key: "week", label: "7 days", days: 7 },
+  { key: "month", label: "30 days", days: 30 },
+  { key: "all", label: "All time", days: 90 },
+];
+const WEEK = [
+  { label: "M", calories: 1840 }, { label: "T", calories: 2100 }, { label: "W", calories: 1750 },
+  { label: "T", calories: 1920 }, { label: "F", calories: 2260 }, { label: "S", calories: 1600 }, { label: "S", calories: 1120 },
+];
+const MEAL_MIX = [
+  { label: "Breakfast", kcal: 420, color: "var(--cf-green)" },
+  { label: "Lunch", kcal: 610, color: "var(--cf-orange)" },
+  { label: "Dinner", kcal: 680, color: "var(--cf-terracotta)" },
+  { label: "Snacks", kcal: 210, color: "var(--cf-blue)" },
+];
+const WEIGHTS = [
+  { daysAgo: 0, kg: 72.4 }, { daysAgo: 2, kg: 72.6 }, { daysAgo: 5, kg: 72.9 },
+  { daysAgo: 9, kg: 73.2 }, { daysAgo: 14, kg: 73.0 }, { daysAgo: 21, kg: 73.6 }, { daysAgo: 28, kg: 74.1 },
+];
+const FASTS = [
+  { daysAgo: 0, hours: 14.2, window: "20:10 \u2192 10:20" },
+  { daysAgo: 1, hours: 16.4, window: "19:40 \u2192 12:05" },
+  { daysAgo: 2, hours: 12.1, window: "21:15 \u2192 09:20" },
+  { daysAgo: 3, hours: 15.8, window: "20:00 \u2192 11:50" },
+  { daysAgo: 4, hours: 13.4, window: "20:35 \u2192 10:00" },
+  { daysAgo: 5, hours: 17.2, window: "19:10 \u2192 12:25" },
+];
+
+class Component extends DCLogic {
+  state = { section: "overview", range: "week", weightPeriod: "month", weighIn: "" };
+  nav = (file) => { window.location.href = encodeURI(file); };
+  componentDidMount() {
+    this.mountIcons();
+    if (typeof window !== "undefined" && window.location.hash === "#weight") this.setState({ section: "weight" });
+  }
+  componentDidUpdate() { this.mountIcons(); }
+  mountIcons() { if (window.lucide) window.lucide.createIcons(); }
+  setSection = (section) => this.setState({ section });
+  setRange = (range) => this.setState({ range });
+  onWeighIn = (e) => this.setState({ weighIn: e.target.value });
+  saveWeighIn = () => this.setState({ weighIn: "" });
+
+  fmtDate = (daysAgo) => {
+    const d = new Date(); d.setDate(d.getDate() - daysAgo);
+    return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  };
+  relative = (daysAgo) => (daysAgo === 0 ? "Today" : daysAgo === 1 ? "Yesterday" : `${daysAgo} days ago`);
+
+  renderVals() {
+    const s = this.state;
+    const section = s.section;
+    const range = RANGES.find((r) => r.key === s.range) || RANGES[0];
+    const maxCal = Math.max(...WEEK.map((d) => d.calories), 1);
+    const avgCalories = Math.round(WEEK.reduce((sum, d) => sum + d.calories, 0) / WEEK.length);
+    const daysLogged = range.days === 7 ? 7 : range.days === 30 ? 26 : 74;
+    const avg = { protein: 118, carbs: 176, fat: 52, fiber: 21 };
+
+    const mixTotal = MEAL_MIX.reduce((sum, m) => sum + m.kcal, 0) || 1;
+    const latest = WEIGHTS[0].kg;
+    const oldest = WEIGHTS[WEIGHTS.length - 1].kg;
+    const changeRaw = latest - oldest;
+    const weightAvg = WEIGHTS.reduce((sum, w) => sum + w.kg, 0) / WEIGHTS.length;
+
+    const kgs = WEIGHTS.map((w) => w.kg).reverse();
+    const minKg = Math.min(...kgs), maxKg = Math.max(...kgs);
+    const span = maxKg - minKg || 1;
+    const polyline = kgs.map((kg, i) => {
+      const x = (i / Math.max(1, kgs.length - 1)) * 300;
+      const y = 110 - ((kg - minKg) / span) * 100;
+      return `${Math.round(x)},${Math.round(y)}`;
+    }).join(" ");
+
+    const fastAvg = FASTS.reduce((sum, f) => sum + f.hours, 0) / FASTS.length;
+    const fastGoal = 16;
+
+    return {
+      pageTitle: section === "weight" ? "Weight" : section === "fasting" ? "Fasting" : section === "nutrition" ? "Nutrition" : "How it's going",
+      sections: SECTIONS.map((sec) => ({
+        ...sec, onClick: () => this.setSection(sec.key),
+        bg: section === sec.key ? "var(--cf-solid-bg)" : "transparent",
+        color: section === sec.key ? "var(--cf-solid-text)" : "var(--cf-muted-2)",
+      })),
+      isOverview: section === "overview", isNutrition: section === "nutrition",
+      isWeight: section === "weight", isFasting: section === "fasting",
+      showRange: section === "overview" || section === "nutrition",
+      ranges: RANGES.map((r) => ({
+        ...r, onClick: () => this.setRange(r.key),
+        bg: s.range === r.key ? "var(--cf-solid-bg)" : "transparent",
+        color: s.range === r.key ? "var(--cf-solid-text)" : "var(--cf-muted-2)",
+        border: s.range === r.key ? "var(--cf-solid-bg)" : "var(--cf-border)",
+      })),
+      rangeDays: range.days, daysLogged, streakDays: 12, avgCalories,
+      weekStrip: WEEK.map((d) => ({
+        label: d.label,
+        mark: d.calories > 0 ? (d.calories > TARGETS.calories ? "!" : "\u2713") : "\u2013",
+        bg: d.calories === 0 ? "var(--cf-border)" : d.calories > TARGETS.calories ? "rgba(172,84,63,.14)" : "rgba(50,109,54,.12)",
+        color: d.calories === 0 ? "var(--cf-muted)" : d.calories > TARGETS.calories ? "var(--cf-terracotta)" : "var(--cf-green)",
+      })),
+      dayBars: WEEK.map((d) => ({
+        label: d.label, value: d.calories,
+        heightPct: Math.max(6, Math.round((d.calories / maxCal) * 100)),
+        color: d.calories > TARGETS.calories ? "var(--cf-terracotta)" : "var(--cf-green)",
+      })),
+      patterns: [
+        { icon: "trending-up", iconBg: "rgba(50,109,54,.1)", iconColor: "var(--cf-green)", title: "Weekdays are steadier", detail: "Mon\u2013Thu average 1,900 kcal; weekends run 260 higher." },
+        { icon: "moon", iconBg: "rgba(51,113,162,.1)", iconColor: "var(--cf-blue)", title: "Evening snacking adds up", detail: "Snacks after 20:00 account for 12% of your intake." },
+        { icon: "drumstick", iconBg: "rgba(176,122,32,.12)", iconColor: "var(--cf-orange)", title: "Protein dips on busy days", detail: "You hit your protein target on 4 of the last 7 days." },
+      ],
+      macroRows: [
+        { label: "Protein", value: avg.protein, target: TARGETS.protein, pct: Math.min(100, Math.round((avg.protein / TARGETS.protein) * 100)), color: "var(--cf-green)" },
+        { label: "Carbs", value: avg.carbs, target: TARGETS.carbs, pct: Math.min(100, Math.round((avg.carbs / TARGETS.carbs) * 100)), color: "var(--cf-orange)" },
+        { label: "Fat", value: avg.fat, target: TARGETS.fat, pct: Math.min(100, Math.round((avg.fat / TARGETS.fat) * 100)), color: "var(--cf-terracotta)" },
+        { label: "Fibre", value: avg.fiber, target: TARGETS.fiber, pct: Math.min(100, Math.round((avg.fiber / TARGETS.fiber) * 100)), color: "var(--cf-blue)" },
+      ],
+      mealMix: MEAL_MIX.map((m) => ({ ...m, pct: Math.round((m.kcal / mixTotal) * 100) })),
+      weightUnit: "kg", weighInValue: s.weighIn, onWeighIn: this.onWeighIn, saveWeighIn: this.saveWeighIn,
+      weighInPlaceholder: latest.toFixed(1),
+      weighInHint: `Last weigh-in ${latest.toFixed(1)} kg, ${this.relative(WEIGHTS[0].daysAgo).toLowerCase()}.`,
+      weightLatest: `${latest.toFixed(1)} kg`,
+      weightChange: `${changeRaw > 0 ? "+" : ""}${changeRaw.toFixed(1)} kg`,
+      weightChangeColor: changeRaw > 0 ? "var(--cf-terracotta)" : "var(--cf-green)",
+      weightAverage: `${weightAvg.toFixed(1)} kg`,
+      weightPolyline: polyline,
+      weightRangeStart: this.fmtDate(WEIGHTS[WEIGHTS.length - 1].daysAgo),
+      weightRangeEnd: "Today",
+      weightHistory: WEIGHTS.map((w, i) => {
+        const prev = WEIGHTS[i + 1];
+        const delta = prev ? w.kg - prev.kg : 0;
+        return {
+          dateLabel: this.fmtDate(w.daysAgo), relative: this.relative(w.daysAgo),
+          value: `${w.kg.toFixed(1)} kg`,
+          delta: prev ? `${delta > 0 ? "+" : ""}${delta.toFixed(1)}` : "\u2013",
+          deltaColor: !prev ? "var(--cf-muted)" : delta > 0 ? "var(--cf-terracotta)" : "var(--cf-green)",
+        };
+      }),
+      fastAverage: fastAvg.toFixed(1), fastLongest: Math.max(...FASTS.map((f) => f.hours)).toFixed(1), fastGoal,
+      fastHistory: FASTS.map((f) => ({
+        dateLabel: this.fmtDate(f.daysAgo), hours: f.hours.toFixed(1), window: f.window,
+        pct: Math.min(100, Math.round((f.hours / fastGoal) * 100)),
+        color: f.hours >= fastGoal ? "var(--cf-green)" : "var(--cf-amber)",
+      })),
+      openAddFood: () => this.nav(ADDFOOD),
+      navItemsLeft: [
+        { icon: "sun", label: "Today", color: "var(--cf-muted)", weight: 600, onClick: () => this.nav(TODAY) },
+        { icon: "calendar-range", label: "Plan", color: "var(--cf-muted)", weight: 600, onClick: () => this.nav(PLAN) },
+      ],
+      navItemsRight: [
+        { icon: "trending-up", label: "Insights", color: "var(--cf-green)", weight: 800, onClick: () => {} },
+        { icon: "user-round", label: "Profile", color: "var(--cf-muted)", weight: 600, onClick: () => this.nav(PROFILE) },
+      ],
+    };
+  }
+}
+
+</script>
+</body>
+</html>

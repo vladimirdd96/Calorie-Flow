@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  :root{--cf-bg:#efe9dc;--cf-card:#fffdf8;--cf-input-bg:#fff;--cf-text:#332b1f;--cf-muted:#756346;--cf-muted-2:#6a563f;--cf-border:#ece3cd;--cf-border-strong:#e0d5ba;--cf-icon-muted:#7d6a49;--cf-solid-bg:#332b1f;--cf-solid-text:#f2ead9;--cf-green:#326D36;--cf-amber:#8a5f18;--cf-terracotta:#AC543F;--cf-blue:#3371A2;--cf-orange:#93641a;}
+  html[data-theme="dark"]{--cf-bg:#1c1712;--cf-card:#26201a;--cf-input-bg:#211b15;--cf-text:#f2ead9;--cf-muted:#a89678;--cf-muted-2:#c2b393;--cf-border:#3a3226;--cf-border-strong:#857458;--cf-icon-muted:#9c8a68;--cf-solid-bg:#f2ead9;--cf-solid-text:#332b1f;--cf-green:#4CAF50;--cf-amber:#c08a26;--cf-terracotta:#d1755e;--cf-blue:#5393c7;--cf-orange:#c78d2c;}
+</style>
+<script>(function(){try{var t=localStorage.getItem("cf-theme")||"light";document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  body{margin:0;}
+  .cf-navbtn:active{opacity:.6;}
+  .cf-row:hover{background:rgba(50,109,54,.04);}
+  .cf-tab{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:10px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;}
+  .cf-switch{appearance:none;-webkit-appearance:none;width:46px;height:27px;border-radius:14px;background:#ddd2b6;position:relative;cursor:pointer;flex:0 0 auto;transition:background .18s ease;margin:0;}
+  .cf-switch:checked{background:#326D36;}
+  .cf-switch::after{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#fff;transition:transform .18s ease;}
+  .cf-switch:checked::after{transform:translateX(19px);}
+  a{color:#8a5f18;}
+  a:hover{color:#AC543F;}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:var(--cf-bg);display:flex;justify-content:center;font-family:'Quicksand',system-ui,sans-serif;color:var(--cf-text);">
+  <div style="width:100%;max-width:clamp(420px, 62vw, 780px);padding:clamp(20px,5vw,40px) 16px calc(110px + env(safe-area-inset-bottom));box-sizing:border-box;">
+
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+      <div style="width:56px;height:56px;border-radius:16px;display:grid;place-items:center;font-weight:700;font-size:20px;color:#fff;background:var(--cf-green);flex:0 0 auto;">M</div>
+      <div style="min-width:0;">
+        <span style="display:block;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--cf-amber);margin-bottom:2px;">Profile</span>
+        <h1 style="margin:0;font-size:20px;font-weight:700;">Maria</h1>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:4px;padding:4px;background:var(--cf-card);border-radius:14px;box-shadow:0 6px 16px rgba(60,40,20,.08);margin-bottom:20px;">
+      <button type="button" class="cf-tab" onClick="{{ showProfileTab }}" style="min-height:44px;background:{{ profileTabBg }};color:{{ profileTabColor }};"><i data-lucide="user-round" style="width:15px;height:15px;"></i>Profile</button>
+      <button type="button" class="cf-tab" onClick="{{ showCustomizeTab }}" style="min-height:44px;background:{{ customizeTabBg }};color:{{ customizeTabColor }};"><i data-lucide="sliders-horizontal" style="width:15px;height:15px;"></i>Customize</button>
+    </div>
+
+    <!-- ============ PROFILE TAB ============ -->
+    <sc-if value="{{ isProfileTab }}" hint-placeholder-val="{{ true }}">
+
+      <span style="display:block;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--cf-muted);margin:0 0 8px 4px;">Daily targets</span>
+      <div style="background:var(--cf-card);border-radius:16px;box-shadow:0 6px 16px rgba(60,40,20,.08);padding:16px;margin-bottom:10px;">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">
+          <sc-for list="{{ targetSummary }}" as="t" hint-placeholder-count="4">
+            <div style="text-align:center;">
+              <small style="display:block;font-size:11.5px;font-weight:800;color:{{ t.color }};margin-bottom:3px;">{{ t.label }}</small>
+              <strong style="font-size:16px;">{{ t.value }}</strong>
+            </div>
+          </sc-for>
+        </div>
+        <button type="button" onClick="{{ openGoals }}" style="width:100%;min-height:44px;border:1px solid var(--cf-border);border-radius:12px;background:transparent;color:var(--cf-text);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i data-lucide="pencil" style="width:15px;height:15px;color:var(--cf-amber);"></i>Edit targets</button>
+      </div>
+      <button type="button" onClick="{{ openBodyDetails }}" style="width:100%;display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--cf-card);border:0;border-radius:16px;box-shadow:0 6px 16px rgba(60,40,20,.08);cursor:pointer;text-align:left;font-family:inherit;color:var(--cf-text);margin-bottom:20px;">
+        <span style="width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:rgba(51,113,162,.1);color:var(--cf-blue);flex:0 0 auto;"><i data-lucide="ruler" style="width:17px;height:17px;"></i></span>
+        <span style="flex:1;min-width:0;display:grid;gap:2px;"><strong style="font-size:13.5px;">Body &amp; activity</strong><small style="font-size:12.5px;color:var(--cf-muted);">{{ bodySummary }}</small></span>
+        <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--cf-icon-muted);flex:0 0 auto;"></i>
+      </button>
+
+      <span style="display:block;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--cf-muted);margin:0 0 8px 4px;">Elsewhere in the app</span>
+      <div style="display:grid;gap:8px;margin-bottom:20px;">
+        <sc-for list="{{ shortcuts }}" as="sc" hint-placeholder-count="3">
+          <button type="button" onClick="{{ sc.onClick }}" style="width:100%;display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--cf-card);border:0;border-radius:16px;box-shadow:0 6px 16px rgba(60,40,20,.08);cursor:pointer;text-align:left;font-family:inherit;color:var(--cf-text);">
+            <span style="width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:{{ sc.iconBg }};color:{{ sc.iconColor }};flex:0 0 auto;"><i data-lucide="{{ sc.icon }}" style="width:17px;height:17px;"></i></span>
+            <span style="flex:1;min-width:0;display:grid;gap:2px;"><strong style="font-size:13.5px;">{{ sc.title }}</strong><small style="font-size:12.5px;color:var(--cf-muted);">{{ sc.detail }}</small></span>
+            <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--cf-icon-muted);flex:0 0 auto;"></i>
+          </button>
+        </sc-for>
+      </div>
+
+      <span style="display:block;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--cf-muted);margin:0 0 8px 4px;">Account &amp; sync</span>
+      <div style="background:var(--cf-card);border-radius:16px;box-shadow:0 6px 16px rgba(60,40,20,.08);overflow:hidden;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--cf-border);">
+          <span style="width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:{{ syncIconBg }};color:{{ syncIconColor }};flex:0 0 auto;"><i data-lucide="{{ syncIcon }}" style="width:17px;height:17px;"></i></span>
+          <span style="flex:1;min-width:0;display:grid;gap:2px;"><strong style="font-size:13.5px;">{{ syncTitle }}</strong><small style="font-size:12.5px;color:var(--cf-muted);">{{ syncDetail }}</small></span>
+          <button type="button" onClick="{{ toggleSync }}" style="flex:0 0 auto;min-height:40px;padding:0 14px;border:1px solid var(--cf-border);border-radius:11px;background:transparent;color:var(--cf-text);font-family:inherit;font-weight:700;font-size:12.5px;cursor:pointer;">{{ syncAction }}</button>
+        </div>
+        <label style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;">
+          <span style="width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:rgba(176,122,32,.12);color:var(--cf-orange);flex:0 0 auto;"><i data-lucide="share-2" style="width:17px;height:17px;"></i></span>
+          <span style="flex:1;min-width:0;"><strong style="display:block;font-size:13.5px;">Share a read-only diary</strong><small style="font-size:12.5px;color:var(--cf-muted);">{{ shareDetail }}</small></span>
+          <input type="checkbox" class="cf-switch" checked="{{ shareEnabled }}" onChange="{{ toggleShare }}">
+        </label>
+      </div>
+      <sc-if value="{{ shareEnabled }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:8px;background:var(--cf-card);border:1px dashed var(--cf-border-strong);border-radius:14px;padding:12px 14px;margin-bottom:20px;">
+          <code style="flex:1;min-width:0;font-size:12.5px;color:var(--cf-muted-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ shareLink }}</code>
+          <button type="button" onClick="{{ copyShareLink }}" style="flex:0 0 auto;min-height:40px;padding:0 12px;border:0;border-radius:10px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:12.5px;cursor:pointer;">{{ copyLabel }}</button>
+        </div>
+      </sc-if>
+
+      <span style="display:block;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--cf-muted);margin:0 0 8px 4px;">Your data</span>
+      <div style="background:var(--cf-card);border-radius:16px;box-shadow:0 6px 16px rgba(60,40,20,.08);overflow:hidden;margin-bottom:20px;">
+        <sc-for list="{{ dataRows }}" as="row" hint-placeholder-count="4">
+          <button type="button" class="cf-row" onClick="{{ row.onClick }}" style="width:100%;display:flex;align-items:center;gap:12px;min-height:52px;padding:0 16px;border:0;border-top:{{ row.borderTop }};background:transparent;cursor:pointer;text-align:left;font-family:inherit;color:{{ row.textColor }};">
+            <i data-lucide="{{ row.icon }}" style="width:17px;height:17px;color:{{ row.iconColor }};flex:0 0 auto;"></i>
+            <span style="flex:1;min-width:0;display:grid;gap:1px;"><strong style="font-size:13.5px;">{{ row.label }}</strong><small style="font-size:12px;color:var(--cf-muted);">{{ row.detail }}</small></span>
+            <i data-lucide="chevron-right" style="width:15px;height:15px;color:var(--cf-icon-muted);flex:0 0 auto;"></i>
+          </button>
+        </sc-for>
+      </div>
+
+      <button type="button" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;min-height:50px;border:1px solid var(--cf-border);border-radius:14px;background:transparent;color:var(--cf-terracotta);font-family:inherit;font-weight:700;font-size:13.5px;cursor:pointer;"><i data-lucide="log-out" style="width:16px;height:16px;"></i>Sign out</button>
+    </sc-if>
+
+    <!-- ============ CUSTOMIZE TAB ============ -->
+    <sc-if value="{{ isCustomizeTab }}" hint-placeholder-val="{{ false }}">
+
+      <span style="display:block;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--cf-muted);margin:0 0 8px 4px;">What you see</span>
+      <div style="background:var(--cf-card);border-radius:16px;box-shadow:0 6px 16px rgba(60,40,20,.08);overflow:hidden;margin-bottom:20px;">
+        <sc-for list="{{ displayToggles }}" as="t" hint-placeholder-count="3">
+          <label style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-top:{{ t.borderTop }};cursor:pointer;">
+            <span style="width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:{{ t.iconBg }};color:{{ t.iconColor }};flex:0 0 auto;"><i data-lucide="{{ t.icon }}" style="width:17px;height:17px;"></i></span>
+            <span style="flex:1;min-width:0;"><strong style="display:block;font-size:13.5px;">{{ t.title }}</strong><small style="font-size:12.5px;color:var(--cf-muted);line-height:1.4;">{{ t.detail }}</small></span>
+            <input type="checkbox" class="cf-switch" checked="{{ t.checked }}" onChange="{{ t.onChange }}">
+          </label>
+        </sc-for>
+      </div>
+
+      <span style="display:block;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--cf-muted);margin:0 0 8px 4px;">Optional features</span>
+      <p style="margin:0 0 8px 4px;font-size:12.5px;color:var(--cf-muted);line-height:1.45;">Turn off anything you don't use and it disappears from the app.</p>
+      <div style="background:var(--cf-card);border-radius:16px;box-shadow:0 6px 16px rgba(60,40,20,.08);overflow:hidden;margin-bottom:12px;">
+        <sc-for list="{{ featureToggles }}" as="t" hint-placeholder-count="4">
+          <label style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-top:{{ t.borderTop }};cursor:pointer;">
+            <span style="width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:{{ t.iconBg }};color:{{ t.iconColor }};flex:0 0 auto;"><i data-lucide="{{ t.icon }}" style="width:17px;height:17px;"></i></span>
+            <span style="flex:1;min-width:0;"><strong style="display:block;font-size:13.5px;">{{ t.title }}</strong><small style="font-size:12.5px;color:var(--cf-muted);line-height:1.4;">{{ t.detail }}</small></span>
+            <input type="checkbox" class="cf-switch" checked="{{ t.checked }}" onChange="{{ t.onChange }}">
+          </label>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ fastingEnabled }}" hint-placeholder-val="{{ true }}">
+        <div style="background:var(--cf-card);border-radius:16px;box-shadow:0 6px 16px rgba(60,40,20,.08);padding:16px;margin-bottom:20px;">
+          <strong style="display:block;font-size:13.5px;margin-bottom:12px;">Fasting settings</strong>
+          <span style="display:block;font-size:12px;font-weight:800;color:var(--cf-muted-2);margin-bottom:6px;">Daily goal</span>
+          <div style="display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;border:1px solid var(--cf-border);border-radius:12px;margin-bottom:14px;">
+            <sc-for list="{{ fastingGoals }}" as="g" hint-placeholder-count="4">
+              <button type="button" onClick="{{ g.onClick }}" style="min-height:42px;border:0;border-radius:9px;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer;background:{{ g.bg }};color:{{ g.color }};">{{ g.label }}</button>
+            </sc-for>
+          </div>
+          <label style="display:flex;align-items:center;gap:12px;padding:10px 0;cursor:pointer;">
+            <span style="flex:1;min-width:0;"><strong style="display:block;font-size:13px;">Precise timing</strong><small style="font-size:12.5px;color:var(--cf-muted);">Use exact log times instead of rounding to the hour</small></span>
+            <input type="checkbox" class="cf-switch" checked="{{ fastingPrecise }}" onChange="{{ toggleFastingPrecise }}">
+          </label>
+          <label style="display:flex;align-items:center;gap:12px;padding:10px 0 0;cursor:pointer;">
+            <span style="flex:1;min-width:0;"><strong style="display:block;font-size:13px;">Late entries end a fast</strong><small style="font-size:12.5px;color:var(--cf-muted);">A meal logged after midnight closes the current fast</small></span>
+            <input type="checkbox" class="cf-switch" checked="{{ fastingLateEnds }}" onChange="{{ toggleFastingLate }}">
+          </label>
+        </div>
+      </sc-if>
+
+      <span style="display:block;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--cf-muted);margin:0 0 8px 4px;">Targets by day</span>
+      <div style="background:var(--cf-card);border-radius:16px;box-shadow:0 6px 16px rgba(60,40,20,.08);padding:16px;margin-bottom:20px;">
+        <label style="display:flex;align-items:center;gap:12px;cursor:pointer;">
+          <span style="flex:1;min-width:0;"><strong style="display:block;font-size:13.5px;">Different targets per weekday</strong><small style="font-size:12.5px;color:var(--cf-muted);line-height:1.4;">Eat more on training days, less on rest days</small></span>
+          <input type="checkbox" class="cf-switch" checked="{{ perDayTargets }}" onChange="{{ togglePerDayTargets }}">
+        </label>
+        <sc-if value="{{ perDayTargets }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;gap:8px;margin-top:14px;">
+            <sc-for list="{{ dayTargets }}" as="d" hint-placeholder-count="7">
+              <div style="display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:10px;">
+                <span style="font-size:12.5px;font-weight:800;color:var(--cf-muted-2);">{{ d.label }}</span>
+                <div style="height:7px;border-radius:4px;background:var(--cf-border);overflow:hidden;"><div style="height:100%;width:{{ d.pct }}%;background:var(--cf-green);border-radius:4px;"></div></div>
+                <span style="font-size:12.5px;font-weight:700;white-space:nowrap;">{{ d.kcal }} kcal</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+
+      <span style="display:block;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--cf-muted);margin:0 0 8px 4px;">Meal guides</span>
+      <div style="background:var(--cf-card);border-radius:16px;box-shadow:0 6px 16px rgba(60,40,20,.08);padding:16px;margin-bottom:20px;">
+        <label style="display:flex;align-items:center;gap:12px;cursor:pointer;">
+          <span style="flex:1;min-width:0;"><strong style="display:block;font-size:13.5px;">Show a guide per meal</strong><small style="font-size:12.5px;color:var(--cf-muted);line-height:1.4;">Split your daily target across breakfast, lunch, dinner and snacks</small></span>
+          <input type="checkbox" class="cf-switch" checked="{{ mealGuides }}" onChange="{{ toggleMealGuides }}">
+        </label>
+        <sc-if value="{{ mealGuides }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;gap:10px;margin-top:14px;">
+            <sc-for list="{{ mealGuideRows }}" as="m" hint-placeholder-count="4">
+              <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;">
+                <span style="font-size:13px;font-weight:700;">{{ m.label }}</span>
+                <span style="font-size:12.5px;font-weight:700;color:var(--cf-muted-2);white-space:nowrap;">{{ m.kcal }} kcal &middot; {{ m.share }}%</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+
+      <span style="display:block;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--cf-muted);margin:0 0 8px 4px;">Units</span>
+      <div style="background:var(--cf-card);border-radius:16px;box-shadow:0 6px 16px rgba(60,40,20,.08);margin-bottom:20px;padding:6px;display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+        <sc-for list="{{ unitOptions }}" as="opt" hint-placeholder-count="2">
+          <button type="button" onClick="{{ opt.onClick }}" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;border:0;border-radius:12px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;background:{{ opt.bg }};color:{{ opt.color }};">{{ opt.label }}</button>
+        </sc-for>
+      </div>
+
+      <span style="display:block;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--cf-muted);margin:0 0 8px 4px;">Appearance</span>
+      <div style="background:var(--cf-card);border-radius:16px;box-shadow:0 6px 16px rgba(60,40,20,.08);margin-bottom:10px;padding:6px;display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+        <sc-for list="{{ themeOptions }}" as="opt" hint-placeholder-count="2">
+          <button type="button" onClick="{{ opt.onClick }}" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;border:0;border-radius:12px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;background:{{ opt.bg }};color:{{ opt.color }};">
+            <i data-lucide="{{ opt.icon }}" style="width:15px;height:15px;"></i>{{ opt.label }}
+          </button>
+        </sc-for>
+      </div>
+      <div style="background:var(--cf-card);border-radius:16px;box-shadow:0 6px 16px rgba(60,40,20,.08);padding:16px;margin-bottom:20px;">
+        <span style="display:block;font-size:12px;font-weight:800;color:var(--cf-muted-2);margin-bottom:8px;">Coach text size</span>
+        <div style="display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;border:1px solid var(--cf-border);border-radius:12px;">
+          <sc-for list="{{ textSizes }}" as="t" hint-placeholder-count="3">
+            <button type="button" onClick="{{ t.onClick }}" style="min-height:42px;border:0;border-radius:9px;font-family:inherit;font-size:{{ t.fontSize }};font-weight:800;cursor:pointer;background:{{ t.bg }};color:{{ t.color }};">{{ t.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- GOALS SHEET -->
+    <sc-if value="{{ goalsOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed;inset:0;background:rgba(30,24,14,.35);z-index:30;" onClick="{{ closeGoals }}"></div>
+      <div style="position:fixed;left:0;right:0;bottom:0;max-height:86vh;overflow-y:auto;background:var(--cf-card);border-radius:20px 20px 0 0;padding:14px 18px 26px;box-shadow:0 -10px 30px rgba(60,40,20,.15);z-index:31;">
+        <div style="width:36px;height:4px;border-radius:3px;background:var(--cf-border-strong);margin:0 auto 12px;"></div>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:16px;">
+          <strong style="font-size:18px;">Daily targets</strong>
+          <button type="button" onClick="{{ closeGoals }}" aria-label="Close" style="width:40px;height:40px;margin:-8px -8px 0 0;border:0;border-radius:12px;background:var(--cf-bg);color:var(--cf-muted-2);display:grid;place-items:center;cursor:pointer;flex:0 0 auto;"><i data-lucide="x" style="width:17px;height:17px;"></i></button>
+        </div>
+        <div style="display:grid;gap:10px;margin-bottom:16px;">
+          <sc-for list="{{ goalFields }}" as="g" hint-placeholder-count="4">
+            <label style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--cf-input-bg);border:1px solid var(--cf-border);border-radius:12px;padding:6px 14px;">
+              <span style="font-size:13.5px;font-weight:700;color:{{ g.color }};">{{ g.label }}</span>
+              <input value="{{ g.value }}" onInput="{{ g.onInput }}" style="width:90px;min-height:44px;border:0;background:transparent;font-family:inherit;font-size:16px;font-weight:700;color:var(--cf-text);text-align:right;outline:none;">
+            </label>
+          </sc-for>
+        </div>
+        <p style="margin:0 0 16px;font-size:12.5px;color:var(--cf-muted);line-height:1.45;">Macros add up to <strong style="color:var(--cf-text);">{{ goalsMacroCalories }} kcal</strong> against a {{ goalsCalorieTarget }} kcal target.</p>
+        <button type="button" onClick="{{ saveGoals }}" style="width:100%;min-height:50px;border:0;border-radius:13px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;">Save targets</button>
+      </div>
+    </sc-if>
+
+    <!-- BODY DETAILS SHEET -->
+    <sc-if value="{{ bodyOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed;inset:0;background:rgba(30,24,14,.35);z-index:30;" onClick="{{ closeBodyDetails }}"></div>
+      <div style="position:fixed;left:0;right:0;bottom:0;max-height:86vh;overflow-y:auto;background:var(--cf-card);border-radius:20px 20px 0 0;padding:14px 18px 26px;box-shadow:0 -10px 30px rgba(60,40,20,.15);z-index:31;">
+        <div style="width:36px;height:4px;border-radius:3px;background:var(--cf-border-strong);margin:0 auto 12px;"></div>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:16px;">
+          <strong style="font-size:18px;">Body &amp; activity</strong>
+          <button type="button" onClick="{{ closeBodyDetails }}" aria-label="Close" style="width:40px;height:40px;margin:-8px -8px 0 0;border:0;border-radius:12px;background:var(--cf-bg);color:var(--cf-muted-2);display:grid;place-items:center;cursor:pointer;flex:0 0 auto;"><i data-lucide="x" style="width:17px;height:17px;"></i></button>
+        </div>
+        <p style="margin:0 0 16px;font-size:13px;color:var(--cf-muted);line-height:1.5;">These only feed the target suggestion. Change them any time and we'll recalculate.</p>
+        <div style="display:grid;gap:10px;margin-bottom:16px;">
+          <sc-for list="{{ bodyFields }}" as="f" hint-placeholder-count="3">
+            <label style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--cf-input-bg);border:1px solid var(--cf-border);border-radius:12px;padding:6px 14px;">
+              <span style="font-size:13.5px;font-weight:700;color:var(--cf-muted-2);">{{ f.label }}</span>
+              <input value="{{ f.value }}" onInput="{{ f.onInput }}" style="width:100px;min-height:44px;border:0;background:transparent;font-family:inherit;font-size:16px;font-weight:700;color:var(--cf-text);text-align:right;outline:none;">
+            </label>
+          </sc-for>
+        </div>
+        <span style="display:block;font-size:12px;font-weight:800;color:var(--cf-muted-2);margin-bottom:6px;">Activity level</span>
+        <div style="display:grid;gap:6px;margin-bottom:16px;">
+          <sc-for list="{{ activityOptions }}" as="a" hint-placeholder-count="4">
+            <button type="button" onClick="{{ a.onClick }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:50px;padding:0 14px;border:1px solid {{ a.border }};border-radius:12px;background:{{ a.bg }};color:var(--cf-text);font-family:inherit;font-weight:700;font-size:13.5px;cursor:pointer;">
+              <span>{{ a.label }}</span>
+              <small style="font-size:12px;font-weight:600;color:var(--cf-muted);">{{ a.detail }}</small>
+            </button>
+          </sc-for>
+        </div>
+        <button type="button" onClick="{{ closeBodyDetails }}" style="width:100%;min-height:50px;border:0;border-radius:13px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;">Save</button>
+      </div>
+    </sc-if>
+
+  </div>
+
+  <div style="position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;pointer-events:none;">
+    <div style="position:relative;width:100%;max-width:clamp(420px, 62vw, 780px);pointer-events:auto;filter:drop-shadow(0 -6px 14px rgba(30,20,10,.14));">
+      <div style="position:absolute;left:50%;top:-30px;transform:translateX(-50%);width:90px;height:46px;background:var(--cf-card);border-radius:56px 56px 0 0;"></div>
+      <div style="position:relative;background:var(--cf-card);display:grid;grid-template-columns:1fr 1fr auto 1fr 1fr;align-items:end;gap:4px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));">
+        <sc-for list="{{ navItemsLeft }}" as="item" hint-placeholder-count="2">
+          <button type="button" class="cf-navbtn" onClick="{{ item.onClick }}" style="display:grid;justify-items:center;gap:3px;padding:6px 2px;background:transparent;border:0;border-radius:10px;cursor:pointer;color:{{ item.color }};font-family:inherit;">
+            <i data-lucide="{{ item.icon }}" style="width:20px;height:20px;"></i>
+            <span style="font-size:11px;font-weight:{{ item.weight }};">{{ item.label }}</span>
+          </button>
+        </sc-for>
+        <button type="button" onClick="{{ openAddFood }}" aria-label="Add food" style="position:relative;top:-22px;justify-self:center;width:56px;height:56px;border-radius:50%;border:0;background:var(--cf-green);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 8px 16px rgba(50,109,54,.35);">
+          <i data-lucide="plus" style="width:28px;height:28px;"></i>
+        </button>
+        <sc-for list="{{ navItemsRight }}" as="item" hint-placeholder-count="2">
+          <button type="button" class="cf-navbtn" onClick="{{ item.onClick }}" style="display:grid;justify-items:center;gap:3px;padding:6px 2px;background:transparent;border:0;border-radius:10px;cursor:pointer;color:{{ item.color }};font-family:inherit;">
+            <i data-lucide="{{ item.icon }}" style="width:20px;height:20px;"></i>
+            <span style="font-size:11px;font-weight:{{ item.weight }};">{{ item.label }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const TODAY = "Calorie Flow - Today (Mobile).dc.html";
+const COACH = "Calorie Flow - Coach (Mobile).dc.html";
+const LIBRARY = "Calorie Flow - Foods (Mobile).dc.html";
+const PLAN = "Calorie Flow - Foods (Mobile).dc.html#plan";
+const INSIGHTS = "Calorie Flow - Insights (Mobile).dc.html";
+const WEIGHT = "Calorie Flow - Insights (Mobile).dc.html#weight";
+const ADDFOOD = "Calorie Flow - Add Food (Mobile).dc.html";
+const ONBOARDING = "Calorie Flow - Onboarding (Mobile).dc.html";
+
+const FASTING_GOALS = [12, 14, 16, 18];
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const DAY_KCAL = { Mon: 2000, Tue: 2200, Wed: 2000, Thu: 2200, Fri: 2000, Sat: 1800, Sun: 1800 };
+const MEAL_SHARES = [
+  { label: "Breakfast", share: 25 }, { label: "Lunch", share: 30 },
+  { label: "Dinner", share: 33 }, { label: "Snacks", share: 12 },
+];
+
+class Component extends DCLogic {
+  state = {
+    tab: "profile",
+    goals: { calories: "2000", protein: "150", carbs: "230", fat: "65" },
+    goalsDraft: { calories: "2000", protein: "150", carbs: "230", fat: "65" },
+    goalsOpen: false, bodyOpen: false,
+    body: { age: "34", height: "168", weight: "72.4" }, activity: "moderate",
+    theme: "light", units: "metric", textSize: "regular",
+    hideCalories: false, netCarbs: false, estimatedBadges: true,
+    planEnabled: true, waterEnabled: true, fastingEnabled: true, weightEnabled: true,
+    fastingGoal: 16, fastingPrecise: false, fastingLateEnds: true,
+    perDayTargets: false, mealGuides: true,
+    syncOn: true, shareEnabled: false, copied: false,
+  };
+  nav = (file) => { window.location.href = encodeURI(file); };
+  componentDidMount() {
+    this.mountIcons();
+    try {
+      const t = localStorage.getItem("cf-theme"); if (t) this.setState({ theme: t });
+      const read = (k, fallback) => { const v = localStorage.getItem(k); return v === null ? fallback : v === "1"; };
+      this.setState({
+        hideCalories: read("cf-hide-calories", false), waterEnabled: read("cf-water", true),
+        fastingEnabled: read("cf-fasting", true), weightEnabled: read("cf-weight", true),
+      });
+    } catch (e) {}
+  }
+  componentDidUpdate() { this.mountIcons(); }
+  mountIcons() { if (window.lucide) window.lucide.createIcons(); }
+
+  showProfileTab = () => this.setState({ tab: "profile" });
+  showCustomizeTab = () => this.setState({ tab: "customize" });
+  setTheme = (theme) => {
+    this.setState({ theme });
+    try { localStorage.setItem("cf-theme", theme); } catch (e) {}
+    if (typeof document !== "undefined") document.documentElement.setAttribute("data-theme", theme);
+  };
+  setUnits = (units) => this.setState({ units });
+  setTextSize = (textSize) => this.setState({ textSize });
+  toggle = (key) => this.setState((s) => {
+    const next = !s[key];
+    if (key === "hideCalories") { try { localStorage.setItem("cf-hide-calories", next ? "1" : "0"); } catch (e) {} }
+    if (key === "waterEnabled") { try { localStorage.setItem("cf-water", next ? "1" : "0"); } catch (e) {} }
+    if (key === "fastingEnabled") { try { localStorage.setItem("cf-fasting", next ? "1" : "0"); } catch (e) {} }
+    if (key === "weightEnabled") { try { localStorage.setItem("cf-weight", next ? "1" : "0"); } catch (e) {} }
+    return { [key]: next };
+  });
+  setFastingGoal = (fastingGoal) => this.setState({ fastingGoal });
+  setActivity = (activity) => this.setState({ activity });
+
+  openGoals = () => this.setState((s) => ({ goalsOpen: true, goalsDraft: { ...s.goals } }));
+  closeGoals = () => this.setState({ goalsOpen: false });
+  setGoalField = (key, value) => this.setState((s) => ({ goalsDraft: { ...s.goalsDraft, [key]: value } }));
+  saveGoals = () => this.setState((s) => ({ goals: { ...s.goalsDraft }, goalsOpen: false }));
+
+  openBodyDetails = () => this.setState({ bodyOpen: true });
+  closeBodyDetails = () => this.setState({ bodyOpen: false });
+  setBodyField = (key, value) => this.setState((s) => ({ body: { ...s.body, [key]: value } }));
+
+  copyShareLink = () => {
+    this.setState({ copied: true });
+    window.setTimeout(() => this.setState({ copied: false }), 1600);
+  };
+
+  renderVals() {
+    const s = this.state;
+    const isProfileTab = s.tab === "profile";
+    const kcal = Number(s.goals.calories) || 2000;
+    const goalsMacroCalories = Math.round((Number(s.goals.protein) || 0) * 4 + (Number(s.goals.carbs) || 0) * 4 + (Number(s.goals.fat) || 0) * 9);
+    const maxDayKcal = Math.max(...WEEKDAYS.map((d) => DAY_KCAL[d]));
+    const seg = (active) => ({
+      bg: active ? "var(--cf-solid-bg)" : "transparent",
+      color: active ? "var(--cf-solid-text)" : "var(--cf-muted-2)",
+    });
+
+    return {
+      isProfileTab, isCustomizeTab: !isProfileTab,
+      showProfileTab: this.showProfileTab, showCustomizeTab: this.showCustomizeTab,
+      profileTabBg: isProfileTab ? "var(--cf-solid-bg)" : "transparent",
+      profileTabColor: isProfileTab ? "var(--cf-solid-text)" : "var(--cf-muted-2)",
+      customizeTabBg: !isProfileTab ? "var(--cf-solid-bg)" : "transparent",
+      customizeTabColor: !isProfileTab ? "var(--cf-solid-text)" : "var(--cf-muted-2)",
+
+      targetSummary: [
+        { label: "kcal", value: s.goals.calories, color: "var(--cf-muted-2)" },
+        { label: "Protein", value: `${s.goals.protein}g`, color: "var(--cf-green)" },
+        { label: "Carbs", value: `${s.goals.carbs}g`, color: "var(--cf-orange)" },
+        { label: "Fat", value: `${s.goals.fat}g`, color: "var(--cf-terracotta)" },
+      ],
+      openGoals: this.openGoals, closeGoals: this.closeGoals, goalsOpen: s.goalsOpen, saveGoals: this.saveGoals,
+      goalFields: [
+        { label: "Calories", value: s.goalsDraft.calories, color: "var(--cf-muted-2)", onInput: (e) => this.setGoalField("calories", e.target.value) },
+        { label: "Protein (g)", value: s.goalsDraft.protein, color: "var(--cf-green)", onInput: (e) => this.setGoalField("protein", e.target.value) },
+        { label: "Carbs (g)", value: s.goalsDraft.carbs, color: "var(--cf-orange)", onInput: (e) => this.setGoalField("carbs", e.target.value) },
+        { label: "Fat (g)", value: s.goalsDraft.fat, color: "var(--cf-terracotta)", onInput: (e) => this.setGoalField("fat", e.target.value) },
+      ],
+      goalsMacroCalories, goalsCalorieTarget: s.goals.calories,
+
+      bodySummary: `${s.body.age} yrs \u00b7 ${s.body.height} cm \u00b7 ${s.activity} activity`,
+      bodyOpen: s.bodyOpen, openBodyDetails: this.openBodyDetails, closeBodyDetails: this.closeBodyDetails,
+      bodyFields: [
+        { label: "Age", value: s.body.age, onInput: (e) => this.setBodyField("age", e.target.value) },
+        { label: "Height (cm)", value: s.body.height, onInput: (e) => this.setBodyField("height", e.target.value) },
+        { label: "Weight (kg)", value: s.body.weight, onInput: (e) => this.setBodyField("weight", e.target.value) },
+      ],
+      activityOptions: [
+        { key: "sedentary", label: "Mostly sitting", detail: "Desk work" },
+        { key: "light", label: "Lightly active", detail: "1\u20132 sessions" },
+        { key: "moderate", label: "Moderately active", detail: "3\u20134 sessions" },
+        { key: "high", label: "Very active", detail: "5+ sessions" },
+      ].map((a) => ({
+        ...a, onClick: () => this.setActivity(a.key),
+        bg: s.activity === a.key ? "rgba(50,109,54,.1)" : "transparent",
+        border: s.activity === a.key ? "var(--cf-green)" : "var(--cf-border)",
+      })),
+
+      shortcuts: [
+        { icon: "scale", iconBg: "rgba(138,95,24,.1)", iconColor: "var(--cf-amber)", title: "Weight history", detail: "Weigh-ins and trend live in Insights", onClick: () => this.nav(WEIGHT) },
+        { icon: "library", iconBg: "rgba(176,122,32,.12)", iconColor: "var(--cf-orange)", title: "Your foods", detail: "Everything you've saved or logged", onClick: () => this.nav(LIBRARY) },
+        { icon: "message-circle", iconBg: "rgba(51,113,162,.1)", iconColor: "var(--cf-blue)", title: "Coach", detail: "Chat about meals, recipes and your log", onClick: () => this.nav(COACH) },
+      ],
+
+      syncOn: s.syncOn, toggleSync: () => this.toggle("syncOn"),
+      syncIcon: s.syncOn ? "cloud" : "cloud-off",
+      syncIconBg: s.syncOn ? "rgba(50,109,54,.1)" : "var(--cf-border)",
+      syncIconColor: s.syncOn ? "var(--cf-green)" : "var(--cf-muted)",
+      syncTitle: s.syncOn ? "Synced to your account" : "Sync paused",
+      syncDetail: s.syncOn ? "Last synced a few minutes ago" : "Your log stays on this device only",
+      syncAction: s.syncOn ? "Pause" : "Resume",
+
+      shareEnabled: s.shareEnabled, toggleShare: () => this.toggle("shareEnabled"),
+      shareDetail: s.shareEnabled ? "Anyone with the link can view, not edit" : "Off \u2014 nobody can see your diary",
+      shareLink: "calorieflow.app/d/maria-7fk2",
+      copyShareLink: this.copyShareLink, copyLabel: s.copied ? "Copied" : "Copy",
+
+      dataRows: [
+        { icon: "refresh-cw", iconColor: "var(--cf-muted-2)", textColor: "var(--cf-text)", label: "Redo setup", detail: "Walk through onboarding again", borderTop: "0", onClick: () => this.nav(ONBOARDING) },
+        { icon: "file-text", iconColor: "var(--cf-muted-2)", textColor: "var(--cf-text)", label: "Meal report (CSV)", detail: "Every logged meal as a spreadsheet", borderTop: "1px solid var(--cf-border)", onClick: () => {} },
+        { icon: "download", iconColor: "var(--cf-muted-2)", textColor: "var(--cf-text)", label: "Export everything (JSON)", detail: "Foods, recipes, diary and settings", borderTop: "1px solid var(--cf-border)", onClick: () => {} },
+        { icon: "upload", iconColor: "var(--cf-muted-2)", textColor: "var(--cf-text)", label: "Restore from a backup", detail: "Replaces what's on this device", borderTop: "1px solid var(--cf-border)", onClick: () => {} },
+      ],
+
+      displayToggles: [
+        { icon: "eye-off", iconBg: "var(--cf-border)", iconColor: "var(--cf-muted-2)", title: "Hide calorie numbers", detail: "Track macros only \u2014 calories disappear everywhere", checked: s.hideCalories, onChange: () => this.toggle("hideCalories"), borderTop: "0" },
+        { icon: "wheat", iconBg: "rgba(176,122,32,.12)", iconColor: "var(--cf-orange)", title: "Show net carbs", detail: "Subtract fibre from total carbohydrate", checked: s.netCarbs, onChange: () => this.toggle("netCarbs"), borderTop: "1px solid var(--cf-border)" },
+        { icon: "sparkles", iconBg: "rgba(51,113,162,.1)", iconColor: "var(--cf-blue)", title: "Flag estimated entries", detail: "Mark anything a photo or the coach estimated", checked: s.estimatedBadges, onChange: () => this.toggle("estimatedBadges"), borderTop: "1px solid var(--cf-border)" },
+      ],
+
+      featureToggles: [
+        { icon: "calendar-range", iconBg: "rgba(50,109,54,.1)", iconColor: "var(--cf-green)", title: "Plan", detail: "Weekly meal plan, recipes and shopping list", checked: s.planEnabled, onChange: () => this.toggle("planEnabled"), borderTop: "0" },
+        { icon: "droplet", iconBg: "rgba(51,113,162,.1)", iconColor: "var(--cf-blue)", title: "Water", detail: "A hydration tracker on Today", checked: s.waterEnabled, onChange: () => this.toggle("waterEnabled"), borderTop: "1px solid var(--cf-border)" },
+        { icon: "timer", iconBg: "rgba(138,95,24,.1)", iconColor: "var(--cf-amber)", title: "Fasting", detail: "Track eating windows between meals", checked: s.fastingEnabled, onChange: () => this.toggle("fastingEnabled"), borderTop: "1px solid var(--cf-border)" },
+        { icon: "scale", iconBg: "rgba(172,84,63,.1)", iconColor: "var(--cf-terracotta)", title: "Weight", detail: "Weigh-ins, trend and history in Insights", checked: s.weightEnabled, onChange: () => this.toggle("weightEnabled"), borderTop: "1px solid var(--cf-border)" },
+      ],
+
+      fastingEnabled: s.fastingEnabled,
+      fastingGoals: FASTING_GOALS.map((h) => ({ label: `${h} h`, onClick: () => this.setFastingGoal(h), ...seg(s.fastingGoal === h) })),
+      fastingPrecise: s.fastingPrecise, toggleFastingPrecise: () => this.toggle("fastingPrecise"),
+      fastingLateEnds: s.fastingLateEnds, toggleFastingLate: () => this.toggle("fastingLateEnds"),
+
+      perDayTargets: s.perDayTargets, togglePerDayTargets: () => this.toggle("perDayTargets"),
+      dayTargets: WEEKDAYS.map((d) => ({ label: d, kcal: DAY_KCAL[d], pct: Math.round((DAY_KCAL[d] / maxDayKcal) * 100) })),
+
+      mealGuides: s.mealGuides, toggleMealGuides: () => this.toggle("mealGuides"),
+      mealGuideRows: MEAL_SHARES.map((m) => ({ ...m, kcal: Math.round((kcal * m.share) / 100) })),
+
+      unitOptions: [
+        { key: "metric", label: "Metric (kg, cm)" },
+        { key: "imperial", label: "Imperial (lb, in)" },
+      ].map((o) => ({ ...o, onClick: () => this.setUnits(o.key), ...seg(s.units === o.key) })),
+
+      themeOptions: [
+        { key: "light", label: "Light", icon: "sun" },
+        { key: "dark", label: "Dark", icon: "moon" },
+      ].map((o) => ({ ...o, onClick: () => this.setTheme(o.key), ...seg(s.theme === o.key) })),
+
+      textSizes: [
+        { key: "compact", label: "Compact", fontSize: "12px" },
+        { key: "regular", label: "Regular", fontSize: "13px" },
+        { key: "large", label: "Large", fontSize: "15px" },
+      ].map((o) => ({ ...o, onClick: () => this.setTextSize(o.key), ...seg(s.textSize === o.key) })),
+
+      openAddFood: () => this.nav(ADDFOOD),
+      navItemsLeft: [
+        { icon: "sun", label: "Today", color: "var(--cf-muted)", weight: 600, onClick: () => this.nav(TODAY) },
+        { icon: "calendar-range", label: "Plan", color: "var(--cf-muted)", weight: 600, onClick: () => this.nav(PLAN) },
+      ],
+      navItemsRight: [
+        { icon: "trending-up", label: "Insights", color: "var(--cf-muted)", weight: 600, onClick: () => this.nav(INSIGHTS) },
+        { icon: "user-round", label: "Profile", color: "var(--cf-green)", weight: 800, onClick: () => {} },
+      ],
+    };
+  }
+}
+
+</script>
+</body>
+</html>

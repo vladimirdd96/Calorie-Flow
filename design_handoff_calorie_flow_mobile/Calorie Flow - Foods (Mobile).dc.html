@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  :root{--cf-bg:#efe9dc;--cf-card:#fffdf8;--cf-input-bg:#fff;--cf-text:#332b1f;--cf-muted:#756346;--cf-muted-2:#6a563f;--cf-border:#ece3cd;--cf-border-strong:#e0d5ba;--cf-icon-muted:#7d6a49;--cf-solid-bg:#332b1f;--cf-solid-text:#f2ead9;--cf-green:#326D36;--cf-amber:#8a5f18;--cf-terracotta:#AC543F;--cf-blue:#3371A2;--cf-orange:#93641a;}
+  html[data-theme="dark"]{--cf-bg:#1c1712;--cf-card:#26201a;--cf-input-bg:#211b15;--cf-text:#f2ead9;--cf-muted:#a89678;--cf-muted-2:#c2b393;--cf-border:#3a3226;--cf-border-strong:#857458;--cf-icon-muted:#9c8a68;--cf-solid-bg:#f2ead9;--cf-solid-text:#332b1f;--cf-green:#4CAF50;--cf-amber:#c08a26;--cf-terracotta:#d1755e;--cf-blue:#5393c7;--cf-orange:#c78d2c;}
+</style>
+<script>(function(){try{var t=localStorage.getItem("cf-theme")||"light";document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="./image-slot.js"></script>
+<style>
+  body{margin:0;}
+  .cf-navbtn:active{opacity:.6;}
+  .cf-row:hover{background:rgba(50,109,54,.04);}
+  .cf-tab{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:9px 2px;border:0;background:transparent;font-family:inherit;font-weight:700;font-size:12px;cursor:pointer;border-radius:11px;white-space:nowrap;}
+  .cf-hscroll{scrollbar-width:none;}
+  .cf-hscroll::-webkit-scrollbar{display:none;}
+  .cf-hscroll-wrap{position:relative;}
+  .cf-hscroll-wrap::after{content:"";position:absolute;top:0;right:0;bottom:0;width:30px;background:linear-gradient(to right, transparent, var(--cf-bg));pointer-events:none;border-radius:0 10px 10px 0;}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:var(--cf-bg);display:flex;justify-content:center;font-family:'Quicksand',system-ui,sans-serif;color:var(--cf-text);">
+  <div style="width:100%;max-width:clamp(420px, 62vw, 780px);padding:clamp(20px,5vw,40px) 16px calc(110px + env(safe-area-inset-bottom));box-sizing:border-box;">
+
+    <span style="display:block;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--cf-amber);margin-bottom:2px;">{{ pageEyebrow }}</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;">
+      <h1 style="margin:0;font-size:20px;font-weight:700;">{{ pageTitle }}</h1>
+      <sc-if value="{{ showPlanNav }}" hint-placeholder-val="{{ false }}">
+        <button type="button" onClick="{{ selectFoodsTab }}" style="display:flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border:1px solid var(--cf-border);border-radius:12px;background:var(--cf-card);color:var(--cf-text);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;flex:0 0 auto;"><i data-lucide="library" style="width:16px;height:16px;color:var(--cf-amber);"></i>Foods</button>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{ showPlanNav }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;gap:4px;padding:4px;background:var(--cf-card);border-radius:14px;box-shadow:0 6px 16px rgba(60,40,20,.08);margin-bottom:16px;">
+        <button type="button" class="cf-tab" onClick="{{ selectPlanTab }}" style="min-height:44px;background:{{ weekTabBg }};color:{{ weekTabColor }};"><i data-lucide="calendar-range" style="width:15px;height:15px;"></i>This week</button>
+        <button type="button" class="cf-tab" onClick="{{ selectRecipesTab }}" style="min-height:44px;background:{{ recipesTabBg }};color:{{ recipesTabColor }};"><i data-lucide="book-open" style="width:15px;height:15px;"></i>Recipes</button>
+        <button type="button" class="cf-tab" onClick="{{ selectShoppingTab }}" style="position:relative;min-height:44px;background:{{ shoppingTabBg }};color:{{ shoppingTabColor }};"><i data-lucide="list-checks" style="width:15px;height:15px;"></i>Shopping<sc-if value="{{ hasOpenGroceries }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:4px;right:8px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--cf-terracotta);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;">{{ openGroceriesCount }}</span></sc-if></button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showLibraryPanel }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;align-items:center;gap:8px;background:var(--cf-input-bg);border:1px solid var(--cf-border);border-radius:14px;padding:0 12px;margin-bottom:12px;">
+      <i data-lucide="search" style="width:15px;height:15px;color:var(--cf-muted);flex:0 0 auto;"></i>
+      <input value="{{ query }}" onInput="{{ onQueryInput }}" placeholder="{{ searchPlaceholder }}" style="flex:1;min-width:0;border:0;background:transparent;font-family:inherit;font-size:13px;color:var(--cf-text);padding:11px 0;outline:none;">
+    </div>
+
+    <sc-if value="{{ showFilters }}" hint-placeholder-val="{{ true }}">
+    <div class="cf-hscroll-wrap" style="margin-bottom:14px;">
+    <div class="cf-hscroll" style="display:flex;gap:6px;overflow-x:auto;">
+      <sc-for list="{{ filters }}" as="f" hint-placeholder-count="3">
+        <button type="button" onClick="{{ f.onClick }}" style="white-space:nowrap;padding:7px 13px;border:1px solid {{ f.border }};border-radius:999px;background:{{ f.bg }};color:{{ f.color }};font-family:inherit;font-weight:700;font-size:12.5px;cursor:pointer;">{{ f.label }}</button>
+      </sc-for>
+    </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ showPlanRecipes }}" hint-placeholder-val="{{ false }}">
+      <button type="button" onClick="{{ openNewRecipe }}" style="width:100%;display:flex;align-items:center;gap:10px;min-height:52px;padding:0 14px;margin-bottom:12px;border:1px dashed var(--cf-border-strong);border-radius:14px;background:transparent;cursor:pointer;font-family:inherit;color:var(--cf-text);">
+        <span style="width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:rgba(50,109,54,.12);color:var(--cf-green);flex:0 0 auto;"><i data-lucide="plus" style="width:17px;height:17px;"></i></span>
+        <span style="font-size:13.5px;font-weight:700;">New recipe</span>
+      </button>
+    </sc-if>
+
+    <sc-if value="{{ hasResults }}" hint-placeholder-val="{{ true }}">
+      <div style="background:var(--cf-card);border-radius:16px;box-shadow:0 6px 16px rgba(60,40,20,.08);overflow:hidden;">
+        <sc-for list="{{ results }}" as="item" hint-placeholder-count="6">
+          <div style="display:grid;grid-template-columns:1fr auto;align-items:center;border-top:{{ item.borderTop }};">
+            <button type="button" class="cf-row" onClick="{{ item.onSelect }}" style="min-width:0;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:12px 14px;border:0;background:transparent;cursor:pointer;text-align:left;font-family:inherit;color:var(--cf-text);">
+              <div style="width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-weight:700;font-size:13px;color:{{ item.avatarTextColor }};background:{{ item.avatarBg }};"><sc-if value="{{ item.isRecipe }}" hint-placeholder-val="{{ false }}"><i data-lucide="book-open" style="width:16px;height:16px;"></i></sc-if><sc-if value="{{ item.notRecipe }}" hint-placeholder-val="{{ true }}">{{ item.initial }}</sc-if></div>
+              <div style="min-width:0;display:grid;gap:2px;">
+                <strong style="font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ item.name }}</strong>
+                <small style="font-size:12px;color:var(--cf-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ item.detail }}</small>
+              </div>
+              <div style="text-align:right;"><strong style="display:block;font-size:13px;">{{ item.kcal }}</strong><small style="font-size:11px;color:var(--cf-muted);">{{ item.kcalUnit }}</small></div>
+            </button>
+            <div style="display:flex;align-items:center;padding-right:10px;">
+              <sc-if value="{{ item.isRecipe }}" hint-placeholder-val="{{ false }}">
+                <button type="button" onClick="{{ item.onEdit }}" aria-label="Edit {{ item.name }}" style="width:44px;height:44px;border:0;background:transparent;border-radius:11px;color:var(--cf-icon-muted);display:grid;place-items:center;cursor:pointer;"><i data-lucide="pencil" style="width:16px;height:16px;"></i></button>
+              </sc-if>
+              <sc-if value="{{ item.notRecipe }}" hint-placeholder-val="{{ true }}">
+                <span style="display:grid;place-items:center;width:34px;height:44px;color:var(--cf-icon-muted);"><i data-lucide="chevron-right" style="width:16px;height:16px;"></i></span>
+              </sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;padding:34px 16px;background:var(--cf-card);border-radius:16px;box-shadow:0 6px 16px rgba(60,40,20,.08);">
+        <i data-lucide="{{ emptyIcon }}" style="width:26px;height:26px;color:var(--cf-icon-muted);"></i>
+        <strong style="display:block;font-size:13px;margin:10px 0 4px;">{{ emptyTitle }}</strong>
+        <p style="margin:0 0 14px;font-size:12.5px;color:var(--cf-muted);">{{ emptySubtitle }}</p>
+        <button type="button" onClick="{{ openAddFood }}" style="display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border:0;border-radius:11px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:12.5px;cursor:pointer;"><i data-lucide="plus" style="width:13px;height:13px;"></i>Add food</button>
+      </div>
+    </sc-if>
+    </sc-if>
+
+    <sc-if value="{{ showPlanWeek }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;">
+        <button type="button" onClick="{{ planDayPrev }}" aria-label="Previous day" style="width:44px;height:44px;border-radius:12px;border:1px solid var(--cf-border);background:var(--cf-card);display:grid;place-items:center;cursor:pointer;"><i data-lucide="chevron-left" style="width:16px;height:16px;"></i></button>
+        <button type="button" onClick="{{ openPlanCalendar }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;border-radius:12px;border:1px solid var(--cf-border);background:var(--cf-card);cursor:pointer;font-family:inherit;">
+          <i data-lucide="calendar-days" style="width:15px;height:15px;color:var(--cf-amber);"></i><span style="font-size:13px;font-weight:700;">{{ planDayLabel }}</span>
+        </button>
+        <button type="button" onClick="{{ planDayNext }}" aria-label="Next day" style="width:44px;height:44px;border-radius:12px;border:1px solid var(--cf-border);background:var(--cf-card);display:grid;place-items:center;cursor:pointer;"><i data-lucide="chevron-right" style="width:16px;height:16px;"></i></button>
+      </div>
+
+      <sc-if value="{{ planCalendarOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:fixed;inset:0;background:rgba(30,24,14,.35);z-index:30;" onClick="{{ closePlanCalendar }}"></div>
+        <div style="position:fixed;left:0;right:0;bottom:0;max-height:80vh;overflow-y:auto;background:var(--cf-card);border-radius:20px 20px 0 0;padding:14px 18px 26px;box-shadow:0 -10px 30px rgba(60,40,20,.15);z-index:31;">
+          <div style="width:36px;height:4px;border-radius:3px;background:var(--cf-border-strong);margin:0 auto 16px;"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <button type="button" onClick="{{ monthPrev }}" aria-label="Previous month" style="width:44px;height:44px;border-radius:12px;border:1px solid var(--cf-border);background:var(--cf-input-bg);display:grid;place-items:center;cursor:pointer;"><i data-lucide="chevron-left" style="width:16px;height:16px;"></i></button>
+            <strong style="font-size:14px;">{{ monthLabel }}</strong>
+            <button type="button" onClick="{{ monthNext }}" aria-label="Next month" style="width:44px;height:44px;border-radius:12px;border:1px solid var(--cf-border);background:var(--cf-input-bg);display:grid;place-items:center;cursor:pointer;"><i data-lucide="chevron-right" style="width:16px;height:16px;"></i></button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px;">
+            <sc-for list="{{ weekdayLabels }}" as="w" hint-placeholder-count="7">
+              <div style="text-align:center;font-size:11px;font-weight:800;color:var(--cf-muted);text-transform:uppercase;">{{ w }}</div>
+            </sc-for>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:12px;">
+            <sc-for list="{{ monthCells }}" as="c" hint-placeholder-count="35">
+              <button type="button" onClick="{{ c.onClick }}" disabled="{{ c.disabled }}" style="position:relative;aspect-ratio:1;border:1px solid {{ c.border }};border-radius:11px;background:{{ c.bg }};color:{{ c.color }};font-family:inherit;font-size:13px;font-weight:{{ c.weight }};cursor:{{ c.cursor }};opacity:{{ c.opacity }};visibility:{{ c.visibility }};">
+                {{ c.date }}
+                <sc-if value="{{ c.hasPlan }}" hint-placeholder-val="{{ false }}">
+                  <span style="position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:{{ c.dotColor }};"></span>
+                </sc-if>
+              </button>
+            </sc-for>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;font-size:12px;color:var(--cf-muted);">
+            <span style="display:flex;align-items:center;gap:5px;"><span style="width:4px;height:4px;border-radius:50%;background:var(--cf-green);display:inline-block;"></span>Has planned meals</span>
+            <span>Past days are read-only</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="display:grid;gap:10px;margin-bottom:22px;">
+        <sc-for list="{{ planSlots }}" as="slot" hint-placeholder-count="4">
+          <div style="background:var(--cf-card);border-radius:15px;box-shadow:0 6px 16px rgba(60,40,20,.08);padding:12px 14px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:{{ slot.hasItem }};">
+              <span style="font-size:12.5px;font-weight:800;color:var(--cf-muted-2);text-transform:uppercase;letter-spacing:.06em;">{{ slot.label }}</span>
+              <sc-if value="{{ slot.filledEditable }}" hint-placeholder-val="{{ false }}">
+                <button type="button" onClick="{{ slot.onClear }}" aria-label="Remove" style="width:32px;height:32px;border:0;background:transparent;color:var(--cf-icon-muted);cursor:pointer;display:grid;place-items:center;"><i data-lucide="x" style="width:14px;height:14px;"></i></button>
+              </sc-if>
+            </div>
+            <sc-if value="{{ slot.filled }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                <div style="min-width:0;"><strong style="display:block;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ slot.name }}</strong><small style="font-size:12px;color:var(--cf-muted);">{{ slot.detail }}</small></div>
+                <strong style="font-size:13px;white-space:nowrap;">{{ slot.kcal }}<small style="font-size:11px;font-weight:600;color:var(--cf-muted);"> kcal</small></strong>
+              </div>
+            </sc-if>
+            <sc-if value="{{ slot.emptyEditable }}" hint-placeholder-val="{{ true }}">
+              <button type="button" onClick="{{ slot.onAdd }}" style="width:100%;border:1px dashed var(--cf-border-strong);border-radius:11px;padding:10px;background:transparent;color:var(--cf-muted);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;"><i data-lucide="plus" style="width:13px;height:13px;"></i>Add to plan</button>
+            </sc-if>
+            <sc-if value="{{ slot.emptyReadOnly }}" hint-placeholder-val="{{ false }}">
+              <p style="margin:0;padding:10px 0;text-align:center;font-size:12.5px;color:var(--cf-icon-muted);">Nothing planned</p>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ addSheetOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:fixed;inset:0;background:rgba(30,24,14,.35);z-index:30;" onClick="{{ closeAddSheet }}"></div>
+        <div style="position:fixed;left:0;right:0;bottom:0;max-height:82vh;overflow-y:auto;background:var(--cf-card);border-radius:20px 20px 0 0;padding:14px 18px 26px;box-shadow:0 -10px 30px rgba(60,40,20,.15);z-index:31;">
+          <div style="width:36px;height:4px;border-radius:3px;background:var(--cf-border-strong);margin:0 auto 16px;"></div>
+          <strong style="display:block;font-size:15px;margin-bottom:12px;">Add to {{ addSheetLabel }}</strong>
+          <div style="display:flex;align-items:center;gap:8px;background:var(--cf-input-bg);border:1px solid var(--cf-border);border-radius:14px;padding:0 12px;margin-bottom:12px;">
+            <i data-lucide="search" style="width:15px;height:15px;color:var(--cf-muted);flex:0 0 auto;"></i>
+            <input value="{{ addSheetQuery }}" onInput="{{ onAddSheetQuery }}" placeholder="Search foods and recipes" style="flex:1;min-width:0;border:0;background:transparent;font-family:inherit;font-size:13px;color:var(--cf-text);padding:11px 0;outline:none;">
+          </div>
+          <sc-if value="{{ addSheetHasResults }}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid;">
+              <sc-for list="{{ addSheetResults }}" as="opt" hint-placeholder-count="6">
+                <button type="button" onClick="{{ opt.onClick }}" style="width:100%;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:10px 4px;border:0;border-top:{{ opt.borderTop }};background:transparent;cursor:pointer;text-align:left;font-family:inherit;color:var(--cf-text);">
+                  <div style="width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-weight:700;font-size:13px;color:{{ opt.avatarTextColor }};background:{{ opt.avatarBg }};"><sc-if value="{{ opt.isRecipe }}" hint-placeholder-val="{{ false }}"><i data-lucide="book-open" style="width:14px;height:14px;"></i></sc-if><sc-if value="{{ opt.notRecipe }}" hint-placeholder-val="{{ true }}">{{ opt.initial }}</sc-if></div>
+                  <span style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ opt.name }}</span>
+                  <small style="color:var(--cf-muted);white-space:nowrap;font-size:12.5px;">{{ opt.kcal }} kcal</small>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ addSheetNoResults }}" hint-placeholder-val="{{ false }}">
+            <p style="text-align:center;margin:20px 0;font-size:13px;color:var(--cf-muted);">No matches. Try a different search.</p>
+          </sc-if>
+        </div>
+      </sc-if>
+
+    </sc-if>
+
+    <sc-if value="{{ showPlanShopping }}" hint-placeholder-val="{{ false }}">
+      <div style="background:var(--cf-card);border-radius:16px;box-shadow:0 6px 16px rgba(60,40,20,.08);padding:16px;margin-bottom:20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <strong style="font-size:14px;">Grocery list</strong>
+          <button type="button" onClick="{{ generateGroceries }}" style="border:0;background:transparent;color:var(--cf-green);font-family:inherit;font-weight:700;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:4px;"><i data-lucide="refresh-cw" style="width:12px;height:12px;"></i>Generate from plan</button>
+        </div>
+        <sc-if value="{{ hasGroceries }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;gap:2px;">
+            <sc-for list="{{ groceries }}" as="g" hint-placeholder-count="5">
+              <button type="button" onClick="{{ g.onToggle }}" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 4px;border:0;border-top:{{ g.borderTop }};background:transparent;cursor:pointer;text-align:left;font-family:inherit;">
+                <span style="width:19px;height:19px;border-radius:6px;border:1.5px solid {{ g.checkBorder }};background:{{ g.checkBg }};display:grid;place-items:center;flex:0 0 auto;color:#fff;"><sc-if value="{{ g.checked }}" hint-placeholder-val="{{ false }}"><i data-lucide="check" style="width:12px;height:12px;"></i></sc-if></span>
+                <span style="font-size:13px;text-decoration:{{ g.textDecoration }};color:{{ g.textColor }};">{{ g.name }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ noGroceries }}" hint-placeholder-val="{{ true }}">
+          <p style="margin:0;font-size:12.5px;color:var(--cf-muted);">Generate from your plan, add items yourself, or send ingredients here from Coach.</p>
+        </sc-if>
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <input value="{{ groceryDraft }}" onInput="{{ onGroceryDraftInput }}" onKeyDown="{{ onGroceryDraftKeyDown }}" placeholder="Add an item" style="flex:1;min-width:0;min-height:44px;box-sizing:border-box;border:1px solid var(--cf-border);border-radius:12px;padding:0 12px;font-family:inherit;font-size:13px;color:var(--cf-text);background:var(--cf-input-bg);">
+          <button type="button" onClick="{{ addGroceryItem }}" style="flex:0 0 auto;min-height:44px;padding:0 18px;border:0;border-radius:12px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;">Add</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ recipeEditOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed;inset:0;background:rgba(30,24,14,.35);z-index:30;" onClick="{{ closeRecipeEdit }}"></div>
+      <div style="position:fixed;left:0;right:0;bottom:0;max-height:86vh;overflow-y:auto;background:var(--cf-card);border-radius:20px 20px 0 0;padding:14px 18px 26px;box-shadow:0 -10px 30px rgba(60,40,20,.15);z-index:31;">
+        <div style="width:36px;height:4px;border-radius:3px;background:var(--cf-border-strong);margin:0 auto 12px;"></div>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:16px;">
+          <strong style="font-size:18px;">{{ recipeEditTitle }}</strong>
+          <button type="button" onClick="{{ closeRecipeEdit }}" aria-label="Close" style="width:40px;height:40px;margin:-8px -8px 0 0;border:0;border-radius:12px;background:var(--cf-bg);color:var(--cf-muted-2);display:grid;place-items:center;cursor:pointer;flex:0 0 auto;"><i data-lucide="x" style="width:17px;height:17px;"></i></button>
+        </div>
+
+        <label style="display:grid;gap:6px;margin-bottom:14px;"><span style="font-size:12px;font-weight:800;color:var(--cf-muted-2);">Recipe name</span><input value="{{ recipeEditName }}" onInput="{{ onRecipeEditName }}" placeholder="e.g. Weeknight lentil bowl" style="min-height:48px;box-sizing:border-box;border:1px solid var(--cf-border);border-radius:12px;padding:0 14px;font-family:inherit;font-size:15px;color:var(--cf-text);background:var(--cf-input-bg);"></label>
+
+        <span style="display:block;font-size:12px;font-weight:800;color:var(--cf-muted-2);margin-bottom:6px;">Makes</span>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+          <button type="button" onClick="{{ recipeEditServingsDown }}" aria-label="Fewer servings" style="width:44px;height:44px;border-radius:12px;border:1px solid var(--cf-border);background:var(--cf-input-bg);color:var(--cf-text);font-size:19px;cursor:pointer;flex:0 0 auto;">&minus;</button>
+          <strong style="flex:1;text-align:center;font-size:15px;">{{ recipeEditServingsLabel }}</strong>
+          <button type="button" onClick="{{ recipeEditServingsUp }}" aria-label="More servings" style="width:44px;height:44px;border-radius:12px;border:1px solid var(--cf-border);background:var(--cf-input-bg);color:var(--cf-text);font-size:19px;cursor:pointer;flex:0 0 auto;">+</button>
+        </div>
+
+        <span style="display:block;font-size:12px;font-weight:800;color:var(--cf-muted-2);margin-bottom:6px;">Ingredients</span>
+        <sc-if value="{{ recipeEditHasIngredients }}" hint-placeholder-val="{{ true }}">
+          <div style="border:1px solid var(--cf-border);border-radius:14px;overflow:hidden;margin-bottom:10px;">
+            <sc-for list="{{ recipeEditIngredients }}" as="ing" hint-placeholder-count="4">
+              <div style="display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;padding:11px 12px;border-top:{{ ing.borderTop }};">
+                <span style="font-size:13.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ ing.name }}</span>
+                <small style="font-size:12.5px;color:var(--cf-muted);white-space:nowrap;">{{ ing.amountLabel }} &middot; {{ ing.kcal }} kcal</small>
+                <button type="button" onClick="{{ ing.onRemove }}" aria-label="Remove {{ ing.name }}" style="width:40px;height:40px;margin:-8px -6px;border:0;background:transparent;color:var(--cf-icon-muted);display:grid;place-items:center;cursor:pointer;"><i data-lucide="x" style="width:15px;height:15px;"></i></button>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ recipeEditNoIngredients }}" hint-placeholder-val="{{ false }}">
+          <p style="margin:0 0 10px;font-size:13px;color:var(--cf-muted);">No ingredients yet. Add the first one below.</p>
+        </sc-if>
+
+        <div style="display:grid;grid-template-columns:1fr 78px 78px auto;gap:6px;margin-bottom:18px;">
+          <input value="{{ recipeEditNewName }}" onInput="{{ onRecipeEditNewName }}" placeholder="Ingredient" style="min-width:0;box-sizing:border-box;min-height:44px;border:1px solid var(--cf-border);border-radius:11px;padding:0 12px;font-family:inherit;font-size:13px;color:var(--cf-text);background:var(--cf-input-bg);">
+          <input value="{{ recipeEditNewQty }}" onInput="{{ onRecipeEditNewQty }}" placeholder="g" style="min-width:0;box-sizing:border-box;min-height:44px;border:1px solid var(--cf-border);border-radius:11px;padding:0 10px;font-family:inherit;font-size:13px;text-align:center;color:var(--cf-text);background:var(--cf-input-bg);">
+          <input value="{{ recipeEditNewKcal }}" onInput="{{ onRecipeEditNewKcal }}" placeholder="kcal" style="min-width:0;box-sizing:border-box;min-height:44px;border:1px solid var(--cf-border);border-radius:11px;padding:0 10px;font-family:inherit;font-size:13px;text-align:center;color:var(--cf-text);background:var(--cf-input-bg);">
+          <button type="button" onClick="{{ addRecipeEditIngredient }}" aria-label="Add ingredient" style="width:44px;height:44px;border:0;border-radius:11px;background:rgba(50,109,54,.12);color:var(--cf-green);display:grid;place-items:center;cursor:pointer;flex:0 0 auto;"><i data-lucide="plus" style="width:18px;height:18px;"></i></button>
+        </div>
+
+        <div style="display:flex;align-items:baseline;justify-content:space-between;padding:12px 14px;border-radius:13px;background:var(--cf-bg);margin-bottom:16px;">
+          <span style="font-size:13px;font-weight:700;color:var(--cf-muted-2);">Per serving</span>
+          <strong style="font-size:19px;">{{ recipeEditPerServing }}<small style="font-size:12.5px;font-weight:600;color:var(--cf-muted);"> kcal</small></strong>
+        </div>
+
+        <button type="button" onClick="{{ saveRecipeEdit }}" style="width:100%;min-height:50px;border:0;border-radius:13px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;margin-bottom:8px;">Save recipe</button>
+        <sc-if value="{{ recipeEditCanDelete }}" hint-placeholder-val="{{ false }}">
+          <button type="button" onClick="{{ deleteRecipe }}" style="width:100%;min-height:46px;border:0;background:transparent;color:var(--cf-terracotta);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;">Delete recipe</button>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ recipeLogOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed;inset:0;background:rgba(30,24,14,.35);z-index:30;" onClick="{{ closeRecipeLog }}"></div>
+      <div style="position:fixed;left:0;right:0;bottom:0;max-height:82vh;overflow-y:auto;background:var(--cf-card);border-radius:20px 20px 0 0;padding:14px 18px 26px;box-shadow:0 -10px 30px rgba(60,40,20,.15);z-index:31;">
+        <div style="width:36px;height:4px;border-radius:3px;background:var(--cf-border-strong);margin:0 auto 16px;"></div>
+        <span style="display:block;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--cf-amber);margin-bottom:2px;">Log recipe</span>
+        <strong style="display:block;font-size:16px;margin-bottom:12px;">{{ recipeLogName }}</strong>
+
+        <span style="display:block;font-size:12.5px;font-weight:800;color:var(--cf-muted-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Ingredients ({{ recipeLogIngredientCount }})</span>
+        <div style="background:var(--cf-input-bg);border:1px solid var(--cf-border);border-radius:14px;overflow:hidden;margin-bottom:8px;">
+          <sc-for list="{{ recipeLogIngredients }}" as="ing" hint-placeholder-count="4">
+            <div style="display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:8px;padding:9px 12px;border-top:{{ ing.borderTop }};">
+              <span style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ ing.name }}</span>
+              <div style="display:flex;align-items:center;gap:4px;">
+                <input type="number" value="{{ ing.qty }}" onChange="{{ ing.onQtyChange }}" min="0" step="1" style="width:44px;border:1px solid var(--cf-border);border-radius:8px;background:var(--cf-card);font-family:inherit;font-size:12.5px;color:var(--cf-text);padding:5px 4px;text-align:center;outline:none;">
+                <small style="font-size:12px;color:var(--cf-muted);white-space:nowrap;">{{ ing.unit }}</small>
+              </div>
+              <small style="font-size:12.5px;color:var(--cf-muted);white-space:nowrap;">{{ ing.kcal }} kcal</small>
+              <button type="button" onClick="{{ ing.onRemove }}" aria-label="Remove ingredient" style="width:22px;height:22px;border:0;background:transparent;color:var(--cf-icon-muted);cursor:pointer;display:grid;place-items:center;flex:0 0 auto;"><i data-lucide="x" style="width:13px;height:13px;"></i></button>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:16px;">
+          <input value="{{ recipeLogNewName }}" onInput="{{ onRecipeLogNewName }}" onKeyDown="{{ onRecipeLogNewKeyDown }}" placeholder="Ingredient name" style="flex:1;min-width:0;border:1px solid var(--cf-border);background:var(--cf-input-bg);border-radius:11px;font-family:inherit;font-size:13px;color:var(--cf-text);padding:9px 12px;outline:none;">
+          <input type="number" value="{{ recipeLogNewKcal }}" onInput="{{ onRecipeLogNewKcal }}" onKeyDown="{{ onRecipeLogNewKeyDown }}" placeholder="kcal" style="width:64px;border:1px solid var(--cf-border);background:var(--cf-input-bg);border-radius:11px;font-family:inherit;font-size:13px;color:var(--cf-text);padding:9px 8px;outline:none;">
+          <button type="button" onClick="{{ addRecipeLogItem }}" aria-label="Add ingredient" style="width:38px;height:38px;flex:0 0 auto;border:0;border-radius:11px;background:var(--cf-solid-bg);color:var(--cf-solid-text);display:grid;place-items:center;cursor:pointer;"><i data-lucide="plus" style="width:15px;height:15px;"></i></button>
+        </div>
+
+        <span style="display:block;font-size:12.5px;font-weight:800;color:var(--cf-muted-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Log to</span>
+        <div style="display:flex;gap:6px;margin-bottom:16px;">
+          <sc-for list="{{ recipeLogMeals }}" as="m" hint-placeholder-count="4">
+            <button type="button" onClick="{{ m.onClick }}" style="flex:1;padding:9px 4px;border:1px solid {{ m.border }};border-radius:11px;background:{{ m.bg }};color:{{ m.color }};font-family:inherit;font-weight:700;font-size:12.5px;cursor:pointer;">{{ m.label }}</button>
+          </sc-for>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--cf-input-bg);border:1px solid var(--cf-border);border-radius:14px;padding:10px 14px;margin-bottom:18px;">
+          <span style="font-size:13px;font-weight:700;color:var(--cf-muted-2);">Servings</span>
+          <div style="display:flex;align-items:center;gap:14px;">
+            <button type="button" onClick="{{ bumpServingsDown }}" aria-label="Decrease servings" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--cf-border);background:var(--cf-card);display:grid;place-items:center;cursor:pointer;"><i data-lucide="minus" style="width:13px;height:13px;"></i></button>
+            <strong style="font-size:14px;min-width:14px;text-align:center;">{{ recipeLogServings }}</strong>
+            <button type="button" onClick="{{ bumpServingsUp }}" aria-label="Increase servings" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--cf-border);background:var(--cf-card);display:grid;place-items:center;cursor:pointer;"><i data-lucide="plus" style="width:13px;height:13px;"></i></button>
+          </div>
+        </div>
+
+        <button type="button" onClick="{{ confirmRecipeLog }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border:0;border-radius:13px;background:var(--cf-solid-bg);color:var(--cf-solid-text);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;">
+          Log {{ recipeLogTotal }} kcal to {{ recipeLogMealLabel }}
+        </button>
+      </div>
+    </sc-if>
+
+  </div>
+
+  <div style="position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;pointer-events:none;">
+    <div style="position:relative;width:100%;max-width:clamp(420px, 62vw, 780px);pointer-events:auto;filter:drop-shadow(0 -6px 14px rgba(30,20,10,.14));">
+      <div style="position:absolute;left:50%;top:-30px;transform:translateX(-50%);width:90px;height:46px;background:var(--cf-card);border-radius:56px 56px 0 0;"></div>
+      <div style="position:relative;background:var(--cf-card);display:grid;grid-template-columns:1fr 1fr auto 1fr 1fr;align-items:end;gap:4px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));">
+        <sc-for list="{{ navItemsLeft }}" as="item" hint-placeholder-count="2">
+          <button type="button" class="cf-navbtn" onClick="{{ item.onClick }}" style="display:grid;justify-items:center;gap:3px;padding:6px 2px;background:transparent;border:0;border-radius:10px;cursor:pointer;color:{{ item.color }};font-family:inherit;">
+            <i data-lucide="{{ item.icon }}" style="width:20px;height:20px;"></i>
+            <span style="font-size:11px;font-weight:{{ item.weight }};">{{ item.label }}</span>
+          </button>
+        </sc-for>
+        <button type="button" onClick="{{ openAddFood }}" aria-label="Add food" style="position:relative;top:-22px;justify-self:center;width:56px;height:56px;border-radius:50%;border:0;background:var(--cf-green);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 8px 16px rgba(50,109,54,.35);">
+          <i data-lucide="plus" style="width:28px;height:28px;"></i>
+        </button>
+        <sc-for list="{{ navItemsRight }}" as="item" hint-placeholder-count="2">
+          <button type="button" class="cf-navbtn" onClick="{{ item.onClick }}" style="display:grid;justify-items:center;gap:3px;padding:6px 2px;background:transparent;border:0;border-radius:10px;cursor:pointer;color:{{ item.color }};font-family:inherit;">
+            <i data-lucide="{{ item.icon }}" style="width:20px;height:20px;"></i>
+            <span style="font-size:11px;font-weight:{{ item.weight }};">{{ item.label }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const FOODS = [
+  { name: "Greek yoghurt and berries", detail: "Your custom food", kcal: 278, kcalUnit: "kcal / 100 g", color: "var(--cf-green)" },
+  { name: "Grilled chicken bowl", detail: "Your custom food", kcal: 187, kcalUnit: "kcal / 100 g", color: "var(--cf-orange)" },
+  { name: "Almonds", detail: "Reference food", kcal: 579, kcalUnit: "kcal / 100 g", color: "var(--cf-terracotta)" },
+  { name: "Apple", detail: "Reference food", kcal: 52, kcalUnit: "kcal / 100 g", color: "var(--cf-blue)" },
+  { name: "Protein shake", detail: "Your custom food", kcal: 121, kcalUnit: "kcal / 100 g", color: "var(--cf-amber)" },
+];
+const RECIPES = [
+  { name: "Weeknight lentil bowl", detail: "5 foods · saved recipe", kcal: 640, kcalUnit: "kcal total", ingredients: [
+    { name: "Red lentils", qty: 80, unit: "g", kcalPerUnit: 3.5 },
+    { name: "Basmati rice", qty: 100, unit: "g", kcalPerUnit: 1.3 },
+    { name: "Roasted carrots", qty: 80, unit: "g", kcalPerUnit: 0.75 },
+    { name: "Tahini dressing", qty: 20, unit: "g", kcalPerUnit: 6 },
+    { name: "Parsley", qty: 5, unit: "g", kcalPerUnit: 1 },
+  ] },
+  { name: "Breakfast regulars", detail: "3 foods · saved recipe", kcal: 420, kcalUnit: "kcal total", ingredients: [
+    { name: "Rolled oats", qty: 50, unit: "g", kcalPerUnit: 3.8 },
+    { name: "Greek yoghurt", qty: 150, unit: "g", kcalPerUnit: 0.9 },
+    { name: "Mixed berries", qty: 80, unit: "g", kcalPerUnit: 0.6 },
+  ] },
+];
+const DISCOVER_COLLECTIONS = [
+  { imageId: "discover-collection-protein", title: "High-protein breakfasts", count: "12 recipes", placeholder: "Collection photo", categories: ["breakfast", "protein"] },
+  { imageId: "discover-collection-light", title: "Under 400 kcal dinners", count: "9 recipes", placeholder: "Collection photo", categories: ["dinner", "light"] },
+  { imageId: "discover-collection-snacks", title: "Post-workout snacks", count: "7 foods", placeholder: "Collection photo", categories: ["snacks", "protein"] },
+];
+const DISCOVER_RECIPES = [
+  { imageId: "discover-recipe-salmon", name: "Harissa roasted salmon", detail: "520 kcal · 38g protein", placeholder: "Recipe photo", categories: ["dinner", "protein"], kcal: 520, ingredients: [
+    { name: "Salmon fillet", qty: 150, unit: "g", kcalPerUnit: 2 },
+    { name: "Harissa paste", qty: 15, unit: "g", kcalPerUnit: 2 },
+    { name: "Charred lemon", qty: 1, unit: "wedge", kcalPerUnit: 5 },
+    { name: "Roasted potatoes", qty: 150, unit: "g", kcalPerUnit: 1.2 },
+  ] },
+  { imageId: "discover-recipe-grainbowl", name: "Charred veg grain bowl", detail: "460 kcal · 14g protein", placeholder: "Recipe photo", categories: ["lunch", "light"], kcal: 460, ingredients: [
+    { name: "Farro", qty: 80, unit: "g", kcalPerUnit: 1.5 },
+    { name: "Charred courgette", qty: 100, unit: "g", kcalPerUnit: 0.4 },
+    { name: "Chickpeas", qty: 100, unit: "g", kcalPerUnit: 1.6 },
+    { name: "Lemon herb dressing", qty: 20, unit: "g", kcalPerUnit: 7 },
+  ] },
+  { imageId: "discover-recipe-tofu", name: "Miso glazed tofu", detail: "390 kcal · 22g protein", placeholder: "Recipe photo", categories: ["dinner", "light", "protein"], kcal: 390, ingredients: [
+    { name: "Firm tofu", qty: 150, unit: "g", kcalPerUnit: 0.8 },
+    { name: "Miso glaze", qty: 20, unit: "g", kcalPerUnit: 2.5 },
+    { name: "Steamed rice", qty: 120, unit: "g", kcalPerUnit: 1.3 },
+    { name: "Bok choy", qty: 100, unit: "g", kcalPerUnit: 0.15 },
+  ] },
+  { imageId: "discover-recipe-chicken", name: "Lemon herb chicken", detail: "410 kcal · 36g protein", placeholder: "Recipe photo", categories: ["dinner", "protein"], kcal: 410, ingredients: [
+    { name: "Chicken breast", qty: 150, unit: "g", kcalPerUnit: 1.65 },
+    { name: "Lemon herb marinade", qty: 20, unit: "g", kcalPerUnit: 3 },
+    { name: "Roasted vegetables", qty: 120, unit: "g", kcalPerUnit: 0.8 },
+  ] },
+];
+const DISCOVER_FOODS = [
+  { name: "Cottage cheese", detail: "Trending · high protein", kcal: 98, kcalUnit: "kcal / 100 g", color: "var(--cf-blue)", categories: ["snacks", "protein"] },
+  { name: "Overnight oats", detail: "Trending · make-ahead", kcal: 150, kcalUnit: "kcal / 100 g", color: "var(--cf-orange)", categories: ["breakfast"] },
+  { name: "Air-fried chickpeas", detail: "Trending · high fiber", kcal: 210, kcalUnit: "kcal / 100 g", color: "var(--cf-terracotta)", categories: ["snacks", "light"] },
+];
+const DISCOVER_CATEGORIES = [
+  { key: "all", label: "All" },
+  { key: "breakfast", label: "Breakfast" },
+  { key: "lunch", label: "Lunch" },
+  { key: "dinner", label: "Dinner" },
+  { key: "snacks", label: "Snacks" },
+  { key: "protein", label: "High-protein" },
+  { key: "light", label: "Low-calorie" },
+];
+const TODAY = "Calorie Flow - Today (Mobile).dc.html";
+const COACH = "Calorie Flow - Coach (Mobile).dc.html";
+const PROFILE = "Calorie Flow - Profile (Mobile).dc.html";
+const INSIGHTS = "Calorie Flow - Insights (Mobile).dc.html";
+const ADDFOOD = "Calorie Flow - Add Food (Mobile).dc.html";
+
+const PLAN_MEALS = ["Breakfast", "Lunch", "Dinner", "Snack"];
+
+class Component extends DCLogic {
+  state = {
+    tab: "foods", query: "", filter: "all",
+    recipes: RECIPES.map((r) => ({ ...r, servings: r.servings || 2 })),
+    recipeEditId: undefined, recipeEditName: "", recipeEditServings: 2, recipeEditItems: [],
+    recipeEditNewName: "", recipeEditNewQty: "", recipeEditNewKcal: "",
+    discoverQuery: "", discoverCategory: "all",
+    recipeLogRecipe: null, recipeLogMeal: "Breakfast", recipeLogServings: 1, recipeLogItems: [], recipeLogNewName: "", recipeLogNewKcal: "",
+    planDayOffset: 0, addSheetKey: null, addSheetQuery: "", planCalendarOpen: false, calendarMonthOffset: 0,
+    planEntries: {
+      "-3-Breakfast": { name: "Greek yoghurt and berries", kcal: 278 },
+      "-3-Lunch": { name: "Grilled chicken bowl", kcal: 340 },
+      "-2-Dinner": { name: "Weeknight lentil bowl", kcal: 640 },
+      "-1-Breakfast": { name: "Protein shake", kcal: 121 },
+      "-1-Lunch": { name: "Grilled chicken bowl", kcal: 340 },
+      "0-Breakfast": { name: "Greek yoghurt and berries", kcal: 278 },
+      "1-Lunch": { name: "Weeknight lentil bowl", kcal: 640 },
+      "2-Dinner": { name: "Grilled chicken bowl", kcal: 340 },
+      "4-Breakfast": { name: "Protein shake", kcal: 121 },
+    },
+    groceries: [],
+  };
+  nav = (file) => { window.location.href = encodeURI(file); };
+  componentDidMount() {
+    this.mountIcons();
+    if (typeof window !== "undefined" && window.location.hash === "#plan" && this.state.tab !== "plan") this.setState({ tab: "plan" });
+  }
+  componentDidUpdate() { this.mountIcons(); }
+  mountIcons() { if (window.lucide) window.lucide.createIcons(); }
+  selectFoodsTab = () => this.setState({ tab: "foods", filter: "all", query: "" });
+  selectRecipesTab = () => this.setState({ tab: "recipes", filter: "all", query: "" });
+  selectShoppingTab = () => this.setState({ tab: "shopping" });
+  openNewRecipe = () => this.setState({
+    recipeEditId: "new", recipeEditName: "", recipeEditServings: 2, recipeEditItems: [],
+    recipeEditNewName: "", recipeEditNewQty: "", recipeEditNewKcal: "",
+  });
+  openRecipeEdit = (recipe) => this.setState({
+    recipeEditId: recipe.name, recipeEditName: recipe.name,
+    recipeEditServings: recipe.servings || 2,
+    recipeEditItems: (recipe.ingredients || []).map((ing) => ({ name: ing.name, qty: ing.qty, kcal: Math.round(ing.qty * ing.kcalPerUnit) })),
+    recipeEditNewName: "", recipeEditNewQty: "", recipeEditNewKcal: "",
+  });
+  closeRecipeEdit = () => this.setState({ recipeEditId: undefined });
+  onRecipeEditName = (e) => this.setState({ recipeEditName: e.target.value });
+  bumpRecipeEditServings = (delta) => this.setState((s) => ({ recipeEditServings: Math.max(1, Math.min(12, s.recipeEditServings + delta)) }));
+  onRecipeEditNewName = (e) => this.setState({ recipeEditNewName: e.target.value });
+  onRecipeEditNewQty = (e) => this.setState({ recipeEditNewQty: e.target.value });
+  onRecipeEditNewKcal = (e) => this.setState({ recipeEditNewKcal: e.target.value });
+  addRecipeEditIngredient = () => this.setState((s) => {
+    const name = (s.recipeEditNewName || "").trim();
+    if (!name) return null;
+    return {
+      recipeEditItems: [...s.recipeEditItems, { name, qty: Number(s.recipeEditNewQty) || 0, kcal: Number(s.recipeEditNewKcal) || 0 }],
+      recipeEditNewName: "", recipeEditNewQty: "", recipeEditNewKcal: "",
+    };
+  });
+  removeRecipeEditIngredient = (i) => this.setState((s) => ({ recipeEditItems: s.recipeEditItems.filter((_, idx) => idx !== i) }));
+  saveRecipeEdit = () => this.setState((s) => {
+    const name = (s.recipeEditName || "").trim();
+    if (!name) return { recipeEditId: undefined };
+    const total = s.recipeEditItems.reduce((sum, it) => sum + it.kcal, 0);
+    const record = {
+      name, detail: `${s.recipeEditItems.length} foods \u00b7 saved recipe`, kcal: total, kcalUnit: "kcal total",
+      servings: s.recipeEditServings, isRecipe: true,
+      ingredients: s.recipeEditItems.map((it) => ({ name: it.name, qty: it.qty || 1, unit: "g", kcalPerUnit: it.qty ? it.kcal / it.qty : it.kcal })),
+    };
+    const existing = s.recipes.findIndex((r) => r.name === s.recipeEditId);
+    const recipes = existing >= 0 ? s.recipes.map((r, i) => (i === existing ? record : r)) : [...s.recipes, record];
+    return { recipes, recipeEditId: undefined };
+  });
+  deleteRecipe = () => this.setState((s) => ({ recipes: s.recipes.filter((r) => r.name !== s.recipeEditId), recipeEditId: undefined }));
+  selectDiscoverTab = () => this.setState({ tab: "discover" });
+  onDiscoverQueryInput = (event) => this.setState({ discoverQuery: event.target.value });
+  setDiscoverCategory = (key) => this.setState({ discoverCategory: key });
+  selectPlanTab = () => this.setState({ tab: "plan" });
+  onQueryInput = (event) => this.setState({ query: event.target.value });
+  setFilter = (filter) => this.setState({ filter });
+  openAddFood = () => this.nav(ADDFOOD);
+  planDayPrev = () => this.setState((s) => ({ planDayOffset: s.planDayOffset - 1 }));
+  planDayNext = () => this.setState((s) => ({ planDayOffset: s.planDayOffset + 1 }));
+  openPlanCalendar = () => this.setState({ planCalendarOpen: true, calendarMonthOffset: 0 });
+  closePlanCalendar = () => this.setState({ planCalendarOpen: false });
+  monthPrev = () => this.setState((s) => ({ calendarMonthOffset: s.calendarMonthOffset - 1 }));
+  monthNext = () => this.setState((s) => ({ calendarMonthOffset: s.calendarMonthOffset + 1 }));
+  selectCalendarDay = (offset) => this.setState({ planDayOffset: offset, planCalendarOpen: false });
+  openPicker = (key, label) => this.setState({ addSheetKey: key, addSheetLabel: label, addSheetQuery: "" });
+  closeAddSheet = () => this.setState({ addSheetKey: null, addSheetQuery: "" });
+  onAddSheetQuery = (e) => this.setState({ addSheetQuery: e.target.value });
+  openRecipeLog = (recipe) => this.setState({ recipeLogRecipe: recipe, recipeLogMeal: "Breakfast", recipeLogServings: 1, recipeLogItems: recipe.ingredients.map((ing) => ({ ...ing })), recipeLogNewName: "", recipeLogNewKcal: "" });
+  closeRecipeLog = () => this.setState({ recipeLogRecipe: null });
+  setRecipeLogMeal = (meal) => this.setState({ recipeLogMeal: meal });
+  bumpRecipeServings = (delta) => this.setState((s) => ({ recipeLogServings: Math.max(1, Math.min(6, s.recipeLogServings + delta)) }));
+  onRecipeLogNewName = (e) => this.setState({ recipeLogNewName: e.target.value });
+  onRecipeLogNewKcal = (e) => this.setState({ recipeLogNewKcal: e.target.value });
+  setRecipeLogItemQty = (index, qty) => this.setState((s) => ({
+    recipeLogItems: s.recipeLogItems.map((it, i) => i === index ? { ...it, qty: Math.max(0, qty) } : it),
+  }));
+  addRecipeLogItem = () => this.setState((s) => {
+    const name = s.recipeLogNewName.trim();
+    if (!name) return null;
+    const kcal = parseFloat(s.recipeLogNewKcal) || 0;
+    return { recipeLogItems: [...s.recipeLogItems, { name, qty: 1, unit: "serving", kcalPerUnit: kcal }], recipeLogNewName: "", recipeLogNewKcal: "" };
+  });
+  onRecipeLogNewKeyDown = (e) => { if (e.key === "Enter") this.addRecipeLogItem(); };
+  removeRecipeLogItem = (index) => this.setState((s) => ({ recipeLogItems: s.recipeLogItems.filter((_, i) => i !== index) }));
+  confirmRecipeLog = () => {
+    const s = this.state;
+    const itemsTotal = s.recipeLogItems.reduce((sum, it) => sum + it.qty * it.kcalPerUnit, 0);
+    const total = Math.round(itemsTotal * s.recipeLogServings);
+    const key = "0-" + s.recipeLogMeal;
+    this.setState((prev) => ({
+      planEntries: { ...prev.planEntries, [key]: { name: s.recipeLogRecipe.name, kcal: total } },
+      recipeLogRecipe: null, tab: "plan", planDayOffset: 0,
+    }));
+  };
+  assignPlanSlot = (key, item) => this.setState((s) => ({ planEntries: { ...s.planEntries, [key]: item }, addSheetKey: null, addSheetQuery: "" }));
+  clearPlanSlot = (key) => this.setState((s) => { const entries = { ...s.planEntries }; delete entries[key]; return { planEntries: entries }; });
+  generateGroceries = () => {
+    const names = Object.values(this.state.planEntries).map((e) => e.name);
+    const unique = [...new Set(names)];
+    this.setState({ groceries: unique.map((name) => ({ name, checked: false })) });
+  };
+  onGroceryDraftInput = (e) => this.setState({ groceryDraft: e.target.value });
+  onGroceryDraftKeyDown = (e) => { if (e.key === "Enter") this.addGroceryItem(); };
+  addGroceryItem = () => this.setState((s) => {
+    const name = (s.groceryDraft || "").trim();
+    if (!name) return null;
+    return { groceryDraft: "", groceries: [...s.groceries, { name, checked: false }] };
+  });
+  toggleGrocery = (i) => this.setState((s) => ({ groceries: s.groceries.map((g, idx) => idx === i ? { ...g, checked: !g.checked } : g) }));
+
+  renderVals() {
+    const s = this.state;
+    const q = s.query.trim().toLowerCase();
+    const isFoods = s.tab === "foods";
+    const source = isFoods ? FOODS : s.recipes;
+    const filterOptions = isFoods
+      ? [{ key: "all", label: "All" }, { key: "custom", label: "Your foods" }, { key: "reference", label: "Reference" }]
+      : [{ key: "all", label: "All" }];
+    let filtered = source.filter((f) => f.name.toLowerCase().includes(q));
+    if (isFoods && s.filter === "custom") filtered = filtered.filter((f) => f.detail === "Your custom food");
+    if (isFoods && s.filter === "reference") filtered = filtered.filter((f) => f.detail === "Reference food");
+    const results = filtered.map((item, i) => ({
+      ...item, isRecipe: !isFoods, notRecipe: isFoods, initial: item.name.slice(0, 1).toUpperCase(),
+      avatarBg: isFoods ? item.color : "rgba(176,122,32,.12)", avatarTextColor: isFoods ? "#fff" : "var(--cf-orange)",
+      borderTop: i === 0 ? "0" : "1px solid var(--cf-border)", onSelect: () => isFoods ? this.nav(ADDFOOD) : this.openRecipeLog(item),
+      onEdit: () => this.openRecipeEdit(item),
+    }));
+    const isRecipes = s.tab === "recipes";
+    const isDiscover = false;
+    const isShopping = s.tab === "shopping";
+    const isPlanArea = s.tab === "plan" || isRecipes || isShopping;
+    const isPlan = s.tab === "plan";
+    const recipeEditTotal = s.recipeEditItems.reduce((sum, it) => sum + it.kcal, 0);
+    const openGroceriesCount = s.groceries.filter((g) => !g.checked).length;
+    const today0 = new Date(); today0.setHours(0, 0, 0, 0);
+    const planDate = new Date(today0); planDate.setDate(planDate.getDate() + s.planDayOffset);
+    const planDayLabel = s.planDayOffset === 0 ? "Today" : planDate.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+    const planDayHasMeals = PLAN_MEALS.some((label) => s.planEntries[s.planDayOffset + "-" + label]);
+    const planDayIsPast = s.planDayOffset < 0;
+    const planSlots = PLAN_MEALS.map((label) => {
+      const key = s.planDayOffset + "-" + label;
+      const entry = s.planEntries[key];
+      const filled = !!entry;
+      return {
+        label, filled, empty: !filled, hasItem: filled ? "10px" : "0",
+        emptyEditable: !filled && !planDayIsPast, emptyReadOnly: !filled && planDayIsPast,
+        filledEditable: filled && !planDayIsPast,
+        name: entry?.name, detail: "Planned", kcal: entry?.kcal,
+        onAdd: () => this.openPicker(key, label), onClear: () => this.clearPlanSlot(key),
+      };
+    });
+
+    const addQ = s.addSheetQuery.trim().toLowerCase();
+    const addSheetSource = [
+      ...FOODS.map((f) => ({ name: f.name, kcal: f.kcal, isRecipe: false })),
+      ...RECIPES.map((r) => ({ name: r.name, kcal: r.kcal, isRecipe: true })),
+    ].filter((f) => f.name.toLowerCase().includes(addQ));
+    const addSheetResults = addSheetSource.map((item, i) => ({
+      ...item, notRecipe: !item.isRecipe, initial: item.name.slice(0, 1).toUpperCase(),
+      avatarBg: item.isRecipe ? "rgba(176,122,32,.12)" : "var(--cf-green)", avatarTextColor: item.isRecipe ? "var(--cf-orange)" : "#fff",
+      borderTop: i === 0 ? "0" : "1px solid var(--cf-border)",
+      onClick: () => this.assignPlanSlot(s.addSheetKey, { name: item.name, kcal: item.kcal }),
+    }));
+
+
+    const viewMonth = new Date(today0.getFullYear(), today0.getMonth() + s.calendarMonthOffset, 1);
+    const monthLabel = viewMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    const firstWeekday = (viewMonth.getDay() + 6) % 7; // Monday-first
+    const daysInMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0).getDate();
+    const monthCells = [];
+    for (let i = 0; i < firstWeekday; i++) monthCells.push({ visibility: "hidden", disabled: true, date: "", onClick: () => {} });
+    for (let d = 1; d <= daysInMonth; d++) {
+      const cellDate = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), d);
+      const offset = Math.round((cellDate - today0) / 86400000);
+      const isPast = offset < 0;
+      const isSelected = offset === s.planDayOffset;
+      const isToday = offset === 0;
+      const hasPlan = PLAN_MEALS.some((label) => s.planEntries[offset + "-" + label]);
+      monthCells.push({
+        date: d, visibility: "visible", disabled: false, hasPlan,
+        onClick: () => this.selectCalendarDay(offset),
+        cursor: "pointer",
+        bg: isSelected ? "var(--cf-solid-bg)" : (isToday ? "var(--cf-solid-text)" : "#fff"),
+        color: isSelected ? "var(--cf-solid-text)" : (isPast ? "var(--cf-icon-muted)" : "var(--cf-solid-bg)"),
+        border: isSelected ? "var(--cf-solid-bg)" : "var(--cf-border)",
+        weight: isToday ? 800 : 600,
+        opacity: isPast ? 0.55 : 1,
+        dotColor: isSelected ? "var(--cf-solid-text)" : "var(--cf-green)",
+      });
+    }
+    const dq = s.discoverQuery.trim().toLowerCase();
+    const matchesDiscover = (item, nameKey) => {
+      const matchesQuery = !dq || item[nameKey].toLowerCase().includes(dq);
+      const matchesCategory = s.discoverCategory === "all" || item.categories.includes(s.discoverCategory);
+      return matchesQuery && matchesCategory;
+    };
+    const discoverCollectionsFiltered = DISCOVER_COLLECTIONS.filter((c) => matchesDiscover(c, "title"));
+    const discoverRecipesFiltered = DISCOVER_RECIPES.filter((r) => matchesDiscover(r, "name"));
+    const discoverFoodsFiltered = DISCOVER_FOODS.filter((f) => matchesDiscover(f, "name"));
+
+    const recipeLogRecipe = s.recipeLogRecipe;
+    const recipeLogItemsCalc = s.recipeLogItems.map((it) => ({ ...it, itemKcal: Math.round(it.qty * it.kcalPerUnit) }));
+    const recipeLogBaseTotal = recipeLogItemsCalc.reduce((sum, it) => sum + it.itemKcal, 0);
+    const recipeLogTotal = Math.round(recipeLogBaseTotal * s.recipeLogServings);
+    const recipeLogMeals = PLAN_MEALS.map((label) => ({
+      label, onClick: () => this.setRecipeLogMeal(label),
+      bg: s.recipeLogMeal === label ? "var(--cf-solid-bg)" : "transparent", color: s.recipeLogMeal === label ? "var(--cf-solid-text)" : "var(--cf-muted-2)",
+      border: s.recipeLogMeal === label ? "var(--cf-solid-bg)" : "var(--cf-border)",
+    }));
+    const recipeLogIngredients = recipeLogItemsCalc.map((item, i) => ({
+      name: item.name, qty: item.qty, unit: item.unit, kcal: item.itemKcal,
+      borderTop: i === 0 ? "0" : "1px solid var(--cf-border)",
+      onQtyChange: (e) => this.setRecipeLogItemQty(i, parseFloat(e.target.value)),
+      onRemove: () => this.removeRecipeLogItem(i),
+    }));
+
+    const groceries = s.groceries.map((g, i) => ({
+      ...g, onToggle: () => this.toggleGrocery(i), borderTop: i === 0 ? "0" : "1px solid var(--cf-border)",
+      checkBg: g.checked ? "var(--cf-green)" : "transparent", checkBorder: g.checked ? "var(--cf-green)" : "#d9cca8",
+      textDecoration: g.checked ? "line-through" : "none", textColor: g.checked ? "var(--cf-muted)" : "var(--cf-solid-bg)",
+    }));
+    return {
+      pageEyebrow: isPlanArea ? "Plan" : "Library",
+      pageTitle: isShopping ? "Shopping list" : isRecipes ? "Your recipes" : isPlan ? "Plan your week" : "Your foods",
+      showLibraryPanel: isFoods || isRecipes, showPlanNav: isPlanArea,
+      showPlanWeek: isPlan, showPlanShopping: isShopping, showPlanRecipes: isRecipes,
+      showPlanPanel: isPlan, showDiscoverPanel: false,
+      selectShoppingTab: this.selectShoppingTab, openNewRecipe: this.openNewRecipe,
+      weekTabBg: isPlan ? "var(--cf-solid-bg)" : "transparent", weekTabColor: isPlan ? "var(--cf-solid-text)" : "var(--cf-muted-2)",
+      shoppingTabBg: isShopping ? "var(--cf-solid-bg)" : "transparent", shoppingTabColor: isShopping ? "var(--cf-solid-text)" : "var(--cf-muted-2)",
+      hasOpenGroceries: openGroceriesCount > 0, openGroceriesCount,
+      recipeEditOpen: !!s.recipeEditId,
+      recipeEditTitle: s.recipeEditId === "new" ? "New recipe" : "Edit recipe",
+      recipeEditCanDelete: !!s.recipeEditId && s.recipeEditId !== "new",
+      recipeEditName: s.recipeEditName, onRecipeEditName: this.onRecipeEditName,
+      recipeEditServingsLabel: `${s.recipeEditServings} ${s.recipeEditServings === 1 ? "serving" : "servings"}`,
+      recipeEditServingsUp: () => this.bumpRecipeEditServings(1), recipeEditServingsDown: () => this.bumpRecipeEditServings(-1),
+      recipeEditIngredients: s.recipeEditItems.map((it, i) => ({
+        ...it, borderTop: i === 0 ? "0" : "1px solid var(--cf-border)",
+        amountLabel: it.qty ? `${it.qty} g` : "to taste",
+        onRemove: () => this.removeRecipeEditIngredient(i),
+      })),
+      recipeEditHasIngredients: s.recipeEditItems.length > 0, recipeEditNoIngredients: s.recipeEditItems.length === 0,
+      recipeEditNewName: s.recipeEditNewName, onRecipeEditNewName: this.onRecipeEditNewName,
+      recipeEditNewQty: s.recipeEditNewQty, onRecipeEditNewQty: this.onRecipeEditNewQty,
+      recipeEditNewKcal: s.recipeEditNewKcal, onRecipeEditNewKcal: this.onRecipeEditNewKcal,
+      addRecipeEditIngredient: this.addRecipeEditIngredient,
+      recipeEditPerServing: Math.round(recipeEditTotal / Math.max(1, s.recipeEditServings)),
+      saveRecipeEdit: this.saveRecipeEdit, deleteRecipe: this.deleteRecipe, closeRecipeEdit: this.closeRecipeEdit,
+      discoverQuery: s.discoverQuery, onDiscoverQueryInput: this.onDiscoverQueryInput,
+      discoverCategories: DISCOVER_CATEGORIES.map((c) => ({ ...c, onClick: () => this.setDiscoverCategory(c.key), bg: s.discoverCategory === c.key ? "var(--cf-solid-bg)" : "transparent", color: s.discoverCategory === c.key ? "var(--cf-solid-text)" : "var(--cf-muted-2)", border: s.discoverCategory === c.key ? "var(--cf-solid-bg)" : "var(--cf-border)" })),
+      discoverCollections: discoverCollectionsFiltered.map((c) => ({ ...c, onClick: () => this.selectRecipesTab() })),
+      discoverRecipes: discoverRecipesFiltered.map((r) => ({ ...r, onClick: () => this.openRecipeLog(r) })),
+      discoverFoods: discoverFoodsFiltered.map((item, i) => ({ ...item, initial: item.name.slice(0, 1).toUpperCase(), borderTop: i === 0 ? "0" : "1px solid var(--cf-border)", onSelect: () => this.nav(ADDFOOD) })),
+      hasDiscoverCollections: discoverCollectionsFiltered.length > 0,
+      hasDiscoverRecipes: discoverRecipesFiltered.length > 0,
+      hasDiscoverFoods: discoverFoodsFiltered.length > 0,
+      discoverNoResults: discoverCollectionsFiltered.length === 0 && discoverRecipesFiltered.length === 0 && discoverFoodsFiltered.length === 0,
+      selectDiscoverTab: this.selectDiscoverTab,
+      discoverTabBg: isDiscover ? "var(--cf-solid-bg)" : "transparent", discoverTabColor: isDiscover ? "var(--cf-solid-text)" : "var(--cf-muted-2)",
+      planDayLabel, planDayPrev: this.planDayPrev, planDayNext: this.planDayNext,
+      openPlanCalendar: this.openPlanCalendar, closePlanCalendar: this.closePlanCalendar, planCalendarOpen: s.planCalendarOpen,
+      monthPrev: this.monthPrev, monthNext: this.monthNext, monthLabel,
+      weekdayLabels: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"], monthCells,
+      planSlots, groceries, hasGroceries: groceries.length > 0, noGroceries: groceries.length === 0,
+      groceryDraft: s.groceryDraft || "", onGroceryDraftInput: this.onGroceryDraftInput,
+      onGroceryDraftKeyDown: this.onGroceryDraftKeyDown, addGroceryItem: this.addGroceryItem,
+      addSheetOpen: !!s.addSheetKey, closeAddSheet: this.closeAddSheet, addSheetLabel: s.addSheetLabel,
+      addSheetQuery: s.addSheetQuery, onAddSheetQuery: this.onAddSheetQuery,
+      addSheetResults, addSheetHasResults: addSheetResults.length > 0, addSheetNoResults: addSheetResults.length === 0,
+      generateGroceries: this.generateGroceries,
+      recipeLogOpen: !!s.recipeLogRecipe, closeRecipeLog: this.closeRecipeLog,
+      recipeLogName: recipeLogRecipe?.name, recipeLogIngredients, recipeLogIngredientCount: recipeLogIngredients.length,
+      recipeLogNewName: s.recipeLogNewName, onRecipeLogNewName: this.onRecipeLogNewName,
+      recipeLogNewKcal: s.recipeLogNewKcal, onRecipeLogNewKcal: this.onRecipeLogNewKcal,
+      addRecipeLogItem: this.addRecipeLogItem, onRecipeLogNewKeyDown: this.onRecipeLogNewKeyDown,
+      recipeLogMeals, recipeLogServings: s.recipeLogServings,
+      bumpServingsDown: () => this.bumpRecipeServings(-1), bumpServingsUp: () => this.bumpRecipeServings(1),
+      recipeLogTotal, recipeLogMealLabel: s.recipeLogMeal, confirmRecipeLog: this.confirmRecipeLog,      selectFoodsTab: this.selectFoodsTab, selectRecipesTab: this.selectRecipesTab, selectPlanTab: this.selectPlanTab,
+      foodsTabBg: isFoods ? "var(--cf-solid-bg)" : "transparent", foodsTabColor: isFoods ? "var(--cf-solid-text)" : "var(--cf-muted-2)",
+      recipesTabBg: isRecipes ? "var(--cf-solid-bg)" : "transparent", recipesTabColor: isRecipes ? "var(--cf-solid-text)" : "var(--cf-muted-2)",
+      planTabBg: isPlan ? "var(--cf-solid-bg)" : "transparent", planTabColor: isPlan ? "var(--cf-solid-text)" : "var(--cf-muted-2)",
+      query: s.query, onQueryInput: this.onQueryInput, searchPlaceholder: isFoods ? "Search your foods" : "Search your recipes",
+      filters: filterOptions.map((f) => ({ ...f, onClick: () => this.setFilter(f.key), bg: s.filter === f.key ? "var(--cf-solid-bg)" : "transparent", color: s.filter === f.key ? "var(--cf-solid-text)" : "var(--cf-muted-2)", border: s.filter === f.key ? "var(--cf-solid-bg)" : "var(--cf-border)" })),
+      showFilters: filterOptions.length > 1,
+      hasResults: results.length > 0, noResults: results.length === 0, results,
+      emptyIcon: isFoods ? "apple" : "book-open",
+      emptyTitle: isFoods ? "No foods yet" : "No recipes yet",
+      emptySubtitle: isFoods ? "Foods you log or add get saved here." : "Combine logged meals into a recipe from Today.",
+      openAddFood: this.openAddFood,
+      navItemsLeft: [
+        { icon: "sun", label: "Today", color: "var(--cf-muted)", weight: 600, onClick: () => this.nav(TODAY) },
+        { icon: "calendar-range", label: "Plan", color: isPlan ? "var(--cf-green)" : "var(--cf-muted)", weight: isPlan ? 800 : 600, onClick: this.selectPlanTab },
+      ],
+      navItemsRight: [
+        { icon: "trending-up", label: "Insights", color: "var(--cf-muted)", weight: 600, onClick: () => this.nav(INSIGHTS) },
+        { icon: "user-round", label: "Profile", color: "var(--cf-muted)", weight: 600, onClick: () => this.nav(PROFILE) },
+      ],
+    };
+  }
+}
+
+</script>
+</body>
+</html>
