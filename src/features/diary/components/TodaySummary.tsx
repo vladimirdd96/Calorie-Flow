@@ -74,7 +74,7 @@ function WeightPanel({ profile, onSave, onOpenWeight }: { profile: Profile; onSa
   </div>;
 }
 
-function NutritionExpanded({ total, targets }: { total: Nutrition; targets: DailyTargets }) {
+function NutritionExpanded({ total, targets, hideCalories }: { total: Nutrition; targets: DailyTargets; hideCalories: boolean }) {
   const [microsOpen, setMicrosOpen] = useState(false);
   const macroCalories = total.protein * 4 + total.carbs * 4 + total.fat * 9;
   const shares = {
@@ -84,13 +84,18 @@ function NutritionExpanded({ total, targets }: { total: Nutrition; targets: Dail
   };
   const micros = total.micronutrients;
   const availableMicros = micros ? microLabels.map((item) => ({ ...item, value: micros[item.key] })) : [];
+  const contextMetrics: Array<{ label: string; value: number; unit: string; target?: number; color: string }> = [
+    ...(!hideCalories ? [{ label: "Calories", value: total.calories, target: targets.calories, unit: "kcal", color: "var(--mint)" }] : []),
+    { label: "Fibre", value: total.fiber, target: targets.fiber, unit: "g", color: "var(--blue)" },
+    { label: "Sugar", value: total.sugar, unit: "g", color: "var(--carbs)" },
+    { label: "Saturated fat", value: micros?.saturatedFatG ?? 0, unit: "g", color: "var(--fat)" },
+  ];
   return <div className="today-nutrition-expanded">
     <div className="macro-share" aria-label={`${shares.protein}% protein, ${shares.carbs}% carbs, ${shares.fat}% fat`}><i className="protein" style={{ width: `${shares.protein}%` }} /><i className="carbs" style={{ width: `${shares.carbs}%` }} /><i className="fat" style={{ width: `${shares.fat}%` }} /></div>
     <div className="macro-share-labels" style={{ gridTemplateColumns: `${shares.protein}fr ${shares.carbs}fr ${shares.fat}fr` }}><span>{shares.protein}% protein</span><span>{shares.carbs}% carbs</span><span>{shares.fat}% fat</span></div>
     <div className="expanded-targets">
-      {([["Protein", total.protein, targets.protein, "var(--protein)"], ["Carbs", total.carbs, targets.carbs, "var(--carbs)"], ["Fat", total.fat, targets.fat, "var(--fat)"]] as const).map(([label, value, target, color]) => <div key={label} style={{ "--macro-color": color } as CSSProperties}><div className="expanded-target-heading"><span>{label}</span><strong>{round(value)} g <small>of {target} g target</small></strong></div><div className="expanded-target-bar"><i /><span><b style={{ width: `${Math.min(100, value / Math.max(1, target) * 100)}%` }} /></span></div></div>)}
+      {contextMetrics.map(({ label, value, target, unit, color }) => <div key={label} style={{ "--macro-color": color } as CSSProperties}><div className="expanded-target-heading"><span>{label}</span><strong>{round(value)} {unit} <small>{target === undefined ? "tracked today" : `of ${target} ${unit} target`}</small></strong></div><div className="expanded-target-bar"><i />{target === undefined ? <span className="is-untracked">No daily target</span> : <span><b style={{ width: `${Math.min(100, value / Math.max(1, target) * 100)}%` }} /></span>}</div></div>)}
     </div>
-    <div className="supporting-nutrition"><span className="supporting-nutrition-label">Other nutrition</span><div className="nutrition-chip-row"><span className="blue">Fibre {round(total.fiber)} / {targets.fiber} g target</span><span className="amber">Sugar {round(total.sugar)} g eaten</span><span className="green">{Math.max(0, Math.round(targets.calories - total.calories))} kcal left</span></div></div>
     <button type="button" className="micros-toggle" aria-expanded={microsOpen} onClick={() => setMicrosOpen((open) => !open)}>Micronutrients ({availableMicros.length})<ChevronDown size={13} /></button>
     {microsOpen && <div className="micro-chip-groups">{(["mineral", "vitamin"] as const).map((group) => <section key={group}><span>{group === "mineral" ? "Minerals & other" : "Vitamins"}</span><div>{availableMicros.filter((item) => item.group === group).map((item) => <span className={item.value === 0 ? "zero" : ""} key={item.key}><strong>{round(item.value, 2)}</strong>{item.unit} {item.label}</span>)}</div></section>)}</div>}
   </div>;
@@ -117,7 +122,7 @@ export function TodaySummary({ profile, meals, total, targets, onSaveProfile, on
     </div>
     <div className="today-nutrition-divider" />
     <button type="button" className="today-nutrition-toggle" aria-expanded={nutritionOpen} onClick={() => setNutritionOpen((open) => !open)}>Full nutrition details<ChevronDown size={14} /></button>
-    {nutritionOpen && <NutritionExpanded total={total} targets={targets} />}
+    {nutritionOpen && <NutritionExpanded total={total} targets={targets} hideCalories={profile.hideCalories} />}
   </section>;
 }
 

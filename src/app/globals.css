@@ -1551,14 +1551,8 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 .expanded-target-bar { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 10px; }
 .expanded-target-bar > i { width: 9px; height: 9px; background: var(--macro-color); border-radius: 50%; }
 .expanded-target-bar > span { height: 6px; overflow: hidden; background: var(--track); border-radius: 4px; }
+.expanded-target-bar > span.is-untracked { display: flex; align-items: center; padding-left: 8px; color: var(--muted-2); background: transparent; border: 1px dashed var(--border-strong); font-size: 10px; font-weight: 600; }
 .expanded-target-bar b { display: block; height: 100%; background: var(--macro-color); border-radius: inherit; }
-.supporting-nutrition { margin-top: 16px; }
-.supporting-nutrition-label { display: block; margin-bottom: 7px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
-.nutrition-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-.nutrition-chip-row span { flex: 1 1 90px; padding: 8px; border-radius: 10px; font-size: 12px; font-weight: 700; text-align: center; }
-.nutrition-chip-row .blue { color: var(--blue); background: color-mix(in oklch, var(--blue) 10%, transparent); }
-.nutrition-chip-row .amber { color: var(--carbs); background: color-mix(in oklch, var(--carbs) 10%, transparent); }
-.nutrition-chip-row .green { color: var(--mint); background: color-mix(in oklch, var(--mint) 10%, transparent); }
 .micros-toggle { width: 100%; margin-top: 14px; padding-top: 9px; color: var(--muted-2); border-top: 1px dashed var(--border-strong); font-size: 12px; }
 .micro-chip-groups { display: grid; gap: 14px; margin-top: 12px; }
 .micro-chip-groups section > span { display: block; margin-bottom: 7px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
