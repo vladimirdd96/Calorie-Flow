@@ -1543,6 +1543,15 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 .macro-share .fat { background: var(--fat); }
 .macro-share-labels { display: grid; margin-top: 6px; color: var(--muted-2); font-size: 11px; font-weight: 700; }
 .macro-share-labels span { min-width: max-content; text-align: center; }
+.expanded-targets { display: grid; gap: 10px; margin-top: 16px; }
+.expanded-targets > div { display: grid; gap: 5px; }
+.expanded-target-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; color: var(--text); font-size: 12.5px; font-weight: 700; }
+.expanded-target-heading strong { white-space: nowrap; }
+.expanded-target-heading small { color: var(--muted-2); font-size: 11px; font-weight: 600; }
+.expanded-target-bar { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 10px; }
+.expanded-target-bar > i { width: 9px; height: 9px; background: var(--macro-color); border-radius: 50%; }
+.expanded-target-bar > span { height: 6px; overflow: hidden; background: var(--track); border-radius: 4px; }
+.expanded-target-bar b { display: block; height: 100%; background: var(--macro-color); border-radius: inherit; }
 .supporting-nutrition { margin-top: 16px; }
 .supporting-nutrition-label { display: block; margin-bottom: 7px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
 .nutrition-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
