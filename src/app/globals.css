@@ -147,6 +147,11 @@ p { color: var(--muted); line-height: 1.55; }
 .icon-button { width: 44px; height: 44px; display: grid; place-items: center; padding: 0; border-radius: 13px; border: 1px solid var(--border); background: var(--panel-soft); }
 .icon-button svg { width: 19px; }
 .icon-button.ghost { background: transparent; border-color: transparent; }
+/* Configurable-feature shortcut: leads the top-right cluster on any card, or floats alone in an empty corner. See docs/ui-patterns.md. */
+.config-shortcut { width: 34px; height: 34px; display: grid; place-items: center; padding: 0; color: var(--muted-2); background: transparent; border: 1px solid transparent; border-radius: 10px; opacity: .65; flex-shrink: 0; }
+.config-shortcut svg { width: 16px; height: 16px; }
+.config-shortcut:hover { color: var(--text); background: var(--panel-strong); opacity: 1; }
+.config-shortcut:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; opacity: 1; }
 .danger-hover:hover { color: var(--red); background: rgba(255,124,131,.08); }
 .hero-grid { display: grid; gap: 14px; }
 .hero-card { padding: 18px; display: grid; place-items: center; }
@@ -1495,6 +1500,8 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 .today-coach-button { width: 44px; height: 44px; flex: 0 0 auto; display: grid; place-items: center; padding: 0; color: var(--blue); background: var(--panel); border: 1px solid var(--border); border-radius: 12px; }
 .today-coach-button svg { width: 18px; }
 .today-hero { position: relative; margin-bottom: 16px; padding: clamp(18px, 4vw, 26px) clamp(14px, 4vw, 22px) 20px; border: 0; border-radius: 16px; box-shadow: 0 10px 24px color-mix(in oklch, var(--text) 12%, transparent); }
+.today-hero > .config-shortcut { position: absolute; top: 14px; right: 14px; }
+.today-hero:hover > .config-shortcut, .today-hero:focus-within > .config-shortcut { opacity: 1; }
 .today-hero-toggles { display: flex; align-items: stretch; justify-content: space-around; gap: 8px; margin-bottom: 16px; }
 .today-hero-toggles:empty { display: none; }
 .today-hero-toggles button { min-height: 36px; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 0 12px; border: 1.5px solid currentColor; border-radius: 9px; background: transparent; font-size: 12.5px; font-weight: 700; white-space: nowrap; }
