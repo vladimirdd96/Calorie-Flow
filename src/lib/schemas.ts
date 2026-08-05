@@ -139,6 +139,7 @@ export const profileSchema = z.object({
   carbDisplay: z.enum(["total", "net"]).optional(),
   waterTargetMl: z.number().finite().int().min(250).max(20_000).optional(),
   waterEntries: z.array(waterEntrySchema).max(10_000).optional(),
+  glassSizeMl: z.union([z.literal(150), z.literal(200), z.literal(250), z.literal(300), z.literal(350), z.literal(500)]).optional(),
   enabledHabitFeatures: z.array(z.enum(["water", "fasting"])).max(2).refine((features) => new Set(features).size === features.length, "Habit features must not repeat").optional(),
   planEnabled: z.boolean().optional(),
   fastingGoalHours: z.union([z.literal(12), z.literal(14), z.literal(16), z.literal(18), z.literal(24), z.literal(36), z.literal(48)]).optional(),

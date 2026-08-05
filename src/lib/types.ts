@@ -117,6 +117,8 @@ export const fastingLateMealBehaviors = { ask: "ask", new: "new", previous: "pre
 export type FastingLateMealBehavior = typeof fastingLateMealBehaviors[keyof typeof fastingLateMealBehaviors];
 export const recipeCookViews = { scroll: "scroll", step: "step" } as const;
 export type RecipeCookView = typeof recipeCookViews[keyof typeof recipeCookViews];
+export const glassSizesMl = [150, 200, 250, 300, 350, 500] as const;
+export type GlassSizeMl = typeof glassSizesMl[number];
 export const defaultNutritionTargets = { sugar: 50, saturatedFat: 20, sodiumMg: 2300, potassiumMg: 3500 } as const;
 export type NutritionTargetKey = "sugarTarget" | "saturatedFatTarget" | "sodiumTarget" | "potassiumTarget";
 
@@ -160,6 +162,7 @@ export type Profile = {
   carbDisplay?: "total" | "net";
   waterTargetMl?: number;
   waterEntries?: WaterEntry[];
+  glassSizeMl?: GlassSizeMl;
   enabledHabitFeatures?: HabitFeature[];
   planEnabled?: boolean;
   fastingGoalHours?: FastingGoalHours;

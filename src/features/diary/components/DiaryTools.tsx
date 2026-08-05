@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, ChevronDown, Check, Droplets, ImagePlus, Info, Plus, Share2, Sparkles, Timer, X } from "lucide-react";
+import { BookOpen, ChevronDown, Check, Droplets, ImagePlus, Info, Pencil, Plus, Share2, Sparkles, Timer, X } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { ThemedSelect } from "@/features/shared/ThemedSelect";
 import { DatePickerField } from "@/features/shared/DatePicker";
@@ -10,7 +10,7 @@ import { hydrationTotal, setWaterAmount } from "@/lib/hydration";
 import { localDateKey, round, sumNutrition } from "@/lib/nutrition";
 import { getSupabase } from "@/lib/supabase";
 import type { Food, Meal, MealType, Profile, Recipe, RecipeIngredient } from "@/lib/types";
-import { fastingGoalHours, habitFeatures } from "@/lib/types";
+import { fastingGoalHours, glassSizesMl, habitFeatures } from "@/lib/types";
 import { recipeIngredientNutrition, recipeLogId } from "@/features/recipes/recipeLogging";
 import { AddFoodSheet } from "@/features/food-capture/FoodCapture";
 import { mealLabels, ProgressRing } from "./DiaryPrimitives";
@@ -127,13 +127,20 @@ export function MealAddRow({ mealType, meals, onAdd, onSaveRecipe }: { mealType:
 }
 
 function WaterTracker({ profile, dateKey, onSave }: { profile: Profile; dateKey: string; onSave: (profile: Profile) => void }) {
+  const [editingSize, setEditingSize] = useState(false);
   const total = hydrationTotal(profile.waterEntries, dateKey);
   const target = profile.waterTargetMl || 2000;
+  const glassSize = profile.glassSizeMl || 250;
   const setTotal = (amountMl: number) => onSave({ ...profile, waterEntries: setWaterAmount(profile.waterEntries, dateKey, amountMl) });
+  const setGlassSize = (size: typeof glassSizesMl[number]) => { onSave({ ...profile, glassSizeMl: size }); setEditingSize(false); };
   return <section className="water-tracker rhythm-card card" aria-labelledby="water-heading">
     <header className="rhythm-card-heading"><span className="rhythm-icon water"><Droplets size={18} /></span><div><span className="eyebrow">Hydration</span><h2 id="water-heading">Water</h2></div><strong>{total.toLocaleString()}<small> / {target.toLocaleString()} ml</small></strong></header>
     <div className="habit-progress" role="progressbar" aria-label="Water logged today" aria-valuemin={0} aria-valuemax={target} aria-valuenow={total}><i style={{ width: `${Math.min(100, total / target * 100)}%` }} /></div>
-    <div className="water-actions"><button type="button" className="icon-button subtle-button" onClick={() => setTotal(Math.max(0, total - 250))} aria-label="Remove 250 millilitres of water">−</button><button type="button" className="primary-button" onClick={() => setTotal(total + 250)}><Droplets size={16} />Add 250 ml</button><button type="button" className="secondary-button" onClick={() => setTotal(total + 500)}>+500 ml</button></div>
+    <div className="water-actions"><button type="button" className="icon-button subtle-button" onClick={() => setTotal(Math.max(0, total - glassSize))} aria-label={`Remove one glass (${glassSize} millilitres) of water`}>−</button><button type="button" className="primary-button" onClick={() => setTotal(total + glassSize)}><Droplets size={16} />+1 glass</button><button type="button" className="secondary-button" onClick={() => setTotal(total + glassSize * 2)}>+2 glasses</button></div>
+    <div className="water-glass-size">
+      <button type="button" className="text-button muted glass-size-toggle" aria-expanded={editingSize} onClick={() => setEditingSize((current) => !current)}>{glassSize} ml glass<Pencil size={12} /></button>
+      {editingSize && <div className="segmented glass-size-options" role="group" aria-label="Glass size">{glassSizesMl.map((size) => <button key={size} type="button" aria-pressed={glassSize === size} className={glassSize === size ? "active" : ""} onClick={() => setGlassSize(size)}>{size} ml</button>)}</div>}
+    </div>
   </section>;
 }
 
