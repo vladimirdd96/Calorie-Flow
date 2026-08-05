@@ -36,7 +36,6 @@ const mealLabels: Record<MealType, string> = {
 };
 
 const fastingDateTime = (value: string) => new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-const fastingTime = (value: string) => new Date(value).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 const fastingDateTimeInput = (value?: string) => {
   if (!value) return "";
   const date = new Date(value);
@@ -49,6 +48,14 @@ function startOfWeek(date: Date) {
   const day = result.getDay() || 7;
   result.setDate(result.getDate() - day + 1);
   return result;
+}
+
+function validWeightEntries(entries: Profile["weightEntries"]): WeightEntry[] {
+  return (Array.isArray(entries) ? entries : []).filter((entry): entry is WeightEntry => typeof entry?.date === "string" && Number.isFinite(entry.weightKg));
+}
+
+function validFastingRecords(records: Profile["fastingRecords"]): FastingRecord[] {
+  return (Array.isArray(records) ? records : []).filter((record): record is FastingRecord => typeof record?.id === "string" && typeof record.startedAt === "string" && (record.endedAt === undefined || typeof record.endedAt === "string"));
 }
 
 export function InsightsView({ meals, profile, onSave, weightTrackingEnabled, initialSection }: { meals: Meal[]; profile: Profile; onSave: (profile: Profile) => void; weightTrackingEnabled: boolean; initialSection?: InsightsSection }) {
@@ -73,7 +80,7 @@ export function InsightsView({ meals, profile, onSave, weightTrackingEnabled, in
   const waterTarget = profile.waterTargetMl || 2000;
   const waterDays = recentLogDates().filter((date) => hydrationTotal(profile.waterEntries, date) >= waterTarget * .8).length;
   const MAX_PLAUSIBLE_FASTING_HOURS = 48;
-  const fastingRecords = uniqueFastingRecords(profile.fastingRecords);
+  const fastingRecords = uniqueFastingRecords(validFastingRecords(profile.fastingRecords));
   const completedFasts = fastingRecords.filter((record) => record.endedAt && fastingWindowHours(record.startedAt, record.endedAt) >= (profile.fastingGoalHours || 16) && fastingWindowHours(record.startedAt, record.endedAt) <= MAX_PLAUSIBLE_FASTING_HOURS).length;
   const fastingGoal = profile.fastingGoalHours || 16;
   const activeFasting = activeFast(fastingRecords);
@@ -96,7 +103,7 @@ export function InsightsView({ meals, profile, onSave, weightTrackingEnabled, in
   const activeSection: InsightsSection = (section === "weight" && !weightTrackingEnabled) || (section === "fasting" && !fastingEnabled) ? "overview" : section;
   const [editingFastingId, setEditingFastingId] = useState<string>();
   const [fastingDraft, setFastingDraft] = useState<{ startedAt: string; endedAt: string }>({ startedAt: "", endedAt: "" });
-  const entries = [...(profile.weightEntries || [])].sort((a, b) => b.date.localeCompare(a.date));
+  const entries = validWeightEntries(profile.weightEntries).sort((a, b) => b.date.localeCompare(a.date));
   const latestWeight = entries[0]?.weightKg ?? profile.weightKg;
   const measurementSystem = measurementSystemFor(profile);
   const [weightDate, setWeightDate] = useState(localDateKey());

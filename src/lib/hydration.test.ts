@@ -11,4 +11,9 @@ describe("hydration", () => {
     expect(setWaterAmount(entries, "2026-07-20", 900)).toEqual([{ date: "2026-07-20", amountMl: 900 }]);
     expect(setWaterAmount(entries, "2026-07-20", 0)).toEqual([]);
   });
+
+  it("treats malformed legacy stored entries as empty", () => {
+    expect(hydrationTotal({} as never, "2026-07-20")).toBe(0);
+    expect(setWaterAmount({} as never, "2026-07-20", 900)).toEqual([{ date: "2026-07-20", amountMl: 900 }]);
+  });
 });

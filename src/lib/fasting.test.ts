@@ -16,6 +16,10 @@ describe("fasting", () => {
     expect(uniqueFastingRecords([duplicate, duplicate])).toEqual([duplicate]);
   });
 
+  it("treats malformed legacy fasting records as empty", () => {
+    expect(uniqueFastingRecords({} as never)).toEqual([]);
+  });
+
   it("limits progress to a completed target", () => {
     expect(fastingProgress("2026-07-21T18:00:00.000Z", "2026-07-22T06:00:00.000Z", 16)).toBe(.75);
     expect(fastingProgress("2026-07-21T18:00:00.000Z", "2026-07-22T18:00:00.000Z", 16)).toBe(1);

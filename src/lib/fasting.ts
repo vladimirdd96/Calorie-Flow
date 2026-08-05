@@ -3,7 +3,7 @@ import type { FastingLateMealBehavior, FastingRecord, Meal, Profile } from "./ty
 export const DEFAULT_FASTING_WINDOW_MINUTES = 30;
 
 export function uniqueFastingRecords(records: FastingRecord[] | undefined) {
-  return [...new Map((records || []).map((record) => [record.id, record])).values()];
+  return [...new Map((Array.isArray(records) ? records : []).map((record) => [record.id, record])).values()];
 }
 
 export function activeFast(records: FastingRecord[] | undefined) {

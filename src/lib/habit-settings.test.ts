@@ -7,6 +7,10 @@ describe("habit visibility settings", () => {
     expect(isHabitFeatureEnabled(undefined, "fasting")).toBe(false);
   });
 
+  it("does not throw for a malformed legacy preference", () => {
+    expect(isHabitFeatureEnabled("water" as never, "water")).toBe(false);
+  });
+
   it("toggles only the requested habit without changing the other preference", () => {
     const withoutWater = toggleHabitFeature(["water", "fasting"], "water");
     expect(withoutWater).toEqual(["fasting"]);

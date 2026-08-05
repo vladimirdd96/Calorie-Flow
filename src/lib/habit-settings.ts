@@ -2,7 +2,7 @@ import { allHabitFeatures, defaultHabitFeatures, type HabitFeature } from "./typ
 
 /** Optional habits are off until the user enables them in Customize. */
 export function isHabitFeatureEnabled(enabledFeatures: HabitFeature[] | undefined, feature: HabitFeature) {
-  return enabledFeatures?.includes(feature) ?? false;
+  return Array.isArray(enabledFeatures) && enabledFeatures.includes(feature);
 }
 
 export function toggleHabitFeature(enabledFeatures: HabitFeature[] | undefined, feature: HabitFeature): HabitFeature[] {
