@@ -7,6 +7,7 @@ Apply these rules to every task, regardless of size.
 1. Run `npm run docs:list` and read only documentation whose `read_when` hints match the task.
 2. Preserve Calorie Flow's local-first behavior. Cloud sync and AI features must remain optional.
 3. Keep browser-safe configuration separate from server-side secrets; never expose a secret through `NEXT_PUBLIC_*`.
+4. When fixing a bug, audit every other screen, entry point, and shared component/state path that could exhibit the same behavior. Reproduce or inspect each relevant location and fix all affected instances before handoff; do not limit the fix to the screen named in the report.
 
 ## Commits and checks
 
