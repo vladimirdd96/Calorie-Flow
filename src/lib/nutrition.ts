@@ -1,4 +1,4 @@
-import type { ActivityLevel, DailyTargets, DietPreset, Food, MealType, Micronutrients, Nutrition, Profile, ServingUnit, Weekday } from "./types";
+import { defaultNutritionTargets, type ActivityLevel, type DailyTargets, type DietPreset, type Food, type MealType, type Micronutrients, type Nutrition, type Profile, type ServingUnit, type Weekday } from "./types";
 
 export const EMPTY_NUTRITION: Nutrition = {
   calories: 0,
@@ -30,6 +30,16 @@ export function round(value: number, digits = 1) {
 
 export function netCarbs(nutrition: Pick<Nutrition, "carbs" | "fiber">) {
   return Math.max(0, round(nutrition.carbs - nutrition.fiber));
+}
+
+export function normalizeNutritionTargets(profile: Profile): Profile {
+  return {
+    ...profile,
+    sugarTarget: profile.sugarTarget ?? defaultNutritionTargets.sugar,
+    saturatedFatTarget: profile.saturatedFatTarget ?? defaultNutritionTargets.saturatedFat,
+    sodiumTarget: profile.sodiumTarget ?? defaultNutritionTargets.sodiumMg,
+    potassiumTarget: profile.potassiumTarget ?? defaultNutritionTargets.potassiumMg,
+  };
 }
 
 const weekdays: Weekday[] = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];

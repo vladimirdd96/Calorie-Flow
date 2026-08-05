@@ -1551,7 +1551,6 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 .expanded-target-bar { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 10px; }
 .expanded-target-bar > i { width: 9px; height: 9px; background: var(--macro-color); border-radius: 50%; }
 .expanded-target-bar > span { height: 6px; overflow: hidden; background: var(--track); border-radius: 4px; }
-.expanded-target-bar > span.is-untracked { display: flex; align-items: center; padding-left: 8px; color: var(--muted-2); background: transparent; border: 1px dashed var(--border-strong); font-size: 10px; font-weight: 600; }
 .expanded-target-bar b { display: block; height: 100%; background: var(--macro-color); border-radius: inherit; }
 .micros-toggle { width: 100%; margin-top: 14px; padding-top: 9px; color: var(--muted-2); border-top: 1px dashed var(--border-strong); font-size: 12px; }
 .micro-chip-groups { display: grid; gap: 14px; margin-top: 12px; }
@@ -1782,6 +1781,19 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 .onboarding-macro-edit { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .onboarding-macro-edit label { min-width: 0; font-size: 11px; }
 .onboarding-macro-edit input { min-width: 0; min-height: 38px; padding: 0 8px; border-radius: 9px; }
+.nutrition-goals-advanced { margin-top: 14px; border-top: 1px solid var(--border); }
+.nutrition-goals-advanced summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 2px 2px; color: var(--text); cursor: pointer; list-style: none; }
+.nutrition-goals-advanced summary::-webkit-details-marker { display: none; }
+.nutrition-goals-advanced summary > span { display: grid; gap: 3px; text-align: left; }
+.nutrition-goals-advanced summary strong { font-size: 13px; }
+.nutrition-goals-advanced summary small { color: var(--muted); font-size: 11px; font-weight: 500; line-height: 1.35; }
+.nutrition-goals-advanced summary > svg { flex: 0 0 auto; color: var(--muted-2); transition: transform .18s ease; }
+.nutrition-goals-advanced[open] summary > svg { transform: rotate(90deg); }
+.nutrition-goal-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+.nutrition-goal-fields label { display: grid; gap: 5px; min-width: 0; color: var(--muted-2); font-size: 11px; font-weight: 800; }
+.nutrition-goal-fields label > span { display: grid; gap: 2px; }
+.nutrition-goal-fields label > span small { color: var(--muted); font-size: 10px; font-weight: 500; line-height: 1.25; }
+.nutrition-goal-fields .input-suffix input { min-height: 42px; }
 .onboarding-actions { position: sticky; bottom: 0; z-index: 2; display: flex; gap: 10px; padding: 0 0 max(4px, env(safe-area-inset-bottom)); background: var(--bg); }
 .onboarding-actions .secondary-button { min-height: 50px; flex: 0 0 auto; padding: 0 20px; color: var(--muted-2); background: transparent; border: 1px solid var(--border); border-radius: 14px; font-size: 13px; }
 .onboarding-actions .primary-button { min-height: 50px; flex: 1; color: var(--bg); background: var(--text); border-radius: 14px; font-size: 14px; }

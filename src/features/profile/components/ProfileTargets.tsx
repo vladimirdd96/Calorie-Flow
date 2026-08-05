@@ -7,6 +7,7 @@ import { NumericInput } from "@/features/shared/NumericInput";
 import { calculateCalories, calculateMacroTargets } from "@/lib/nutrition";
 import type { ActivityLevel, DietPreset, GoalMode, Profile, Sex } from "@/lib/types";
 import { measurementSystems } from "@/lib/types";
+import { NutritionGoalFields } from "./NutritionGoalFields";
 
 const kgToLb = (kg: number) => kg * 2.2046226218; const lbToKg = (lb: number) => lb / 2.2046226218; const cmToIn = (cm: number) => cm / 2.54; const inToCm = (inches: number) => inches * 2.54;
 const measurementSystemFor = (profile: Profile) => profile.measurementSystem || measurementSystems.metric;
@@ -96,6 +97,10 @@ export function TargetEditor({ profile, onSave, onCancel, onboarding = false }: 
             <div className="onboarding-target-heading"><span><Flame size={17} /></span><div><small>Starting target</small><strong>{calculatedCalories.toLocaleString()} <em>kcal</em></strong></div></div>
             {editingPreset ? <div className="onboarding-macro-edit">{(["proteinTarget", "carbsTarget", "fatTarget"] as const).map((key) => <label key={key}><span>{key === "proteinTarget" ? "Protein" : key === "carbsTarget" ? "Carbs" : "Fat"} g</span><NumericInput required min="0" inputMode="decimal" value={draft[key]} onChange={(event) => updateMacro(key, event.target.value)} /></label>)}</div> : <div className="onboarding-macros"><span><Drumstick />P <strong>{calculatedMacros.protein} g</strong></span><span><Wheat />C <strong>{calculatedMacros.carbs} g</strong></span><span><Droplet />F <strong>{calculatedMacros.fat} g</strong></span></div>}
           </div>
+          <details className="nutrition-goals-advanced">
+            <summary><span><strong>More nutrition goals</strong><small>Optional guides for sugar, saturated fat, sodium and potassium.</small></span><ChevronRight size={16} /></summary>
+            <NutritionGoalFields profile={draft} onChange={(key, value) => update(key, value)} />
+          </details>
         </>}
       </section>
       <footer className="onboarding-actions">
@@ -123,6 +128,10 @@ export function TargetEditor({ profile, onSave, onCancel, onboarding = false }: 
         {!draft.hideCalories && <div><span>Starting target</span><strong>{calculatedCalories.toLocaleString()} <small>kcal</small></strong></div>}
         {editingPreset ? <div className="macro-edit-grid"><label><span>Protein</span><div className="input-suffix"><NumericInput required min="0" inputMode="decimal" value={draft.proteinTarget} onChange={(event) => updateMacro("proteinTarget", event.target.value)} /><span>g</span></div></label><label><span>Carbs</span><div className="input-suffix"><NumericInput required min="0" inputMode="decimal" value={draft.carbsTarget} onChange={(event) => updateMacro("carbsTarget", event.target.value)} /><span>g</span></div></label><label><span>Fat</span><div className="input-suffix"><NumericInput required min="0" inputMode="decimal" value={draft.fatTarget} onChange={(event) => updateMacro("fatTarget", event.target.value)} /><span>g</span></div></label></div> : <div className="target-macros"><span>P <strong>{calculatedMacros.protein} g</strong></span><span>C <strong>{calculatedMacros.carbs} g</strong></span><span>F <strong>{calculatedMacros.fat} g</strong></span></div>}
       </div>
+      <details className="nutrition-goals-advanced">
+        <summary><span><strong>More nutrition goals</strong><small>Set daily guides for sugar, saturated fat, sodium and potassium.</small></span><ChevronRight size={16} /></summary>
+        <NutritionGoalFields profile={draft} onChange={(key, value) => update(key, value)} />
+      </details>
       <div className="target-editor-actions"><button className="secondary-button" type="button" onClick={onCancel}>Cancel</button><button className="primary-button" type="submit">Save adjustments<ChevronRight size={18} /></button></div>
       <p className="form-footnote">Calculated with Mifflin–St Jeor. Treat the result as a starting estimate and adjust from your weight trend.</p>
     </form>

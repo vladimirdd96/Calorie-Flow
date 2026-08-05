@@ -30,6 +30,7 @@ function accountDisplayName(user: CloudUser | null) {
 }
 
 import { TargetEditor } from "./components/ProfileTargets";
+import { NutritionGoalFields } from "./components/NutritionGoalFields";
 import { useModalFocus } from "./hooks/useDisclosure";
 
 import { ProfileCustomize } from "./components/ProfileCustomize";
@@ -43,13 +44,17 @@ function ProfileLinkRow({ icon, tone, title, detail, onClick }: { icon: React.Re
 }
 
 function DailyTargetsSheet({ profile, onSave, onClose }: { profile: Profile; onSave: (profile: Profile) => void; onClose: () => void }) {
-  const [draft, setDraft] = useState({ calories: profile.calorieTarget, protein: profile.proteinTarget, carbs: profile.carbsTarget, fat: profile.fatTarget });
-  const update = (key: keyof typeof draft, value: string) => setDraft((current) => ({ ...current, [key]: Math.max(0, Number(value)) }));
-  const macroCalories = Math.round(draft.protein * 4 + draft.carbs * 4 + draft.fat * 9);
-  return <form className="profile-compact-sheet" onSubmit={(event) => { event.preventDefault(); onSave({ ...profile, calorieTarget: draft.calories, proteinTarget: draft.protein, carbsTarget: draft.carbs, fatTarget: draft.fat }); onClose(); }}>
+  const [draft, setDraft] = useState(profile);
+  const update = <K extends keyof Profile>(key: K, value: Profile[K]) => setDraft((current) => ({ ...current, [key]: value }));
+  const macroCalories = Math.round(draft.proteinTarget * 4 + draft.carbsTarget * 4 + draft.fatTarget * 9);
+  return <form className="profile-compact-sheet" onSubmit={(event) => { event.preventDefault(); onSave(draft); onClose(); }}>
     <div className="compact-sheet-header"><h2>Daily targets</h2><button type="button" className="icon-button ghost" aria-label="Close" onClick={onClose}><X size={17} /></button></div>
-    <div className="profile-target-fields">{(["calories", "protein", "carbs", "fat"] as const).map((key) => <label key={key} className={key}><span>{key === "calories" ? "Calories" : `${key[0].toUpperCase()}${key.slice(1)} (g)`}</span><NumericInput min="0" value={draft[key]} onChange={(event) => update(key, event.target.value)} /></label>)}</div>
-    <p>Macros add up to <strong>{macroCalories} kcal</strong> against a {draft.calories} kcal target.</p>
+    <div className="profile-target-fields">{(["calorieTarget", "proteinTarget", "carbsTarget", "fatTarget"] as const).map((key) => <label key={key} className={key}><span>{key === "calorieTarget" ? "Calories" : `${key.replace("Target", "")[0].toUpperCase()}${key.replace("Target", "").slice(1)} (g)`}</span><NumericInput min="0" value={draft[key]} onChange={(event) => update(key, Math.max(0, Number(event.target.value)))} /></label>)}</div>
+    <p>Macros add up to <strong>{macroCalories} kcal</strong> against a {draft.calorieTarget} kcal target.</p>
+    <details className="nutrition-goals-advanced">
+      <summary><span><strong>More nutrition goals</strong><small>Sugar, saturated fat, sodium and potassium.</small></span><ChevronRight size={16} /></summary>
+      <NutritionGoalFields profile={draft} onChange={(key, value) => update(key, value)} />
+    </details>
     <button className="primary-button full" type="submit">Save targets</button>
   </form>;
 }

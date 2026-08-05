@@ -115,6 +115,8 @@ export const fastingTrackingModes = { standard: "standard", precise: "precise" }
 export type FastingTrackingMode = typeof fastingTrackingModes[keyof typeof fastingTrackingModes];
 export const fastingLateMealBehaviors = { ask: "ask", new: "new", previous: "previous" } as const;
 export type FastingLateMealBehavior = typeof fastingLateMealBehaviors[keyof typeof fastingLateMealBehaviors];
+export const defaultNutritionTargets = { sugar: 50, saturatedFat: 20, sodiumMg: 2300, potassiumMg: 3500 } as const;
+export type NutritionTargetKey = "sugarTarget" | "saturatedFatTarget" | "sodiumTarget" | "potassiumTarget";
 
 export type DailyTargets = {
   calories: number;
@@ -141,6 +143,10 @@ export type Profile = {
   carbsTarget: number;
   fatTarget: number;
   fiberTarget: number;
+  sugarTarget: number;
+  saturatedFatTarget: number;
+  sodiumTarget: number;
+  potassiumTarget: number;
   hideCalories: boolean;
   showEstimatedBadges?: boolean;
   onboardingDone: boolean;

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { CoachChat, CoachMealAction, CoachMealChoice, CoachMessage, DailyTargets, DiaryShare, FastingRecord, Food, LabelAnalysis, Meal, MealPhotoAnalysis, MealPlanEntry, Nutrition, Profile, PublicRecipe, Recipe, WaterEntry, WeightEntry } from "./types";
+import { defaultNutritionTargets, type CoachChat, type CoachMealAction, type CoachMealChoice, type CoachMessage, type DailyTargets, type DiaryShare, type FastingRecord, type Food, type LabelAnalysis, type Meal, type MealPhotoAnalysis, type MealPlanEntry, type Nutrition, type Profile, type PublicRecipe, type Recipe, type WaterEntry, type WeightEntry } from "./types";
 
 const dietaryTagSchema = z.enum(["vegetarian", "vegan", "glutenFree", "dairyFree", "pescatarian", "keto", "paleo"]);
 
@@ -123,6 +123,10 @@ export const profileSchema = z.object({
   carbsTarget: finiteNonNegative.max(2_000),
   fatTarget: finiteNonNegative.max(2_000),
   fiberTarget: finiteNonNegative.max(2_000),
+  sugarTarget: finiteNonNegative.max(2_000).default(defaultNutritionTargets.sugar),
+  saturatedFatTarget: finiteNonNegative.max(2_000).default(defaultNutritionTargets.saturatedFat),
+  sodiumTarget: finiteNonNegative.max(20_000).default(defaultNutritionTargets.sodiumMg),
+  potassiumTarget: finiteNonNegative.max(20_000).default(defaultNutritionTargets.potassiumMg),
   hideCalories: z.boolean(),
   showEstimatedBadges: z.boolean().optional(),
   onboardingDone: z.boolean(),

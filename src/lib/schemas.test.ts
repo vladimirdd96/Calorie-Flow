@@ -103,6 +103,14 @@ describe("external data schemas", () => {
     expect(() => profileSchema.parse({ ...profile, enabledHabitFeatures: ["water", "water"] })).toThrow("Habit features must not repeat");
   });
 
+  it("fills nutrition-goal defaults for legacy profiles", () => {
+    const parsed = profileSchema.parse({
+      name: "Legacy profile", sex: "male", age: 30, heightCm: 180, weightKg: 80, activity: "moderate", goalMode: "maintain", dietPreset: "balanced",
+      calorieTarget: 2500, proteinTarget: 150, carbsTarget: 300, fatTarget: 70, fiberTarget: 30, hideCalories: false, onboardingDone: true,
+    });
+    expect(parsed).toMatchObject({ sugarTarget: 50, saturatedFatTarget: 20, sodiumTarget: 2300, potassiumTarget: 3500 });
+  });
+
   it("only accepts a shared diary after it has a recipient", () => {
     const invitation = {
       id: "d4b47f94-9137-49aa-b5d4-e681bb1c3e17",

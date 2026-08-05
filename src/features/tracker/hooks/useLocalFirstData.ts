@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { deleteCloudMeal, getCloudSnapshot, mergeSnapshots, pushCloudSnapshot, upsertCloudProfile } from "@/lib/cloud";
 import { getAll, getLocalSnapshot, getSetting, initializeFoods, replaceLocalSnapshot, setSetting } from "@/lib/db";
 import { syncAutomaticFasting } from "@/lib/fasting";
+import { normalizeNutritionTargets } from "@/lib/nutrition";
 import { getSupabase, type CloudUser } from "@/lib/supabase";
 import type { Food, Meal, Profile } from "@/lib/types";
 import { defaultHabitFeatures } from "@/lib/types";
@@ -16,7 +17,7 @@ type ChatTextSize = typeof chatTextSizes[keyof typeof chatTextSizes];
 const THEME_SETTING = "appearance:theme";
 const CHAT_TEXT_SIZE_SETTING = "appearance:chat-text-size";
 const HOME_SCREEN_PROMPT_SETTING = "homeScreenPromptCompleted";
-const DEFAULT_PROFILE: Profile = { name: "", sex: "male", age: 30, heightCm: 180, weightKg: 80, activity: "moderate", goalMode: "maintain", dietPreset: "balanced", calorieTarget: 2750, proteinTarget: 145, carbsTarget: 375, fatTarget: 70, fiberTarget: 30, hideCalories: false, onboardingDone: false, weightEntries: [], waterEntries: [], waterTargetMl: 2000, enabledHabitFeatures: [...defaultHabitFeatures], planEnabled: true, fastingGoalHours: 16, fastingRecords: [] };
+const DEFAULT_PROFILE: Profile = { name: "", sex: "male", age: 30, heightCm: 180, weightKg: 80, activity: "moderate", goalMode: "maintain", dietPreset: "balanced", calorieTarget: 2750, proteinTarget: 145, carbsTarget: 375, fatTarget: 70, fiberTarget: 30, sugarTarget: 50, saturatedFatTarget: 20, sodiumTarget: 2300, potassiumTarget: 3500, hideCalories: false, onboardingDone: false, weightEntries: [], waterEntries: [], waterTargetMl: 2000, enabledHabitFeatures: [...defaultHabitFeatures], planEnabled: true, fastingGoalHours: 16, fastingRecords: [] };
 const isThemeMode = (value: unknown): value is ThemeMode => value === themeModes.light || value === themeModes.dark;
 const isChatTextSize = (value: unknown): value is ChatTextSize => value === chatTextSizes.compact || value === chatTextSizes.comfortable || value === chatTextSizes.large;
 const isStandaloneDisplay = () => window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
@@ -61,7 +62,7 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
   const refresh = useCallback(async () => {
     await initializeFoods();
     const [storedProfile, storedFoods, storedMeals] = await Promise.all([getSetting<Profile>("profile"), getAll<Food>("foods"), getAll<Meal>("meals")]);
-    setProfile(storedProfile || DEFAULT_PROFILE); setFoods(storedFoods); setMeals(storedMeals); setStartupError(""); setReady(true);
+    setProfile(storedProfile ? normalizeNutritionTargets(storedProfile) : DEFAULT_PROFILE); setFoods(storedFoods); setMeals(storedMeals); setStartupError(""); setReady(true);
   }, []);
   useEffect(() => {
     // IndexedDB is our external store; hydrate it once when the client mounts.
@@ -169,6 +170,8 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
         next = mergeSnapshots(local, remote);
         shouldPush = true;
       }
+
+      if (next.profile) next.profile = normalizeNutritionTargets(next.profile);
 
       const accountName = accountDisplayName(user);
       if (accountName && !next.profile?.name.trim()) {
@@ -286,7 +289,7 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
       });
   };
   const saveProfile = async (next: Profile, announce = true) => {
-    const synchronized = syncAutomaticFasting(next, meals);
+    const synchronized = syncAutomaticFasting(normalizeNutritionTargets(next), meals);
     setProfile(synchronized); await setSetting("profile", synchronized); if (announce) setToast("Profile saved");
     syncWrite((userId) => upsertCloudProfile(userId, synchronized));
   };

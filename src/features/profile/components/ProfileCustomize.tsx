@@ -1,10 +1,12 @@
 "use client";
 
-import { CalendarRange, Droplet, EyeOff, Moon, Scale, Sparkles, Sun, Timer, Wheat } from "lucide-react";
+import { CalendarRange, ChevronRight, Droplet, EyeOff, Moon, Scale, Sparkles, Sun, Timer, Wheat } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { isHabitFeatureEnabled, toggleHabitFeature } from "@/lib/habit-settings";
 import type { DailyTargets, MealType, Profile, Weekday } from "@/lib/types";
 import { fastingLateMealBehaviors, fastingTrackingModes, habitFeatures, measurementSystems, weightTrackingStatuses } from "@/lib/types";
+import type { NutritionTargetKey } from "@/lib/types";
+import { NutritionGoalFields } from "./NutritionGoalFields";
 
 type ThemeMode = "light" | "dark";
 type ChatTextSize = "compact" | "comfortable" | "large";
@@ -56,6 +58,7 @@ export function ProfileCustomize({ profile, onSave, theme, onThemeChange, chatTe
   const dayTargets = profile.dailyTargets || {};
   const maxDayCalories = Math.max(profile.calorieTarget, ...Object.values(dayTargets).map((target) => target?.calories || 0));
   const mealTargets = profile.mealCalorieTargets || {};
+  const saveNutritionGoal = (key: NutritionTargetKey, value: number) => onSave({ ...profile, [key]: value });
 
   return <div className="profile-customize">
     <h2 className="profile-section-label">What you see</h2>
@@ -81,6 +84,12 @@ export function ProfileCustomize({ profile, onSave, theme, onThemeChange, chatTe
       <label className="profile-simple-toggle"><span><strong>Precise timing</strong><small>Use exact log times instead of rounding to the hour</small></span><input className="profile-switch" type="checkbox" checked={preciseTiming} onChange={() => onSave({ ...profile, fastingTrackingMode: preciseTiming ? fastingTrackingModes.standard : fastingTrackingModes.precise })} /></label>
       <label className="profile-simple-toggle"><span><strong>Late entries end a fast</strong><small>A meal logged after midnight closes the current fast</small></span><input className="profile-switch" type="checkbox" checked={lateEntriesEndFast} onChange={() => onSave({ ...profile, fastingLateMealBehavior: lateEntriesEndFast ? fastingLateMealBehaviors.ask : fastingLateMealBehaviors.new })} /></label>
     </section>}
+
+    <h2 className="profile-section-label">Additional nutrition goals</h2>
+    <details className="profile-settings-card nutrition-goals-advanced">
+      <summary><span><strong>Set nutrient guides</strong><small>Sugar, saturated fat, sodium and potassium</small></span><ChevronRight size={16} /></summary>
+      <NutritionGoalFields profile={profile} onChange={saveNutritionGoal} />
+    </details>
 
     <h2 className="profile-section-label">Targets by day</h2>
     <section className="profile-settings-card">
