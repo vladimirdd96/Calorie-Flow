@@ -38,6 +38,7 @@ export function TodayView({
   onOpenInsights,
   onSaveProfile,
   onSaveRecipe,
+  onOpenTargets,
 }: {
   profile: Profile;
   foods: Food[];
@@ -59,6 +60,7 @@ export function TodayView({
   onOpenInsights: (section?: InsightsSection) => void;
   onSaveProfile: (profile: Profile) => void;
   onSaveRecipe: (recipe: Recipe, components: Meal[]) => Promise<void>;
+  onOpenTargets: () => void;
 }) {
   const [recipeDraftMeals, setRecipeDraftMeals] = useState<Meal[]>();
   const [dropTarget, setDropTarget] = useState<string>();
@@ -150,7 +152,7 @@ export function TodayView({
 
       {showHomeScreenPrompt && <HomeScreenPrompt onDismiss={onDismissHomeScreenPrompt} />}
 
-      <TodaySummary profile={profile} meals={meals} total={total} targets={targets} onSaveProfile={onSaveProfile} onOpenWeight={() => onOpenInsights("weight")} onOpenFasting={() => onOpenInsights("fasting")} />
+      <TodaySummary profile={profile} meals={meals} total={total} targets={targets} onSaveProfile={onSaveProfile} onOpenWeight={() => onOpenInsights("weight")} onOpenFasting={() => onOpenInsights("fasting")} onOpenTargets={onOpenTargets} />
       {isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.water) && <TodayWater profile={profile} dateKey={dateKey} onSave={onSaveProfile} />}
 
       <section className="log-section">
