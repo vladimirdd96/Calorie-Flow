@@ -1,4 +1,4 @@
-import { defaultNutritionTargets, type ActivityLevel, type DailyTargets, type DietPreset, type Food, type MealType, type Micronutrients, type Nutrition, type Profile, type ServingUnit, type Weekday } from "./types";
+import { defaultNutritionTargets, goalPaces, type ActivityLevel, type DailyTargets, type DietPreset, type Food, type GoalPace, type MacroPresetOverride, type MealTimeBoundaries, type MealType, type Micronutrients, type Nutrition, type Profile, type ServingUnit, type WeekStartDay, type Weekday } from "./types";
 
 export const EMPTY_NUTRITION: Nutrition = {
   calories: 0,
@@ -79,15 +79,15 @@ export function sumNutrition(items: Nutrition[]): Nutrition {
   return items.some((item) => item.micronutrients) ? { ...total, micronutrients, micronutrientsIncomplete } : total;
 }
 
-export function scaleNutrition(per100: Nutrition, grams: number): Nutrition {
+export function scaleNutrition(per100: Nutrition, grams: number, macroDigits = 1): Nutrition {
   const ratio = Math.max(0, grams) / 100;
   const scaled: Nutrition = {
     calories: round(per100.calories * ratio, 0),
-    protein: round(per100.protein * ratio),
-    carbs: round(per100.carbs * ratio),
-    fat: round(per100.fat * ratio),
-    fiber: round(per100.fiber * ratio),
-    sugar: round(per100.sugar * ratio),
+    protein: round(per100.protein * ratio, macroDigits),
+    carbs: round(per100.carbs * ratio, macroDigits),
+    fat: round(per100.fat * ratio, macroDigits),
+    fiber: round(per100.fiber * ratio, macroDigits),
+    sugar: round(per100.sugar * ratio, macroDigits),
   };
   if (per100.micronutrients) {
     scaled.micronutrients = Object.fromEntries(Object.keys(per100.micronutrients).map((key) => [key, round(per100.micronutrients![key as keyof Micronutrients] * ratio, 2)])) as Micronutrients;
@@ -96,12 +96,12 @@ export function scaleNutrition(per100: Nutrition, grams: number): Nutrition {
 }
 
 /** Inverse of scaleNutrition: nutrition known for `grams` grams, expressed per 100 g. */
-export function nutritionPer100Grams(nutrition: Nutrition, grams: number): Nutrition {
+export function nutritionPer100Grams(nutrition: Nutrition, grams: number, macroDigits = 1): Nutrition {
   if (!(grams > 0)) return nutrition;
-  return scaleNutrition(nutrition, 10_000 / grams);
+  return scaleNutrition(nutrition, 10_000 / grams, macroDigits);
 }
 
-export function gramsFor(food: Food, amount: number, unit: ServingUnit): number {
+export function gramsFor(food: Food, amount: number, unit: ServingUnit, overrides?: { tbspGrams?: number; tspGrams?: number }): number {
   const safeAmount = Math.max(0, amount || 0);
   const unitWeights: Record<ServingUnit, number> = {
     serving: food.servingGrams || 100,
@@ -109,8 +109,8 @@ export function gramsFor(food: Food, amount: number, unit: ServingUnit): number 
     "100g": 100,
     package: food.packageGrams || food.servingGrams || 100,
     piece: food.pieceGrams || food.servingGrams || 100,
-    tbsp: 15,
-    tsp: 5,
+    tbsp: overrides?.tbspGrams ?? 15,
+    tsp: overrides?.tspGrams ?? 5,
     ml: 1,
   };
   return round(safeAmount * unitWeights[unit]);
@@ -130,15 +130,31 @@ export function contextualUnits(food: Food): ServingUnit[] {
   return [...new Set(units)];
 }
 
-export function calculateCalories(profile: Pick<Profile, "sex" | "age" | "heightCm" | "weightKg" | "activity" | "goalMode">) {
+const goalPaceDeltas: Record<GoalPace, { lose: number; gain: number }> = {
+  conservative: { lose: -250, gain: 150 },
+  moderate: { lose: -450, gain: 250 },
+  aggressive: { lose: -650, gain: 350 },
+};
+
+export function calculateCalories(profile: Pick<Profile, "sex" | "age" | "heightCm" | "weightKg" | "activity" | "goalMode" | "goalPace">, roundingStep: number = 25) {
   const sexOffset = profile.sex === "male" ? 5 : -161;
   const bmr = 10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age + sexOffset;
   const maintenance = bmr * activityMultipliers[profile.activity];
-  const goalAdjustment = profile.goalMode === "lose" ? -450 : profile.goalMode === "gain" ? 250 : 0;
-  return Math.max(1200, Math.round((maintenance + goalAdjustment) / 25) * 25);
+  const deltas = goalPaceDeltas[profile.goalPace || goalPaces.moderate];
+  const goalAdjustment = profile.goalMode === "lose" ? deltas.lose : profile.goalMode === "gain" ? deltas.gain : 0;
+  return Math.max(1200, Math.round((maintenance + goalAdjustment) / roundingStep) * roundingStep);
 }
 
-export function calculateMacroTargets(calories: number, weightKg: number, preset: DietPreset) {
+/** Which macroPresetOverride fields each non-custom preset's calculation actually uses, for settings UI. */
+export const macroPresetRuleFields: Record<Exclude<DietPreset, "custom">, Array<keyof MacroPresetOverride>> = {
+  balanced: ["proteinPerKg", "fatPerKg"],
+  "high-protein": ["proteinPerKg", "fatPerKg"],
+  keto: ["proteinPerKg", "carbCap"],
+  "high-protein-keto": ["proteinPerKg", "carbCap"],
+  "low-fat": ["proteinPerKg", "fatPercent"],
+};
+
+export function calculateMacroTargets(calories: number, weightKg: number, preset: DietPreset, overrides?: Partial<Record<DietPreset, MacroPresetOverride>>) {
   const rules: Record<Exclude<DietPreset, "custom">, { proteinPerKg: number; fatPerKg?: number; carbCap?: number; fatPercent?: number }> = {
     balanced: { proteinPerKg: 1.8, fatPerKg: 0.9 },
     "high-protein": { proteinPerKg: 2.2, fatPerKg: 0.8 },
@@ -146,7 +162,7 @@ export function calculateMacroTargets(calories: number, weightKg: number, preset
     "high-protein-keto": { proteinPerKg: 2.2, carbCap: 30 },
     "low-fat": { proteinPerKg: 1.8, fatPercent: 0.2 },
   };
-  const rule = rules[preset === "custom" ? "balanced" : preset];
+  const rule = { ...rules[preset === "custom" ? "balanced" : preset], ...overrides?.[preset] };
   const protein = Math.round(weightKg * rule.proteinPerKg / 5) * 5;
   if (rule.carbCap) {
     const carbs = rule.carbCap;
@@ -160,6 +176,15 @@ export function calculateMacroTargets(calories: number, weightKg: number, preset
   return { protein, carbs, fat };
 }
 
+/** Monday of the week containing `dateKey` (or Sunday, when `weekStartsOn` is "sunday"). */
+export function startOfWeek(dateKey: string, weekStartsOn: WeekStartDay = "monday"): Date {
+  const day = new Date(`${dateKey}T12:00:00`);
+  const weekday = day.getDay();
+  const offset = weekStartsOn === "sunday" ? -weekday : (weekday === 0 ? -6 : 1) - weekday;
+  day.setDate(day.getDate() + offset);
+  return day;
+}
+
 export function localDateKey(date = new Date()) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -167,12 +192,14 @@ export function localDateKey(date = new Date()) {
   return `${year}-${month}-${day}`;
 }
 
+const defaultMealTimeBoundaries: MealTimeBoundaries = { breakfastEndsHour: 11, lunchEndsHour: 15, dinnerEndsHour: 20 };
+
 /** Suggest a meal using the browser's local timezone; callers can still let the user override it. */
-export function suggestedMealType(date = new Date()): MealType {
+export function suggestedMealType(date = new Date(), boundaries: MealTimeBoundaries = defaultMealTimeBoundaries): MealType {
   const hour = date.getHours();
-  if (hour < 11) return "breakfast";
-  if (hour < 15) return "lunch";
-  if (hour < 20) return "dinner";
+  if (hour < boundaries.breakfastEndsHour) return "breakfast";
+  if (hour < boundaries.lunchEndsHour) return "lunch";
+  if (hour < boundaries.dinnerEndsHour) return "dinner";
   return "snack";
 }
 

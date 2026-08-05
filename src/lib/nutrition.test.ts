@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateCalories, calculateMacroTargets, gramsFor, netCarbs, resolveDailyTargets, resolveMealCalorieTarget, scaleNutrition, sumNutrition, suggestedMealType } from "./nutrition";
+import { calculateCalories, calculateMacroTargets, gramsFor, netCarbs, resolveDailyTargets, resolveMealCalorieTarget, scaleNutrition, startOfWeek, sumNutrition, suggestedMealType } from "./nutrition";
 import type { Food } from "./types";
 
 const food: Food = {
@@ -70,6 +70,48 @@ describe("nutrition calculations", () => {
   it("uses an optional target for an individual meal without inventing one", () => {
     expect(resolveMealCalorieTarget({ mealCalorieTargets: { lunch: 720 } }, "lunch")).toBe(720);
     expect(resolveMealCalorieTarget({ mealCalorieTargets: { lunch: 720 } }, "dinner")).toBeUndefined();
+  });
+
+  it("adjusts the calorie deficit and surplus by pace", () => {
+    const base = { sex: "male" as const, age: 29, heightCm: 191, weightKg: 84, activity: "moderate" as const };
+    expect(calculateCalories({ ...base, goalMode: "lose" })).toBe(calculateCalories({ ...base, goalMode: "lose", goalPace: "moderate" }));
+    expect(calculateCalories({ ...base, goalMode: "lose", goalPace: "conservative" })).toBeGreaterThan(calculateCalories({ ...base, goalMode: "lose", goalPace: "moderate" }));
+    expect(calculateCalories({ ...base, goalMode: "lose", goalPace: "aggressive" })).toBeLessThan(calculateCalories({ ...base, goalMode: "lose", goalPace: "moderate" }));
+  });
+
+  it("rounds the calorie target to a custom step", () => {
+    const base = { sex: "male" as const, age: 29, heightCm: 191, weightKg: 84, activity: "moderate" as const, goalMode: "maintain" as const };
+    expect(calculateCalories(base, 10) % 10).toBe(0);
+    expect(calculateCalories(base, 50) % 50).toBe(0);
+  });
+
+  it("merges a macro preset override onto the base rule", () => {
+    const defaultResult = calculateMacroTargets(2900, 84, "balanced");
+    const overridden = calculateMacroTargets(2900, 84, "balanced", { balanced: { proteinPerKg: 2.5 } });
+    expect(overridden.protein).toBeGreaterThan(defaultResult.protein);
+  });
+
+  it("resolves the start of the week for Monday and Sunday anchors", () => {
+    expect(startOfWeek("2026-07-22").getDay()).toBe(1);
+    expect(startOfWeek("2026-07-22", "sunday").getDay()).toBe(0);
+  });
+
+  it("suggests a meal type from custom time boundaries", () => {
+    const boundaries = { breakfastEndsHour: 9, lunchEndsHour: 13, dinnerEndsHour: 18 };
+    expect(suggestedMealType(new Date(2026, 6, 20, 8, 59), boundaries)).toBe("breakfast");
+    expect(suggestedMealType(new Date(2026, 6, 20, 9, 0), boundaries)).toBe("lunch");
+    expect(suggestedMealType(new Date(2026, 6, 20, 19, 0), boundaries)).toBe("snack");
+  });
+
+  it("applies a serving-size override for tbsp and tsp", () => {
+    expect(gramsFor(food, 1, "tbsp", { tbspGrams: 14 })).toBe(14);
+    expect(gramsFor(food, 1, "tsp", { tspGrams: 4 })).toBe(4);
+    expect(gramsFor(food, 1, "tbsp")).toBe(15);
+  });
+
+  it("scales nutrition to a non-default macro precision", () => {
+    expect(scaleNutrition(food.nutrientsPer100, 60, 0)).toMatchObject({ protein: 6, carbs: 12, fat: 5 });
+    expect(scaleNutrition(food.nutrientsPer100, 60, 2)).toMatchObject({ protein: 6, fat: 4.8 });
   });
 
 });

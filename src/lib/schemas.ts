@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { defaultNutritionTargets, recipeOrigins, type CoachChat, type CoachMealAction, type CoachMealChoice, type CoachMessage, type DailyTargets, type DiaryShare, type FastingRecord, type Food, type LabelAnalysis, type Meal, type MealPhotoAnalysis, type MealPlanEntry, type Nutrition, type Profile, type PublicRecipe, type Recipe, type WaterEntry, type WeightEntry } from "./types";
+import { defaultNutritionTargets, recipeOrigins, type CoachChat, type CoachMealAction, type CoachMealChoice, type CoachMessage, type DailyTargets, type DiaryShare, type FastingRecord, type Food, type LabelAnalysis, type MacroPresetOverride, type Meal, type MealPhotoAnalysis, type MealPlanEntry, type Nutrition, type Profile, type PublicRecipe, type Recipe, type WaterEntry, type WeightEntry } from "./types";
 
 const dietaryTagSchema = z.enum(["vegetarian", "vegan", "glutenFree", "dairyFree", "pescatarian", "keto", "paleo"]);
 const recipeOriginSchema = z.enum([recipeOrigins.created, recipeOrigins.saved]);
@@ -26,6 +26,12 @@ export const mealPlanEntrySchema = z.union([
   z.object({ ...mealPlanEntryBaseSchema, foodId: z.string().trim().min(1).max(240) }).strict(),
 ]) satisfies z.ZodType<MealPlanEntry>;
 const dailyTargetsSchema = z.object({ calories: positiveFinite.max(20_000), protein: finiteNonNegative.max(2_000), carbs: finiteNonNegative.max(2_000), fat: finiteNonNegative.max(2_000), fiber: finiteNonNegative.max(2_000) }).strict() satisfies z.ZodType<DailyTargets>;
+const macroPresetOverrideSchema = z.object({
+  proteinPerKg: z.number().finite().min(0).max(5).optional(),
+  fatPerKg: z.number().finite().min(0).max(5).optional(),
+  carbCap: z.number().finite().min(0).max(500).optional(),
+  fatPercent: z.number().finite().min(0).max(1).optional(),
+}).strict() satisfies z.ZodType<MacroPresetOverride>;
 
 export const nutritionSchema = z.object({
   calories: finiteNonNegative,
@@ -150,6 +156,29 @@ export const profileSchema = z.object({
   fastingRecords: z.array(fastingRecordSchema).max(10_000).optional(),
   recipes: z.array(recipeSchema).max(10_000).optional(),
   mealPlanEntries: z.array(mealPlanEntrySchema).max(100_000).optional(),
+  extraShoppingItems: z.array(z.string().trim().max(240)).max(1_000).optional(),
+  recipeCookView: z.enum(["scroll", "step"]).optional(),
+  weekStartsOn: z.enum(["monday", "sunday"]).optional(),
+  mealTimeBoundaries: z.object({
+    breakfastEndsHour: z.number().int().min(0).max(23),
+    lunchEndsHour: z.number().int().min(0).max(23),
+    dinnerEndsHour: z.number().int().min(0).max(23),
+  }).strict().optional(),
+  goalPace: z.enum(["conservative", "moderate", "aggressive"]).optional(),
+  macroPresetOverrides: z.object({
+    balanced: macroPresetOverrideSchema.optional(),
+    "high-protein": macroPresetOverrideSchema.optional(),
+    keto: macroPresetOverrideSchema.optional(),
+    "high-protein-keto": macroPresetOverrideSchema.optional(),
+    "low-fat": macroPresetOverrideSchema.optional(),
+    custom: macroPresetOverrideSchema.optional(),
+  }).strict().optional(),
+  calorieRoundingStep: z.union([z.literal(5), z.literal(10), z.literal(25), z.literal(50)]).optional(),
+  macroRoundingDigits: z.union([z.literal(0), z.literal(1), z.literal(2)]).optional(),
+  tbspGrams: z.number().finite().min(1).max(60).optional(),
+  tspGrams: z.number().finite().min(1).max(60).optional(),
+  insightsTolerancePercent: z.number().finite().min(1).max(50).optional(),
+  insightsDefaultRange: z.enum(["week", "month", "all"]).optional(),
 }).strict() satisfies z.ZodType<Profile>;
 
 export const coachMessageSchema = z.object({

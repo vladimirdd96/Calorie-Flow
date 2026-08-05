@@ -3,10 +3,13 @@
 import { CalendarRange, ChefHat, ChevronRight, Droplet, EyeOff, Moon, Scale, Sparkles, Sun, Timer, Wheat } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { isHabitFeatureEnabled, toggleHabitFeature } from "@/lib/habit-settings";
-import type { DailyTargets, MealType, Profile, Weekday } from "@/lib/types";
-import { fastingLateMealBehaviors, fastingTrackingModes, habitFeatures, measurementSystems, recipeCookViews, weightTrackingStatuses } from "@/lib/types";
+import type { DailyTargets, MealTimeBoundaries, MealType, Profile, Weekday } from "@/lib/types";
+import { calorieRoundingSteps, fastingGoalHours, fastingLateMealBehaviors, fastingTrackingModes, habitFeatures, macroRoundingDigitsOptions, measurementSystems, recipeCookViews, weekStartDays, weightTrackingStatuses } from "@/lib/types";
 import type { NutritionTargetKey } from "@/lib/types";
+import { NumericInput } from "@/features/shared/NumericInput";
 import { NutritionGoalFields } from "./NutritionGoalFields";
+
+const defaultMealTimeBoundaries: MealTimeBoundaries = { breakfastEndsHour: 11, lunchEndsHour: 15, dinnerEndsHour: 20 };
 
 type ThemeMode = "light" | "dark";
 type ChatTextSize = "compact" | "comfortable" | "large";
@@ -54,7 +57,12 @@ export function ProfileCustomize({ profile, onSave, theme, onThemeChange, chatTe
   const preciseTiming = profile.fastingTrackingMode === fastingTrackingModes.precise;
   const lateEntriesEndFast = profile.fastingLateMealBehavior === fastingLateMealBehaviors.new;
   const measurementSystem = profile.measurementSystem || measurementSystems.metric;
+  const weekStartsOn = profile.weekStartsOn || weekStartDays.monday;
   const cookView = profile.recipeCookView || recipeCookViews.scroll;
+  const mealTimeBoundaries = profile.mealTimeBoundaries || defaultMealTimeBoundaries;
+  const calorieRoundingStep = profile.calorieRoundingStep || 25;
+  const macroRoundingDigits = profile.macroRoundingDigits ?? 1;
+  const saveMealTimeBoundary = (key: keyof MealTimeBoundaries, value: number) => onSave({ ...profile, mealTimeBoundaries: { ...mealTimeBoundaries, [key]: value } });
   const saveHabit = (feature: typeof habitFeatures[keyof typeof habitFeatures]) => onSave({ ...profile, enabledHabitFeatures: toggleHabitFeature(profile.enabledHabitFeatures, feature) });
   const dayTargets = profile.dailyTargets || {};
   const maxDayCalories = Math.max(profile.calorieTarget, ...Object.values(dayTargets).map((target) => target?.calories || 0));
@@ -81,7 +89,7 @@ export function ProfileCustomize({ profile, onSave, theme, onThemeChange, chatTe
     {fastingEnabled && <section className="profile-settings-card profile-fasting-settings">
       <strong>Fasting settings</strong>
       <span className="profile-setting-label">Daily goal</span>
-      <div className="profile-segmented four" role="group" aria-label="Daily fasting goal">{([12, 14, 16, 18] as const).map((hours) => <button type="button" key={hours} className={(profile.fastingGoalHours || 16) === hours ? "active" : ""} onClick={() => onSave({ ...profile, fastingGoalHours: hours })}>{hours} h</button>)}</div>
+      <div className="profile-segmented four" role="group" aria-label="Daily fasting goal">{fastingGoalHours.map((hours) => <button type="button" key={hours} className={(profile.fastingGoalHours || 16) === hours ? "active" : ""} onClick={() => onSave({ ...profile, fastingGoalHours: hours })}>{hours} h</button>)}</div>
       <label className="profile-simple-toggle"><span><strong>Precise timing</strong><small>Use exact log times instead of rounding to the hour</small></span><input className="profile-switch" type="checkbox" checked={preciseTiming} onChange={() => onSave({ ...profile, fastingTrackingMode: preciseTiming ? fastingTrackingModes.standard : fastingTrackingModes.precise })} /></label>
       <label className="profile-simple-toggle"><span><strong>Late entries end a fast</strong><small>A meal logged after midnight closes the current fast</small></span><input className="profile-switch" type="checkbox" checked={lateEntriesEndFast} onChange={() => onSave({ ...profile, fastingLateMealBehavior: lateEntriesEndFast ? fastingLateMealBehaviors.ask : fastingLateMealBehaviors.new })} /></label>
     </section>}
@@ -101,8 +109,18 @@ export function ProfileCustomize({ profile, onSave, theme, onThemeChange, chatTe
     <h2 className="profile-section-label">Meal guides</h2>
     <section className="profile-settings-card">
       <label className="profile-simple-toggle"><span><strong>Show a guide per meal</strong><small>Split your daily target across breakfast, lunch, dinner and snacks</small></span><input className="profile-switch" type="checkbox" checked={mealGuides} onChange={() => onSave({ ...profile, mealCalorieTargets: mealGuides ? undefined : defaultMealTargets(profile) })} /></label>
-      {mealGuides && <div className="profile-meal-guides">{meals.map(({ key, label, share }) => <div key={key}><span>{label}</span><strong>{mealTargets[key] || Math.round(profile.calorieTarget * share / 100)} kcal · {share}%</strong></div>)}</div>}
+      {mealGuides && <div className="nutrition-goal-fields profile-meal-guides">{meals.map(({ key, label, share }) => { const value = mealTargets[key] || Math.round(profile.calorieTarget * share / 100); return <label key={key}><span>{label}</span><div className="input-suffix"><NumericInput required min="0" step="1" inputMode="numeric" value={value} onChange={(event) => onSave({ ...profile, mealCalorieTargets: { ...mealTargets, [key]: Math.max(0, Number(event.target.value)) } })} /><span>kcal</span></div></label>; })}</div>}
     </section>
+
+    <h2 className="profile-section-label">Meal timing</h2>
+    <details className="profile-settings-card">
+      <summary><span><strong>When one meal becomes the next</strong><small>Used to suggest a meal type by the clock</small></span><ChevronRight size={16} /></summary>
+      <div className="nutrition-goal-fields">
+        <label><span>Breakfast ends <small>hour of day, 24h</small></span><div className="input-suffix"><NumericInput required min="0" max="23" step="1" inputMode="numeric" value={mealTimeBoundaries.breakfastEndsHour} onChange={(event) => saveMealTimeBoundary("breakfastEndsHour", Math.min(23, Math.max(0, Number(event.target.value))))} /><span>h</span></div></label>
+        <label><span>Lunch ends <small>hour of day, 24h</small></span><div className="input-suffix"><NumericInput required min="0" max="23" step="1" inputMode="numeric" value={mealTimeBoundaries.lunchEndsHour} onChange={(event) => saveMealTimeBoundary("lunchEndsHour", Math.min(23, Math.max(0, Number(event.target.value))))} /><span>h</span></div></label>
+        <label><span>Dinner ends <small>hour of day, 24h</small></span><div className="input-suffix"><NumericInput required min="0" max="23" step="1" inputMode="numeric" value={mealTimeBoundaries.dinnerEndsHour} onChange={(event) => saveMealTimeBoundary("dinnerEndsHour", Math.min(23, Math.max(0, Number(event.target.value))))} /><span>h</span></div></label>
+      </div>
+    </details>
 
     <h2 className="profile-section-label">Cooking</h2>
     <section className="profile-settings-card">
@@ -112,6 +130,28 @@ export function ProfileCustomize({ profile, onSave, theme, onThemeChange, chatTe
         <button type="button" aria-pressed={cookView === recipeCookViews.step} className={cookView === recipeCookViews.step ? "active" : ""} onClick={() => onSave({ ...profile, recipeCookView: recipeCookViews.step })}>Step-by-step</button>
       </div>
       <small className="profile-section-help">{cookView === recipeCookViews.scroll ? "Recipes open showing everything at once; tap Start cooking to go step-by-step." : "Recipes jump straight into step-by-step cook mode."}</small>
+    </section>
+
+    <h2 className="profile-section-label">Calendar</h2>
+    <div className="profile-choice-card two" role="group" aria-label="Week starts on">
+      <button type="button" aria-pressed={weekStartsOn === weekStartDays.monday} className={weekStartsOn === weekStartDays.monday ? "active" : ""} onClick={() => onSave({ ...profile, weekStartsOn: weekStartDays.monday })}>Monday</button>
+      <button type="button" aria-pressed={weekStartsOn === weekStartDays.sunday} className={weekStartsOn === weekStartDays.sunday ? "active" : ""} onClick={() => onSave({ ...profile, weekStartsOn: weekStartDays.sunday })}>Sunday</button>
+    </div>
+
+    <h2 className="profile-section-label">Precision</h2>
+    <section className="profile-settings-card">
+      <span className="profile-setting-label">Calorie target rounds to</span>
+      <div className="profile-segmented four" role="group" aria-label="Calorie target rounding step">{calorieRoundingSteps.map((step) => <button type="button" key={step} aria-pressed={calorieRoundingStep === step} className={calorieRoundingStep === step ? "active" : ""} onClick={() => onSave({ ...profile, calorieRoundingStep: step })}>{step}</button>)}</div>
+      <span className="profile-setting-label">Macro decimal places</span>
+      <div className="profile-segmented three" role="group" aria-label="Macro rounding precision">{macroRoundingDigitsOptions.map((digits) => <button type="button" key={digits} aria-pressed={macroRoundingDigits === digits} className={macroRoundingDigits === digits ? "active" : ""} onClick={() => onSave({ ...profile, macroRoundingDigits: digits })}>{digits === 0 ? "Whole" : digits}</button>)}</div>
+    </section>
+
+    <h2 className="profile-section-label">Kitchen units</h2>
+    <section className="profile-settings-card">
+      <div className="nutrition-goal-fields">
+        <label><span>1 tablespoon =</span><div className="input-suffix"><NumericInput required min="1" max="60" step="0.5" inputMode="decimal" value={profile.tbspGrams ?? 15} onChange={(event) => onSave({ ...profile, tbspGrams: Math.max(1, Number(event.target.value)) })} /><span>g</span></div></label>
+        <label><span>1 teaspoon =</span><div className="input-suffix"><NumericInput required min="1" max="60" step="0.5" inputMode="decimal" value={profile.tspGrams ?? 5} onChange={(event) => onSave({ ...profile, tspGrams: Math.max(1, Number(event.target.value)) })} /><span>g</span></div></label>
+      </div>
     </section>
 
     <h2 className="profile-section-label">Units</h2>
