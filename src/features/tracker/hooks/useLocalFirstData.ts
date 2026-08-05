@@ -17,6 +17,7 @@ type ChatTextSize = typeof chatTextSizes[keyof typeof chatTextSizes];
 const THEME_SETTING = "appearance:theme";
 const CHAT_TEXT_SIZE_SETTING = "appearance:chat-text-size";
 const HOME_SCREEN_PROMPT_SETTING = "homeScreenPromptCompleted";
+const syncRetryDelaysMs = [2_000, 5_000, 15_000] as const;
 const DEFAULT_PROFILE: Profile = { name: "", sex: "male", age: 30, heightCm: 180, weightKg: 80, activity: "moderate", goalMode: "maintain", dietPreset: "balanced", calorieTarget: 2750, proteinTarget: 145, carbsTarget: 375, fatTarget: 70, fiberTarget: 30, sugarTarget: 50, saturatedFatTarget: 20, sodiumTarget: 2300, potassiumTarget: 3500, hideCalories: false, onboardingDone: false, weightEntries: [], waterEntries: [], waterTargetMl: 2000, enabledHabitFeatures: [...defaultHabitFeatures], planEnabled: true, fastingGoalHours: 16, fastingRecords: [] };
 const isThemeMode = (value: unknown): value is ThemeMode => value === themeModes.light || value === themeModes.dark;
 const isChatTextSize = (value: unknown): value is ChatTextSize => value === chatTextSizes.compact || value === chatTextSizes.comfortable || value === chatTextSizes.large;
@@ -49,6 +50,8 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
   const cloudSyncQueuedRef = useRef(false);
   const cloudWriteInFlightRef = useRef(false);
   const suppressRealtimeSyncUntilRef = useRef(0);
+  const syncRetryCountRef = useRef(0);
+  const syncRetryTimerRef = useRef<number | undefined>(undefined);
 
   const requestCloudSync = useCallback(() => {
     if (cloudSyncInFlightRef.current) {
@@ -58,6 +61,20 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
     syncIdentityRef.current = "";
     setSyncAttempt((value) => value + 1);
   }, []);
+  const retryCloudSync = useCallback(() => {
+    cloudWriteFailedRef.current = false;
+    syncRetryCountRef.current = 0;
+    requestCloudSync();
+  }, [requestCloudSync]);
+  const scheduleCloudRetry = useCallback(() => {
+    if (!navigator.onLine || syncRetryTimerRef.current !== undefined) return;
+    const delay = syncRetryDelaysMs[syncRetryCountRef.current++];
+    if (delay === undefined) return;
+    syncRetryTimerRef.current = window.setTimeout(() => {
+      syncRetryTimerRef.current = undefined;
+      requestCloudSync();
+    }, delay);
+  }, [requestCloudSync]);
 
   const refresh = useCallback(async () => {
     await initializeFoods();
@@ -129,10 +146,13 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
   }, [ready, setShowHomeScreenPrompt]);
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
   useEffect(() => {
-    const retry = () => { cloudWriteFailedRef.current = false; requestCloudSync(); };
+    const retry = () => retryCloudSync();
     window.addEventListener("online", retry);
     return () => window.removeEventListener("online", retry);
-  }, [requestCloudSync]);
+  }, [retryCloudSync]);
+  useEffect(() => () => {
+    if (syncRetryTimerRef.current !== undefined) window.clearTimeout(syncRetryTimerRef.current);
+  }, []);
   useEffect(() => {
     if (!ready || !auth.ready || !auth.user) return;
     const user = auth.user;
@@ -205,10 +225,13 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
       await replaceLocalSnapshot(next);
       remoteDeletedMealIdsRef.current.clear();
       await setSetting("dataOwner", identity);
-      if (active) { cloudWriteFailedRef.current = false; await refresh(); setSyncState("synced"); }
+      if (active) { cloudWriteFailedRef.current = false; syncRetryCountRef.current = 0; await refresh(); setSyncState("synced"); }
     };
     synchronize().catch(() => {
-      if (active) setSyncState(navigator.onLine ? "error" : "offline");
+      if (active) {
+        setSyncState(navigator.onLine ? "error" : "offline");
+        scheduleCloudRetry();
+      }
     }).finally(() => {
       cloudSyncInFlightRef.current = false;
       if (cloudSyncQueuedRef.current) {
@@ -217,7 +240,7 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
       }
     });
     return () => { active = false; };
-  }, [auth.configured, auth.ready, auth.user, ready, refresh, requestCloudSync, syncAttempt]);
+  }, [auth.configured, auth.ready, auth.user, ready, refresh, requestCloudSync, scheduleCloudRetry, syncAttempt]);
 
   useEffect(() => {
     if (!ready || !auth.ready || !auth.user || !auth.configured) return;
@@ -286,6 +309,7 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
       .catch(() => {
         cloudWriteFailedRef.current = true;
         setSyncState(navigator.onLine ? "error" : "offline");
+        scheduleCloudRetry();
       });
   };
   const saveProfile = async (next: Profile, announce = true) => {
@@ -307,5 +331,5 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, meals, profile]);
   const markSyncMutation = () => { syncMutationRef.current += 1; };
-  return { ready, startupError, setStartupError, profile, setProfile, onboardingOrigin, setOnboardingOrigin, foods, setFoods, meals, setMeals, syncState, theme, setTheme, chatTextSize, setChatTextSize, refresh, syncWrite, saveProfile, markSyncMutation };
+  return { ready, startupError, setStartupError, profile, setProfile, onboardingOrigin, setOnboardingOrigin, foods, setFoods, meals, setMeals, syncState, theme, setTheme, chatTextSize, setChatTextSize, refresh, syncWrite, saveProfile, markSyncMutation, retryCloudSync };
 }

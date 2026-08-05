@@ -183,6 +183,7 @@ export function ProfileView({
   onImport,
   user,
   syncState,
+  onRetrySync,
   onSignOut,
   theme,
   onThemeChange,
@@ -198,6 +199,7 @@ export function ProfileView({
   onImport: (data: BackupData, mode: "merge" | "replace") => Promise<void>;
   user: CloudUser | null;
   syncState: SyncState;
+  onRetrySync: () => void;
   onSignOut: () => Promise<void>;
   theme: ThemeMode;
   onThemeChange: (theme: ThemeMode) => void;
@@ -271,7 +273,7 @@ export function ProfileView({
         <ProfileSectionLabel>Elsewhere in the app</ProfileSectionLabel>
         <div className="profile-link-stack"><ProfileLinkRow icon={<BarChart3 />} tone="carbs" title="Weight history" detail="Weigh-ins and trend live in Insights" onClick={() => onNavigate({ tab: "insights", section: "weight" })} /><ProfileLinkRow icon={<Library />} tone="carbs" title="Your foods" detail="Everything you've saved or logged" onClick={() => onNavigate({ tab: "search" })} /><ProfileLinkRow icon={<MessageCircle />} tone="blue" title="Coach" detail="Chat about meals, recipes and your log" onClick={() => onNavigate({ tab: "coach", section: "chat" })} /></div>
         <ProfileSectionLabel>Account &amp; sync</ProfileSectionLabel>
-        <section className="profile-account-card"><div><span className="profile-link-icon mint"><Cloud /></span><span><strong>{user ? "Synced to your account" : "Saved on this device"}</strong><small>{user ? syncState === "synced" ? "Up to date across devices" : "Syncing your latest changes" : "Sign in to sync across devices"}</small></span><button type="button" onClick={() => void onSignOut()}>{user ? "Sign out" : "Local"}</button></div><button type="button" className="profile-share-row" onClick={() => setSharingOpen(true)}><span className="profile-link-icon carbs"><Share2 /></span><span><strong>Share a read-only diary</strong><small>Invite someone you trust</small></span><ChevronRight size={16} /></button></section>
+        <section className="profile-account-card"><div><span className="profile-link-icon mint"><Cloud /></span><span><strong>{user ? "Synced to your account" : "Saved on this device"}</strong><small>{user ? syncState === "synced" ? "Up to date across devices" : syncState === "error" ? "Couldn't sync — changes are saved on this device" : syncState === "offline" ? "Offline — changes are saved on this device" : "Syncing your latest changes" : "Sign in to sync across devices"}</small></span>{user && (syncState === "error" || syncState === "offline") ? <button type="button" onClick={() => onRetrySync()}>Retry</button> : <button type="button" onClick={() => void onSignOut()}>{user ? "Sign out" : "Local"}</button>}</div><button type="button" className="profile-share-row" onClick={() => setSharingOpen(true)}><span className="profile-link-icon carbs"><Share2 /></span><span><strong>Share a read-only diary</strong><small>Invite someone you trust</small></span><ChevronRight size={16} /></button></section>
         <ProfileSectionLabel>Your data</ProfileSectionLabel>
         <section className="profile-data-card">
           <button type="button" onClick={onRestartOnboarding}><RefreshCw /><span><strong>Redo setup</strong><small>Walk through onboarding again</small></span><ChevronRight /></button>
