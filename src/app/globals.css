@@ -2036,7 +2036,12 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 .insights-chart-legend span:last-child i { background: var(--fat); }
 .insights-page .summary-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .insights-page .fasting-summary-strip .card { min-width: 0; }
-.insights-page .fasting-summary-strip > div:last-child { grid-column: auto; }
+.insights-page .fasting-summary-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.insights-page .fasting-summary-strip > div { min-width: 0; padding: 14px; }
+.insights-page .fasting-summary-strip strong { overflow: hidden; font-size: 18px; text-overflow: ellipsis; white-space: nowrap; }
+.insights-page .fasting-summary-strip small { color: var(--muted); font-size: 10px; }
+.insights-page .fasting-controls { margin-top: 14px; }
+.insights-page .fasting-controls button.active { color: var(--bg); background: var(--text); }
 .insights-page .weight-summary-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .insights-page .weight-metric { min-width: 0; padding: 14px; text-align: left; }
 .insights-page .weight-metric strong { overflow: hidden; font-size: 18px; text-overflow: ellipsis; white-space: nowrap; }

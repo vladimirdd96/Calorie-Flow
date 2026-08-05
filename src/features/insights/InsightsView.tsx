@@ -14,6 +14,7 @@ import { habitFeatures, measurementSystems } from "@/lib/types";
 import { averageNutritionFor } from "./averageNutrition";
 
 type WeightPeriod = "week" | "month" | "all";
+type FastingPeriod = "week" | "month" | "all";
 type InsightsRange = "week" | "month" | "all";
 type InsightsSection = "overview" | "nutrition" | "weight" | "fasting";
 
@@ -35,6 +36,7 @@ const mealLabels: Record<MealType, string> = {
 };
 
 const fastingDateTime = (value: string) => new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+const fastingTime = (value: string) => new Date(value).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 const fastingDateTimeInput = (value?: string) => {
   if (!value) return "";
   const date = new Date(value);
@@ -76,11 +78,19 @@ export function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: 
   const completedFastingRecords = fastingRecords
     .filter((record): record is FastingRecord & { endedAt: string } => Boolean(record.endedAt))
     .sort((a, b) => b.endedAt.localeCompare(a.endedAt));
-  const fastingDurations = completedFastingRecords.map((record) => fastingWindowHours(record.startedAt, record.endedAt));
+  const fastingPeriodRecords = completedFastingRecords.filter((record) => {
+    if (fastingPeriod === "all") return true;
+    const now = new Date();
+    const date = new Date(record.endedAt);
+    if (fastingPeriod === "month") return date >= new Date(now.getFullYear(), now.getMonth(), 1);
+    return date >= startOfWeek(now);
+  });
+  const fastingDurations = fastingPeriodRecords.map((record) => fastingWindowHours(record.startedAt, record.endedAt));
   const plausibleFastingDurations = fastingDurations.filter((hours) => hours <= MAX_PLAUSIBLE_FASTING_HOURS);
   const averageFast = plausibleFastingDurations.length ? plausibleFastingDurations.reduce((sum, hours) => sum + hours, 0) / plausibleFastingDurations.length : 0;
   const longestFast = plausibleFastingDurations.length ? Math.max(...plausibleFastingDurations) : 0;
   const [weightPeriod, setWeightPeriod] = useState<WeightPeriod>("week");
+  const [fastingPeriod, setFastingPeriod] = useState<FastingPeriod>("week");
   const [range, setRange] = useState<InsightsRange>("week");
   const [section, setSection] = useState<InsightsSection>("overview");
   const activeSection: InsightsSection = (section === "weight" && !weightTrackingEnabled) || (section === "fasting" && !fastingEnabled) ? "overview" : section;
@@ -165,10 +175,13 @@ export function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: 
         })}</div> : <div className="weight-empty card"><strong>Your weight history starts here.</strong><p>Log a weigh-in above to see daily entries and rolling averages.</p></div>}
       </section>}
       {activeSection === "fasting" && fastingEnabled && <section id="insights-fasting-panel" role="tabpanel" aria-labelledby="insights-fasting-tab" className="fasting-history-section workspace-panel">
-        <div className="section-heading"><div><span className="eyebrow">Optional rhythm</span><h2 id="fasting-history-heading">Fasting history</h2></div><span className="subtle">{fastingGoal}-hour goal</span></div>
-        <div className="summary-strip fasting-summary-strip"><div className="card"><span>Average fast</span><strong>{averageFast ? averageFast.toFixed(1) : "—"}<small> h</small></strong></div><div className="card"><span>Longest</span><strong>{longestFast ? longestFast.toFixed(1) : "—"}<small> h</small></strong></div></div>
+        <div className="section-heading"><div><span className="eyebrow">Optional rhythm</span><h2 id="fasting-history-heading">Fasting history</h2></div><span className="subtle">{fastingPeriodRecords.length} {fastingPeriodRecords.length === 1 ? "fast" : "fasts"}</span></div>
+        <div className="fasting-controls weight-controls" role="group" aria-label="Fasting history period">
+          {(["week", "month", "all"] as const).map((period) => <button key={period} type="button" className={fastingPeriod === period ? "active" : ""} aria-pressed={fastingPeriod === period} onClick={() => setFastingPeriod(period)}>{period === "week" ? "This week" : period === "month" ? "This month" : "All time"}</button>)}
+        </div>
+        <div className="summary-strip fasting-summary-strip"><div className="card"><span>Completed</span><strong>{fastingPeriodRecords.length}</strong><small> windows</small></div><div className="card"><span>Average fast</span><strong>{averageFast ? averageFast.toFixed(1) : "—"}<small> h</small></strong></div><div className="card"><span>Longest</span><strong>{longestFast ? longestFast.toFixed(1) : "—"}<small> h</small></strong></div></div>
         {activeFasting && <section className="fasting-active-history card" aria-labelledby="fasting-active-heading"><span className="action-icon amber"><Timer /></span><div><span className="eyebrow">In progress</span><strong id="fasting-active-heading">Started {fastingDateTime(activeFasting.startedAt)}</strong><p>Your current window will appear in history after your next meal.</p></div></section>}
-        {completedFastingRecords.length > 0 ? <div className="fasting-history-list" aria-label="Completed fasting windows">{completedFastingRecords.map((record) => {
+        {fastingPeriodRecords.length > 0 ? <div className="fasting-history-list" aria-label="Completed fasting windows">{fastingPeriodRecords.map((record) => {
           const duration = fastingWindowHours(record.startedAt, record.endedAt);
           const reachedGoal = duration >= fastingGoal;
           const implausible = duration > MAX_PLAUSIBLE_FASTING_HOURS;
