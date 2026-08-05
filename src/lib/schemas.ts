@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { defaultNutritionTargets, type CoachChat, type CoachMealAction, type CoachMealChoice, type CoachMessage, type DailyTargets, type DiaryShare, type FastingRecord, type Food, type LabelAnalysis, type Meal, type MealPhotoAnalysis, type MealPlanEntry, type Nutrition, type Profile, type PublicRecipe, type Recipe, type WaterEntry, type WeightEntry } from "./types";
+import { defaultNutritionTargets, recipeOrigins, type CoachChat, type CoachMealAction, type CoachMealChoice, type CoachMessage, type DailyTargets, type DiaryShare, type FastingRecord, type Food, type LabelAnalysis, type Meal, type MealPhotoAnalysis, type MealPlanEntry, type Nutrition, type Profile, type PublicRecipe, type Recipe, type WaterEntry, type WeightEntry } from "./types";
 
 const dietaryTagSchema = z.enum(["vegetarian", "vegan", "glutenFree", "dairyFree", "pescatarian", "keto", "paleo"]);
+const recipeOriginSchema = z.enum([recipeOrigins.created, recipeOrigins.saved]);
 
 const finiteNonNegative = z.number().finite().min(0);
 const positiveFinite = z.number().finite().positive();
@@ -54,7 +55,7 @@ const recipeIngredientSchema = z.object({
   quantity: z.string().trim().max(60).optional(),
 }).strict();
 
-const recipeSchema = z.object({ id: z.string().trim().min(1).max(240), name: z.string().trim().min(1).max(240), servings: positiveFinite.max(100), ingredients: z.array(recipeIngredientSchema).max(100), nutritionPerServing: nutritionSchema, servingGrams: positiveFinite.max(20_000).optional(), instructions: z.array(z.string().trim().min(1).max(500)).max(30).optional(), cuisine: z.string().trim().max(60).optional(), dietaryTags: z.array(dietaryTagSchema).max(20).optional(), imageUrls: z.array(z.string().min(1).max(400_000)).max(8).optional(), isPublic: z.boolean().optional(), publicRecipeId: z.string().trim().min(1).max(240).optional(), createdAt: z.string().datetime({ offset: true }), updatedAt: z.string().datetime({ offset: true }) }).strict() satisfies z.ZodType<Recipe>;
+const recipeSchema = z.object({ id: z.string().trim().min(1).max(240), name: z.string().trim().min(1).max(240), servings: positiveFinite.max(100), ingredients: z.array(recipeIngredientSchema).max(100), nutritionPerServing: nutritionSchema, servingGrams: positiveFinite.max(20_000).optional(), instructions: z.array(z.string().trim().min(1).max(500)).max(30).optional(), cuisine: z.string().trim().max(60).optional(), dietaryTags: z.array(dietaryTagSchema).max(20).optional(), imageUrls: z.array(z.string().min(1).max(400_000)).max(8).optional(), isPublic: z.boolean().optional(), publicRecipeId: z.string().trim().min(1).max(240).optional(), origin: recipeOriginSchema.optional(), createdAt: z.string().datetime({ offset: true }), updatedAt: z.string().datetime({ offset: true }) }).strict() satisfies z.ZodType<Recipe>;
 
 export const foodSchema = z.object({
   id: z.string().trim().min(1).max(240),
