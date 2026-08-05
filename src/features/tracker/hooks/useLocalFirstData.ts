@@ -90,6 +90,7 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
         checking = false;
       }
     };
+    void checkForDeploymentUpdate();
     const interval = window.setInterval(() => void checkForDeploymentUpdate(), 60_000);
     document.addEventListener("visibilitychange", checkForDeploymentUpdate);
     return () => {
