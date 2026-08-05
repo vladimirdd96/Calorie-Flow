@@ -290,6 +290,10 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
   };
   const saveProfile = async (next: Profile, announce = true) => {
     const synchronized = syncAutomaticFasting(normalizeNutritionTargets(next), meals);
+    // Reserve the local snapshot before IndexedDB writes. A cloud hydration
+    // already in flight must not replace this profile (or its related diary
+    // update) before its own cloud write has been queued.
+    syncMutationRef.current += 1;
     setProfile(synchronized); await setSetting("profile", synchronized); if (announce) setToast("Profile saved");
     syncWrite((userId) => upsertCloudProfile(userId, synchronized));
   };

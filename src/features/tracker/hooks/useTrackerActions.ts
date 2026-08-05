@@ -45,6 +45,7 @@ export function useTrackerActions(dependencies: Dependencies) {
       if (food) updates.set(food.id, { ...food, imageUrl });
     });
     if (!updates.size) return;
+    markSyncMutation();
     await Promise.all([...updates.values()].map((food) => put("foods", food)));
     setFoods((current) => current.map((food) => updates.get(food.id) || food));
     syncWrite((userId) => Promise.all([...updates.values()].map((food) => upsertCloudFood(userId, food))).then(() => undefined));
@@ -67,6 +68,7 @@ export function useTrackerActions(dependencies: Dependencies) {
     const loggedDate = meal.loggedDate || dateKey;
     const adjustedDate = loggedDate === localDateKey() ? new Date() : new Date(`${loggedDate}T12:00:00`);
     const savedMeal = { ...meal, imageUrl: meal.imageUrl || food.imageUrl, loggedDate, createdAt: adjustedDate.toISOString() };
+    markSyncMutation();
     await Promise.all([put("meals", savedMeal), put("foods", food)]);
     setMeals((current) => [...current, savedMeal]);
     setFoods((current) => [food, ...current.filter((item) => item.id !== food.id)]);
@@ -76,12 +78,14 @@ export function useTrackerActions(dependencies: Dependencies) {
   };
   const logMeal = async (meal: Meal, food: Food) => { prepareMeal(meal, (nextMeal) => { void persistLogMeal(nextMeal, food); }); };
   const saveFood = async (food: Food) => {
+    markSyncMutation();
     await put("foods", food);
     setFoods((current) => [food, ...current.filter((item) => item.id !== food.id)]);
     syncWrite((userId) => upsertCloudFood(userId, food));
   };
   const saveEditedMeal = async (meal: Meal) => {
     const savedMeal = { ...meal, loggedDate: meal.loggedDate || dateKey };
+    markSyncMutation();
     await put("meals", savedMeal);
     await saveLinkedFoodPhotos([savedMeal]);
     setMeals((current) => current.map((candidate) => candidate.id === savedMeal.id ? savedMeal : candidate));
@@ -90,6 +94,7 @@ export function useTrackerActions(dependencies: Dependencies) {
   };
   const saveEditedRecipe = async (meal: Meal, recipe: Recipe) => {
     const savedMeal = { ...meal, loggedDate: meal.loggedDate || dateKey };
+    markSyncMutation();
     await put("meals", savedMeal);
     await saveLinkedFoodPhotos(recipe.ingredients.map((ingredient) => ({ foodId: ingredient.foodId, imageUrl: savedMeal.imageUrl || recipe.imageUrls?.[0] })));
     await saveProfile({ ...profile, recipes: (profile.recipes || []).map((candidate) => candidate.id === recipe.id ? recipe : candidate) }, false);
@@ -105,6 +110,7 @@ export function useTrackerActions(dependencies: Dependencies) {
     destination.splice(targetIndex < 0 ? destination.length : targetIndex + (insertAfter ? 1 : 0), 0, { ...meal, mealType, loggedDate: meal.loggedDate || dateKey });
     nextByType.set(mealType, destination);
     const changed = [...nextByType.values()].flat().map((candidate, index) => ({ ...candidate, position: nextByType.get(candidate.mealType)?.findIndex((item) => item.id === candidate.id) ?? index }));
+    markSyncMutation();
     await Promise.all(changed.map((candidate) => put("meals", candidate)));
     setMeals((current) => current.map((candidate) => changed.find((next) => next.id === candidate.id) || candidate));
     syncWrite((userId) => Promise.all(changed.map((candidate) => upsertCloudMeal(userId, candidate))).then(() => undefined));
@@ -114,6 +120,7 @@ export function useTrackerActions(dependencies: Dependencies) {
     const destinationMeals = meals.filter((candidate) => (candidate.loggedDate || localDateKey(new Date(candidate.createdAt))) === dateKey && candidate.mealType === mealType).sort(compareMealOrder);
     const copy: Meal = { ...meal, id: `duplicate-${crypto.randomUUID()}`, mealType, loggedDate: meal.loggedDate || dateKey, createdAt: new Date().toISOString(), position: destinationMeals.length };
     prepareMeal(copy, (nextMeal) => {
+      markSyncMutation();
       void put("meals", nextMeal).then(() => {
         setMeals((current) => [...current, nextMeal]);
         void saveProfile(syncAutomaticFasting(profile, [...meals, nextMeal]), false);
@@ -124,6 +131,7 @@ export function useTrackerActions(dependencies: Dependencies) {
     });
   };
   const persistNewMeal = async (meal: Meal) => {
+    markSyncMutation();
     await put("meals", meal);
     if (meal.recipeId) {
       const recipe = profile.recipes?.find((candidate) => candidate.id === meal.recipeId);
@@ -153,6 +161,7 @@ export function useTrackerActions(dependencies: Dependencies) {
       loggedDate: dateKey,
       source: "custom",
     };
+    markSyncMutation();
     await Promise.all([...components.map((meal) => remove("meals", meal.id)), put("meals", recipeMeal)]);
     await saveLinkedFoodPhotos(recipe.ingredients.map((ingredient) => ({ foodId: ingredient.foodId, imageUrl: recipe.imageUrls?.[0] })));
     await saveProfile({ ...profile, recipes: [...(profile.recipes || []), recipe] }, false);
@@ -200,6 +209,7 @@ export function useTrackerActions(dependencies: Dependencies) {
   const deleteMeal = async (id: string) => {
     const deletedMeal = meals.find((meal) => meal.id === id);
     if (!deletedMeal) return;
+    markSyncMutation();
     await remove("meals", id); setMeals((current) => current.filter((meal) => meal.id !== id)); setToast("");
     let deletionKey: string | undefined;
     if (auth.user) {
@@ -223,6 +233,7 @@ export function useTrackerActions(dependencies: Dependencies) {
     const { meal, timerId } = undoMeal;
     window.clearTimeout(timerId);
     setUndoMeal(undefined);
+    markSyncMutation();
     await put("meals", meal);
     setMeals((current) => [...current.filter((candidate) => candidate.id !== meal.id), meal]);
     if (auth.user) {
@@ -240,6 +251,7 @@ export function useTrackerActions(dependencies: Dependencies) {
     return { ...local, ...merged, coachMessages };
   };
   const restoreBackup = async (data: BackupData, mode: "merge" | "replace") => {
+    markSyncMutation();
     if (mode === "replace") await replaceData(data);
     else await importData(data);
     await refresh(); setToast(mode === "replace" ? "Backup replaced current data" : "Backup restored");

@@ -6,6 +6,19 @@ const supabaseKey = publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 const canonicalAppUrl = publicEnv.NEXT_PUBLIC_APP_URL;
 
 const productionAppOrigin = "https://calorie-flow.vladimirdd96.workers.dev";
+const cloudRequestTimeoutMs = 15_000;
+
+/** Prevent a stalled browser request from blocking the local-first sync queue forever. */
+const fetchWithTimeout: typeof fetch = (input, init) => {
+  const controller = new AbortController();
+  const abortFromCaller = () => controller.abort();
+  init?.signal?.addEventListener("abort", abortFromCaller, { once: true });
+  const timeout = globalThis.setTimeout(() => controller.abort(), cloudRequestTimeoutMs);
+  return fetch(input, { ...init, signal: controller.signal }).finally(() => {
+    globalThis.clearTimeout(timeout);
+    init?.signal?.removeEventListener("abort", abortFromCaller);
+  });
+};
 
 export function getAppOrigin() {
   if (canonicalAppUrl) return new URL(canonicalAppUrl).origin;
@@ -25,6 +38,7 @@ export function getSupabase() {
   if (!supabaseUrl || !supabaseKey) return null;
   if (!client) {
     client = createClient(supabaseUrl, supabaseKey, {
+      global: { fetch: fetchWithTimeout },
       auth: {
         persistSession: true,
         autoRefreshToken: true,
