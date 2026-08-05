@@ -3,9 +3,19 @@ import type { PublicRecipe } from "../../lib/types";
 
 export type CatalogueRow = { title: string; items: PublicRecipe[] };
 
-/** Picks a hero without changing catalogue order or requiring another request. */
-export function featuredCatalogueRecipe(items: PublicRecipe[]): PublicRecipe | undefined {
-  return items.find((item) => item.source === "ai") || items[0];
+const MS_PER_DAY = 86_400_000;
+
+/** Stable per-day index so the featured pick rotates daily without a server round-trip. */
+function dayIndex(now: Date, poolSize: number): number {
+  return Math.floor(now.getTime() / MS_PER_DAY) % poolSize;
+}
+
+/** Picks a hero without changing catalogue order or requiring another request. Rotates daily among AI recipes (falling back to the full catalogue). */
+export function featuredCatalogueRecipe(items: PublicRecipe[], now: Date = new Date()): PublicRecipe | undefined {
+  const pool = items.filter((item) => item.source === "ai");
+  const candidates = pool.length > 0 ? pool : items;
+  if (candidates.length === 0) return undefined;
+  return candidates[dayIndex(now, candidates.length)];
 }
 
 /** Groups the browse rails, omitting the recipe already promoted as the feature. */
