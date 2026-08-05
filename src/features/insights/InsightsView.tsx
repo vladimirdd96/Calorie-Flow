@@ -122,11 +122,14 @@ export function InsightsView({ meals, profile, onSave, weightTrackingEnabled, in
   });
   const weightAverage = periodEntries.length ? periodEntries.reduce((sum, entry) => sum + entry.weightKg, 0) / periodEntries.length : 0;
   const weightChange = periodEntries.length > 1 ? periodEntries[0].weightKg - periodEntries[periodEntries.length - 1].weightKg : 0;
-  const groupedWeights = Array.from(new Map(periodEntries.map((entry) => {
+  const groupedWeights = Array.from(periodEntries.reduce((groups, entry) => {
     const date = new Date(`${entry.date}T12:00:00`);
     const key = weightPeriod === "week" ? localDateKey(startOfWeek(date)) : entry.date.slice(0, 7);
-    return [key, { key, entries: periodEntries.filter((candidate) => (weightPeriod === "week" ? localDateKey(startOfWeek(new Date(`${candidate.date}T12:00:00`))) : candidate.date.slice(0, 7)) === key) }];
-  })).values()).sort((a, b) => b.key.localeCompare(a.key));
+    const group = groups.get(key);
+    if (group) group.entries.push(entry);
+    else groups.set(key, { key, entries: [entry] });
+    return groups;
+  }, new Map<string, { key: string; entries: WeightEntry[] }>()).values()).sort((a, b) => b.key.localeCompare(a.key));
   const saveWeight = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const weightKg = measurementSystem === measurementSystems.imperial ? lbToKg(Number(weightInput)) : Number(weightInput);
