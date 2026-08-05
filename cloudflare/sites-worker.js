@@ -300,7 +300,9 @@ async function foodSearch(request, env) {
   } catch {
     // Preserve local and custom-food search when the optional service is offline.
   }
-  return json({ error: "Online food search is temporarily unavailable." }, 503);
+  // Catalogue search is optional. Keep the route successful so the browser can
+  // continue showing local/custom foods and the manual-food action offline.
+  return json({ products: [] });
 }
 
 function extractOutputText(response) {

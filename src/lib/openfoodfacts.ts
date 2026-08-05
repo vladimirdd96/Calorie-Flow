@@ -63,6 +63,21 @@ async function fetchFoodSearch(path: string) {
   throw lastError instanceof Error ? lastError : new Error("Food search failed");
 }
 
+async function fetchPublicFoodSearch(query: string) {
+  const params = new URLSearchParams({
+    action: "process",
+    json: "true",
+    search_terms: query,
+    page_size: "50",
+    fields: "code,product_name,generic_name,brands,quantity,serving_size,serving_quantity,product_quantity,image_front_small_url,image_front_url,nutrition_data_per,nutriments",
+    lc: "bg,en",
+    cc: "bg",
+  });
+  const response = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?${params.toString()}`);
+  if (!response.ok) throw new Error(`Public food search failed with status ${response.status}`);
+  return response;
+}
+
 function numberValue(value: unknown) {
   const parsed = typeof value === "number" ? value : Number.parseFloat(String(value || "0"));
   return Number.isFinite(parsed) ? parsed : 0;
@@ -210,9 +225,24 @@ export async function searchOpenFoodFacts(query: string): Promise<Food[]> {
   const cached = searchCache.get(cacheKey);
   if (cached && cached.expiresAt > Date.now()) return cached.foods;
 
-  const response = await fetchFoodSearch(`/api/food-search?q=${encodeURIComponent(normalizedQuery)}`);
-  const data = await response.json();
-  const foods = (data.products || []).map(mapProduct).filter(Boolean) as Food[];
+  let response: Response;
+  try {
+    response = await fetchFoodSearch(`/api/food-search?q=${encodeURIComponent(normalizedQuery)}`);
+  } catch (proxyError) {
+    try {
+      response = await fetchPublicFoodSearch(normalizedQuery);
+    } catch {
+      throw proxyError;
+    }
+  }
+  const data: unknown = await response.json();
+  const products = data && typeof data === "object" && Array.isArray((data as { products?: unknown }).products)
+    ? (data as { products: unknown[] }).products
+    : [];
+  const foods = products
+    .filter((product): product is Record<string, unknown> => Boolean(product) && typeof product === "object" && !Array.isArray(product))
+    .map((product) => mapProduct(product as OffProduct | FdcProduct | RestaurantProduct))
+    .filter(Boolean) as Food[];
   searchCache.set(cacheKey, { foods, expiresAt: Date.now() + SEARCH_CACHE_TTL_MS });
   return foods;
 }

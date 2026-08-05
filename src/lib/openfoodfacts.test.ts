@@ -75,6 +75,26 @@ describe("searchOpenFoodFacts", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it("treats an empty or malformed optional catalogue response as no remote matches", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ error: "temporarily unavailable" }) }));
+
+    await expect(searchOpenFoodFacts("offline food")).resolves.toEqual([]);
+  });
+
+  it("falls back to the public catalogue when the app search route is unreachable", async () => {
+    const fetchMock = vi.fn()
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ products: [{ code: "public-1", product_name: "Public result", nutriments: { "energy-kcal_100g": 100 } }] }),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(searchOpenFoodFacts("public result")).resolves.toEqual([expect.objectContaining({ name: "Public result" })]);
+    expect(fetchMock.mock.calls[2][0]).toContain("world.openfoodfacts.org/cgi/search.pl");
+  });
+
   it("maps restaurant menu items into a serving-aware food result", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true,

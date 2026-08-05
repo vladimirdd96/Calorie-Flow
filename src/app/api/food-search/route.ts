@@ -152,6 +152,8 @@ export async function GET(request: NextRequest) {
     if (!openFoodFactsProducts?.length && !foodDataCentralProducts.length && !restaurantProducts.length) return response({ products: [] });
     return response({ products: [...restaurantProducts, ...(openFoodFactsProducts || []), ...foodDataCentralProducts] });
   } catch {
-    return response({ error: "Online food search is temporarily unavailable." }, 503);
+    // Catalogue search is optional. Keep the route successful so the browser can
+    // continue showing local/custom foods and the manual-food action offline.
+    return response({ products: [] });
   }
 }
