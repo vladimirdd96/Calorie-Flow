@@ -773,11 +773,16 @@ p { color: var(--muted); line-height: 1.55; }
 .recipe-composer textarea { min-height: 86px; resize: vertical; }
 .recipe-nutrition { display: grid; gap: 8px; }
 .recipe-list, .planned-list { display: grid; gap: 8px; }
-.recipe-card, .planned-entry { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; }
-.recipe-card-body { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.recipe-card, .planned-entry { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; min-width: 0; flex-wrap: wrap; }
+.recipe-card-body { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 200px; }
 .recipe-card-body > div:last-child, .planned-entry > span { display: grid; gap: 3px; min-width: 0; }
-.recipe-card small, .planned-entry small { color: var(--muted); font-size: 11px; }
-.recipe-card-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.recipe-card-body strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recipe-card small, .planned-entry small { color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recipe-card-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: auto; }
+
+@media (max-width: 420px) {
+  .recipe-card-actions { flex: 1 1 100%; justify-content: flex-end; margin-left: 0; }
+}
 .recipe-empty { display: grid; gap: 8px; padding: 18px; }
 .recipe-empty strong { font-size: 16px; }
 .recipe-empty p, .planned-groceries p { margin: 0; font-size: 12px; }
