@@ -1,17 +1,20 @@
 "use client";
 
-import { BookOpen, ChefHat, Minus, Plus, RefreshCw, Search, Sparkles, Users } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { BookOpen, ChefHat, ChefHat as CookIcon, ChevronLeft, ChevronRight, ListPlus, RefreshCw, Search, Sparkles, Users } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Sheet } from "@/features/shared/Sheet";
 import { ClearableInput } from "@/features/shared/ClearableInput";
 import { QuickPlanSheet } from "./QuickPlanSheet";
+import { RecipeDetail } from "./RecipeDetail";
+import { CookMode } from "./CookMode";
 import { getSetting, setSetting } from "@/lib/db";
 import { fetchCatalogue } from "@/lib/cloud";
 import { getSupabase } from "@/lib/supabase";
 import { localDateKey } from "@/lib/nutrition";
-import { humanizeTaxonomyKey, scaleIngredientQuantity, topEatenFoods } from "@/lib/planning";
-import { cuisines, dietaryTags } from "@/lib/types";
-import type { DietaryTag, Meal, MealPlanEntry, MealType, PublicRecipe, Recipe } from "@/lib/types";
+import { humanizeTaxonomyKey, topEatenFoods } from "@/lib/planning";
+import { catalogueBrowseRows, featuredCatalogueRecipe } from "../cataloguePresentation";
+import { cuisines, dietaryTags, recipeCookViews } from "@/lib/types";
+import type { DietaryTag, Meal, MealPlanEntry, MealType, PublicRecipe, Recipe, RecipeCookView } from "@/lib/types";
 
 const LAST_GENERATED_SETTING = "plan:lastRecipeGenAt";
 const COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
@@ -21,41 +24,61 @@ async function authToken() {
   return (await getSupabase()?.auth.getSession())?.data.session?.access_token;
 }
 
-function CatalogueTile({ item, hideCalories, onOpen }: { item: PublicRecipe; hideCalories?: boolean; onOpen: () => void }) {
-  return <button type="button" className="recipe-tile" onClick={onOpen}>
+function RecipeBrowseCard({ item, hideCalories, onOpen, featured = false }: { item: PublicRecipe; hideCalories?: boolean; onOpen: () => void; featured?: boolean }) {
+  return <button type="button" className={featured ? "catalogue-feature-card" : "recipe-browse-card"} onClick={onOpen}>
     {item.imageUrl ? <img src={item.imageUrl} alt="" /> : <span className="recipe-tile-icon">{item.source === "ai" ? <Sparkles size={22} /> : <ChefHat size={22} />}</span>}
-    <span className="recipe-tile-body">
+    <span className="recipe-browse-card-overlay">
+      {featured && <small className="catalogue-feature-kicker">Tonight&apos;s pick</small>}
       <strong>{item.name}</strong>
       <small>{item.source === "ai" ? "AI pick" : "Community"}{!hideCalories && ` · ${Math.round(item.nutritionPerServing.calories)} kcal`}</small>
     </span>
   </button>;
 }
 
-function PosterTile({ item, hideCalories, onOpen }: { item: PublicRecipe; hideCalories?: boolean; onOpen: () => void }) {
-  return <button type="button" className="poster-tile" onClick={onOpen}>
-    {item.imageUrl ? <img src={item.imageUrl} alt="" /> : <span className="poster-tile-icon">{item.source === "ai" ? <Sparkles size={26} /> : <ChefHat size={26} />}</span>}
-    <span className="poster-tile-body">
-      <strong>{item.name}</strong>
-      {!hideCalories && <small>{Math.round(item.nutritionPerServing.calories)} kcal</small>}
-    </span>
-  </button>;
-}
-
 function CatalogueRow({ title, items, hideCalories, onOpen }: { title: string; items: PublicRecipe[]; hideCalories?: boolean; onOpen: (item: PublicRecipe) => void }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [canScrollBack, setCanScrollBack] = useState(false);
+  const [canScrollForward, setCanScrollForward] = useState(false);
+
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const updateControls = () => {
+      const maximum = track.scrollWidth - track.clientWidth;
+      setCanScrollBack(track.scrollLeft > 2);
+      setCanScrollForward(maximum > 2 && track.scrollLeft < maximum - 2);
+    };
+    const observer = new ResizeObserver(updateControls);
+    observer.observe(track);
+    track.addEventListener("scroll", updateControls, { passive: true });
+    updateControls();
+    return () => { observer.disconnect(); track.removeEventListener("scroll", updateControls); };
+  }, [items.length]);
+
+  const scroll = (direction: -1 | 1) => {
+    const track = trackRef.current;
+    if (!track) return;
+    track.scrollBy({ left: direction * Math.max(280, track.clientWidth * .82), behavior: "smooth" });
+  };
+
   return <section className="catalogue-row">
     <h3>{title}</h3>
-    <div className="catalogue-row-track">{items.map((item) => <PosterTile key={item.id} item={item} hideCalories={hideCalories} onOpen={() => onOpen(item)} />)}</div>
+    <div ref={trackRef} className="catalogue-row-track">{items.map((item) => <RecipeBrowseCard key={item.id} item={item} hideCalories={hideCalories} onOpen={() => onOpen(item)} />)}</div>
+    {canScrollBack && <button type="button" className="catalogue-row-control previous" aria-label={`Show earlier recipes in ${title}`} onClick={() => scroll(-1)}><ChevronLeft /></button>}
+    {canScrollForward && <button type="button" className="catalogue-row-control next" aria-label={`Show more recipes in ${title}`} onClick={() => scroll(1)}><ChevronRight /></button>}
   </section>;
 }
 
-export function CatalogueView({ userId, meals, recipes, entries, hideCalories, onSaveToLibrary, onPlanRecipe }: {
+export function CatalogueView({ userId, meals, recipes, entries, hideCalories, cookView, onSaveToLibrary, onPlanRecipe, onAddToShopping }: {
   userId?: string;
   meals: Meal[];
   recipes: Recipe[];
   entries: MealPlanEntry[];
   hideCalories?: boolean;
+  cookView?: RecipeCookView;
   onSaveToLibrary: (item: PublicRecipe) => Recipe;
   onPlanRecipe: (recipe: Recipe, date: string, mealType: MealType) => void;
+  onAddToShopping: (names: string[]) => void;
 }) {
   const [query, setQuery] = useState("");
   const [source, setSource] = useState<SourceFilter>("all");
@@ -71,8 +94,12 @@ export function CatalogueView({ userId, meals, recipes, entries, hideCalories, o
   const [planTarget, setPlanTarget] = useState<PublicRecipe>();
   const [servingsCount, setServingsCount] = useState(1);
   const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set());
+  const [cooking, setCooking] = useState(false);
 
-  const openRecipe = (item: PublicRecipe) => { setSelected(item); setServingsCount(item.servings); setCheckedSteps(new Set()); };
+  const openRecipe = (item: PublicRecipe) => {
+    setSelected(item); setServingsCount(item.servings); setCheckedSteps(new Set()); onSaveToLibrary(item);
+    if (cookView === recipeCookViews.step && item.instructions.length) setCooking(true);
+  };
   const toggleDietary = (tag: DietaryTag) => setDietary((current) => current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag]);
   const toggleStep = (index: number) => setCheckedSteps((current) => { const next = new Set(current); if (next.has(index)) next.delete(index); else next.add(index); return next; });
   const filtersActive = Boolean(query.trim() || source !== "all" || cuisine || dietary.length > 0);
@@ -99,19 +126,8 @@ export function CatalogueView({ userId, meals, recipes, entries, hideCalories, o
 
   const savedPublicIds = useMemo(() => new Set(recipes.map((item) => item.publicRecipeId).filter(Boolean)), [recipes]);
 
-  const rows = useMemo(() => {
-    if (filtersActive) return [];
-    const byLabel = new Map<string, PublicRecipe[]>();
-    for (const item of catalogue) {
-      const label = item.imageCredit?.label || (item.source === "community" ? "Community recipes" : "AI picks");
-      if (!byLabel.has(label)) byLabel.set(label, []);
-      byLabel.get(label)!.push(item);
-    }
-    return [...byLabel.entries()].map(([label, items]) => ({
-      title: items[0]?.cuisine ? `${label} · ${humanizeTaxonomyKey(items[0].cuisine)}` : label,
-      items,
-    }));
-  }, [catalogue, filtersActive]);
+  const featured = useMemo(() => filtersActive ? undefined : featuredCatalogueRecipe(catalogue), [catalogue, filtersActive]);
+  const rows = useMemo(() => filtersActive ? [] : catalogueBrowseRows(catalogue, featured?.id), [catalogue, featured?.id, filtersActive]);
 
   const refresh = async () => {
     if (!userId) return;
@@ -163,42 +179,39 @@ export function CatalogueView({ userId, meals, recipes, entries, hideCalories, o
       {refreshNote && <small>{refreshNote}</small>}
     </div>}
     {error && <div className="inline-alert error" role="alert">{error}</div>}
-    {!loading && !error && !catalogue.length ? <div className="recipe-empty card"><span className="action-icon mint"><ChefHat size={22} /></span><strong>The catalogue is still filling up.</strong><p>Share one of your recipes, or refresh your picks to add AI-assisted ideas.</p></div>
+    {loading ? <div className="catalogue-loading" role="status" aria-label="Loading recipes"><div className="catalogue-skeleton-feature" />{Array.from({ length: 5 }, (_, index) => <i key={index} className="catalogue-skeleton-card" />)}</div>
+      : !error && !catalogue.length ? <div className="recipe-empty catalogue-empty card"><span className="action-icon mint"><ChefHat size={22} /></span><strong>The catalogue is still filling up.</strong><p>Share one of your recipes, or refresh your picks to add AI-assisted ideas.</p></div>
       : filtersActive
-        ? <div className="catalogue-grid">{catalogue.map((item) => <CatalogueTile key={item.id} item={item} hideCalories={hideCalories} onOpen={() => openRecipe(item)} />)}</div>
-        : <div className="catalogue-rows">{rows.map((row) => <CatalogueRow key={row.title} title={row.title} items={row.items} hideCalories={hideCalories} onOpen={openRecipe} />)}</div>}
+        ? <div className="catalogue-grid">{catalogue.map((item) => <RecipeBrowseCard key={item.id} item={item} hideCalories={hideCalories} onOpen={() => openRecipe(item)} />)}</div>
+        : <div className="catalogue-rows">{featured && <RecipeBrowseCard item={featured} featured hideCalories={hideCalories} onOpen={() => openRecipe(featured)} />}{rows.map((row) => <CatalogueRow key={row.title} title={row.title} items={row.items} hideCalories={hideCalories} onOpen={openRecipe} />)}</div>}
 
-    {selected && <Sheet onClose={() => setSelected(undefined)} wide label={selected.name}>
-      <div className="catalogue-detail">
-        {selected.imageUrl && <div className="catalogue-detail-photo"><img src={selected.imageUrl} alt="" />{selected.imageCredit && <a href={selected.imageCredit.sourceUrl} target="_blank" rel="noopener noreferrer">via {selected.imageCredit.label} ↗</a>}</div>}
-        <div className="sheet-header"><div><span className="eyebrow">{selected.source === "ai" ? "AI pick" : "Community recipe"}</span><h2>{selected.name}</h2></div><span /></div>
-        {(selected.cuisine || selected.dietaryTags.length > 0) && <div className="catalogue-badges">
-          {selected.cuisine && <span className="catalogue-badge">{humanizeTaxonomyKey(selected.cuisine)}</span>}
-          {selected.dietaryTags.map((tag) => <span key={tag} className="catalogue-badge">{humanizeTaxonomyKey(tag)}</span>)}
-        </div>}
-        <div className="catalogue-servings-row">
-          <span>{!hideCalories && `${Math.round(selected.nutritionPerServing.calories)} kcal per serving · `}Servings</span>
-          <div className="catalogue-servings-stepper">
-            <button type="button" aria-label="Fewer servings" disabled={servingsCount <= 1} onClick={() => setServingsCount((count) => Math.max(1, count - 1))}><Minus size={14} /></button>
-            <strong>{servingsCount}</strong>
-            <button type="button" aria-label="More servings" onClick={() => setServingsCount((count) => Math.min(100, count + 1))}><Plus size={14} /></button>
-          </div>
-        </div>
-        <ul className="catalogue-detail-ingredients">{selected.ingredients.map((ingredient) => <li key={ingredient.id}>{ingredient.quantity ? `${scaleIngredientQuantity(ingredient.quantity, scaleFactor)} ` : ""}{ingredient.name}</li>)}</ul>
-        {selected.instructions.length > 0 && <>
-          <h3 className="catalogue-instructions-heading">Instructions</h3>
-          <ol className="catalogue-instructions">
-            {selected.instructions.map((step, index) => <li key={index} className={checkedSteps.has(index) ? "done" : ""}>
-              <button type="button" onClick={() => toggleStep(index)}>{step}</button>
-            </li>)}
-          </ol>
-        </>}
-        <div className="sheet-actions">
-          <button type="button" className="secondary-button" disabled={savedPublicIds.has(selected.id)} onClick={() => onSaveToLibrary(selected)}><BookOpen size={16} />{savedPublicIds.has(selected.id) ? "Saved" : "Save to my recipes"}</button>
-          <button type="button" className="primary-button" onClick={() => setPlanTarget(selected)}>Plan this</button>
-        </div>
-      </div>
+    {selected && <Sheet onClose={() => { setSelected(undefined); setCooking(false); }} wide label={selected.name}>
+      <RecipeDetail
+        name={selected.name}
+        imageUrl={selected.imageUrl}
+        imageCredit={selected.imageCredit}
+        eyebrow={selected.source === "ai" ? "AI pick" : "Community recipe"}
+        cuisine={selected.cuisine}
+        dietaryTags={selected.dietaryTags}
+        hideCalories={hideCalories}
+        caloriesPerServing={selected.nutritionPerServing.calories}
+        servingsCount={servingsCount}
+        onServingsChange={setServingsCount}
+        ingredients={selected.ingredients}
+        scaleFactor={scaleFactor}
+        instructions={selected.instructions}
+        checkedSteps={checkedSteps}
+        onToggleStep={toggleStep}
+        actions={[
+          { key: "shopping", label: "Add to shopping list", icon: ListPlus, onClick: () => onAddToShopping(selected.ingredients.map((ingredient) => ingredient.name)) },
+          { key: "plan", label: "Plan this", icon: BookOpen, onClick: () => setPlanTarget(selected), variant: "secondary" },
+          { key: "cook", label: "Start cooking", icon: CookIcon, onClick: () => setCooking(true), variant: "primary", disabled: !selected.instructions.length },
+        ]}
+      />
+      {savedPublicIds.has(selected.id) && <p className="recipe-view-saved-note">Saved to your recipes — find it under Recipes.</p>}
     </Sheet>}
+
+    {selected && cooking && <CookMode name={selected.name} ingredients={selected.ingredients} scaleFactor={scaleFactor} instructions={selected.instructions} onClose={() => setCooking(false)} />}
 
     {planTarget && <Sheet onClose={() => setPlanTarget(undefined)} label={`Plan ${planTarget.name}`}>
       <QuickPlanSheet entries={entries} initialDate={localDateKey()} itemName={planTarget.name} onConfirm={(date, mealType) => { onPlanRecipe(onSaveToLibrary(planTarget), date, mealType); setPlanTarget(undefined); setSelected(undefined); }} />

@@ -17,8 +17,8 @@ export function recipeMeal(recipe: Recipe, loggedDate: string, mealType: MealTyp
 
 export type GroceryItem = { name: string; recipeNames: string[] };
 
-/** Dedupes ingredient names across planned recipes, case-insensitively, and records which recipe(s) each came from. */
-export function groceryItemsForPlan(recipes: Recipe[]): GroceryItem[] {
+/** Dedupes ingredient names across planned recipes plus any manually added items, case-insensitively, and records which recipe(s) each came from. Manually added items carry no recipe name. */
+export function groceryItemsForPlan(recipes: Recipe[], extraNames: string[] = []): GroceryItem[] {
   const byKey = new Map<string, GroceryItem>();
   for (const recipe of recipes) {
     for (const ingredient of recipe.ingredients) {
@@ -32,6 +32,12 @@ export function groceryItemsForPlan(recipes: Recipe[]): GroceryItem[] {
         byKey.set(key, { name, recipeNames: [recipe.name] });
       }
     }
+  }
+  for (const raw of extraNames) {
+    const name = raw.trim();
+    if (!name) continue;
+    const key = name.toLocaleLowerCase();
+    if (!byKey.has(key)) byKey.set(key, { name, recipeNames: [] });
   }
   return [...byKey.values()];
 }

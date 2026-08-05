@@ -233,7 +233,9 @@ export async function fetchCatalogue(options: { q?: string; source?: "all" | "co
   let query = client().from("public_recipes").select(publicRecipeColumns).order("created_at", { ascending: false }).limit(limit);
   if (source !== "all") query = query.eq("source", source);
   if (cuisine) query = query.eq("cuisine", cuisine);
-  if (dietary?.length) query = query.contains("dietary_tags", dietary);
+  // dietary_tags is jsonb, not a Postgres array — .contains() would send the
+  // unquoted `{a,b}` array-literal syntax, which PostgREST rejects as invalid JSON.
+  if (dietary?.length) query = query.filter("dietary_tags", "cs", JSON.stringify(dietary));
   if (q?.trim()) query = query.ilike("name", `%${q.trim()}%`);
   const { data, error } = await query;
   if (error) {

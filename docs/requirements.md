@@ -23,6 +23,14 @@ This is the durable record of product requirements stated in user requests. Read
 - When the logged item is linked to a saved food, its photo is also shown for that food in the Food Library.
 - Food photos use the same resized private data-URL format as meal and recipe photos so offline storage remains available.
 
+## Modal sheets — 2026-07-23
+
+- On touch devices, when a modal sheet is scrolled to the top, dragging downward from its body or visible handle by at least 90 px closes it; upward drags continue scrolling content, and shorter downward drags return the sheet to its resting position.
+
+## Nutrition insights averages — 2026-07-23
+
+- Macro values in Insights are averages per logged day, not totals across the seven-day window. The UI must state that only days with logged food are included and compare each average with the user's daily target.
+
 ## Meal planning and food library navigation — 2026-07-30
 
 - Meal plans can contain either saved recipes or saved foods. Existing recipe-based plan entries remain valid, and shopping lists continue to use recipe ingredients only.
@@ -33,3 +41,12 @@ This is the durable record of product requirements stated in user requests. Read
 - The Add Food sheet exposes saved recipes and foods already used in the diary before the user searches.
 - Quick-reuse items are ranked by diary usage, with recipe logs counted once even when a recipe creates multiple ingredient rows.
 - Selecting a quick-reuse recipe follows the existing recipe portion/logging flow; selecting a food follows the existing food portion flow.
+
+## Desktop workspace and catalogue browsing — 2026-08-05
+
+- Desktop uses a responsive workspace beside the persistent navigation rail; pages may use the extra width purposefully, while forms, diary rows, and conversations retain readable inner measures.
+- Plan → Catalogue presents the default browse state as a featured landscape recipe followed by landscape recipe rails. Searching or filtering keeps a practical responsive grid, and every recipe action continues to work from the existing detail flow.
+
+## In-app section navigation — 2026-08-05
+
+- Cross-page links to a tabbed workspace must name both the destination page and its intended tab. For example, the Today weight and fasting shortcuts open the matching Insights histories instead of the default overview.

@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, CalendarDays, CalendarRange, ChevronDown, ChevronLeft, ChevronRight, Library, ListChecks, Plus, Sparkles, Trash2 } from "lucide-react";
+import { BookOpen, CalendarDays, CalendarPlus, CalendarRange, ChefHat, ChevronDown, ChevronLeft, ChevronRight, Library, ListChecks, ListPlus, Pencil, Plus, Share2, Sparkles, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Sheet } from "@/features/shared/Sheet";
 import { PortionSheet } from "@/features/food-capture/FoodCapture";
@@ -10,12 +10,16 @@ import { WeekStrip } from "./components/WeekStrip";
 import { PlanSlotCard } from "./components/PlanSlotCard";
 import { RecipeComposer } from "./components/RecipeComposer";
 import { RecipeCard } from "./components/RecipeCard";
+import { RecipeDetail } from "./components/RecipeDetail";
+import { CookMode } from "./components/CookMode";
 import { CatalogueView } from "./components/CatalogueView";
 import { ShoppingList } from "./components/ShoppingList";
+import type { PlanSection } from "@/features/navigation/types";
 import { localDateKey } from "@/lib/nutrition";
 import { groceryItemsForPlan } from "@/lib/planning";
 import { publishRecipeToCatalogue, unpublishRecipe } from "@/lib/cloud";
 import { recipeAsFood } from "@/features/recipes/recipeLogging";
+import { recipeCookViews, recipeOrigins } from "@/lib/types";
 import type { Food, Meal, MealType, Profile, PublicRecipe, Recipe } from "@/lib/types";
 
 const mealLabels: Record<MealType, string> = {
@@ -41,13 +45,30 @@ function cloneFromCatalogue(item: PublicRecipe, recipes: Recipe[]): Recipe {
     ingredients: item.ingredients.map((ingredient) => ({ ...ingredient, id: `ingredient-${crypto.randomUUID()}` })),
     nutritionPerServing: item.nutritionPerServing,
     imageUrls: item.imageUrl ? [item.imageUrl] : undefined,
+    instructions: item.instructions,
+    cuisine: item.cuisine,
+    dietaryTags: item.dietaryTags,
     publicRecipeId: item.id,
+    origin: recipeOrigins.saved,
     createdAt: now,
     updatedAt: now,
   };
 }
 
-export function PlanView({ profile, foods, meals, userId, onSave, onLog, onOpenFoods, onOpenAdd }: {
+/** Merges names into a deduped, case-insensitive manual shopping list. */
+function addNamesToShoppingList(current: string[] | undefined, names: string[]): string[] {
+  const list = [...(current || [])];
+  const keys = new Set(list.map((item) => item.toLocaleLowerCase()));
+  for (const raw of names) {
+    const name = raw.trim();
+    if (!name || keys.has(name.toLocaleLowerCase())) continue;
+    keys.add(name.toLocaleLowerCase());
+    list.push(name);
+  }
+  return list;
+}
+
+export function PlanView({ profile, foods, meals, userId, onSave, onLog, onOpenFoods, onOpenAdd, initialSection }: {
   profile: Profile;
   foods: Food[];
   meals: Meal[];
@@ -56,21 +77,26 @@ export function PlanView({ profile, foods, meals, userId, onSave, onLog, onOpenF
   onLog: (meal: Meal) => Promise<void>;
   onOpenFoods: () => void;
   onOpenAdd: (date: string, mealType: MealType) => void;
+  initialSection?: PlanSection;
 }) {
   const recipes = profile.recipes || [];
   const entries = (profile.mealPlanEntries || []).filter((entry) => entry.recipeId ? recipes.some((recipe) => recipe.id === entry.recipeId) : foods.some((food) => food.id === entry.foodId)).sort((a, b) => a.date.localeCompare(b.date));
   const [recipeComposerOpen, setRecipeComposerOpen] = useState(false);
   const [date, setDate] = useState(localDateKey());
-  const [section, setSection] = useState<"week" | "recipes" | "catalogue" | "shopping">("week");
+  const [section, setSection] = useState<PlanSection>(initialSection || "week");
   const [loggingRecipe, setLoggingRecipe] = useState<Recipe>();
   const [editingRecipe, setEditingRecipe] = useState<Recipe>();
   const [deletingRecipe, setDeletingRecipe] = useState<Recipe>();
   const [planCalendarOpen, setPlanCalendarOpen] = useState(false);
   const [quickPlanRecipe, setQuickPlanRecipe] = useState<Recipe>();
   const [sharingRecipeId, setSharingRecipeId] = useState<string>();
+  const [viewingRecipe, setViewingRecipe] = useState<Recipe>();
+  const [viewServings, setViewServings] = useState(1);
+  const [viewCheckedSteps, setViewCheckedSteps] = useState<Set<number>>(new Set());
+  const [cookingRecipe, setCookingRecipe] = useState<Recipe>();
 
   const saveRecipe = (recipe: Recipe) => onSave({ ...profile, recipes: upsertRecipe(recipes, recipe) });
-  const addRecipe = (recipe: Recipe) => onSave({ ...profile, recipes: [...recipes, recipe] });
+  const addRecipe = (recipe: Recipe) => onSave({ ...profile, recipes: [...recipes, { ...recipe, origin: recipe.origin || recipeOrigins.created }] });
   const deleteRecipe = (recipe: Recipe) => { onSave({ ...profile, recipes: recipes.filter((item) => item.id !== recipe.id), mealPlanEntries: entries.filter((entry) => entry.recipeId !== recipe.id) }); setDeletingRecipe(undefined); };
   const removeEntry = (id: string) => onSave({ ...profile, mealPlanEntries: (profile.mealPlanEntries || []).filter((entry) => entry.id !== id) });
   const planRecipeEntry = (recipe: Recipe, entryDate: string, mealType: MealType) => onSave({ ...profile, recipes: upsertRecipe(recipes, recipe), mealPlanEntries: [...(profile.mealPlanEntries || []), { id: `plan-${crypto.randomUUID()}`, recipeId: recipe.id, date: entryDate, mealType }] });
@@ -79,6 +105,12 @@ export function PlanView({ profile, foods, meals, userId, onSave, onLog, onOpenF
     if (!recipes.some((existing) => existing.id === recipe.id)) onSave({ ...profile, recipes: [...recipes, recipe] });
     return recipe;
   };
+  const addToShopping = (names: string[]) => onSave({ ...profile, extraShoppingItems: addNamesToShoppingList(profile.extraShoppingItems, names) });
+  const openRecipe = (recipe: Recipe) => {
+    setViewingRecipe(recipe); setViewServings(recipe.servings); setViewCheckedSteps(new Set());
+    if (profile.recipeCookView === recipeCookViews.step && recipe.instructions?.length) setCookingRecipe(recipe);
+  };
+  const toggleViewStep = (index: number) => setViewCheckedSteps((current) => { const next = new Set(current); if (next.has(index)) next.delete(index); else next.add(index); return next; });
   const toggleShare = async (recipe: Recipe) => {
     if (!userId) return;
     setSharingRecipeId(recipe.id);
@@ -95,7 +127,10 @@ export function PlanView({ profile, foods, meals, userId, onSave, onLog, onOpenF
   };
 
   const plannedRecipes = entries.map((entry) => entry.recipeId ? recipes.find((recipe) => recipe.id === entry.recipeId) : undefined).filter((recipe): recipe is Recipe => Boolean(recipe));
-  const groceries = groceryItemsForPlan(plannedRecipes);
+  const groceries = groceryItemsForPlan(plannedRecipes, profile.extraShoppingItems);
+  const ownRecipes = recipes.filter((recipe) => recipe.origin !== recipeOrigins.saved);
+  const savedRecipes = recipes.filter((recipe) => recipe.origin === recipeOrigins.saved);
+  const viewScaleFactor = viewingRecipe ? viewServings / viewingRecipe.servings : 1;
   const movePlanDay = (offset: number) => {
     const next = new Date(`${date}T12:00:00`);
     next.setDate(next.getDate() + offset);
@@ -130,21 +165,58 @@ export function PlanView({ profile, foods, meals, userId, onSave, onLog, onOpenF
         <RecipeComposer userId={userId} onSave={(recipe) => { addRecipe(recipe); setRecipeComposerOpen(false); }} />
       </details>
       <section className="recipe-library" aria-labelledby="recipe-library-heading">
-        <div className="section-heading"><div><span className="eyebrow">Your library</span><h2 id="recipe-library-heading">Saved recipes</h2></div><span className="subtle">{recipes.length} saved</span></div>
-        {recipes.length ? <div className="recipe-list">{recipes.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} sharing={sharingRecipeId === recipe.id} onLog={() => setLoggingRecipe(recipe)} onPlan={() => setQuickPlanRecipe(recipe)} onEdit={() => setEditingRecipe(recipe)} onDelete={() => setDeletingRecipe(recipe)} onToggleShare={userId ? () => void toggleShare(recipe) : undefined} />)}</div>
+        <div className="section-heading"><div><span className="eyebrow">Your library</span><h2 id="recipe-library-heading">Your recipes</h2></div><span className="subtle">{ownRecipes.length} saved</span></div>
+        {ownRecipes.length ? <div className="recipe-list">{ownRecipes.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} sharing={sharingRecipeId === recipe.id} onOpen={() => openRecipe(recipe)} onLog={() => setLoggingRecipe(recipe)} onPlan={() => setQuickPlanRecipe(recipe)} onEdit={() => setEditingRecipe(recipe)} onDelete={() => setDeletingRecipe(recipe)} onToggleShare={userId ? () => void toggleShare(recipe) : undefined} />)}</div>
           : <div className="recipe-empty card"><span className="action-icon mint"><BookOpen size={22} /></span><strong>Your regular meals belong here.</strong><p>Save one recipe and it can be logged or planned without rebuilding it.</p><button type="button" className="secondary-button" onClick={() => setRecipeComposerOpen(true)}><Plus size={16} />Save your first recipe</button></div>}
       </section>
+      {savedRecipes.length > 0 && <section className="recipe-library" aria-labelledby="recipe-saved-heading">
+        <div className="section-heading"><div><span className="eyebrow">From the catalogue</span><h2 id="recipe-saved-heading">Saved from catalogue</h2></div><span className="subtle">{savedRecipes.length} saved</span></div>
+        <div className="recipe-list">{savedRecipes.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} sharing={sharingRecipeId === recipe.id} onOpen={() => openRecipe(recipe)} onLog={() => setLoggingRecipe(recipe)} onPlan={() => setQuickPlanRecipe(recipe)} onEdit={() => setEditingRecipe(recipe)} onDelete={() => setDeletingRecipe(recipe)} onToggleShare={userId ? () => void toggleShare(recipe) : undefined} />)}</div>
+      </section>}
     </section>}
 
-    {section === "catalogue" && <CatalogueView userId={userId} meals={meals} recipes={recipes} entries={entries} hideCalories={profile.hideCalories} onSaveToLibrary={saveToLibrary} onPlanRecipe={planRecipeEntry} />}
+    {section === "catalogue" && <CatalogueView userId={userId} meals={meals} recipes={recipes} entries={entries} hideCalories={profile.hideCalories} cookView={profile.recipeCookView} onSaveToLibrary={saveToLibrary} onPlanRecipe={planRecipeEntry} onAddToShopping={addToShopping} />}
 
-    {section === "shopping" && <ShoppingList items={groceries} hasRecipes={recipes.length > 0} />}
+    {section === "shopping" && <ShoppingList items={groceries} hasRecipes={recipes.length > 0} onRemoveExtra={(name) => onSave({ ...profile, extraShoppingItems: (profile.extraShoppingItems || []).filter((item) => item.toLocaleLowerCase() !== name.toLocaleLowerCase()) })} />}
 
     {planCalendarOpen && <Sheet label="Choose a plan date" onClose={() => setPlanCalendarOpen(false)}><PlanCalendarSheet dateKey={date} entries={entries} onSelect={(nextDate) => { setDate(nextDate); setPlanCalendarOpen(false); }} /></Sheet>}
     {loggingRecipe && <Sheet onClose={() => setLoggingRecipe(undefined)} wide showClose={false} className="add-food-sheet-shell"><PortionSheet food={recipeAsFood(loggingRecipe, foods)} recipeId={loggingRecipe.id} hideCalories={profile.hideCalories} onLog={(meal) => void onLog(meal)} onClose={() => setLoggingRecipe(undefined)} /></Sheet>}
     {editingRecipe && <Sheet onClose={() => setEditingRecipe(undefined)} label={`Edit ${editingRecipe.name}`} wide><div className="recipe-edit-sheet"><div className="sheet-header"><div><span className="eyebrow">Saved recipe</span><h2>Edit recipe</h2></div><span /></div><RecipeComposer recipe={editingRecipe} userId={userId} onSave={(recipe) => { saveRecipe(recipe); setEditingRecipe(undefined); }} /></div></Sheet>}
     {deletingRecipe && <Sheet onClose={() => setDeletingRecipe(undefined)} label={`Delete ${deletingRecipe.name}`}><div className="recipe-delete-sheet"><div className="sheet-header"><div><span className="eyebrow">Saved recipe</span><h2>Delete recipe?</h2></div><span /></div><p><strong>{deletingRecipe.name}</strong> will be removed from your recipe library and any future meal plans. Meals you already logged will stay in your diary.</p><div className="sheet-actions"><button type="button" className="secondary-button" onClick={() => setDeletingRecipe(undefined)}>Cancel</button><button type="button" className="primary-button danger-button" onClick={() => deleteRecipe(deletingRecipe)}><Trash2 size={17} />Delete recipe</button></div></div></Sheet>}
     {quickPlanRecipe && <Sheet onClose={() => setQuickPlanRecipe(undefined)} label={`Plan ${quickPlanRecipe.name}`}><QuickPlanSheet entries={entries} initialDate={date} itemName={quickPlanRecipe.name} onConfirm={(entryDate, mealType) => { planRecipeEntry(quickPlanRecipe, entryDate, mealType); setQuickPlanRecipe(undefined); }} /></Sheet>}
+
+    {viewingRecipe && <Sheet onClose={() => { setViewingRecipe(undefined); setCookingRecipe(undefined); }} wide label={viewingRecipe.name}>
+      <RecipeDetail
+        name={viewingRecipe.name}
+        imageUrl={viewingRecipe.imageUrls?.[0]}
+        eyebrow={viewingRecipe.origin === recipeOrigins.saved ? "Saved recipe" : "Your recipe"}
+        cuisine={viewingRecipe.cuisine}
+        dietaryTags={viewingRecipe.dietaryTags}
+        hideCalories={profile.hideCalories}
+        caloriesPerServing={viewingRecipe.nutritionPerServing.calories}
+        servingsCount={viewServings}
+        onServingsChange={setViewServings}
+        ingredients={viewingRecipe.ingredients}
+        scaleFactor={viewScaleFactor}
+        instructions={viewingRecipe.instructions || []}
+        checkedSteps={viewCheckedSteps}
+        onToggleStep={toggleViewStep}
+        actions={[
+          { key: "shopping", label: "Add to shopping list", icon: ListPlus, onClick: () => addToShopping(viewingRecipe.ingredients.map((ingredient) => ingredient.name)) },
+          { key: "log", label: "Log now", icon: BookOpen, onClick: () => setLoggingRecipe(viewingRecipe) },
+          { key: "plan", label: "Plan this", icon: CalendarPlus, onClick: () => setQuickPlanRecipe(viewingRecipe) },
+          { key: "cook", label: "Start cooking", icon: ChefHat, onClick: () => setCookingRecipe(viewingRecipe), variant: "primary", disabled: !(viewingRecipe.instructions || []).length },
+          { key: "edit", label: "Edit", icon: Pencil, onClick: () => { setEditingRecipe(viewingRecipe); setViewingRecipe(undefined); } },
+          ...(userId ? [{
+            key: "share", label: viewingRecipe.isPublic ? "Remove from catalogue" : "Share to catalogue", icon: Share2,
+            onClick: () => void toggleShare(viewingRecipe), disabled: sharingRecipeId === viewingRecipe.id || (!viewingRecipe.isPublic && !viewingRecipe.imageUrls?.length),
+            note: !viewingRecipe.isPublic && !viewingRecipe.imageUrls?.length ? "Add a photo to share this recipe publicly." : undefined,
+          }] : []),
+        ]}
+      />
+    </Sheet>}
+
+    {cookingRecipe && <CookMode name={cookingRecipe.name} ingredients={cookingRecipe.ingredients} scaleFactor={viewScaleFactor} instructions={cookingRecipe.instructions || []} onClose={() => setCookingRecipe(undefined)} />}
   </main>;
 }
 

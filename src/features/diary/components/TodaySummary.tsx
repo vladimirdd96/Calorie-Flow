@@ -34,7 +34,7 @@ function MacroTarget({ icon, label, value, target, color }: { icon: ReactNode; l
   </div>;
 }
 
-function FastingPanel({ profile, meals, onSave }: { profile: Profile; meals: Meal[]; onSave: (profile: Profile) => void }) {
+function FastingPanel({ profile, meals, onSave, onOpenFasting }: { profile: Profile; meals: Meal[]; onSave: (profile: Profile) => void; onOpenFasting: () => void }) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 60_000);
@@ -55,6 +55,7 @@ function FastingPanel({ profile, meals, onSave }: { profile: Profile; meals: Mea
     <span className="today-panel-label">Goal</span>
     <div className="today-goal-options">{fastingGoals.map((hours) => <button key={hours} type="button" className={goal === hours ? "active" : ""} onClick={() => onSave({ ...profile, fastingGoalHours: hours })}>{hours} h</button>)}</div>
     <small>{sessionCopy}</small>
+    <button type="button" className="today-trend-link" onClick={onOpenFasting}>See fasting history<ChevronRight size={14} /></button>
   </div>;
 }
 
@@ -70,7 +71,7 @@ function WeightPanel({ profile, onSave, onOpenWeight }: { profile: Profile; onSa
   return <div className="today-inline-panel">
     <strong className="today-panel-title">Today&apos;s weigh-in</strong>
     <div className="today-weigh-row"><label><span className="visually-hidden">Weight in kilograms</span><input inputMode="decimal" value={draft} onChange={(event) => setDraft(event.target.value)} /><small>kg</small></label><button type="button" className="primary-button" onClick={save}>Save</button></div>
-    <button type="button" className="today-trend-link" onClick={onOpenWeight}>See your trend<ChevronRight size={14} /></button>
+    <button type="button" className="today-trend-link" onClick={onOpenWeight}>See weight history<ChevronRight size={14} /></button>
   </div>;
 }
 
@@ -101,7 +102,7 @@ function NutritionExpanded({ total, profile }: { total: Nutrition; profile: Prof
   </div>;
 }
 
-export function TodaySummary({ profile, meals, total, targets, onSaveProfile, onOpenWeight }: { profile: Profile; meals: Meal[]; total: Nutrition; targets: DailyTargets; onSaveProfile: (profile: Profile) => void; onOpenWeight: () => void }) {
+export function TodaySummary({ profile, meals, total, targets, onSaveProfile, onOpenWeight, onOpenFasting }: { profile: Profile; meals: Meal[]; total: Nutrition; targets: DailyTargets; onSaveProfile: (profile: Profile) => void; onOpenWeight: () => void; onOpenFasting: () => void }) {
   const [openPanel, setOpenPanel] = useState<"fasting" | "weight">();
   const [nutritionOpen, setNutritionOpen] = useState(false);
   const carbs = profile.carbDisplay === "net" ? netCarbs(total) : total.carbs;
@@ -114,7 +115,7 @@ export function TodaySummary({ profile, meals, total, targets, onSaveProfile, on
       {profile.enabledHabitFeatures?.includes("fasting") && <button type="button" className="fasting" aria-expanded={openPanel === "fasting"} onClick={() => setOpenPanel((open) => open === "fasting" ? undefined : "fasting")}><Timer size={13} />{fast ? `${round(fastingHours)}h fasted` : "Fasting since…"}</button>}
       {profile.weightTracking === "enabled" && <button type="button" className="weight" aria-expanded={openPanel === "weight"} onClick={() => setOpenPanel((open) => open === "weight" ? undefined : "weight")}><Scale size={13} />{round(latestWeight)} kg</button>}
     </div>
-    {openPanel === "fasting" && <FastingPanel profile={profile} meals={meals} onSave={onSaveProfile} />}
+    {openPanel === "fasting" && <FastingPanel profile={profile} meals={meals} onSave={onSaveProfile} onOpenFasting={onOpenFasting} />}
     {openPanel === "weight" && <WeightPanel profile={profile} onSave={onSaveProfile} onOpenWeight={onOpenWeight} />}
     <div className="today-hero-main">
       <ProgressRing value={profile.hideCalories ? total.protein : total.calories} target={profile.hideCalories ? targets.protein : targets.calories} nutrition={total} centerValue={Math.abs(Math.round(remaining))} centerUnit={profile.hideCalories ? "g protein left" : remaining < 0 ? "kcal over" : "kcal left"} centerSub={profile.hideCalories ? `${round(total.protein)} of ${targets.protein} g eaten` : `${Math.round(total.calories)} of ${targets.calories} eaten`} centerColor={remaining < 0 ? "var(--fat)" : "var(--text)"} hideLegend />

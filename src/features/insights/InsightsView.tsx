@@ -9,6 +9,7 @@ import { isHabitFeatureEnabled } from "@/lib/habit-settings";
 import { recentLogDates } from "@/lib/logging";
 import { NumericInput } from "@/features/shared/NumericInput";
 import { DatePickerField } from "@/features/shared/DatePicker";
+import type { InsightsSection } from "@/features/navigation/types";
 import type { FastingRecord, Meal, MealType, Profile, WeightEntry } from "@/lib/types";
 import { habitFeatures, measurementSystems } from "@/lib/types";
 import { averageNutritionFor } from "./averageNutrition";
@@ -16,7 +17,6 @@ import { averageNutritionFor } from "./averageNutrition";
 type WeightPeriod = "week" | "month" | "all";
 type FastingPeriod = "week" | "month" | "all";
 type InsightsRange = "week" | "month" | "all";
-type InsightsSection = "overview" | "nutrition" | "weight" | "fasting";
 
 const kgToLb = (kg: number) => kg * 2.2046226218;
 
@@ -51,8 +51,10 @@ function startOfWeek(date: Date) {
   return result;
 }
 
-export function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: { meals: Meal[]; profile: Profile; onSave: (profile: Profile) => void; weightTrackingEnabled: boolean }) {
+export function InsightsView({ meals, profile, onSave, weightTrackingEnabled, initialSection }: { meals: Meal[]; profile: Profile; onSave: (profile: Profile) => void; weightTrackingEnabled: boolean; initialSection?: InsightsSection }) {
   const fastingEnabled = isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting);
+  const [fastingPeriod, setFastingPeriod] = useState<FastingPeriod>("week");
+  const [section, setSection] = useState<InsightsSection>(initialSection || "overview");
   const days = Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
     date.setDate(date.getDate() - (6 - index));
@@ -90,9 +92,7 @@ export function InsightsView({ meals, profile, onSave, weightTrackingEnabled }: 
   const averageFast = plausibleFastingDurations.length ? plausibleFastingDurations.reduce((sum, hours) => sum + hours, 0) / plausibleFastingDurations.length : 0;
   const longestFast = plausibleFastingDurations.length ? Math.max(...plausibleFastingDurations) : 0;
   const [weightPeriod, setWeightPeriod] = useState<WeightPeriod>("week");
-  const [fastingPeriod, setFastingPeriod] = useState<FastingPeriod>("week");
   const [range, setRange] = useState<InsightsRange>("week");
-  const [section, setSection] = useState<InsightsSection>("overview");
   const activeSection: InsightsSection = (section === "weight" && !weightTrackingEnabled) || (section === "fasting" && !fastingEnabled) ? "overview" : section;
   const [editingFastingId, setEditingFastingId] = useState<string>();
   const [fastingDraft, setFastingDraft] = useState<{ startedAt: string; endedAt: string }>({ startedAt: "", endedAt: "" });

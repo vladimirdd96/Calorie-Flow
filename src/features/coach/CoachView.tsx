@@ -15,8 +15,9 @@ import type { CoachChat, CoachMealAction, CoachMealChoice } from "@/lib/types";
 import { groceryItemsFromReply, hideCalorieValues, titleFromQuestion } from "./lib/coachFormatting";
 import { GROCERY_ITEMS_SETTING, isGroceryItem, mealLabels } from "./types";
 import type { AddView, ChatTextSize, CoachSection, DisplayCoachMessage, GroceryList } from "./types";
+import type { CoachSection as NavigationCoachSection } from "@/features/navigation/types";
 
-export function CoachView({ configured, user, onBack, onOpenAccount, onOpenAdd, onLogCoachMeal, hideCalories, chatTextSize }: { configured: boolean; user: CloudUser | null; onBack: () => void; onOpenAccount: () => void; onOpenAdd: (view: AddView) => void; onLogCoachMeal: (action: CoachMealAction) => Promise<void>; hideCalories: boolean; chatTextSize: ChatTextSize }) {
+export function CoachView({ configured, user, onBack, onOpenAccount, onOpenAdd, onLogCoachMeal, hideCalories, chatTextSize, initialSection }: { configured: boolean; user: CloudUser | null; onBack: () => void; onOpenAccount: () => void; onOpenAdd: (view: AddView) => void; onLogCoachMeal: (action: CoachMealAction) => Promise<void>; hideCalories: boolean; chatTextSize: ChatTextSize; initialSection?: NavigationCoachSection }) {
   const [messages, setMessages] = useState<DisplayCoachMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
@@ -31,7 +32,7 @@ export function CoachView({ configured, user, onBack, onOpenAccount, onOpenAdd, 
   const [renameDraft, setRenameDraft] = useState("");
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
   const [chatSearch, setChatSearch] = useState("");
-  const [section, setSection] = useState<CoachSection>("chat");
+  const [section, setSection] = useState<CoachSection>(initialSection || "chat");
   const [groceryLists, setGroceryLists] = useState<GroceryList[]>([]);
   const [activeGroceryListId, setActiveGroceryListId] = useState("");
   const [loadedGroceryKey, setLoadedGroceryKey] = useState("");
@@ -333,7 +334,7 @@ export function CoachView({ configured, user, onBack, onOpenAccount, onOpenAdd, 
       <main className="page coach-page"><header className="page-header"><span className="eyebrow">Nutrition only</span><h1>Coach</h1><p>{hideCalories ? "Nutrition guidance using your actual diary." : "Calorie-aware guidance using your actual diary."}</p></header><section className="coach-gate card"><MessageCircle /><h2>Coach setup is waiting</h2><p>Connect the project database to activate private, diary-aware coaching.</p></section></main>
   );
   if (!user) return (
-      <main className="page coach-page"><header className="page-header"><span className="eyebrow">Nutrition only</span><h1>Coach</h1><p>{hideCalories ? "Nutrition guidance using your actual diary." : "Calorie-aware guidance using your actual diary."}</p></header><section className="coach-gate card"><MessageCircle /><h2>Sign in for private coaching</h2><p>The Coach reads only the signed-in user’s targets, meals, and saved foods.</p><button className="primary-button" onClick={onOpenAccount}><Mail size={17} />Open account setup</button></section></main>
+      <main className="page coach-page"><header className="page-header"><span className="eyebrow">Nutrition only</span><h1>Coach</h1><p>{hideCalories ? "Nutrition guidance using your actual diary." : "Calorie-aware guidance using your actual diary."}</p></header><section className="coach-gate card"><MessageCircle /><h2>Sign in for private coaching</h2><p>The Coach reads only the signed-in user’s targets, meals, and saved foods.</p><button type="button" className="primary-button" onClick={onOpenAccount}><Mail size={17} />Open account setup</button></section></main>
   );
   if (loadedUserId !== user.id) return (
     <main className="page coach-page"><header className="page-header"><span className="eyebrow">Your diary, in context</span><h1>Coach</h1></header><section className="coach-gate card"><span className="coach-loader" /><h2>Loading your private Coach…</h2></section></main>

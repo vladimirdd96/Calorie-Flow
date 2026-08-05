@@ -11,6 +11,7 @@ import { BrandMark, changeDate, dayLabel, mealLabels, MiniProgressRing } from ".
 import { HomeScreenPrompt, SaveRecipeSheet } from "./components/DiaryTools";
 import { MealRow } from "./components/MealControls";
 import { TodaySummary, TodayWater } from "./components/TodaySummary";
+import type { InsightsSection } from "@/features/navigation/types";
 
 export { DuplicateMealSheet, MealEditor, MoveMealSheet } from "./components/MealControls";
 export { RecipeLogSheet } from "./components/DiaryTools";
@@ -55,7 +56,7 @@ export function TodayView({
   showHomeScreenPrompt: boolean;
   onDismissHomeScreenPrompt: () => void;
   onOpenCalendar: () => void;
-  onOpenInsights: () => void;
+  onOpenInsights: (section?: InsightsSection) => void;
   onSaveProfile: (profile: Profile) => void;
   onSaveRecipe: (recipe: Recipe, components: Meal[]) => Promise<void>;
 }) {
@@ -149,7 +150,7 @@ export function TodayView({
 
       {showHomeScreenPrompt && <HomeScreenPrompt onDismiss={onDismissHomeScreenPrompt} />}
 
-      <TodaySummary profile={profile} meals={meals} total={total} targets={targets} onSaveProfile={onSaveProfile} onOpenWeight={onOpenInsights} />
+      <TodaySummary profile={profile} meals={meals} total={total} targets={targets} onSaveProfile={onSaveProfile} onOpenWeight={() => onOpenInsights("weight")} onOpenFasting={() => onOpenInsights("fasting")} />
       {isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.water) && <TodayWater profile={profile} dateKey={dateKey} onSave={onSaveProfile} />}
 
       <section className="log-section">
@@ -164,7 +165,7 @@ export function TodayView({
         ))}
       </section>
 
-      <button className="coach-check-in today-insights-teaser" onClick={onOpenInsights}>
+      <button type="button" className="coach-check-in today-insights-teaser" onClick={() => onOpenInsights("overview")}>
         <span className="action-icon mint"><TrendingUp size={19} /></span>
         <span><strong>{profile.hideCalories ? "See your nutrition patterns" : "Review your weekly calorie trend"}</strong><small>Protein target and daily averages</small></span>
         <ChevronRight size={18} />

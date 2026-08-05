@@ -23,4 +23,14 @@ describe("tracker feature boundary", () => {
     expect(source).toContain('from "@/features/profile/ProfileView"');
     expect(source).not.toMatch(/function (TodayView|InsightsView|ProfileView|AddFoodSheet|CoachView|PlanView)\(/);
   });
+
+  it("remounts the food editor when opening it from food details", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/features/tracker/TrackerApp.tsx"), "utf8");
+
+    expect(source).toContain('const activeFoodModal = editingFood ?');
+    expect(source).not.toContain('key={`food-${activeFoodModal.mode}`}');
+    expect(source).toContain('<Sheet onClose={() => activeFoodModal.mode === "edit"');
+    expect(source).toContain("setFoodDetails(undefined); setEditingFood(activeFoodModal.food);");
+    expect(source).toContain("setEditingFood(foods.find((food) => food.id === detailMeal.foodId)");
+  });
 });

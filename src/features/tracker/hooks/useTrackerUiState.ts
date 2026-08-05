@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { type Dispatch, type SetStateAction, useCallback, useEffect, useState } from "react";
 import { localDateKey } from "@/lib/nutrition";
 import type { AddFoodView } from "@/features/food-capture/types";
-import type { AppTab } from "@/features/navigation/types";
+import type { AppNavigationTarget, AppTab } from "@/features/navigation/types";
 import type { Food, Meal, MealType, Recipe } from "@/lib/types";
 
 export type MealTimingPrompt = { meal: Meal; previousMeal: Meal; onDecision: (decision: "new" | "previous") => void };
@@ -11,7 +11,14 @@ export type PlanAddDraft = { date: string; mealType: MealType };
 
 /** Ephemeral navigation and overlay state; no persistence or domain writes. */
 export function useTrackerUiState() {
-  const [tab, setTab] = useState<AppTab>("today");
+  const [navigationTarget, setNavigationTarget] = useState<AppNavigationTarget>({ tab: "today" });
+  const tab = navigationTarget.tab;
+  const setTab = useCallback<Dispatch<SetStateAction<AppTab>>>((nextTab) => {
+    setNavigationTarget((current) => ({ tab: typeof nextTab === "function" ? nextTab(current.tab) : nextTab }));
+  }, []);
+  const navigateTo = useCallback((target: AppNavigationTarget) => {
+    setNavigationTarget(target);
+  }, []);
   const [dateKey, setDateKey] = useState(localDateKey());
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -42,7 +49,7 @@ export function useTrackerUiState() {
   }, [toast]);
 
   return {
-    tab, setTab, dateKey, setDateKey, calendarOpen, setCalendarOpen,
+    tab, setTab, navigationTarget, navigateTo, dateKey, setDateKey, calendarOpen, setCalendarOpen,
     adding, setAdding, initialAddView, setInitialAddView, directFood, setDirectFood,
     foodDetails, setFoodDetails, editingFood, setEditingFood,
     editingMeal, setEditingMeal, editingRecipeMeal, setEditingRecipeMeal, detailMeal, setDetailMeal, duplicateMealDraft, setDuplicateMealDraft,

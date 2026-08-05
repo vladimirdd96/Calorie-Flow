@@ -6,7 +6,7 @@ import { ThemedSelect } from "@/features/shared/ThemedSelect";
 import { ClearableInput } from "@/features/shared/ClearableInput";
 import { NumericInput } from "@/features/shared/NumericInput";
 import { Sheet } from "@/features/shared/Sheet";
-import type { AppTab } from "@/features/navigation/types";
+import type { AppNavigationTarget, ProfileSection as NavigationProfileSection } from "@/features/navigation/types";
 import { validateBackup } from "@/lib/db";
 import { acceptCloudDiaryShare, getCloudDiaryShares, getSharedDiarySnapshot, inviteCloudDiaryShare, revokeCloudDiaryShare } from "@/lib/cloud";
 import { localDateKey } from "@/lib/nutrition";
@@ -16,7 +16,7 @@ import type { ActivityLevel, DiaryShare, Profile } from "@/lib/types";
 import { measurementSystems } from "@/lib/types";
 import type { BackupData } from "@/lib/db";
 
-type ProfileSection = "profile" | "customize";
+type ProfileSection = NavigationProfileSection;
 
 type SyncState = "local" | "syncing" | "synced" | "offline" | "error";
 
@@ -189,6 +189,7 @@ export function ProfileView({
   chatTextSize,
   onChatTextSizeChange,
   onNavigate,
+  initialSection,
 }: {
   profile: Profile;
   onSave: (profile: Profile) => void;
@@ -202,13 +203,14 @@ export function ProfileView({
   onThemeChange: (theme: ThemeMode) => void;
   chatTextSize: ChatTextSize;
   onChatTextSizeChange: (size: ChatTextSize) => void;
-  onNavigate: (tab: AppTab) => void;
+  onNavigate: (target: AppNavigationTarget) => void;
+  initialSection?: ProfileSection;
 }) {
   const importRef = useRef<HTMLInputElement>(null);
   const [editingTargets, setEditingTargets] = useState(false);
   const [editingBody, setEditingBody] = useState(false);
   const [sharingOpen, setSharingOpen] = useState(false);
-  const [profileSection, setProfileSection] = useState<ProfileSection>("profile");
+  const [profileSection, setProfileSection] = useState<ProfileSection>(initialSection || "profile");
   const [backupNotice, setBackupNotice] = useState("");
   const [, setExporting] = useState(false);
   const downloadCsv = async () => {
@@ -267,7 +269,7 @@ export function ProfileView({
         <section className="profile-target-card"><div><span><small>kcal</small><strong>{profile.calorieTarget}</strong></span><span><small>Protein</small><strong>{profile.proteinTarget}g</strong></span><span><small>Carbs</small><strong>{profile.carbsTarget}g</strong></span><span><small>Fat</small><strong>{profile.fatTarget}g</strong></span></div><button type="button" onClick={() => setEditingTargets(true)}><Pencil size={15} />Edit targets</button></section>
         <ProfileLinkRow icon={<Ruler />} tone="blue" title="Body & activity" detail={`${profile.age} yrs · ${profile.heightCm} cm · ${profile.activity} activity`} onClick={() => setEditingBody(true)} />
         <ProfileSectionLabel>Elsewhere in the app</ProfileSectionLabel>
-        <div className="profile-link-stack"><ProfileLinkRow icon={<BarChart3 />} tone="carbs" title="Weight history" detail="Weigh-ins and trend live in Insights" onClick={() => onNavigate("insights")} /><ProfileLinkRow icon={<Library />} tone="carbs" title="Your foods" detail="Everything you've saved or logged" onClick={() => onNavigate("search")} /><ProfileLinkRow icon={<MessageCircle />} tone="blue" title="Coach" detail="Chat about meals, recipes and your log" onClick={() => onNavigate("coach")} /></div>
+        <div className="profile-link-stack"><ProfileLinkRow icon={<BarChart3 />} tone="carbs" title="Weight history" detail="Weigh-ins and trend live in Insights" onClick={() => onNavigate({ tab: "insights", section: "weight" })} /><ProfileLinkRow icon={<Library />} tone="carbs" title="Your foods" detail="Everything you've saved or logged" onClick={() => onNavigate({ tab: "search" })} /><ProfileLinkRow icon={<MessageCircle />} tone="blue" title="Coach" detail="Chat about meals, recipes and your log" onClick={() => onNavigate({ tab: "coach", section: "chat" })} /></div>
         <ProfileSectionLabel>Account &amp; sync</ProfileSectionLabel>
         <section className="profile-account-card"><div><span className="profile-link-icon mint"><Cloud /></span><span><strong>{user ? "Synced to your account" : "Saved on this device"}</strong><small>{user ? syncState === "synced" ? "Up to date across devices" : "Syncing your latest changes" : "Sign in to sync across devices"}</small></span><button type="button" onClick={() => void onSignOut()}>{user ? "Sign out" : "Local"}</button></div><button type="button" className="profile-share-row" onClick={() => setSharingOpen(true)}><span className="profile-link-icon carbs"><Share2 /></span><span><strong>Share a read-only diary</strong><small>Invite someone you trust</small></span><ChevronRight size={16} /></button></section>
         <ProfileSectionLabel>Your data</ProfileSectionLabel>

@@ -1,10 +1,10 @@
 "use client";
 
-import { CalendarRange, ChevronRight, Droplet, EyeOff, Moon, Scale, Sparkles, Sun, Timer, Wheat } from "lucide-react";
+import { CalendarRange, ChefHat, ChevronRight, Droplet, EyeOff, Moon, Scale, Sparkles, Sun, Timer, Wheat } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { isHabitFeatureEnabled, toggleHabitFeature } from "@/lib/habit-settings";
 import type { DailyTargets, MealType, Profile, Weekday } from "@/lib/types";
-import { fastingLateMealBehaviors, fastingTrackingModes, habitFeatures, measurementSystems, weightTrackingStatuses } from "@/lib/types";
+import { fastingLateMealBehaviors, fastingTrackingModes, habitFeatures, measurementSystems, recipeCookViews, weightTrackingStatuses } from "@/lib/types";
 import type { NutritionTargetKey } from "@/lib/types";
 import { NutritionGoalFields } from "./NutritionGoalFields";
 
@@ -54,6 +54,7 @@ export function ProfileCustomize({ profile, onSave, theme, onThemeChange, chatTe
   const preciseTiming = profile.fastingTrackingMode === fastingTrackingModes.precise;
   const lateEntriesEndFast = profile.fastingLateMealBehavior === fastingLateMealBehaviors.new;
   const measurementSystem = profile.measurementSystem || measurementSystems.metric;
+  const cookView = profile.recipeCookView || recipeCookViews.scroll;
   const saveHabit = (feature: typeof habitFeatures[keyof typeof habitFeatures]) => onSave({ ...profile, enabledHabitFeatures: toggleHabitFeature(profile.enabledHabitFeatures, feature) });
   const dayTargets = profile.dailyTargets || {};
   const maxDayCalories = Math.max(profile.calorieTarget, ...Object.values(dayTargets).map((target) => target?.calories || 0));
@@ -101,6 +102,16 @@ export function ProfileCustomize({ profile, onSave, theme, onThemeChange, chatTe
     <section className="profile-settings-card">
       <label className="profile-simple-toggle"><span><strong>Show a guide per meal</strong><small>Split your daily target across breakfast, lunch, dinner and snacks</small></span><input className="profile-switch" type="checkbox" checked={mealGuides} onChange={() => onSave({ ...profile, mealCalorieTargets: mealGuides ? undefined : defaultMealTargets(profile) })} /></label>
       {mealGuides && <div className="profile-meal-guides">{meals.map(({ key, label, share }) => <div key={key}><span>{label}</span><strong>{mealTargets[key] || Math.round(profile.calorieTarget * share / 100)} kcal · {share}%</strong></div>)}</div>}
+    </section>
+
+    <h2 className="profile-section-label">Cooking</h2>
+    <section className="profile-settings-card">
+      <span className="profile-setting-label"><ChefHat size={14} /> Recipe view</span>
+      <div className="profile-segmented two" role="group" aria-label="Recipe cook view">
+        <button type="button" aria-pressed={cookView === recipeCookViews.scroll} className={cookView === recipeCookViews.scroll ? "active" : ""} onClick={() => onSave({ ...profile, recipeCookView: recipeCookViews.scroll })}>Scroll</button>
+        <button type="button" aria-pressed={cookView === recipeCookViews.step} className={cookView === recipeCookViews.step ? "active" : ""} onClick={() => onSave({ ...profile, recipeCookView: recipeCookViews.step })}>Step-by-step</button>
+      </div>
+      <small className="profile-section-help">{cookView === recipeCookViews.scroll ? "Recipes open showing everything at once; tap Start cooking to go step-by-step." : "Recipes jump straight into step-by-step cook mode."}</small>
     </section>
 
     <h2 className="profile-section-label">Units</h2>

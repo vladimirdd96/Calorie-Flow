@@ -3,9 +3,10 @@
 import { BookOpen, CalendarPlus, Pencil, Share2, Trash2 } from "lucide-react";
 import type { Recipe } from "@/lib/types";
 
-export function RecipeCard({ recipe, sharing, onLog, onPlan, onEdit, onDelete, onToggleShare }: {
+export function RecipeCard({ recipe, sharing, onOpen, onLog, onPlan, onEdit, onDelete, onToggleShare }: {
   recipe: Recipe;
   sharing?: boolean;
+  onOpen: () => void;
   onLog: () => void;
   onPlan: () => void;
   onEdit: () => void;
@@ -13,10 +14,10 @@ export function RecipeCard({ recipe, sharing, onLog, onPlan, onEdit, onDelete, o
   onToggleShare?: () => void;
 }) {
   return <article className="recipe-card card">
-    <div className="recipe-card-body">
+    <button type="button" className="recipe-card-body" onClick={onOpen}>
       {recipe.imageUrls?.[0] ? <img className="food-avatar" src={recipe.imageUrls[0]} alt="" /> : <span className="recipe-row-icon"><BookOpen size={18} /></span>}
       <div><strong>{recipe.name}</strong><small>{recipe.servings} {recipe.servings === 1 ? "serving" : "servings"} · {Math.round(recipe.nutritionPerServing.protein)}g protein{recipe.isPublic ? " · Shared" : ""}</small></div>
-    </div>
+    </button>
     <div className="recipe-card-actions">
       <button className="text-button" type="button" onClick={onLog}><BookOpen size={15} />Log</button>
       <button className="icon-button subtle-button" type="button" aria-label={`Plan ${recipe.name}`} onClick={onPlan}><CalendarPlus size={15} /></button>

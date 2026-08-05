@@ -115,6 +115,8 @@ export const fastingTrackingModes = { standard: "standard", precise: "precise" }
 export type FastingTrackingMode = typeof fastingTrackingModes[keyof typeof fastingTrackingModes];
 export const fastingLateMealBehaviors = { ask: "ask", new: "new", previous: "previous" } as const;
 export type FastingLateMealBehavior = typeof fastingLateMealBehaviors[keyof typeof fastingLateMealBehaviors];
+export const recipeCookViews = { scroll: "scroll", step: "step" } as const;
+export type RecipeCookView = typeof recipeCookViews[keyof typeof recipeCookViews];
 export const defaultNutritionTargets = { sugar: 50, saturatedFat: 20, sodiumMg: 2300, potassiumMg: 3500 } as const;
 export type NutritionTargetKey = "sugarTarget" | "saturatedFatTarget" | "sodiumTarget" | "potassiumTarget";
 
@@ -168,6 +170,9 @@ export type Profile = {
   fastingRecords?: FastingRecord[];
   recipes?: Recipe[];
   mealPlanEntries?: MealPlanEntry[];
+  /** Manually added shopping list ingredients, not tied to a planned recipe. */
+  extraShoppingItems?: string[];
+  recipeCookView?: RecipeCookView;
 };
 
 export type WeightEntry = {
@@ -224,6 +229,9 @@ export const cuisines = {
 } as const;
 export type Cuisine = typeof cuisines[keyof typeof cuisines];
 
+export const recipeOrigins = { created: "created", saved: "saved" } as const;
+export type RecipeOrigin = typeof recipeOrigins[keyof typeof recipeOrigins];
+
 export type Recipe = {
   id: string;
   name: string;
@@ -242,6 +250,8 @@ export type Recipe = {
   isPublic?: boolean;
   /** Links this recipe to its public_recipes row when shared. */
   publicRecipeId?: string;
+  /** "created" via the recipe composer, or "saved" by interacting with a catalogue recipe. Absent on older recipes; treat as "created". */
+  origin?: RecipeOrigin;
   createdAt: string;
   updatedAt: string;
 };

@@ -7,7 +7,7 @@ import type { GroceryItem } from "@/lib/planning";
 
 const SHOPPING_CHECKED_SETTING = "plan:shoppingChecked";
 
-export function ShoppingList({ items, hasRecipes }: { items: GroceryItem[]; hasRecipes: boolean }) {
+export function ShoppingList({ items, hasRecipes, onRemoveExtra }: { items: GroceryItem[]; hasRecipes: boolean; onRemoveExtra?: (name: string) => void }) {
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [loaded, setLoaded] = useState(false);
 
@@ -37,7 +37,8 @@ export function ShoppingList({ items, hasRecipes }: { items: GroceryItem[]; hasR
       const isChecked = checked.has(key);
       return <li key={item.name} className={`shopping-row${isChecked ? " checked" : ""}`}>
         <label><input type="checkbox" checked={isChecked} onChange={() => toggle(item.name)} /><span>{item.name}</span></label>
-        {item.recipeNames.length > 0 && <small>{item.recipeNames.join(", ")}</small>}
+        {item.recipeNames.length > 0 ? <small>{item.recipeNames.join(", ")}</small> : <small>Added by you</small>}
+        {item.recipeNames.length === 0 && onRemoveExtra && <button type="button" className="icon-button subtle-button" aria-label={`Remove ${item.name}`} onClick={() => onRemoveExtra(item.name)}><Trash2 size={13} /></button>}
       </li>;
     })}</ul> : <p>{hasRecipes ? "Plan a recipe for a day and its ingredients will appear here." : "Plan a saved recipe and its ingredients will appear here. Your existing Coach grocery lists remain available in Coach."}</p>}
   </section>;
