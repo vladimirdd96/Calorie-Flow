@@ -13,12 +13,12 @@ export function recipeIngredientFood(ingredient: RecipeIngredient, foods: Food[]
   return foods.find((food) => food.id === replacementId) || foods.find((food) => food.id === ingredient.foodId);
 }
 
-export function recipeIngredientNutrition(ingredient: RecipeIngredient, foods: Food[], replacementId?: string): Nutrition {
+export function recipeIngredientNutrition(ingredient: RecipeIngredient, foods: Food[], replacementId?: string, macroDigits = 1): Nutrition {
   const replacement = replacementId && replacementId !== ingredient.foodId ? foods.find((food) => food.id === replacementId) : undefined;
-  if (replacement) return scaleNutrition(replacement.nutrientsPer100, ingredient.grams || 100);
+  if (replacement) return scaleNutrition(replacement.nutrientsPer100, ingredient.grams || 100, macroDigits);
   if (ingredient.nutrition) return ingredient.nutrition;
   const sourceFood = recipeIngredientFood(ingredient, foods);
-  if (sourceFood) return scaleNutrition(sourceFood.nutrientsPer100, ingredient.grams || 100);
+  if (sourceFood) return scaleNutrition(sourceFood.nutrientsPer100, ingredient.grams || 100, macroDigits);
   return {
     calories: 0,
     protein: 0,
@@ -29,9 +29,9 @@ export function recipeIngredientNutrition(ingredient: RecipeIngredient, foods: F
   };
 }
 
-export function recipeNutritionForLogging(recipe: Recipe, foods: Food[], replacements: Record<string, string>) {
+export function recipeNutritionForLogging(recipe: Recipe, foods: Food[], replacements: Record<string, string>, macroDigits = 1) {
   if (!canLogRecipeIngredients(recipe)) return recipe.nutritionPerServing;
-  return sumNutrition(recipe.ingredients.map((ingredient) => recipeIngredientNutrition(ingredient, foods, replacements[ingredient.id])));
+  return sumNutrition(recipe.ingredients.map((ingredient) => recipeIngredientNutrition(ingredient, foods, replacements[ingredient.id], macroDigits)));
 }
 
 /** Grams for one serving: explicit value, else summed ingredient grams, else a flat fallback. */
@@ -45,16 +45,16 @@ export function recipeServingGrams(recipe: Recipe): number {
  * Represents a saved recipe as a Food so portion-picking UI (unit switching, gram entry,
  * live nutrition preview) can be reused as-is for logging a recipe.
  */
-export function recipeAsFood(recipe: Recipe, foods: Food[], replacements: Record<string, string> = {}): Food {
+export function recipeAsFood(recipe: Recipe, foods: Food[], replacements: Record<string, string> = {}, macroDigits = 1): Food {
   const servingGrams = recipeServingGrams(recipe);
-  const nutritionPerServingUnit = recipeNutritionForLogging(recipe, foods, replacements);
+  const nutritionPerServingUnit = recipeNutritionForLogging(recipe, foods, replacements, macroDigits);
   return {
     id: recipe.id,
     name: recipe.name,
     imageUrl: recipe.imageUrls?.[0],
     servingGrams,
     packageGrams: servingGrams * Math.max(1, recipe.servings),
-    nutrientsPer100: nutritionPer100Grams(nutritionPerServingUnit, servingGrams),
+    nutrientsPer100: nutritionPer100Grams(nutritionPerServingUnit, servingGrams, macroDigits),
     source: "custom",
   };
 }

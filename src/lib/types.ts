@@ -120,6 +120,24 @@ export type RecipeCookView = typeof recipeCookViews[keyof typeof recipeCookViews
 export const defaultNutritionTargets = { sugar: 50, saturatedFat: 20, sodiumMg: 2300, potassiumMg: 3500 } as const;
 export type NutritionTargetKey = "sugarTarget" | "saturatedFatTarget" | "sodiumTarget" | "potassiumTarget";
 
+export const weekStartDays = { monday: "monday", sunday: "sunday" } as const;
+export type WeekStartDay = typeof weekStartDays[keyof typeof weekStartDays];
+
+export type MealTimeBoundaries = { breakfastEndsHour: number; lunchEndsHour: number; dinnerEndsHour: number };
+
+export const goalPaces = { conservative: "conservative", moderate: "moderate", aggressive: "aggressive" } as const;
+export type GoalPace = typeof goalPaces[keyof typeof goalPaces];
+
+export type MacroPresetOverride = { proteinPerKg?: number; fatPerKg?: number; carbCap?: number; fatPercent?: number };
+
+export const calorieRoundingSteps = [5, 10, 25, 50] as const;
+export type CalorieRoundingStep = typeof calorieRoundingSteps[number];
+export const macroRoundingDigitsOptions = [0, 1, 2] as const;
+export type MacroRoundingDigits = typeof macroRoundingDigitsOptions[number];
+
+export const insightsRanges = { week: "week", month: "month", all: "all" } as const;
+export type InsightsRange = typeof insightsRanges[keyof typeof insightsRanges];
+
 export type DailyTargets = {
   calories: number;
   protein: number;
@@ -173,6 +191,16 @@ export type Profile = {
   /** Manually added shopping list ingredients, not tied to a planned recipe. */
   extraShoppingItems?: string[];
   recipeCookView?: RecipeCookView;
+  weekStartsOn?: WeekStartDay;
+  mealTimeBoundaries?: MealTimeBoundaries;
+  goalPace?: GoalPace;
+  macroPresetOverrides?: Partial<Record<DietPreset, MacroPresetOverride>>;
+  calorieRoundingStep?: CalorieRoundingStep;
+  macroRoundingDigits?: MacroRoundingDigits;
+  tbspGrams?: number;
+  tspGrams?: number;
+  insightsTolerancePercent?: number;
+  insightsDefaultRange?: InsightsRange;
 };
 
 export type WeightEntry = {

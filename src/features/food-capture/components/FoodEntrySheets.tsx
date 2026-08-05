@@ -9,7 +9,7 @@ import { contextualUnits, formatUnit, gramsFor, localDateKey, round, scaleNutrit
 import { recentLogDates } from "@/lib/logging";
 import { readFoodImage } from "@/lib/image";
 import { recipeLogId } from "@/features/recipes/recipeLogging";
-import type { Food, Meal, MealType, Nutrition, ServingUnit } from "@/lib/types";
+import type { Food, Meal, MealTimeBoundaries, MealType, Nutrition, ServingUnit } from "@/lib/types";
 
 const mealLabels: Record<MealType, string> = { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snack" };
 const unitLabels: Record<ServingUnit, string> = { serving: "Serving", g: "Grams", "100g": "100 g", package: "Package", piece: "Piece", tbsp: "Tbsp", tsp: "Tsp", ml: "ml" };
@@ -128,17 +128,17 @@ export function ManualFood({ initialBarcode, notice, onSave, onClose, hideCalori
   );
 }
 
-export function PortionSheet({ food, questions, initialMealType, initialLoggedDate = localDateKey(), editingMeal, recipeId, onLog, onSaveEdit, onClose, hideCalories }: { food: Food; questions?: string[]; initialMealType?: MealType; initialLoggedDate?: string; editingMeal?: Meal; recipeId?: string; onLog?: (meal: Meal, food: Food) => void; onSaveEdit?: (meal: Meal) => void; onClose: () => void; hideCalories: boolean }) {
+export function PortionSheet({ food, questions, initialMealType, initialLoggedDate = localDateKey(), editingMeal, recipeId, onLog, onSaveEdit, onClose, hideCalories, mealTimeBoundaries, servingOverrides, macroRoundingDigits = 1 }: { food: Food; questions?: string[]; initialMealType?: MealType; initialLoggedDate?: string; editingMeal?: Meal; recipeId?: string; onLog?: (meal: Meal, food: Food) => void; onSaveEdit?: (meal: Meal) => void; onClose: () => void; hideCalories: boolean; mealTimeBoundaries?: MealTimeBoundaries; servingOverrides?: { tbspGrams?: number; tspGrams?: number }; macroRoundingDigits?: 0 | 1 | 2 }) {
   const units = contextualUnits(food);
   const initialUnit: ServingUnit = food.packageGrams ? "package" : food.servingGrams ? "serving" : "g";
   const [unit, setUnit] = useState<ServingUnit>(editingMeal?.unit || initialUnit);
   const [amount, setAmount] = useState(editingMeal?.amount ?? (initialUnit === "g" ? 100 : 1));
-  const [mealType, setMealType] = useState<MealType>(() => editingMeal?.mealType || initialMealType || suggestedMealType());
+  const [mealType, setMealType] = useState<MealType>(() => editingMeal?.mealType || initialMealType || suggestedMealType(new Date(), mealTimeBoundaries));
   const [loggedDate, setLoggedDate] = useState(editingMeal?.loggedDate || initialLoggedDate);
   const [additionalDatesOpen, setAdditionalDatesOpen] = useState(false);
   const [loggedDates, setLoggedDates] = useState<string[]>([initialLoggedDate]);
-  const grams = gramsFor(food, amount, unit);
-  const nutrition = scaleNutrition(food.nutrientsPer100, grams);
+  const grams = gramsFor(food, amount, unit, servingOverrides);
+  const nutrition = scaleNutrition(food.nutrientsPer100, grams, macroRoundingDigits);
   const log = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(grams) || grams <= 0) return;

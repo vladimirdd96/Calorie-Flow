@@ -1,31 +1,25 @@
 "use client";
 
 import { useMemo } from "react";
-import { localDateKey } from "@/lib/nutrition";
-import type { Food, MealPlanEntry, Recipe } from "@/lib/types";
+import { localDateKey, startOfWeek } from "@/lib/nutrition";
+import type { Food, MealPlanEntry, Recipe, WeekStartDay } from "@/lib/types";
 
-function startOfWeek(dateKey: string) {
-  const day = new Date(`${dateKey}T12:00:00`);
-  const weekday = day.getDay();
-  day.setDate(day.getDate() + ((weekday === 0 ? -6 : 1) - weekday));
-  return day;
-}
-
-export function WeekStrip({ date, entries, recipes, foods, onSelect }: {
+export function WeekStrip({ date, entries, recipes, foods, onSelect, weekStartsOn }: {
   date: string;
   entries: MealPlanEntry[];
   recipes: Recipe[];
   foods: Food[];
   onSelect: (date: string) => void;
+  weekStartsOn?: WeekStartDay;
 }) {
   const days = useMemo(() => {
-    const start = startOfWeek(date);
+    const start = startOfWeek(date, weekStartsOn);
     return Array.from({ length: 7 }, (_, index) => {
       const day = new Date(start);
       day.setDate(day.getDate() + index);
       return localDateKey(day);
     });
-  }, [date]);
+  }, [date, weekStartsOn]);
   const today = localDateKey();
 
   return <div className="week-strip" role="tablist" aria-label="Week overview">
