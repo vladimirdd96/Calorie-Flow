@@ -24,6 +24,10 @@ Update relevant documentation in the same change when an architectural decision 
 - Allowed types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `ci`, `perf`, `revert`.
 - Stage only task-touched files. Every completed task should leave a focused commit.
 
+## Branch policy
+
+A task worked on a dedicated branch is not done when the commit is pushed. Before marking the task complete: merge the branch into `main`, push `main`, delete the local branch, and delete the remote branch. If remote branch deletion fails (permissions, proxy), say so explicitly rather than silently leaving it.
+
 ## Checks
 
 | Change | Required check |
