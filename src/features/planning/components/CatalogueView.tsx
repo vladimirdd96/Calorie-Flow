@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, ChefHat, ChefHat as CookIcon, ChevronLeft, ChevronRight, ListPlus, RefreshCw, Search, Sparkles, Users } from "lucide-react";
+import { BookOpen, ChefHat, ChefHat as CookIcon, ChevronLeft, ChevronRight, ListPlus, RefreshCw, Search, SlidersHorizontal, Sparkles, Users } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Sheet } from "@/features/shared/Sheet";
 import { ClearableInput } from "@/features/shared/ClearableInput";
@@ -25,10 +25,10 @@ async function authToken() {
 }
 
 function RecipeBrowseCard({ item, hideCalories, onOpen, featured = false }: { item: PublicRecipe; hideCalories?: boolean; onOpen: () => void; featured?: boolean }) {
-  return <button type="button" className={featured ? "catalogue-feature-card" : "recipe-browse-card"} onClick={onOpen}>
+  return <button type="button" className="recipe-browse-card" onClick={onOpen}>
     {item.imageUrl ? <img src={item.imageUrl} alt="" /> : <span className="recipe-tile-icon">{item.source === "ai" ? <Sparkles size={22} /> : <ChefHat size={22} />}</span>}
+    {featured && <span className="catalogue-pick-badge">Pick</span>}
     <span className="recipe-browse-card-overlay">
-      {featured && <small className="catalogue-feature-kicker">Tonight&apos;s pick</small>}
       <strong>{item.name}</strong>
       <small>{item.source === "ai" ? "AI pick" : "Community"}{!hideCalories && ` · ${Math.round(item.nutritionPerServing.calories)} kcal`}</small>
     </span>
@@ -96,6 +96,7 @@ export function CatalogueView({ userId, meals, recipes, entries, hideCalories, c
   const [servingsCount, setServingsCount] = useState(1);
   const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set());
   const [cooking, setCooking] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const openRecipe = (item: PublicRecipe) => {
     setSelected(item); setServingsCount(item.servings); setCheckedSteps(new Set()); onSaveToLibrary(item);
@@ -104,6 +105,7 @@ export function CatalogueView({ userId, meals, recipes, entries, hideCalories, c
   const toggleDietary = (tag: DietaryTag) => setDietary((current) => current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag]);
   const toggleStep = (index: number) => setCheckedSteps((current) => { const next = new Set(current); if (next.has(index)) next.delete(index); else next.add(index); return next; });
   const filtersActive = Boolean(query.trim() || source !== "all" || cuisine || dietary.length > 0);
+  const activeFilterCount = (source !== "all" ? 1 : 0) + (cuisine ? 1 : 0) + dietary.length;
 
   useEffect(() => {
     getSetting<string>(LAST_GENERATED_SETTING).then((stored) => {
@@ -160,19 +162,12 @@ export function CatalogueView({ userId, meals, recipes, entries, hideCalories, c
   const scaleFactor = selected ? servingsCount / selected.servings : 1;
 
   return <section id="plan-catalogue-panel" role="tabpanel" aria-labelledby="plan-catalogue-tab" className="catalogue-view workspace-panel">
-    <label className="library-search"><Search size={16} aria-hidden="true" /><span className="visually-hidden">Search the catalogue</span><ClearableInput value={query} onChange={(event) => setQuery(event.target.value)} onClear={() => setQuery("")} placeholder="Search the catalogue" type="search" clearLabel="Clear catalogue search" /></label>
-    <div className="library-filters" role="group" aria-label="Catalogue source">
-      <button type="button" className={source === "all" ? "active" : ""} onClick={() => setSource("all")}>All</button>
-      <button type="button" className={source === "community" ? "active" : ""} onClick={() => setSource("community")}><Users size={13} />Community</button>
-      <button type="button" className={source === "ai" ? "active" : ""} onClick={() => setSource("ai")}><Sparkles size={13} />AI picks</button>
+    <div className="catalogue-search-row">
+      <label className="library-search"><Search size={16} aria-hidden="true" /><span className="visually-hidden">Search the catalogue</span><ClearableInput value={query} onChange={(event) => setQuery(event.target.value)} onClear={() => setQuery("")} placeholder="Search the catalogue" type="search" clearLabel="Clear catalogue search" /></label>
+      <button type="button" className={`catalogue-filters-trigger${activeFilterCount ? " active" : ""}`} onClick={() => setFiltersOpen(true)}>
+        <SlidersHorizontal size={15} />Filters{activeFilterCount > 0 && <span className="catalogue-filters-count">{activeFilterCount}</span>}
+      </button>
     </div>
-    <div className="library-filter-wrap"><div className="library-filters" role="group" aria-label="Cuisine">
-      <button type="button" className={cuisine === "" ? "active" : ""} onClick={() => setCuisine("")}>All cuisines</button>
-      {Object.values(cuisines).map((value) => <button key={value} type="button" className={cuisine === value ? "active" : ""} onClick={() => setCuisine(cuisine === value ? "" : value)}>{humanizeTaxonomyKey(value)}</button>)}
-    </div></div>
-    <div className="library-filter-wrap"><div className="library-filters" role="group" aria-label="Dietary preference">
-      {Object.values(dietaryTags).map((value) => <button key={value} type="button" className={dietary.includes(value) ? "active" : ""} onClick={() => toggleDietary(value)}>{humanizeTaxonomyKey(value)}</button>)}
-    </div></div>
     {userId && <div className="catalogue-refresh">
       <button type="button" className="secondary-button" onClick={() => void refresh()} disabled={refreshing || cooldownDaysLeft > 0}>
         <RefreshCw size={15} className={refreshing ? "spin" : ""} />{refreshing ? "Refreshing…" : cooldownDaysLeft > 0 ? `Next refresh in ${cooldownDaysLeft}d` : "Refresh my picks"}
@@ -180,11 +175,41 @@ export function CatalogueView({ userId, meals, recipes, entries, hideCalories, c
       {refreshNote && <small>{refreshNote}</small>}
     </div>}
     {error && <div className="inline-alert error" role="alert">{error}</div>}
-    {loading ? <div className="catalogue-loading" role="status" aria-label="Loading recipes"><div className="catalogue-skeleton-feature" />{Array.from({ length: 5 }, (_, index) => <i key={index} className="catalogue-skeleton-card" />)}</div>
+    {loading ? <div className="catalogue-loading" role="status" aria-label="Loading recipes">{Array.from({ length: 6 }, (_, index) => <i key={index} className="catalogue-skeleton-card" />)}</div>
       : !error && !catalogue.length ? <div className="recipe-empty catalogue-empty card"><span className="action-icon mint"><ChefHat size={22} /></span><strong>The catalogue is still filling up.</strong><p>Share one of your recipes, or refresh your picks to add AI-assisted ideas.</p></div>
       : filtersActive
         ? <div className="catalogue-grid">{catalogue.map((item) => <RecipeBrowseCard key={item.id} item={item} hideCalories={hideCalories} onOpen={() => openRecipe(item)} />)}</div>
-        : <div className="catalogue-rows">{featured && <RecipeBrowseCard item={featured} featured hideCalories={hideCalories} onOpen={() => openRecipe(featured)} />}{rows.map((row) => <CatalogueRow key={row.title} title={row.title} items={row.items} hideCalories={hideCalories} onOpen={openRecipe} />)}</div>}
+        : <div className="catalogue-rows">
+            {featured && <section className="catalogue-row"><h3>Tonight&apos;s pick</h3><div className="catalogue-row-track"><RecipeBrowseCard item={featured} featured hideCalories={hideCalories} onOpen={() => openRecipe(featured)} /></div></section>}
+            {rows.map((row) => <CatalogueRow key={row.title} title={row.title} items={row.items} hideCalories={hideCalories} onOpen={openRecipe} />)}
+          </div>}
+
+    {filtersOpen && <Sheet onClose={() => setFiltersOpen(false)} label="Filter the catalogue">
+      <div className="catalogue-filters-sheet">
+        <div>
+          <h4>Source</h4>
+          <div className="library-filters" role="group" aria-label="Catalogue source">
+            <button type="button" className={source === "all" ? "active" : ""} onClick={() => setSource("all")}>All</button>
+            <button type="button" className={source === "community" ? "active" : ""} onClick={() => setSource("community")}><Users size={13} />Community</button>
+            <button type="button" className={source === "ai" ? "active" : ""} onClick={() => setSource("ai")}><Sparkles size={13} />AI picks</button>
+          </div>
+        </div>
+        <div>
+          <h4>Cuisine</h4>
+          <div className="library-filters catalogue-filters-wrap" role="group" aria-label="Cuisine">
+            <button type="button" className={cuisine === "" ? "active" : ""} onClick={() => setCuisine("")}>All cuisines</button>
+            {Object.values(cuisines).map((value) => <button key={value} type="button" className={cuisine === value ? "active" : ""} onClick={() => setCuisine(cuisine === value ? "" : value)}>{humanizeTaxonomyKey(value)}</button>)}
+          </div>
+        </div>
+        <div>
+          <h4>Dietary</h4>
+          <div className="library-filters catalogue-filters-wrap" role="group" aria-label="Dietary preference">
+            {Object.values(dietaryTags).map((value) => <button key={value} type="button" className={dietary.includes(value) ? "active" : ""} onClick={() => toggleDietary(value)}>{humanizeTaxonomyKey(value)}</button>)}
+          </div>
+        </div>
+        {activeFilterCount > 0 && <button type="button" className="secondary-button" onClick={() => { setSource("all"); setCuisine(""); setDietary([]); }}>Clear filters</button>}
+      </div>
+    </Sheet>}
 
     {selected && <Sheet onClose={() => { setSelected(undefined); setCooking(false); }} wide label={selected.name}>
       <RecipeDetail
