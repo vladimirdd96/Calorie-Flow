@@ -2824,6 +2824,11 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 /* Plan v2 — recipe card actions */
 .recipe-card-actions .icon-button { width: 36px; height: 36px; }
 .recipe-card-actions .icon-button.active { color: var(--mint-strong); background: color-mix(in oklch, var(--mint) 14%, var(--control-surface)); border-color: transparent; }
+@media (max-width: 520px) {
+  .recipe-card, .planned-entry { flex-wrap: wrap; }
+  .recipe-card-body { flex: 1 1 100%; }
+  .recipe-card-actions { flex: 1 1 100%; justify-content: flex-end; }
+}
 
 /* Plan v2 — recipe catalogue */
 .catalogue-view { display: grid; gap: 12px; }
