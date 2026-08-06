@@ -1617,8 +1617,8 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 .micros-toggle { width: 100%; margin-top: 14px; padding-top: 9px; color: var(--muted-2); border-top: 1px dashed var(--border-strong); font-size: 12px; }
 .micro-chip-groups { display: grid; gap: 14px; margin-top: 12px; }
 .micro-chip-groups section > span { display: block; margin-bottom: 7px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
-.micro-chip-groups section > div { display: flex; flex-wrap: wrap; gap: 7px; }
-.micro-chip-groups section > div > span { display: inline-flex; align-items: baseline; gap: 4px; padding: 5px 10px; color: var(--text); background: var(--control-surface); border: 1px solid transparent; border-radius: 8px; box-shadow: 0 2px 5px color-mix(in oklch, var(--text) 8%, transparent); font-size: 12px; }
+.micro-chip-groups section > div { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 7px; }
+.micro-chip-groups section > div > span { display: flex; align-items: baseline; justify-content: center; gap: 4px; padding: 5px 10px; color: var(--text); background: var(--control-surface); border: 1px solid transparent; border-radius: 8px; box-shadow: 0 2px 5px color-mix(in oklch, var(--text) 8%, transparent); font-size: 12px; }
 .micro-chip-groups section > div > span.zero { color: var(--muted); background: transparent; border-style: dashed; border-color: var(--border-strong); box-shadow: none; }
 .micro-chip-groups strong { font-size: 12.5px; }
 .today-water { margin-bottom: 16px; padding: 16px; border: 0; border-radius: 16px; box-shadow: 0 2px 8px color-mix(in oklch, var(--text) 5%, transparent); }
