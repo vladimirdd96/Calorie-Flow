@@ -2085,7 +2085,7 @@ body:has(.onboarding-overlay) { overflow: hidden; }
   .workspace-tabs button > span:not(.tab-badge) { display: inline; }
   .workspace-tabs button.active { flex: 1 1 0; }
 
-  .workspace-tabs-row { display: flex; align-items: flex-start; justify-content: center; gap: 12px; margin: 0 0 16px; }
+  .workspace-tabs-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 0 0 16px; }
   .workspace-tabs-row .workspace-tabs { margin: 0; }
 
   .workspace-filters { position: relative; display: block; flex: 0 0 auto; }
