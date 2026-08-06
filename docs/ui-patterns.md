@@ -31,3 +31,13 @@ Placement follows one rule: the shortcut is always the first/outermost element i
 - An existing top-right action row (e.g. a card's own icon-button cluster) — it becomes the leading item in that row instead of a separate floating element, so it never overlaps existing controls.
 
 See `TodaySummary.tsx`'s `onOpenTargets` prop for the reference wiring: `TodayView` → `TrackerApp`'s `navigateTo({ tab: "profile", section: "profile" })`.
+
+### Catalogue browse rails
+
+Unfiltered catalogue browsing is a stack of rails, not one flat list. `catalogueRailSpecs` (`src/features/planning/cataloguePresentation.ts`) is the single ordered source of truth: a fresh-picks rail, one rail per cuisine, one per dietary tag, then community. Rails are grouped by what a user browses for, never by provenance — image attribution belongs on the card and in `RecipeDetail`, not in a rail title.
+
+Two rules keep the stack readable, and both live in `claimRailItems`. A recipe appears in exactly one rail: rails claim in spec order, and a later rail skips anything already claimed. No rail exceeds `RAIL_CAP`, so an early rail cannot drain the catalogue before the ones below it claim their slice; a rail that cannot reach `RAIL_MIN_ITEMS` is dropped rather than rendered half-empty.
+
+`useCatalogueRails` (`src/features/planning/hooks/useCatalogueRails.ts`) fetches a batch of rails at a time, each with its own `fetchCatalogue` query, and an `IntersectionObserver` in `CatalogueRails` loads the next batch before it scrolls into view. Batches must resolve in spec order because claiming does — do not fetch a later rail ahead of an earlier one. The hook has no reset path: `CatalogueRails` is mounted only while no filter is active, and unmounting is what clears the claims. Applying a filter replaces the rails entirely with the flat `.catalogue-grid`.
+
+Rail scroll controls (`.catalogue-row-control`) are edge-anchored scrims spanning the track, carrying a chevron and no other chrome. They show on every viewport, dimmed on pointer devices until the row is hovered, and are never hidden outright — a control the user cannot find is worse than one that is always faintly present.
