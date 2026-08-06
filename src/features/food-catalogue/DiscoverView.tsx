@@ -5,6 +5,7 @@ import { ArrowLeft, BookOpen, ChevronRight, Plus, Search, WifiOff } from "lucide
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AddFoodView } from "@/features/food-capture/types";
 import { ClearableInput } from "@/features/shared/ClearableInput";
+import { foodMatchesQuery } from "@/lib/food-search";
 import { searchOpenFoodFacts } from "@/lib/openfoodfacts";
 import type { Food, Meal, Recipe } from "@/lib/types";
 
@@ -33,6 +34,11 @@ function matchScore(value: string, query: string, boost = 0) {
   return 40 + boost;
 }
 
+/** A food found through a local-language keyword ranks on that keyword, not on its English name. */
+function bestMatchScore(food: Food, query: string, boost = 0) {
+  return Math.max(matchScore(food.name, query, boost), ...(food.keywords || []).map((keyword) => matchScore(keyword, query, boost)));
+}
+
 export function DiscoverView({ foods, recipes, meals, onSelect, onSelectRecipe, onAdd, hideCalories, onBack }: { foods: Food[]; recipes: Recipe[]; meals: Meal[]; onSelect: (food: Food) => void; onSelectRecipe: (recipe: Recipe) => void; onAdd: (view: AddFoodView) => void; hideCalories: boolean; onBack: () => void }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<FoodFilter>("all");
@@ -50,8 +56,7 @@ export function DiscoverView({ foods, recipes, meals, onSelect, onSelectRecipe, 
       if (searchable.toLocaleLowerCase().includes(normalizedQuery)) results.push({ kind: "recipe", item: recipe, score: matchScore(recipe.name, normalizedQuery, 18) });
     });
     foods.forEach((food) => {
-      const searchable = `${food.name} ${food.brand || ""} ${food.barcode || ""}`;
-      if (searchable.toLocaleLowerCase().includes(normalizedQuery)) results.push({ kind: "food", item: food, score: matchScore(food.name, normalizedQuery, diaryFoodIds.has(food.id) ? 24 : 0) });
+      if (foodMatchesQuery(food, normalizedQuery)) results.push({ kind: "food", item: food, score: bestMatchScore(food, normalizedQuery, diaryFoodIds.has(food.id) ? 24 : 0) });
     });
     return results.sort((left, right) => right.score - left.score).map((result): LocalSearchResult => result.kind === "food" ? { kind: "food", item: result.item } : { kind: "recipe", item: result.item });
   }, [diaryFoodIds, foods, normalizedQuery, recipes]);

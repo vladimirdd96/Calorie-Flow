@@ -111,11 +111,23 @@ async function writeSnapshot(
   });
 }
 
+/**
+ * Writes reference foods that the cache is missing, and refreshes the ones that
+ * shipped with different data since they were cached — a catalogue addition or
+ * a corrected value must reach existing installs, not only new ones. Only the
+ * user-owned `lastUsedAt` survives a refresh; nothing else on a seed row is
+ * user-editable.
+ */
 export async function initializeFoods() {
   const existing = await getAll<Food>("foods");
-  const existingIds = new Set(existing.map((food) => food.id));
-  const missingSeeds = seedFoods.filter((food) => !existingIds.has(food.id));
-  if (missingSeeds.length) await Promise.all(missingSeeds.map((food) => put("foods", food)));
+  const cached = new Map(existing.map((food) => [food.id, food]));
+  const changed = seedFoods.reduce<Food[]>((pending, food) => {
+    const previous = cached.get(food.id);
+    if (!previous) return [...pending, food];
+    const refreshed = previous.lastUsedAt ? { ...food, lastUsedAt: previous.lastUsedAt } : food;
+    return JSON.stringify(refreshed) === JSON.stringify(previous) ? pending : [...pending, refreshed];
+  }, []);
+  if (changed.length) await Promise.all(changed.map((food) => put("foods", food)));
 }
 
 export async function put<T>(store: StoreName, value: T) {
