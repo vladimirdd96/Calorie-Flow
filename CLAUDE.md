@@ -53,3 +53,7 @@ Use typed, explicit return values for expected failures in new business-logic co
 ### Constants
 
 Do not duplicate route paths, status values, provider names, or event identifiers as magic strings. Use `as const` objects and derive their types when values are shared.
+
+### Responsive design
+
+Every new feature must be responsive. Layouts default to a narrow phone viewport (~360-390px) and progressively enhance for wider screens; never ship a control, action, or piece of text that is clipped, overlapped, or requires horizontal scroll on a phone. After implementing or changing a screen, dialog, or sheet, render it at a narrow phone width and a wide desktop width and check container width, wrapping, control sizing, and overflow before marking the change complete. If visual verification is not possible in the environment, report the change as unverified rather than complete.
