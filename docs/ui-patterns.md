@@ -16,6 +16,12 @@ Use semantic controls, visible labels, keyboard-accessible dialogs, and sufficie
 
 Sheets that open with a hero photo pull it up past the sheet's top padding and drag handle (`margin-top: -30px`), so the handle and close button float over the image; both carry `z-index: 2` to paint above it.
 
+### Diary hero and optional habits
+
+The hero card (`TodaySummary`) carries nutrition only: the day navigator straddling its top edge, the calorie ring, macro targets, and the full-nutrition disclosure. Optional habits — fasting, weight, water — live in `HabitStrip` (`src/features/diary/components/HabitStrip.tsx`), one tile row directly below the hero. Each enabled habit contributes a tile; the strip renders nothing when all three are off, and a single remaining tile lays out horizontally instead of as a lone column.
+
+A tile opens that habit's `Sheet`, not an inline panel: current value, a seven-point trend, and only the controls needed to log today (fasting goal chips, one weight field, water plus/minus). Deeper editing stays in Insights, reached from the sheet's history link via `onOpenInsights`. Add a new optional habit by extending `habitTileKeys` and its sheet, not by putting another control back in the hero.
+
 ### Signaling a configurable feature
 
 When a card or section surfaces a value the user can tune (a target, a threshold, a preference), add `ConfigShortcut` (`src/features/shared/ConfigShortcut.tsx`) rather than inventing a settings affordance per feature. It renders the shared `.config-shortcut` ghost icon-button (`SlidersHorizontal`, dimmed until hover/focus) and takes a single `onClick`. It never opens an inline settings sheet — wire `onClick` to `navigateTo` (the `AppNavigationTarget` contract in `src/features/navigation/types.ts`) so it redirects to the feature's real configuration screen, the same one reachable from Profile.

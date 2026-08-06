@@ -1555,23 +1555,9 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 .today-hero:has(> .today-hero-date) { margin-top: 30px; padding-top: calc(clamp(18px, 4vw, 26px) + 14px); }
 .today-hero-date { position: absolute; top: 0; left: 50%; z-index: 1; transform: translate(-50%, -50%); }
 .today-hero:hover > .config-shortcut, .today-hero:focus-within > .config-shortcut { opacity: 1; }
-.today-hero-toggles { display: flex; align-items: stretch; justify-content: space-around; gap: 8px; margin-bottom: 16px; }
-.today-hero-toggles:empty { display: none; }
-.today-hero-toggles button { min-height: 36px; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 0 12px; border: 1.5px solid currentColor; border-radius: 9px; background: transparent; font-size: 12.5px; font-weight: 700; white-space: nowrap; }
-.today-hero-toggles .fasting { color: var(--blue); }
-.today-hero-toggles .weight { color: var(--carbs); }
-.today-hero-toggles button[aria-expanded="true"] { background: color-mix(in oklch, currentColor 9%, transparent); }
-.today-inline-panel { margin-bottom: 16px; padding: 14px; border: 1px solid var(--border); border-radius: 14px; }
-.today-panel-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-.today-panel-heading strong, .today-panel-title { font-size: 13.5px; }
-.today-panel-heading span { color: var(--muted-2); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
-.today-panel-progress { height: 8px; margin-bottom: 12px; overflow: hidden; background: var(--track); border-radius: 5px; }
-.today-panel-progress i { display: block; height: 100%; background: var(--blue); border-radius: inherit; transition: width .6s ease; }
-.today-panel-label { display: block; margin-bottom: 6px; color: var(--muted-2); font-size: 12px; font-weight: 800; }
 .today-goal-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 12px; padding: 4px; border: 1px solid var(--border); border-radius: 11px; }
 .today-goal-options button { min-height: 40px; color: var(--muted-2); background: transparent; border: 0; border-radius: 8px; font-size: 12.5px; font-weight: 800; }
 .today-goal-options button.active { color: var(--bg); background: var(--text); }
-.today-inline-panel > small { display: block; color: var(--muted); font-size: 12px; line-height: 1.45; }
 .today-weigh-row { display: flex; gap: 8px; margin-top: 10px; }
 .today-weigh-row label { position: relative; flex: 1; display: block; }
 .today-weigh-row input { min-height: 46px; padding-right: 42px; background: var(--control-surface); border-color: var(--border-strong); font-size: 18px; font-weight: 700; }
@@ -1621,11 +1607,33 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 .micro-chip-groups section > div > span { display: flex; align-items: baseline; justify-content: center; gap: 4px; padding: 5px 10px; color: var(--text); background: var(--control-surface); border: 1px solid transparent; border-radius: 8px; box-shadow: 0 2px 5px color-mix(in oklch, var(--text) 8%, transparent); font-size: 12px; }
 .micro-chip-groups section > div > span.zero { color: var(--muted); background: transparent; border-style: dashed; border-color: var(--border-strong); box-shadow: none; }
 .micro-chip-groups strong { font-size: 12.5px; }
-.today-water { margin-bottom: 16px; padding: 16px; border: 0; border-radius: 16px; box-shadow: 0 2px 8px color-mix(in oklch, var(--text) 5%, transparent); }
-.today-water > div:first-child { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
-.today-water > div:first-child span { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-.today-water > div:first-child svg { color: var(--blue); }
-.today-water > div:first-child strong { color: var(--muted-2); font-size: 13px; white-space: nowrap; }
+/* Optional habits share one strip under the hero; each tile opens its own sheet. */
+.habit-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); margin-bottom: 16px; padding: 0; overflow: hidden; border-radius: 16px; }
+.habit-tile { min-height: 62px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 9px 6px; background: transparent; border: 0; border-right: 1px solid var(--border); border-radius: 0; }
+.habit-tile:last-child { border-right: 0; }
+.habit-tile:hover, .habit-tile:focus-visible { background: color-mix(in oklch, var(--text) 4%, transparent); }
+.habit-tile-icon { display: flex; color: var(--muted-2); }
+.habit-tile.fasting .habit-tile-icon { color: var(--blue); }
+.habit-tile.weight .habit-tile-icon { color: var(--carbs); }
+.habit-tile.water .habit-tile-icon { color: var(--blue); }
+.habit-tile strong { font-size: 14px; font-weight: 700; }
+.habit-tile small { color: var(--muted); font-size: 11px; font-weight: 700; }
+.habit-strip.single { grid-template-columns: 1fr; }
+.habit-strip.single .habit-tile { min-height: 52px; flex-direction: row; gap: 8px; }
+.habit-strip.single .habit-tile small { color: var(--muted-2); }
+.habit-sheet .sheet-header { margin-bottom: 4px; }
+.habit-sheet-value { margin: 0 0 12px; color: var(--muted-2); font-size: 13px; }
+.habit-sheet-value strong { color: var(--text); font-size: 22px; font-weight: 700; }
+.habit-sheet-progress { height: 8px; margin-bottom: 14px; overflow: hidden; background: var(--track); border-radius: 5px; }
+.habit-sheet-progress i { display: block; height: 100%; background: var(--blue); border-radius: inherit; transition: width .6s ease; }
+.habit-sheet-label { display: block; margin-bottom: 6px; color: var(--muted-2); font-size: 12px; font-weight: 800; }
+.habit-trend { display: flex; align-items: flex-end; gap: 6px; height: 96px; margin-bottom: 16px; padding: 10px 8px 0; background: var(--control-surface); border-radius: 12px; }
+.habit-trend-column { min-width: 0; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; }
+.habit-trend-bar-wrap { width: 100%; flex: 1; display: flex; align-items: flex-end; }
+.habit-trend-bar-wrap i { width: 100%; display: block; background: color-mix(in oklch, var(--blue) 35%, transparent); border-radius: 5px 5px 0 0; }
+.habit-trend-bar-wrap i.reached { background: var(--blue); }
+.habit-trend-column small { color: var(--muted); font-size: 10.5px; font-weight: 700; }
+.habit-trend-empty { margin: 0 0 16px; padding: 14px; color: var(--muted); font-size: 12.5px; line-height: 1.45; background: var(--control-surface); border-radius: 12px; }
 .today-water-controls { display: flex; align-items: center; gap: 10px; }
 .today-water-controls button { width: 44px; height: 44px; flex: 0 0 auto; padding: 0; color: var(--text); background: transparent; border: 1px solid var(--border); border-radius: 12px; font-size: 19px; }
 .today-water-controls button.add { color: var(--blue); background: color-mix(in oklch, var(--blue) 12%, transparent); border-color: transparent; }

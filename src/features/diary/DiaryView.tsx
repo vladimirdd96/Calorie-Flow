@@ -4,13 +4,13 @@ import { CalendarDays, ChevronLeft, ChevronRight, MessageCircle, Plus, TrendingU
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Sheet } from "@/features/shared/Sheet";
 import { CalendarPicker } from "@/features/shared/DatePicker";
-import { isHabitFeatureEnabled } from "@/lib/habit-settings";
 import { localDateKey, resolveDailyTargets, resolveMealCalorieTarget, sumNutrition } from "@/lib/nutrition";
-import { habitFeatures, type Food, type Meal, type MealType, type Nutrition, type Profile, type Recipe } from "@/lib/types";
+import { type Food, type Meal, type MealType, type Nutrition, type Profile, type Recipe } from "@/lib/types";
 import { BrandMark, changeDate, dayLabel, mealLabels, MiniProgressRing } from "./components/DiaryPrimitives";
 import { HomeScreenPrompt, SaveRecipeSheet } from "./components/DiaryTools";
+import { HabitStrip } from "./components/HabitStrip";
 import { MealRow } from "./components/MealControls";
-import { TodaySummary, TodayWater } from "./components/TodaySummary";
+import { TodaySummary } from "./components/TodaySummary";
 import type { InsightsSection } from "@/features/navigation/types";
 
 export { DuplicateMealSheet, MealEditor, MoveMealSheet } from "./components/MealControls";
@@ -152,8 +152,8 @@ export function TodayView({
 
       {showHomeScreenPrompt && <HomeScreenPrompt onDismiss={onDismissHomeScreenPrompt} />}
 
-      <TodaySummary profile={profile} meals={meals} total={total} targets={targets} onSaveProfile={onSaveProfile} onOpenWeight={() => onOpenInsights("weight")} onOpenFasting={() => onOpenInsights("fasting")} onOpenTargets={onOpenTargets} dateNav={<div className="today-date-control"><button type="button" onClick={() => onDateChange(changeDate(dateKey, -1))} aria-label="Previous day"><ChevronLeft /></button><button type="button" className="today-date-label" onClick={onOpenCalendar} aria-label={`Open calendar for ${dayLabel(dateKey)}`}><CalendarDays /><span>{dayLabel(dateKey)}</span></button><button type="button" disabled={dateKey >= localDateKey()} onClick={() => onDateChange(changeDate(dateKey, 1))} aria-label="Next day"><ChevronRight /></button></div>} />
-      {isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.water) && <TodayWater profile={profile} dateKey={dateKey} onSave={onSaveProfile} />}
+      <TodaySummary profile={profile} total={total} targets={targets} onOpenTargets={onOpenTargets} dateNav={<div className="today-date-control"><button type="button" onClick={() => onDateChange(changeDate(dateKey, -1))} aria-label="Previous day"><ChevronLeft /></button><button type="button" className="today-date-label" onClick={onOpenCalendar} aria-label={`Open calendar for ${dayLabel(dateKey)}`}><CalendarDays /><span>{dayLabel(dateKey)}</span></button><button type="button" disabled={dateKey >= localDateKey()} onClick={() => onDateChange(changeDate(dateKey, 1))} aria-label="Next day"><ChevronRight /></button></div>} />
+      <HabitStrip profile={profile} meals={meals} dateKey={dateKey} onSaveProfile={onSaveProfile} onOpenInsights={onOpenInsights} />
 
       <section className="log-section">
         {grouped.map(({ type, meals: groupMeals }) => (

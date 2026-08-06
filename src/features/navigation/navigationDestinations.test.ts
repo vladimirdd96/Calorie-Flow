@@ -20,13 +20,14 @@ describe("in-app navigation destinations", () => {
 
   it("sends weight and fasting history shortcuts to their matching Insights tabs", () => {
     const diary = source("src/features/diary/DiaryView.tsx");
-    const summary = source("src/features/diary/components/TodaySummary.tsx");
+    const habitStrip = source("src/features/diary/components/HabitStrip.tsx");
     const profile = source("src/features/profile/ProfileView.tsx");
 
-    expect(diary).toContain('onOpenWeight={() => onOpenInsights("weight")}');
-    expect(diary).toContain('onOpenFasting={() => onOpenInsights("fasting")}');
-    expect(summary).toContain("See weight history");
-    expect(summary).toContain("See fasting history");
+    expect(diary).toContain("onOpenInsights={onOpenInsights}");
+    expect(habitStrip).toContain('openHistory("weight")');
+    expect(habitStrip).toContain('openHistory("fasting")');
+    expect(habitStrip).toContain("See weight history");
+    expect(habitStrip).toContain("See fasting history");
     expect(profile).toContain('onNavigate({ tab: "insights", section: "weight" })');
   });
 });
