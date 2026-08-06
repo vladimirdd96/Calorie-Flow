@@ -1,7 +1,7 @@
 "use client";
 
-import { Activity, Droplets, Flame, Pencil, Plus, Scale, Sparkles, Timer, Trash2, Utensils, Wheat } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { Activity, Droplets, Filter, Flame, Pencil, Plus, Scale, Sparkles, Timer, Trash2, Utensils, Wheat } from "lucide-react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { localDateKey, round, startOfWeek, sumNutrition } from "@/lib/nutrition";
 import { hydrationTotal } from "@/lib/hydration";
 import { activeFast, fastingWindowHours, formatFastingDuration, uniqueFastingRecords } from "@/lib/fasting";
@@ -55,6 +55,20 @@ export function InsightsView({ meals, profile, onSave, weightTrackingEnabled, in
   const [fastingPeriod, setFastingPeriod] = useState<FastingPeriod>("week");
   const [section, setSection] = useState<InsightsSection>(initialSection || "overview");
   const [range, setRange] = useState<InsightsRange>(profile.insightsDefaultRange ?? "week");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!filtersOpen) return;
+    const dismiss = (event: PointerEvent) => {
+      if (!filtersRef.current?.contains(event.target as Node)) setFiltersOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setFiltersOpen(false);
+    };
+    document.addEventListener("pointerdown", dismiss);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => { document.removeEventListener("pointerdown", dismiss); document.removeEventListener("keydown", closeOnEscape); };
+  }, [filtersOpen]);
   const days = Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
     date.setDate(date.getDate() - (6 - index));
@@ -156,17 +170,39 @@ export function InsightsView({ meals, profile, onSave, weightTrackingEnabled, in
     onSave({ ...profile, fastingRecordEdits: { ...profile.fastingRecordEdits, [editingFastingId]: { startedAt: startedAt.toISOString(), ...(endedAt ? { endedAt: endedAt.toISOString() } : {}) } } });
     setEditingFastingId(undefined);
   };
+  const hasFilters = activeSection === "overview" || activeSection === "nutrition";
+  const tabsBar = (
+    <div className="workspace-tabs" role="tablist" aria-label="Insights workspace">
+      <button id="insights-overview-tab" type="button" role="tab" aria-selected={activeSection === "overview"} aria-controls="insights-overview-panel" aria-label="Overview" className={activeSection === "overview" ? "active" : ""} onClick={() => setSection("overview")}><Activity size={15} /><span>Overview</span></button>
+      <button id="insights-nutrition-tab" type="button" role="tab" aria-selected={activeSection === "nutrition"} aria-controls="insights-nutrition-panel" aria-label="Nutrition" className={activeSection === "nutrition" ? "active" : ""} onClick={() => setSection("nutrition")}><Wheat size={15} /><span>Nutrition</span></button>
+      {weightTrackingEnabled && <button id="insights-weight-tab" type="button" role="tab" aria-selected={activeSection === "weight"} aria-controls="insights-weight-panel" aria-label="Weight" className={activeSection === "weight" ? "active" : ""} onClick={() => setSection("weight")}><Scale size={15} /><span>Weight</span></button>}
+      {fastingEnabled && <button id="insights-fasting-tab" type="button" role="tab" aria-selected={activeSection === "fasting"} aria-controls="insights-fasting-panel" aria-label="Fasting" className={activeSection === "fasting" ? "active" : ""} onClick={() => setSection("fasting")}><Timer size={15} /><span>Fasting</span></button>}
+    </div>
+  );
+  const rangeChips = (
+    <div className="insights-ranges" role="group" aria-label="Insights range">{([{ key: "week", label: "7 days" }, { key: "month", label: "30 days" }, { key: "all", label: "All time" }] as const).map((item) => <button key={item.key} type="button" className={range === item.key ? "active" : ""} onClick={() => { setRange(item.key); onSave({ ...profile, insightsDefaultRange: item.key }); }}>{item.label}</button>)}</div>
+  );
+  const toleranceChips = (
+    <div className="insights-ranges" role="group" aria-label="On-track sensitivity">{([5, 10, 20] as const).map((percent) => <button key={percent} type="button" className={(profile.insightsTolerancePercent ?? 10) === percent ? "active" : ""} onClick={() => onSave({ ...profile, insightsTolerancePercent: percent })}>±{percent}%</button>)}</div>
+  );
   return (
     <main className="page insights-page">
       <header className="insights-handoff-header"><span>Insights</span><h1>{activeSection === "overview" ? "How it’s going" : activeSection === "nutrition" ? "Nutrition" : activeSection === "weight" ? "Weight" : "Fasting"}</h1></header>
-      <div className="workspace-tabs" role="tablist" aria-label="Insights workspace">
-        <button id="insights-overview-tab" type="button" role="tab" aria-selected={activeSection === "overview"} aria-controls="insights-overview-panel" aria-label="Overview" className={activeSection === "overview" ? "active" : ""} onClick={() => setSection("overview")}><Activity size={15} /><span>Overview</span></button>
-        <button id="insights-nutrition-tab" type="button" role="tab" aria-selected={activeSection === "nutrition"} aria-controls="insights-nutrition-panel" aria-label="Nutrition" className={activeSection === "nutrition" ? "active" : ""} onClick={() => setSection("nutrition")}><Wheat size={15} /><span>Nutrition</span></button>
-        {weightTrackingEnabled && <button id="insights-weight-tab" type="button" role="tab" aria-selected={activeSection === "weight"} aria-controls="insights-weight-panel" aria-label="Weight" className={activeSection === "weight" ? "active" : ""} onClick={() => setSection("weight")}><Scale size={15} /><span>Weight</span></button>}
-        {fastingEnabled && <button id="insights-fasting-tab" type="button" role="tab" aria-selected={activeSection === "fasting"} aria-controls="insights-fasting-panel" aria-label="Fasting" className={activeSection === "fasting" ? "active" : ""} onClick={() => setSection("fasting")}><Timer size={15} /><span>Fasting</span></button>}
+      {hasFilters ? <div className="workspace-tabs-row">
+        {tabsBar}
+        <div className="workspace-filters" ref={filtersRef}>
+          <button type="button" className="workspace-filters-trigger" aria-haspopup="true" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((open) => !open)}><Filter size={14} />Filters</button>
+          {filtersOpen && <div className="workspace-filters-popover">
+            <span className="workspace-filters-label">Range</span>
+            {rangeChips}
+            {activeSection === "overview" && <><span className="workspace-filters-label">Sensitivity</span>{toleranceChips}</>}
+          </div>}
+        </div>
+      </div> : tabsBar}
+      <div className="insights-ranges-inline">
+        {hasFilters && rangeChips}
+        {activeSection === "overview" && toleranceChips}
       </div>
-      {(activeSection === "overview" || activeSection === "nutrition") && <div className="insights-ranges" role="group" aria-label="Insights range">{([{ key: "week", label: "7 days" }, { key: "month", label: "30 days" }, { key: "all", label: "All time" }] as const).map((item) => <button key={item.key} type="button" className={range === item.key ? "active" : ""} onClick={() => { setRange(item.key); onSave({ ...profile, insightsDefaultRange: item.key }); }}>{item.label}</button>)}</div>}
-      {activeSection === "overview" && <div className="insights-ranges" role="group" aria-label="On-track sensitivity">{([5, 10, 20] as const).map((percent) => <button key={percent} type="button" className={(profile.insightsTolerancePercent ?? 10) === percent ? "active" : ""} onClick={() => onSave({ ...profile, insightsTolerancePercent: percent })}>±{percent}%</button>)}</div>}
       {activeSection === "overview" && <section id="insights-overview-panel" role="tabpanel" aria-labelledby="insights-overview-tab" className="workspace-panel">
       <div className="insights-stat-grid"><div className="card"><span>Logging streak</span><strong><Flame />{streakDays}<small> days</small></strong></div><div className="card"><span>Days logged</span><strong>{rangeLoggedDays.length}<small> of {rangeDayCount}</small></strong></div></div>
       {!profile.hideCalories && <section className="chart-card card insights-calorie-chart"><div className="section-heading compact"><div><span className="eyebrow">Calories by day</span></div><span className="subtle">avg <strong>{Math.round(average).toLocaleString()}</strong></span></div><div className="chart-area"><div className="target-line" style={{ bottom: `${(profile.calorieTarget / max) * 100}%` }} />{days.map((day) => <div className="chart-column" key={day.key}><div className="chart-bar-wrap"><div className={`chart-bar${day.total.calories > profile.calorieTarget ? " over" : ""}`} style={{ height: `${(day.total.calories / max) * 100}%` }}><span>{day.total.calories ? Math.round(day.total.calories) : ""}</span></div></div><small>{day.label}</small></div>)}</div><div className="insights-chart-legend"><span><i />Within target</span><span><i />Over target</span></div></section>}
