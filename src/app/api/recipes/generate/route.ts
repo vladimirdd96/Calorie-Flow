@@ -5,6 +5,7 @@ import { getWorkersAi, workersAiModels } from "@/lib/workers-ai";
 import { extractOutputText, parseJsonObject } from "@/lib/workers-ai-text";
 import { supabaseRest } from "@/lib/supabase-rest";
 import { recipeSearchKey } from "@/lib/planning";
+import { extractMetaTags, siteNameFromUrl } from "@/lib/recipe-import/html";
 import { serverEnv } from "@/lib/env";
 import type { PublicRecipe } from "@/lib/types";
 
@@ -58,14 +59,8 @@ async function enrichWithPageMeta(candidate: SearchCandidate): Promise<SearchCan
       html += decoder.decode(value, { stream: true });
     }
     await reader.cancel().catch(() => undefined);
-    const imageMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i);
-    const siteMatch = html.match(/<meta[^>]+property=["']og:site_name["'][^>]+content=["']([^"']+)["']/i);
-    const imageUrl = imageMatch?.[1];
-    return {
-      ...candidate,
-      imageUrl: imageUrl && /^https:\/\//i.test(imageUrl) ? imageUrl : undefined,
-      siteName: siteMatch?.[1] || new URL(candidate.pageUrl).hostname.replace(/^www\./, ""),
-    };
+    const meta = extractMetaTags(html);
+    return { ...candidate, imageUrl: meta.imageUrl, siteName: meta.siteName || siteNameFromUrl(candidate.pageUrl) };
   } catch {
     return candidate;
   }

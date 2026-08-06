@@ -791,6 +791,33 @@ p { color: var(--muted); line-height: 1.55; }
 .recipe-empty p, .planned-groceries p { margin: 0; font-size: 12px; }
 .recipe-empty p { max-width: 42ch; }
 .recipe-empty .secondary-button { justify-self: start; min-height: 40px; margin-top: 3px; }
+.recipe-empty-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.recipe-origin-chip { display: inline-flex; align-items: center; gap: 3px; margin-left: 7px; padding: 2px 7px; vertical-align: 2px; color: var(--muted-2); background: var(--control-surface); border-radius: 999px; font-size: 10px; font-weight: 800; }
+
+/* Recipe link import — sheet lives in .features/planning/components/RecipeImportSheet.tsx */
+.recipe-import-sheet { display: grid; gap: 14px; }
+.recipe-import-intro { margin: 0; max-width: 52ch; font-size: 12px; }
+.recipe-import-form { display: grid; gap: 10px; }
+.recipe-import-form label { display: grid; gap: 6px; min-width: 0; color: var(--muted-2); font-size: 12px; font-weight: 800; }
+.recipe-import-form input { width: 100%; min-width: 0; }
+.recipe-import-status { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.recipe-import-status i { flex: 0 0 auto; width: 15px; height: 15px; border: 2px solid var(--border-strong); border-top-color: var(--mint); border-radius: 50%; animation: spin 720ms linear infinite; }
+.recipe-import-paste { padding: 12px 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--control-surface); }
+.recipe-import-paste summary { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: 12px; font-weight: 800; cursor: pointer; list-style: none; }
+.recipe-import-paste summary::-webkit-details-marker { display: none; }
+.recipe-import-paste p { margin: 10px 0; max-width: 52ch; font-size: 11px; }
+.recipe-import-paste textarea { width: 100%; min-width: 0; min-height: 130px; margin-bottom: 10px; resize: vertical; }
+.recipe-import-source { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; min-width: 0; font-size: 12px; }
+.recipe-import-source a, .recipe-import-source > span { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; overflow: hidden; color: var(--mint-strong); text-overflow: ellipsis; white-space: nowrap; }
+.recipe-import-source small { color: var(--muted); font-size: 11px; }
+.recipe-import-restart { justify-self: start; }
+.recipe-import-duplicate { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; padding: 13px 14px; color: var(--text); background: color-mix(in oklch, var(--amber) 9%, transparent); border: 1px solid color-mix(in oklch, var(--amber) 22%, transparent); border-radius: 14px; }
+.recipe-import-duplicate > div { display: grid; gap: 3px; min-width: 0; }
+.recipe-import-duplicate svg { color: var(--amber); }
+.recipe-import-duplicate strong { font-size: 13px; }
+.recipe-import-duplicate small { color: var(--muted); font-size: 11px; line-height: 1.45; }
+.recipe-import-duplicate .secondary-button { grid-column: 2; justify-self: start; min-height: 38px; margin-top: 8px; }
+@media (prefers-reduced-motion: reduce) { .recipe-import-status i { animation: none; } }
 .planning-workspace, .recipe-library, .planned-groceries { display: grid; gap: 12px; margin-top: 28px; }
 .workspace-tabs { display: flex; gap: 4px; width: 100%; margin: 0 0 16px; padding: 4px; overflow-x: auto; overflow-y: visible; border: 0; border-radius: 14px; background: var(--panel); box-shadow: 0 6px 16px color-mix(in oklch, var(--text) 8%, transparent); scrollbar-width: none; }
 .workspace-tabs::-webkit-scrollbar { display: none; }

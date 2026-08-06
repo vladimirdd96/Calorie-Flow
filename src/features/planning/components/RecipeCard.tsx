@@ -1,6 +1,7 @@
 "use client";
 
-import { BookOpen, CalendarPlus, Pencil, Share2, Trash2 } from "lucide-react";
+import { BookOpen, CalendarPlus, Link2, Pencil, Share2, Trash2 } from "lucide-react";
+import { recipeOrigins } from "@/lib/types";
 import type { Recipe } from "@/lib/types";
 
 export function RecipeCard({ recipe, sharing, onOpen, onLog, onPlan, onEdit, onDelete, onToggleShare }: {
@@ -16,7 +17,10 @@ export function RecipeCard({ recipe, sharing, onOpen, onLog, onPlan, onEdit, onD
   return <article className="recipe-card card">
     <button type="button" className="recipe-card-body" onClick={onOpen}>
       {recipe.imageUrls?.[0] ? <img className="food-avatar" src={recipe.imageUrls[0]} alt="" /> : <span className="recipe-row-icon"><BookOpen size={18} /></span>}
-      <div><strong>{recipe.name}</strong><small>{recipe.servings} {recipe.servings === 1 ? "serving" : "servings"} · {Math.round(recipe.nutritionPerServing.protein)}g protein{recipe.isPublic ? " · Shared" : ""}</small></div>
+      <div>
+        <strong>{recipe.name}{recipe.origin === recipeOrigins.imported && <span className="recipe-origin-chip"><Link2 size={11} />Imported</span>}</strong>
+        <small>{recipe.servings} {recipe.servings === 1 ? "serving" : "servings"} · {Math.round(recipe.nutritionPerServing.protein)}g protein{recipe.isPublic ? " · Shared" : ""}</small>
+      </div>
     </button>
     <div className="recipe-card-actions">
       <button className="text-button" type="button" onClick={onLog}><BookOpen size={15} />Log</button>
