@@ -1406,6 +1406,13 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 @media (max-width: 420px) {
   .starter-message { display: grid; align-items: start; }
   .starter-message .text-button { padding-bottom: 0; }
+}
+
+/* .insights-page clamps its width to a 420px floor below a ~677px viewport
+   (clamp(420px, 62vw, 780px)), so the three-column weight-log-fields grid
+   stays cramped well past the 420px viewport breakpoint. Match the fields'
+   stacked layout to that floor instead of the raw viewport width. */
+@media (max-width: 850px) {
   .weight-log-fields { grid-template-columns: 1fr 1fr; }
   .weight-log-fields .primary-button { grid-column: 1 / -1; }
 }
