@@ -113,9 +113,9 @@ export function TodaySummary({ profile, meals, total, targets, onSaveProfile, on
   const fastingHours = fast ? fastingWindowHours(fast.startedAt, new Date().toISOString()) : 0;
   return <section className="today-hero card">
     <ConfigShortcut label="Edit daily targets" onClick={onOpenTargets} />
+    {profile.weightTracking === "enabled" && <button type="button" className="today-hero-weight" aria-expanded={openPanel === "weight"} onClick={() => setOpenPanel((open) => open === "weight" ? undefined : "weight")}><Scale size={13} />{round(latestWeight)} kg</button>}
     <div className="today-hero-toggles">
       {profile.enabledHabitFeatures?.includes("fasting") && <button type="button" className="fasting" aria-expanded={openPanel === "fasting"} onClick={() => setOpenPanel((open) => open === "fasting" ? undefined : "fasting")}><Timer size={13} />{fast ? `${round(fastingHours)}h fasted` : "Fasting since…"}</button>}
-      {profile.weightTracking === "enabled" && <button type="button" className="weight" aria-expanded={openPanel === "weight"} onClick={() => setOpenPanel((open) => open === "weight" ? undefined : "weight")}><Scale size={13} />{round(latestWeight)} kg</button>}
     </div>
     {openPanel === "fasting" && <FastingPanel profile={profile} meals={meals} onSave={onSaveProfile} onOpenFasting={onOpenFasting} />}
     {openPanel === "weight" && <WeightPanel profile={profile} onSave={onSaveProfile} onOpenWeight={onOpenWeight} />}

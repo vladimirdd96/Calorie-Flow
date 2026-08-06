@@ -1552,11 +1552,14 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 .today-hero { position: relative; margin-bottom: 16px; padding: clamp(18px, 4vw, 26px) clamp(14px, 4vw, 22px) 20px; border: 0; border-radius: 16px; box-shadow: 0 10px 24px color-mix(in oklch, var(--text) 12%, transparent); }
 .today-hero > .config-shortcut { position: absolute; top: 14px; right: 14px; }
 .today-hero:hover > .config-shortcut, .today-hero:focus-within > .config-shortcut { opacity: 1; }
+/* The weigh-in chip straddles the hero's top edge, so the card reserves room for the half that hangs inside it. */
+.today-hero:has(> .today-hero-weight) { margin-top: 28px; padding-top: calc(clamp(18px, 4vw, 26px) + 10px); }
+.today-hero-weight { position: absolute; top: 0; left: 50%; z-index: 1; min-height: 36px; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 0 12px; transform: translate(-50%, -50%); border: 1.5px solid currentColor; border-radius: 9px; background: var(--panel); color: var(--carbs); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+.today-hero-weight[aria-expanded="true"] { background: color-mix(in oklch, currentColor 9%, var(--panel)); }
 .today-hero-toggles { display: flex; align-items: stretch; justify-content: space-around; gap: 8px; margin-bottom: 16px; }
 .today-hero-toggles:empty { display: none; }
 .today-hero-toggles button { min-height: 36px; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 0 12px; border: 1.5px solid currentColor; border-radius: 9px; background: transparent; font-size: 12.5px; font-weight: 700; white-space: nowrap; }
 .today-hero-toggles .fasting { color: var(--blue); }
-.today-hero-toggles .weight { color: var(--carbs); }
 .today-hero-toggles button[aria-expanded="true"] { background: color-mix(in oklch, currentColor 9%, transparent); }
 .today-inline-panel { margin-bottom: 16px; padding: 14px; border: 1px solid var(--border); border-radius: 14px; }
 .today-panel-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
@@ -1614,8 +1617,8 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 .micros-toggle { width: 100%; margin-top: 14px; padding-top: 9px; color: var(--muted-2); border-top: 1px dashed var(--border-strong); font-size: 12px; }
 .micro-chip-groups { display: grid; gap: 14px; margin-top: 12px; }
 .micro-chip-groups section > span { display: block; margin-bottom: 7px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
-.micro-chip-groups section > div { display: flex; flex-wrap: wrap; gap: 7px; }
-.micro-chip-groups section > div > span { display: inline-flex; align-items: baseline; gap: 4px; padding: 5px 10px; color: var(--text); background: var(--control-surface); border: 1px solid transparent; border-radius: 8px; box-shadow: 0 2px 5px color-mix(in oklch, var(--text) 8%, transparent); font-size: 12px; }
+.micro-chip-groups section > div { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 7px; }
+.micro-chip-groups section > div > span { display: flex; align-items: baseline; justify-content: center; gap: 4px; padding: 5px 10px; color: var(--text); background: var(--control-surface); border: 1px solid transparent; border-radius: 8px; box-shadow: 0 2px 5px color-mix(in oklch, var(--text) 8%, transparent); font-size: 12px; }
 .micro-chip-groups section > div > span.zero { color: var(--muted); background: transparent; border-style: dashed; border-color: var(--border-strong); box-shadow: none; }
 .micro-chip-groups strong { font-size: 12.5px; }
 .today-water { margin-bottom: 16px; padding: 16px; border: 0; border-radius: 16px; box-shadow: 0 2px 8px color-mix(in oklch, var(--text) 5%, transparent); }
