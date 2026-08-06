@@ -1551,6 +1551,9 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 .today-coach-button svg { width: 18px; }
 .today-hero { position: relative; margin-bottom: 16px; padding: clamp(18px, 4vw, 26px) clamp(14px, 4vw, 22px) 20px; border: 0; border-radius: 16px; box-shadow: 0 10px 24px color-mix(in oklch, var(--text) 12%, transparent); }
 .today-hero > .config-shortcut { position: absolute; top: 14px; right: 14px; }
+/* The date control straddles the hero's top edge, so the card reserves room for the half that hangs inside it. */
+.today-hero:has(> .today-hero-date) { margin-top: 30px; padding-top: calc(clamp(18px, 4vw, 26px) + 14px); }
+.today-hero-date { position: absolute; top: 0; left: 50%; z-index: 1; transform: translate(-50%, -50%); }
 .today-hero:hover > .config-shortcut, .today-hero:focus-within > .config-shortcut { opacity: 1; }
 .today-hero-toggles { display: flex; align-items: stretch; justify-content: space-around; gap: 8px; margin-bottom: 16px; }
 .today-hero-toggles:empty { display: none; }

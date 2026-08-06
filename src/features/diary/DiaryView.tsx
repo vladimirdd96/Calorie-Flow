@@ -147,12 +147,12 @@ export function TodayView({
     <main className="page today-page">
       <header className="today-header">
         <div className="today-brand"><BrandMark /><div><span>{new Date().getHours() < 12 ? "Good morning" : new Date().getHours() < 18 ? "Good afternoon" : "Good evening"}</span><strong>Calorie Flow</strong></div></div>
-        <div className="today-header-actions"><div className="today-date-control"><button type="button" onClick={() => onDateChange(changeDate(dateKey, -1))} aria-label="Previous day"><ChevronLeft /></button><button type="button" className="today-date-label" onClick={onOpenCalendar} aria-label={`Open calendar for ${dayLabel(dateKey)}`}><CalendarDays /><span>{dayLabel(dateKey)}</span></button><button type="button" disabled={dateKey >= localDateKey()} onClick={() => onDateChange(changeDate(dateKey, 1))} aria-label="Next day"><ChevronRight /></button></div><button type="button" className="today-coach-button" onClick={onOpenCoach} aria-label="Ask Coach"><MessageCircle /></button></div>
+        <div className="today-header-actions"><button type="button" className="today-coach-button" onClick={onOpenCoach} aria-label="Ask Coach"><MessageCircle /></button></div>
       </header>
 
       {showHomeScreenPrompt && <HomeScreenPrompt onDismiss={onDismissHomeScreenPrompt} />}
 
-      <TodaySummary profile={profile} meals={meals} total={total} targets={targets} onSaveProfile={onSaveProfile} onOpenWeight={() => onOpenInsights("weight")} onOpenFasting={() => onOpenInsights("fasting")} onOpenTargets={onOpenTargets} />
+      <TodaySummary profile={profile} meals={meals} total={total} targets={targets} onSaveProfile={onSaveProfile} onOpenWeight={() => onOpenInsights("weight")} onOpenFasting={() => onOpenInsights("fasting")} onOpenTargets={onOpenTargets} dateNav={<div className="today-date-control"><button type="button" onClick={() => onDateChange(changeDate(dateKey, -1))} aria-label="Previous day"><ChevronLeft /></button><button type="button" className="today-date-label" onClick={onOpenCalendar} aria-label={`Open calendar for ${dayLabel(dateKey)}`}><CalendarDays /><span>{dayLabel(dateKey)}</span></button><button type="button" disabled={dateKey >= localDateKey()} onClick={() => onDateChange(changeDate(dateKey, 1))} aria-label="Next day"><ChevronRight /></button></div>} />
       {isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.water) && <TodayWater profile={profile} dateKey={dateKey} onSave={onSaveProfile} />}
 
       <section className="log-section">

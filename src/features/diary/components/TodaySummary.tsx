@@ -103,7 +103,7 @@ function NutritionExpanded({ total, profile }: { total: Nutrition; profile: Prof
   </div>;
 }
 
-export function TodaySummary({ profile, meals, total, targets, onSaveProfile, onOpenWeight, onOpenFasting, onOpenTargets }: { profile: Profile; meals: Meal[]; total: Nutrition; targets: DailyTargets; onSaveProfile: (profile: Profile) => void; onOpenWeight: () => void; onOpenFasting: () => void; onOpenTargets: () => void }) {
+export function TodaySummary({ profile, meals, total, targets, onSaveProfile, onOpenWeight, onOpenFasting, onOpenTargets, dateNav }: { profile: Profile; meals: Meal[]; total: Nutrition; targets: DailyTargets; onSaveProfile: (profile: Profile) => void; onOpenWeight: () => void; onOpenFasting: () => void; onOpenTargets: () => void; dateNav?: ReactNode }) {
   const [openPanel, setOpenPanel] = useState<"fasting" | "weight">();
   const [nutritionOpen, setNutritionOpen] = useState(false);
   const carbs = profile.carbDisplay === "net" ? netCarbs(total) : total.carbs;
@@ -112,6 +112,7 @@ export function TodaySummary({ profile, meals, total, targets, onSaveProfile, on
   const fast = activeFast(profile.fastingRecords);
   const fastingHours = fast ? fastingWindowHours(fast.startedAt, new Date().toISOString()) : 0;
   return <section className="today-hero card">
+    {dateNav && <div className="today-hero-date">{dateNav}</div>}
     <ConfigShortcut label="Edit daily targets" onClick={onOpenTargets} />
     <div className="today-hero-toggles">
       {profile.enabledHabitFeatures?.includes("fasting") && <button type="button" className="fasting" aria-expanded={openPanel === "fasting"} onClick={() => setOpenPanel((open) => open === "fasting" ? undefined : "fasting")}><Timer size={13} />{fast ? `${round(fastingHours)}h fasted` : "Fasting since…"}</button>}
