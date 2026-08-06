@@ -768,6 +768,18 @@ p { color: var(--muted); line-height: 1.55; }
 .recipe-card-actions .danger { color: var(--red); }
 .recipe-composer textarea { min-height: 86px; resize: vertical; }
 .recipe-nutrition { display: grid; gap: 8px; }
+.recipe-field-group { display: grid; gap: 8px; }
+.recipe-field-label { color: var(--muted); font-size: 12px; font-weight: 700; }
+.recipe-field-list { display: grid; gap: 6px; }
+.recipe-field-row { display: flex; align-items: center; gap: 8px; }
+.recipe-field-row input, .recipe-field-row textarea { flex: 1 1 auto; min-width: 0; padding: 9px 12px; color: var(--text); background: var(--control-surface); border: 1px solid transparent; border-radius: 11px; font-size: 12.5px; line-height: 1.4; font-family: inherit; }
+.recipe-field-row textarea { resize: none; overflow: hidden; }
+.recipe-field-row input:focus-visible, .recipe-field-row textarea:focus-visible { border-color: var(--border-strong); outline: none; }
+.recipe-field-list.numbered .recipe-field-row { align-items: flex-start; }
+.recipe-field-index { display: grid; flex: 0 0 auto; place-items: center; width: 20px; height: 20px; margin-top: 9px; color: var(--muted); background: var(--panel); border-radius: 7px; font-size: 11px; font-weight: 700; }
+.recipe-field-remove { display: grid; flex: 0 0 auto; place-items: center; width: 30px; height: 30px; color: var(--muted); background: transparent; border: none; border-radius: 9px; }
+.recipe-field-remove:hover { color: var(--red); background: var(--control-surface); }
+.recipe-field-add { display: flex; align-items: center; gap: 6px; justify-self: start; padding: 6px 4px; color: var(--mint-strong); background: transparent; border: none; font-size: 12px; font-weight: 700; }
 .recipe-list, .planned-list { display: grid; gap: 8px; }
 .recipe-card, .planned-entry { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; }
 .recipe-card-body { display: flex; align-items: center; gap: 12px; min-width: 0; }

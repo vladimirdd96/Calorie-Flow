@@ -1,7 +1,7 @@
 "use client";
 
-import { BookOpen, ChevronDown, ImagePlus, Share2, X } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { BookOpen, ChevronDown, ImagePlus, Plus, Share2, X } from "lucide-react";
+import { FormEvent, KeyboardEvent, useRef, useState } from "react";
 import { NumericInput } from "@/features/shared/NumericInput";
 import { readMealImage } from "@/features/diary/DiaryView";
 import { getSupabase } from "@/lib/supabase";
@@ -10,8 +10,12 @@ import { recipeNutritionEstimateSchema } from "@/lib/schemas";
 import type { Recipe } from "@/lib/types";
 
 type NutritionFields = { calories: string; protein: string; carbs: string; fat: string; fiber: string; sugar: string };
+type FieldRow = { id: string; value: string };
 
 const defaultNutrition: NutritionFields = { calories: "400", protein: "25", carbs: "45", fat: "12", fiber: "8", sugar: "6" };
+
+const makeRow = (value = ""): FieldRow => ({ id: crypto.randomUUID(), value });
+const rowsFrom = (values?: string[]) => (values?.length ? values.map(makeRow) : [makeRow()]);
 
 async function authToken() {
   return (await getSupabase()?.auth.getSession())?.data.session?.access_token;
@@ -19,8 +23,8 @@ async function authToken() {
 
 export function RecipeComposer({ recipe, userId, onSave }: { recipe?: Recipe; userId?: string; onSave: (recipe: Recipe) => void }) {
   const [name, setName] = useState(recipe?.name || "");
-  const [ingredients, setIngredients] = useState(recipe?.ingredients.map((ingredient) => ingredient.name).join("\n") || "");
-  const [instructions, setInstructions] = useState(recipe?.instructions?.join("\n") || "");
+  const [ingredientRows, setIngredientRows] = useState<FieldRow[]>(() => rowsFrom(recipe?.ingredients.map((ingredient) => ingredient.name)));
+  const [instructionRows, setInstructionRows] = useState<FieldRow[]>(() => rowsFrom(recipe?.instructions));
   const [servings, setServings] = useState(String(recipe?.servings || 2));
   const [servingGrams, setServingGrams] = useState(String(recipe?.servingGrams ?? 100));
   const [nutrition, setNutrition] = useState<NutritionFields>(recipe ? { calories: String(recipe.nutritionPerServing.calories), protein: String(recipe.nutritionPerServing.protein), carbs: String(recipe.nutritionPerServing.carbs), fat: String(recipe.nutritionPerServing.fat), fiber: String(recipe.nutritionPerServing.fiber), sugar: String(recipe.nutritionPerServing.sugar) } : defaultNutrition);
@@ -33,11 +37,56 @@ export function RecipeComposer({ recipe, userId, onSave }: { recipe?: Recipe; us
   const [saving, setSaving] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(Boolean(recipe?.isPublic));
 
+  const ingredientRefs = useRef(new Map<string, HTMLInputElement>());
+  const instructionRefs = useRef(new Map<string, HTMLTextAreaElement>());
+  const focusRowRef = useRef<{ list: "ingredient" | "instruction"; id: string } | undefined>(undefined);
+
   const setNutrient = (key: keyof NutritionFields, value: string) => setNutrition((current) => ({ ...current, [key]: value }));
-  const ingredientNames = ingredients.split(/\n|,/).map((item) => item.trim()).filter(Boolean);
-  const instructionSteps = instructions.split("\n").map((item) => item.trim()).filter(Boolean);
+  const ingredientNames = ingredientRows.map((row) => row.value.trim()).filter(Boolean);
+  const instructionSteps = instructionRows.map((row) => row.value.trim()).filter(Boolean);
   const basicsValid = Boolean(name.trim()) && Number.isFinite(Number(servings)) && Number(servings) > 0 && Number.isFinite(Number(servingGrams)) && Number(servingGrams) > 0 && ingredientNames.length > 0;
   const canShare = imageUrls.length > 0;
+
+  const focusRow = (list: "ingredient" | "instruction", id: string) => { focusRowRef.current = { list, id }; };
+  const attachIngredientRef = (id: string) => (el: HTMLInputElement | null) => {
+    if (el) { ingredientRefs.current.set(id, el); if (focusRowRef.current?.list === "ingredient" && focusRowRef.current.id === id) { el.focus(); focusRowRef.current = undefined; } }
+    else ingredientRefs.current.delete(id);
+  };
+  const attachInstructionRef = (id: string) => (el: HTMLTextAreaElement | null) => {
+    if (el) { instructionRefs.current.set(id, el); if (focusRowRef.current?.list === "instruction" && focusRowRef.current.id === id) { el.focus(); focusRowRef.current = undefined; } }
+    else instructionRefs.current.delete(id);
+  };
+
+  const addIngredientRow = (afterId?: string) => {
+    const row = makeRow();
+    setIngredientRows((current) => { const index = afterId ? current.findIndex((item) => item.id === afterId) : current.length - 1; return [...current.slice(0, index + 1), row, ...current.slice(index + 1)]; });
+    focusRow("ingredient", row.id);
+  };
+  const updateIngredientRow = (id: string, value: string) => setIngredientRows((current) => current.map((row) => (row.id === id ? { ...row, value } : row)));
+  const removeIngredientRow = (id: string, index: number) => {
+    setIngredientRows((current) => (current.length > 1 ? current.filter((row) => row.id !== id) : [makeRow()]));
+    if (index > 0) { const previous = ingredientRows[index - 1]; if (previous) focusRow("ingredient", previous.id); }
+  };
+  const handleIngredientKeyDown = (event: KeyboardEvent<HTMLInputElement>, row: FieldRow, index: number) => {
+    if (event.key === "Enter") { event.preventDefault(); addIngredientRow(row.id); }
+    else if (event.key === "Backspace" && row.value === "" && ingredientRows.length > 1) { event.preventDefault(); removeIngredientRow(row.id, index); }
+  };
+
+  const addInstructionRow = (afterId?: string) => {
+    const row = makeRow();
+    setInstructionRows((current) => { const index = afterId ? current.findIndex((item) => item.id === afterId) : current.length - 1; return [...current.slice(0, index + 1), row, ...current.slice(index + 1)]; });
+    focusRow("instruction", row.id);
+  };
+  const updateInstructionRow = (id: string, value: string) => setInstructionRows((current) => current.map((row) => (row.id === id ? { ...row, value } : row)));
+  const removeInstructionRow = (id: string, index: number) => {
+    setInstructionRows((current) => (current.length > 1 ? current.filter((row) => row.id !== id) : [makeRow()]));
+    if (index > 0) { const previous = instructionRows[index - 1]; if (previous) focusRow("instruction", previous.id); }
+  };
+  const handleInstructionKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>, row: FieldRow, index: number) => {
+    if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); addInstructionRow(row.id); }
+    else if (event.key === "Backspace" && row.value === "" && instructionRows.length > 1) { event.preventDefault(); removeInstructionRow(row.id, index); }
+  };
+  const autoGrowInstruction = (element: HTMLTextAreaElement) => { element.style.height = "auto"; element.style.height = `${element.scrollHeight}px`; };
 
   const estimate = async () => {
     if (!ingredientNames.length) return;
@@ -104,7 +153,7 @@ export function RecipeComposer({ recipe, userId, onSave }: { recipe?: Recipe; us
         }
       }
       onSave(finalRecipe);
-      if (!recipe) { setName(""); setIngredients(""); setInstructions(""); setServings("2"); setServingGrams("100"); setNutrition(defaultNutrition); setImageUrls([]); setShare(false); setEstimateNote(""); setEstimated(false); setAdvancedOpen(false); }
+      if (!recipe) { setName(""); setIngredientRows([makeRow()]); setInstructionRows([makeRow()]); setServings("2"); setServingGrams("100"); setNutrition(defaultNutrition); setImageUrls([]); setShare(false); setEstimateNote(""); setEstimated(false); setAdvancedOpen(false); }
     } catch (error) {
       setEstimateNote(error instanceof Error ? error.message : "Saved locally, but the catalogue could not be updated.");
       onSave(nextRecipe);
@@ -116,8 +165,44 @@ export function RecipeComposer({ recipe, userId, onSave }: { recipe?: Recipe; us
       <label className="span-two"><span>Recipe name</span><input required value={name} maxLength={240} onChange={(event) => setName(event.target.value)} placeholder="e.g. Weeknight lentil bowl" /></label>
       <label><span>Servings</span><NumericInput required min="0.5" max="100" step="0.5" value={servings} onChange={(event) => setServings(event.target.value)} /></label>
       <label><span>Grams per serving</span><NumericInput required min="1" max="20000" step="1" value={servingGrams} onChange={(event) => setServingGrams(event.target.value)} /></label>
-      <label className="span-two"><span>Ingredients</span><textarea required value={ingredients} maxLength={5000} onChange={(event) => setIngredients(event.target.value)} placeholder="One ingredient per line" /></label>
-      <label className="span-two"><span>Instructions</span><textarea value={instructions} maxLength={5000} onChange={(event) => setInstructions(event.target.value)} placeholder="One step per line" /></label>
+    </div>
+
+    <div className="recipe-field-group">
+      <span className="recipe-field-label">Ingredients</span>
+      <div className="recipe-field-list">
+        {ingredientRows.map((row, index) => <div className="recipe-field-row" key={row.id}>
+          <input
+            ref={attachIngredientRef(row.id)}
+            value={row.value}
+            maxLength={200}
+            placeholder={index === 0 ? "e.g. 2 cups spinach" : "Add ingredient"}
+            onChange={(event) => updateIngredientRow(row.id, event.target.value)}
+            onKeyDown={(event) => handleIngredientKeyDown(event, row, index)}
+          />
+          <button type="button" className="recipe-field-remove" aria-label="Remove ingredient" onClick={() => removeIngredientRow(row.id, index)}><X size={14} /></button>
+        </div>)}
+      </div>
+      <button type="button" className="recipe-field-add" onClick={() => addIngredientRow()}><Plus size={14} />Add ingredient</button>
+    </div>
+
+    <div className="recipe-field-group">
+      <span className="recipe-field-label">Instructions</span>
+      <div className="recipe-field-list numbered">
+        {instructionRows.map((row, index) => <div className="recipe-field-row" key={row.id}>
+          <span className="recipe-field-index">{index + 1}</span>
+          <textarea
+            ref={attachInstructionRef(row.id)}
+            rows={1}
+            value={row.value}
+            maxLength={500}
+            placeholder={index === 0 ? "e.g. Sauté onion until soft" : "Add step"}
+            onChange={(event) => { updateInstructionRow(row.id, event.target.value); autoGrowInstruction(event.currentTarget); }}
+            onKeyDown={(event) => handleInstructionKeyDown(event, row, index)}
+          />
+          <button type="button" className="recipe-field-remove" aria-label="Remove step" onClick={() => removeInstructionRow(row.id, index)}><X size={14} /></button>
+        </div>)}
+      </div>
+      <button type="button" className="recipe-field-add" onClick={() => addInstructionRow()}><Plus size={14} />Add step</button>
     </div>
 
     <details className="recipe-advanced" open={advancedOpen} onToggle={(event) => { if (event.currentTarget.open) openAdvanced(); else setAdvancedOpen(false); }}>
