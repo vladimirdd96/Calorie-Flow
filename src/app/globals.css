@@ -1126,7 +1126,7 @@ p { color: var(--muted); line-height: 1.55; }
 .sheet-handle { display: block; width: 42px; height: 28px; margin: -5px auto 0; padding: 0; border: 0; border-radius: 99px; background: transparent; cursor: grab; touch-action: none; }
 .sheet-handle::after { content: ""; display: block; width: 42px; height: 4px; margin: 12px auto; border-radius: 99px; background: var(--handle); }
 .sheet-handle:active { cursor: grabbing; }
-.sheet-close { position: absolute; top: 8px; right: 10px; width: 36px; height: 36px; color: var(--muted); }
+.sheet-close { position: absolute; top: 8px; right: 10px; z-index: 2; width: 36px; height: 36px; color: var(--muted); }
 .sheet-close:hover, .sheet-close:focus-visible { color: var(--text); background: var(--panel); }
 .sheet-header { min-height: 48px; display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px; padding-right: 42px; }
 .sheet-header > div { min-width: 0; flex: 1; text-align: left; }
@@ -1689,8 +1689,9 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 .bottom-nav > .bottom-nav-add svg { width: 28px; height: 28px; }
 
 /* Handoff sheet geometry remains bottom-anchored at every viewport. */
-.sheet-backdrop { align-items: end; padding: max(14px, env(safe-area-inset-top)) 0 0; background: color-mix(in oklch, var(--text) 20%, transparent); backdrop-filter: none; }
-.sheet, .sheet.wide { width: min(100%, 680px); max-height: calc(100vh - max(14px, env(safe-area-inset-top))); margin: 0; padding: 7px 18px calc(26px + env(safe-area-inset-bottom)); background: var(--panel); border-width: 1px 1px 0; border-radius: 20px 20px 0 0; }
+/* The backdrop owns the scroll so the scrollbar sits outside the sheet surface, not on its inner edge. */
+.sheet-backdrop { align-items: flex-start; padding: max(14px, env(safe-area-inset-top)) 0 0; overflow-y: auto; overscroll-behavior: contain; background: color-mix(in oklch, var(--text) 20%, transparent); backdrop-filter: none; }
+.sheet, .sheet.wide { width: min(100%, 680px); max-height: none; margin: auto 0 0; padding: 7px 18px calc(26px + env(safe-area-inset-bottom)); overflow: visible; background: var(--panel); border-width: 1px 1px 0; border-radius: 20px 20px 0 0; }
 
 @media (max-width: 620px) {
   .today-header { align-items: flex-start; }
@@ -1712,7 +1713,9 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 }
 
 /* Add Food handoff */
-.sheet.add-food-sheet-shell { width: min(100%, clamp(420px, 62vw, 780px)); height: 100dvh; max-height: 100dvh; flex-basis: 780px; padding: calc(18px + env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom)); border: 0; border-radius: 0; }
+/* The full-height shell fills the viewport, so it keeps its own scroller instead of handing it to the backdrop. */
+.sheet-backdrop:has(> .add-food-sheet-shell) { padding-top: 0; overflow: hidden; }
+.sheet.add-food-sheet-shell { width: min(100%, clamp(420px, 62vw, 780px)); height: 100dvh; max-height: 100dvh; flex-basis: 780px; padding: calc(18px + env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom)); overflow-x: hidden; overflow-y: auto; border: 0; border-radius: 0; }
 .add-food-sheet-shell > .sheet-handle { display: none; }
 .add-food-sheet-shell .sheet-header .icon-button { width: 40px; height: 40px; color: var(--muted-2); background: var(--bg-soft); border: 0; border-radius: 12px; }
 .add-food-sheet-shell .sheet-header .eyebrow { color: var(--carbs); }
@@ -2665,7 +2668,7 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 
 @media (min-width: 760px) {
   .sheet-backdrop:has(.portion-sheet) { align-items: center; padding: 24px; }
-  .sheet.add-food-sheet-shell:has(.portion-sheet) { max-height: calc(100dvh - 48px); border: 1px solid var(--border); border-radius: 20px; }
+  .sheet.add-food-sheet-shell:has(.portion-sheet) { margin: auto 0; max-height: calc(100dvh - 48px); border: 1px solid var(--border); border-radius: 20px; }
 }
 
 /* Logged diary entry handoff */
@@ -2911,7 +2914,13 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 .catalogue-detail, .recipe-view-detail { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
 .recipe-view-detail .sheet-header { min-width: 0; }
 .recipe-view-detail .sheet-header h2 { max-width: none; overflow: visible; white-space: normal; }
-.catalogue-detail-photo, .recipe-view-photo { position: relative; margin: -7px -18px 0; overflow: hidden; border-radius: 22px 22px 0 0; }
+/* -30px clears the sheet's 7px top padding plus the 23px the drag handle occupies, so the photo meets the sheet's top edge. */
+.catalogue-detail-photo, .recipe-view-photo { position: relative; margin: -30px -18px 0; overflow: hidden; border-radius: 20px 20px 0 0; }
+.sheet:has(.recipe-view-photo, .catalogue-detail-photo) > .sheet-handle { position: relative; z-index: 2; }
+.sheet:has(.recipe-view-photo, .catalogue-detail-photo) > .sheet-handle::after { background: rgba(240,255,248,.85); box-shadow: 0 1px 3px rgba(4,10,9,.35); }
+.sheet:has(.recipe-view-photo, .catalogue-detail-photo) > .sheet-close { color: #f0fff8; background: rgba(4,10,9,.5); border-radius: 50%; backdrop-filter: blur(4px); }
+.sheet:has(.recipe-view-photo, .catalogue-detail-photo) > .sheet-close:hover,
+.sheet:has(.recipe-view-photo, .catalogue-detail-photo) > .sheet-close:focus-visible { color: #f0fff8; background: rgba(4,10,9,.72); }
 .catalogue-detail-photo img, .recipe-view-photo img { width: 100%; max-height: 220px; object-fit: cover; }
 .catalogue-detail-photo a, .recipe-view-photo a { position: absolute; right: 10px; bottom: 10px; padding: 4px 10px; color: #f0fff8; background: rgba(4,10,9,.6); border-radius: 999px; font-size: 10.5px; font-weight: 700; text-decoration: none; backdrop-filter: blur(4px); }
 .catalogue-detail-meta { margin: 0; color: var(--muted); font-size: 12.5px; }

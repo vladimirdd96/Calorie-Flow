@@ -10,6 +10,12 @@ Nutrition data is health-adjacent: label estimates clearly, avoid medical claims
 
 Use semantic controls, visible labels, keyboard-accessible dialogs, and sufficient contrast. Modal sheets must trap focus, restore it when closed, and make the underlying app inert. Keep destructive diary actions recoverable with an Undo window where practical. Never hide a required action at a mobile breakpoint. Test any UI behavior that affects nutrition calculations or persisted diary data.
 
+### Sheet scrolling
+
+`.sheet-backdrop` owns the scroll for ordinary sheets, so the scrollbar sits outside the sheet surface instead of on its inner rounded edge. The sheet itself has `overflow: visible`, no `max-height`, and `margin-top: auto` for bottom anchoring. Full-height shells (`.add-food-sheet-shell`) are the exception: they fill the viewport and keep their own scroller, with the backdrop set to `overflow: hidden`. Drag-to-dismiss gating in `src/features/shared/Sheet.tsx` reads `scrollOffset()`, which takes whichever of the two actually scrolled; the backdrop's click-to-close ignores presses that start in the scrollbar gutter.
+
+Sheets that open with a hero photo pull it up past the sheet's top padding and drag handle (`margin-top: -30px`), so the handle and close button float over the image; both carry `z-index: 2` to paint above it.
+
 ### Signaling a configurable feature
 
 When a card or section surfaces a value the user can tune (a target, a threshold, a preference), add `ConfigShortcut` (`src/features/shared/ConfigShortcut.tsx`) rather than inventing a settings affordance per feature. It renders the shared `.config-shortcut` ghost icon-button (`SlidersHorizontal`, dimmed until hover/focus) and takes a single `onClick`. It never opens an inline settings sheet — wire `onClick` to `navigateTo` (the `AppNavigationTarget` contract in `src/features/navigation/types.ts`) so it redirects to the feature's real configuration screen, the same one reachable from Profile.
