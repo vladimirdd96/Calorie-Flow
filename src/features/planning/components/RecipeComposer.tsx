@@ -11,11 +11,14 @@ import type { Recipe } from "@/lib/types";
 
 type NutritionFields = { calories: string; protein: string; carbs: string; fat: string; fiber: string; sugar: string };
 type FieldRow = { id: string; value: string };
+type IngredientRow = { id: string; name: string; quantity: string };
 
 const defaultNutrition: NutritionFields = { calories: "400", protein: "25", carbs: "45", fat: "12", fiber: "8", sugar: "6" };
 
 const makeRow = (value = ""): FieldRow => ({ id: crypto.randomUUID(), value });
 const rowsFrom = (values?: string[]) => (values?.length ? values.map(makeRow) : [makeRow()]);
+const makeIngredientRow = (name = "", quantity = ""): IngredientRow => ({ id: crypto.randomUUID(), name, quantity });
+const ingredientRowsFrom = (ingredients?: Recipe["ingredients"]) => (ingredients?.length ? ingredients.map((ingredient) => makeIngredientRow(ingredient.name, ingredient.quantity || "")) : [makeIngredientRow()]);
 
 async function authToken() {
   return (await getSupabase()?.auth.getSession())?.data.session?.access_token;
@@ -23,7 +26,7 @@ async function authToken() {
 
 export function RecipeComposer({ recipe, userId, onSave }: { recipe?: Recipe; userId?: string; onSave: (recipe: Recipe) => void }) {
   const [name, setName] = useState(recipe?.name || "");
-  const [ingredientRows, setIngredientRows] = useState<FieldRow[]>(() => rowsFrom(recipe?.ingredients.map((ingredient) => ingredient.name)));
+  const [ingredientRows, setIngredientRows] = useState<IngredientRow[]>(() => ingredientRowsFrom(recipe?.ingredients));
   const [instructionRows, setInstructionRows] = useState<FieldRow[]>(() => rowsFrom(recipe?.instructions));
   const [servings, setServings] = useState(String(recipe?.servings || 2));
   const [servingGrams, setServingGrams] = useState(String(recipe?.servingGrams ?? 100));
@@ -42,9 +45,10 @@ export function RecipeComposer({ recipe, userId, onSave }: { recipe?: Recipe; us
   const focusRowRef = useRef<{ list: "ingredient" | "instruction"; id: string } | undefined>(undefined);
 
   const setNutrient = (key: keyof NutritionFields, value: string) => setNutrition((current) => ({ ...current, [key]: value }));
-  const ingredientNames = ingredientRows.map((row) => row.value.trim()).filter(Boolean);
+  const ingredientItems = ingredientRows.map((row) => ({ name: row.name.trim(), quantity: row.quantity.trim() })).filter((item) => item.name);
+  const ingredientNames = ingredientItems.map((item) => (item.quantity ? `${item.quantity} ${item.name}` : item.name));
   const instructionSteps = instructionRows.map((row) => row.value.trim()).filter(Boolean);
-  const basicsValid = Boolean(name.trim()) && Number.isFinite(Number(servings)) && Number(servings) > 0 && Number.isFinite(Number(servingGrams)) && Number(servingGrams) > 0 && ingredientNames.length > 0;
+  const basicsValid = Boolean(name.trim()) && Number.isFinite(Number(servings)) && Number(servings) > 0 && Number.isFinite(Number(servingGrams)) && Number(servingGrams) > 0 && ingredientItems.length > 0;
   const canShare = imageUrls.length > 0;
 
   const focusRow = (list: "ingredient" | "instruction", id: string) => { focusRowRef.current = { list, id }; };
@@ -58,18 +62,19 @@ export function RecipeComposer({ recipe, userId, onSave }: { recipe?: Recipe; us
   };
 
   const addIngredientRow = (afterId?: string) => {
-    const row = makeRow();
+    const row = makeIngredientRow();
     setIngredientRows((current) => { const index = afterId ? current.findIndex((item) => item.id === afterId) : current.length - 1; return [...current.slice(0, index + 1), row, ...current.slice(index + 1)]; });
     focusRow("ingredient", row.id);
   };
-  const updateIngredientRow = (id: string, value: string) => setIngredientRows((current) => current.map((row) => (row.id === id ? { ...row, value } : row)));
+  const updateIngredientName = (id: string, value: string) => setIngredientRows((current) => current.map((row) => (row.id === id ? { ...row, name: value } : row)));
+  const updateIngredientQuantity = (id: string, value: string) => setIngredientRows((current) => current.map((row) => (row.id === id ? { ...row, quantity: value } : row)));
   const removeIngredientRow = (id: string, index: number) => {
-    setIngredientRows((current) => (current.length > 1 ? current.filter((row) => row.id !== id) : [makeRow()]));
+    setIngredientRows((current) => (current.length > 1 ? current.filter((row) => row.id !== id) : [makeIngredientRow()]));
     if (index > 0) { const previous = ingredientRows[index - 1]; if (previous) focusRow("ingredient", previous.id); }
   };
-  const handleIngredientKeyDown = (event: KeyboardEvent<HTMLInputElement>, row: FieldRow, index: number) => {
+  const handleIngredientKeyDown = (event: KeyboardEvent<HTMLInputElement>, row: IngredientRow, index: number) => {
     if (event.key === "Enter") { event.preventDefault(); addIngredientRow(row.id); }
-    else if (event.key === "Backspace" && row.value === "" && ingredientRows.length > 1) { event.preventDefault(); removeIngredientRow(row.id, index); }
+    else if (event.key === "Backspace" && row.name === "" && row.quantity === "" && ingredientRows.length > 1) { event.preventDefault(); removeIngredientRow(row.id, index); }
   };
 
   const addInstructionRow = (afterId?: string) => {
@@ -133,7 +138,7 @@ export function RecipeComposer({ recipe, userId, onSave }: { recipe?: Recipe; us
     const now = new Date().toISOString();
     const nextRecipe: Recipe = {
       id: recipe?.id || `recipe-${crypto.randomUUID()}`, name: name.trim(), servings: Number(servings), servingGrams: gramsPerServing,
-      ingredients: ingredientNames.map((item, index) => ({ ...recipe?.ingredients[index], id: recipe?.ingredients[index]?.id || `ingredient-${crypto.randomUUID()}`, name: item })),
+      ingredients: ingredientItems.map((item, index) => ({ ...recipe?.ingredients[index], id: recipe?.ingredients[index]?.id || `ingredient-${crypto.randomUUID()}`, name: item.name, quantity: item.quantity || undefined })),
       instructions: instructionSteps, cuisine: recipe?.cuisine, dietaryTags: recipe?.dietaryTags,
       nutritionPerServing: values, imageUrls, isPublic: recipe?.isPublic, publicRecipeId: recipe?.publicRecipeId, origin: recipe?.origin,
       createdAt: recipe?.createdAt || now, updatedAt: now,
@@ -153,7 +158,7 @@ export function RecipeComposer({ recipe, userId, onSave }: { recipe?: Recipe; us
         }
       }
       onSave(finalRecipe);
-      if (!recipe) { setName(""); setIngredientRows([makeRow()]); setInstructionRows([makeRow()]); setServings("2"); setServingGrams("100"); setNutrition(defaultNutrition); setImageUrls([]); setShare(false); setEstimateNote(""); setEstimated(false); setAdvancedOpen(false); }
+      if (!recipe) { setName(""); setIngredientRows([makeIngredientRow()]); setInstructionRows([makeRow()]); setServings("2"); setServingGrams("100"); setNutrition(defaultNutrition); setImageUrls([]); setShare(false); setEstimateNote(""); setEstimated(false); setAdvancedOpen(false); }
     } catch (error) {
       setEstimateNote(error instanceof Error ? error.message : "Saved locally, but the catalogue could not be updated.");
       onSave(nextRecipe);
@@ -172,11 +177,21 @@ export function RecipeComposer({ recipe, userId, onSave }: { recipe?: Recipe; us
       <div className="recipe-field-list">
         {ingredientRows.map((row, index) => <div className="recipe-field-row" key={row.id}>
           <input
+            className="recipe-field-qty"
+            value={row.quantity}
+            maxLength={40}
+            placeholder="Amount"
+            aria-label="Ingredient amount"
+            onChange={(event) => updateIngredientQuantity(row.id, event.target.value)}
+            onKeyDown={(event) => handleIngredientKeyDown(event, row, index)}
+          />
+          <input
             ref={attachIngredientRef(row.id)}
-            value={row.value}
+            value={row.name}
             maxLength={200}
-            placeholder={index === 0 ? "e.g. 2 cups spinach" : "Add ingredient"}
-            onChange={(event) => updateIngredientRow(row.id, event.target.value)}
+            placeholder={index === 0 ? "e.g. spinach" : "Add ingredient"}
+            aria-label="Ingredient name"
+            onChange={(event) => updateIngredientName(row.id, event.target.value)}
             onKeyDown={(event) => handleIngredientKeyDown(event, row, index)}
           />
           <button type="button" className="recipe-field-remove" aria-label="Remove ingredient" onClick={() => removeIngredientRow(row.id, index)}><X size={14} /></button>

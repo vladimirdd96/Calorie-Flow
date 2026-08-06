@@ -773,7 +773,8 @@ p { color: var(--muted); line-height: 1.55; }
 .recipe-field-list { display: grid; gap: 6px; }
 .recipe-field-row { display: flex; align-items: center; gap: 8px; }
 .recipe-field-row input, .recipe-field-row textarea { flex: 1 1 auto; min-width: 0; padding: 9px 12px; color: var(--text); background: var(--control-surface); border: 1px solid transparent; border-radius: 11px; font-size: 12.5px; line-height: 1.4; font-family: inherit; }
-.recipe-field-row textarea { resize: none; overflow: hidden; }
+.recipe-field-row textarea { min-height: 0; resize: none; overflow: hidden; }
+.recipe-field-row .recipe-field-qty { flex: 0 0 88px; }
 .recipe-field-row input:focus-visible, .recipe-field-row textarea:focus-visible { border-color: var(--border-strong); outline: none; }
 .recipe-field-list.numbered .recipe-field-row { align-items: flex-start; }
 .recipe-field-index { display: grid; flex: 0 0 auto; place-items: center; width: 20px; height: 20px; margin-top: 9px; color: var(--muted); background: var(--panel); border-radius: 7px; font-size: 11px; font-weight: 700; }
