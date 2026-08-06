@@ -47,22 +47,58 @@ export function recipeSearchKey(name: string): string {
   return name.trim().toLocaleLowerCase().replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
 }
 
-const quantityFractions: Record<string, number> = { "¼": 0.25, "½": 0.5, "¾": 0.75, "⅛": 0.125, "⅜": 0.375, "⅝": 0.625, "⅞": 0.875 };
-const fractionLabels: [number, string][] = [[0.875, "⅞"], [0.75, "¾"], [0.625, "⅝"], [0.5, "½"], [0.375, "⅜"], [0.25, "¼"], [0.125, "⅛"]];
+/**
+ * Normalizes a source page URL so the same recipe pasted twice compares equal despite a
+ * tracking query, a fragment, a trailing slash, or a www./scheme difference.
+ */
+export function importSourceKey(url: string): string | undefined {
+  try {
+    const parsed = new URL(url);
+    const path = parsed.pathname.replace(/\/+$/, "").toLocaleLowerCase();
+    return `${parsed.hostname.replace(/^www\./i, "").toLocaleLowerCase()}${path}`;
+  } catch { return undefined; }
+}
+
+/**
+ * Finds a recipe the user already has that a candidate would duplicate — same source page first,
+ * then the same normalized name. Callers warn rather than block: saving a second copy is the
+ * user's call.
+ */
+export function findDuplicateRecipe(recipes: Recipe[], candidate: { name: string; importedFrom?: { url: string } }): Recipe | undefined {
+  const sourceKey = candidate.importedFrom?.url ? importSourceKey(candidate.importedFrom.url) : undefined;
+  if (sourceKey) {
+    const bySource = recipes.find((recipe) => recipe.importedFrom?.url && importSourceKey(recipe.importedFrom.url) === sourceKey);
+    if (bySource) return bySource;
+  }
+  const nameKey = recipeSearchKey(candidate.name);
+  return nameKey ? recipes.find((recipe) => recipeSearchKey(recipe.name) === nameKey) : undefined;
+}
+
+/** Unicode fractions understood in an ingredient `quantity` string, in both directions. */
+export const quantityFractions: Record<string, number> = { "¼": 0.25, "½": 0.5, "¾": 0.75, "⅛": 0.125, "⅜": 0.375, "⅝": 0.625, "⅞": 0.875, "⅓": 1 / 3, "⅔": 2 / 3 };
+const fractionLabels: [number, string][] = [[0.875, "⅞"], [0.75, "¾"], [2 / 3, "⅔"], [0.625, "⅝"], [0.5, "½"], [0.375, "⅜"], [1 / 3, "⅓"], [0.25, "¼"], [0.125, "⅛"]];
+/** Twenty-fourths keep every eighth exact while also representing thirds. */
+const quantityPrecision = 24;
+const fractionCharacters = Object.keys(quantityFractions).join("");
+const leadingAmount = new RegExp(`^(\\d*)\\s*([${fractionCharacters}])?`);
+
+/** Renders a numeric amount the way `scaleIngredientQuantity` parses it back: whole number plus a unicode fraction. */
+export function formatQuantityAmount(value: number): string {
+  const amount = Math.max(1 / quantityPrecision, Math.round(value * quantityPrecision) / quantityPrecision);
+  const whole = Math.floor(amount);
+  const fraction = amount - whole;
+  const label = fractionLabels.find(([candidate]) => Math.abs(candidate - fraction) < 0.01)?.[1] || "";
+  return whole > 0 ? `${whole}${label}` : label || "0";
+}
 
 /** Scales a leading numeric/fraction quantity ("1¼ lb", "3 cloves") by a factor, keeping the trailing unit text as-is. */
 export function scaleIngredientQuantity(quantity: string, factor: number): string {
-  const match = quantity.match(/^(\d*)\s*([¼½¾⅛⅜⅝⅞])?/);
+  const match = quantity.match(leadingAmount);
   if (!match || (!match[1] && !match[2])) return quantity;
   const whole = match[1] ? Number(match[1]) : 0;
   const frac = match[2] ? quantityFractions[match[2]] : 0;
   const rest = quantity.slice(match[0].length);
-  const amount = Math.max(0.125, Math.round((whole + frac) * factor * 8) / 8);
-  const roundedWhole = Math.floor(amount);
-  const roundedFrac = Math.round((amount - roundedWhole) * 1000) / 1000;
-  const fracEntry = fractionLabels.find(([value]) => Math.abs(value - roundedFrac) < 0.01);
-  const fracLabel = fracEntry ? fracEntry[1] : "";
-  const numberLabel = roundedWhole > 0 ? `${roundedWhole}${fracLabel}` : fracLabel || "0";
+  const numberLabel = formatQuantityAmount((whole + frac) * factor);
   const separator = rest && !/^[\s,]/.test(rest) ? " " : "";
   return `${numberLabel}${separator}${rest}`;
 }

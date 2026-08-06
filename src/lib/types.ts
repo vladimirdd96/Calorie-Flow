@@ -260,7 +260,7 @@ export const cuisines = {
 } as const;
 export type Cuisine = typeof cuisines[keyof typeof cuisines];
 
-export const recipeOrigins = { created: "created", saved: "saved" } as const;
+export const recipeOrigins = { created: "created", saved: "saved", imported: "imported" } as const;
 export type RecipeOrigin = typeof recipeOrigins[keyof typeof recipeOrigins];
 
 export type Recipe = {
@@ -281,11 +281,16 @@ export type Recipe = {
   isPublic?: boolean;
   /** Links this recipe to its public_recipes row when shared. */
   publicRecipeId?: string;
-  /** "created" via the recipe composer, or "saved" by interacting with a catalogue recipe. Absent on older recipes; treat as "created". */
+  /** "created" via the recipe composer, "saved" by interacting with a catalogue recipe, or "imported" from a pasted link. Absent on older recipes; treat as "created". */
   origin?: RecipeOrigin;
+  /** Where an imported recipe came from, kept for attribution and the "view original" link. */
+  importedFrom?: { url: string; siteName?: string };
   createdAt: string;
   updatedAt: string;
 };
+
+/** A recipe that does not exist yet — what an import or any other pre-fill hands the composer. */
+export type RecipeDraft = Omit<Recipe, "id" | "createdAt" | "updatedAt">;
 
 export type MealPlanEntry = {
   id: string;

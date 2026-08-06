@@ -2,7 +2,8 @@ import { z } from "zod";
 import { defaultNutritionTargets, recipeOrigins, type CoachChat, type CoachMealAction, type CoachMealChoice, type CoachMessage, type DailyTargets, type DiaryShare, type FastingRecord, type Food, type LabelAnalysis, type MacroPresetOverride, type Meal, type MealPhotoAnalysis, type MealPlanEntry, type Nutrition, type Profile, type PublicRecipe, type Recipe, type WaterEntry, type WeightEntry } from "./types";
 
 const dietaryTagSchema = z.enum(["vegetarian", "vegan", "glutenFree", "dairyFree", "pescatarian", "keto", "paleo"]);
-const recipeOriginSchema = z.enum([recipeOrigins.created, recipeOrigins.saved]);
+const recipeOriginSchema = z.enum([recipeOrigins.created, recipeOrigins.saved, recipeOrigins.imported]);
+const importedFromSchema = z.object({ url: z.string().trim().url().max(2_000), siteName: z.string().trim().min(1).max(200).optional() }).strict();
 
 const finiteNonNegative = z.number().finite().min(0);
 const positiveFinite = z.number().finite().positive();
@@ -61,7 +62,7 @@ const recipeIngredientSchema = z.object({
   quantity: z.string().trim().max(60).optional(),
 }).strict();
 
-const recipeSchema = z.object({ id: z.string().trim().min(1).max(240), name: z.string().trim().min(1).max(240), servings: positiveFinite.max(100), ingredients: z.array(recipeIngredientSchema).max(100), nutritionPerServing: nutritionSchema, servingGrams: positiveFinite.max(20_000).optional(), instructions: z.array(z.string().trim().min(1).max(500)).max(30).optional(), cuisine: z.string().trim().max(60).optional(), dietaryTags: z.array(dietaryTagSchema).max(20).optional(), imageUrls: z.array(z.string().min(1).max(400_000)).max(8).optional(), isPublic: z.boolean().optional(), publicRecipeId: z.string().trim().min(1).max(240).optional(), origin: recipeOriginSchema.optional(), createdAt: z.string().datetime({ offset: true }), updatedAt: z.string().datetime({ offset: true }) }).strict() satisfies z.ZodType<Recipe>;
+const recipeSchema = z.object({ id: z.string().trim().min(1).max(240), name: z.string().trim().min(1).max(240), servings: positiveFinite.max(100), ingredients: z.array(recipeIngredientSchema).max(100), nutritionPerServing: nutritionSchema, servingGrams: positiveFinite.max(20_000).optional(), instructions: z.array(z.string().trim().min(1).max(500)).max(30).optional(), cuisine: z.string().trim().max(60).optional(), dietaryTags: z.array(dietaryTagSchema).max(20).optional(), imageUrls: z.array(z.string().min(1).max(400_000)).max(8).optional(), isPublic: z.boolean().optional(), publicRecipeId: z.string().trim().min(1).max(240).optional(), origin: recipeOriginSchema.optional(), importedFrom: importedFromSchema.optional(), createdAt: z.string().datetime({ offset: true }), updatedAt: z.string().datetime({ offset: true }) }).strict() satisfies z.ZodType<Recipe>;
 
 export const foodSchema = z.object({
   id: z.string().trim().min(1).max(240),
@@ -251,6 +252,53 @@ export const generatedRecipeSchema = z.object({
   nutritionPerServing: nutritionSchema,
   instructions: z.array(z.string().trim().min(1).max(500)).min(1).max(30),
 }).strict();
+
+/** Request body for POST /api/recipes/import: exactly one of a pasted link or pasted recipe text — `.strict()` on both branches rejects a body carrying each. */
+export const recipeImportRequestSchema = z.union([
+  z.object({ url: z.string().trim().min(1).max(2_000) }).strict(),
+  z.object({ text: z.string().trim().min(40).max(40_000) }).strict(),
+]);
+
+/**
+ * What the model may return when a page carries no structured recipe markup. Deliberately not
+ * `.strict()`: the relaxed json_object retry is unconstrained, and one stray key ("description",
+ * "prepTime") must not throw away an otherwise perfect extraction — unknown keys are stripped.
+ */
+export const importedRecipeSchema = z.object({
+  name: z.string().trim().min(1).max(240).optional(),
+  servings: positiveFinite.max(100).optional(),
+  servingGrams: positiveFinite.max(20_000).optional(),
+  ingredients: z.array(z.string().trim().min(1).max(240)).max(60),
+  instructions: z.array(z.string().trim().min(1).max(500)).max(40),
+});
+
+export const recipeImportExtractions = { structured: "structured", microdata: "microdata", aiText: "ai-text", aiPasted: "ai-pasted" } as const;
+export const recipeImportNutritionSources = { site: "site", estimated: "estimated", none: "none" } as const;
+
+/** Response from POST /api/recipes/import — a recipe draft the composer pre-fills, never a saved row. */
+export const recipeImportResultSchema = z.object({
+  recipe: z.object({
+    name: z.string().trim().min(1).max(240),
+    servings: positiveFinite.max(100),
+    servingGrams: positiveFinite.max(20_000),
+    ingredients: z.array(z.object({ name: z.string().trim().min(1).max(240), quantity: z.string().trim().max(60).optional() }).strict()).max(100),
+    instructions: z.array(z.string().trim().min(1).max(500)).max(30),
+    nutritionPerServing: nutritionSchema,
+    cuisine: z.string().trim().max(60).optional(),
+    dietaryTags: z.array(dietaryTagSchema).max(20),
+  }).strict(),
+  source: z.object({
+    url: z.string().trim().url().max(2_000).optional(),
+    siteName: z.string().trim().min(1).max(200).optional(),
+    imageUrl: z.string().trim().url().max(2_000).optional(),
+    author: z.string().trim().min(1).max(200).optional(),
+  }).strict(),
+  extraction: z.enum([recipeImportExtractions.structured, recipeImportExtractions.microdata, recipeImportExtractions.aiText, recipeImportExtractions.aiPasted]),
+  nutritionSource: z.enum([recipeImportNutritionSources.site, recipeImportNutritionSources.estimated, recipeImportNutritionSources.none]),
+  confidence: z.enum(["low", "medium", "high"]),
+}).strict();
+
+export type RecipeImportResult = z.infer<typeof recipeImportResultSchema>;
 
 export const coachMealActionSchema = z.object({
   name: z.string().trim().min(1).max(240),

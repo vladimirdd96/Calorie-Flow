@@ -267,13 +267,18 @@ export async function publishRecipeToCatalogue(userId: string, recipe: Recipe): 
   const searchKey = recipeSearchKey(recipe.name);
   const existing = await findPublicRecipeBySearchKey(searchKey);
   if (existing) return existing.id;
+  const imageUrl = recipe.imageUrls?.[0];
+  // A remote photo is hotlinked rather than copied, so it always ships with a visible credit
+  // and a link back to where it came from.
+  const hotlinked = imageUrl && /^https:\/\//i.test(imageUrl) ? recipe.importedFrom : undefined;
   const { data, error } = await client().from("public_recipes").insert({
     name: recipe.name,
     servings: recipe.servings,
     serving_grams: recipe.servingGrams || 100,
     ingredients: recipe.ingredients,
     nutrition_per_serving: recipe.nutritionPerServing,
-    image_url: recipe.imageUrls?.[0],
+    image_url: imageUrl,
+    image_credit: hotlinked ? { label: hotlinked.siteName || new URL(hotlinked.url).hostname.replace(/^www\./, ""), sourceUrl: hotlinked.url } : undefined,
     source: "community",
     author_id: userId,
     instructions: recipe.instructions || [],

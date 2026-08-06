@@ -7,7 +7,7 @@ import { readMealImage } from "@/features/diary/DiaryView";
 import { getSupabase } from "@/lib/supabase";
 import { publishRecipeToCatalogue, unpublishRecipe } from "@/lib/cloud";
 import { recipeNutritionEstimateSchema } from "@/lib/schemas";
-import type { Recipe } from "@/lib/types";
+import type { Recipe, RecipeDraft } from "@/lib/types";
 
 type NutritionFields = { calories: string; protein: string; carbs: string; fat: string; fiber: string; sugar: string };
 type FieldRow = { id: string; value: string };
@@ -24,21 +24,27 @@ async function authToken() {
   return (await getSupabase()?.auth.getSession())?.data.session?.access_token;
 }
 
-export function RecipeComposer({ recipe, userId, onSave }: { recipe?: Recipe; userId?: string; onSave: (recipe: Recipe) => void }) {
-  const [name, setName] = useState(recipe?.name || "");
-  const [ingredientRows, setIngredientRows] = useState<IngredientRow[]>(() => ingredientRowsFrom(recipe?.ingredients));
-  const [instructionRows, setInstructionRows] = useState<FieldRow[]>(() => rowsFrom(recipe?.instructions));
-  const [servings, setServings] = useState(String(recipe?.servings || 2));
-  const [servingGrams, setServingGrams] = useState(String(recipe?.servingGrams ?? 100));
-  const [nutrition, setNutrition] = useState<NutritionFields>(recipe ? { calories: String(recipe.nutritionPerServing.calories), protein: String(recipe.nutritionPerServing.protein), carbs: String(recipe.nutritionPerServing.carbs), fat: String(recipe.nutritionPerServing.fat), fiber: String(recipe.nutritionPerServing.fiber), sugar: String(recipe.nutritionPerServing.sugar) } : defaultNutrition);
-  const [imageUrls, setImageUrls] = useState(recipe?.imageUrls || []);
+/**
+ * `recipe` is an existing saved recipe being edited; `initial` pre-fills a *new* one, which is
+ * how a link import hands its draft over. Only one of the two is ever meaningful.
+ */
+export function RecipeComposer({ recipe, initial, userId, onSave }: { recipe?: Recipe; initial?: RecipeDraft; userId?: string; onSave: (recipe: Recipe) => void }) {
+  const seed = recipe || initial;
+  const [name, setName] = useState(seed?.name || "");
+  const [ingredientRows, setIngredientRows] = useState<IngredientRow[]>(() => ingredientRowsFrom(seed?.ingredients));
+  const [instructionRows, setInstructionRows] = useState<FieldRow[]>(() => rowsFrom(seed?.instructions));
+  const [servings, setServings] = useState(String(seed?.servings || 2));
+  const [servingGrams, setServingGrams] = useState(String(seed?.servingGrams ?? 100));
+  const [nutrition, setNutrition] = useState<NutritionFields>(seed ? { calories: String(seed.nutritionPerServing.calories), protein: String(seed.nutritionPerServing.protein), carbs: String(seed.nutritionPerServing.carbs), fat: String(seed.nutritionPerServing.fat), fiber: String(seed.nutritionPerServing.fiber), sugar: String(seed.nutritionPerServing.sugar) } : defaultNutrition);
+  const [imageUrls, setImageUrls] = useState(seed?.imageUrls || []);
   const [imageError, setImageError] = useState("");
-  const [share, setShare] = useState(Boolean(recipe?.isPublic));
+  const [share, setShare] = useState(Boolean(seed?.isPublic));
   const [estimating, setEstimating] = useState(false);
   const [estimateNote, setEstimateNote] = useState("");
-  const [estimated, setEstimated] = useState(false);
+  // A draft that already carries nutrition must not be silently re-estimated over.
+  const [estimated, setEstimated] = useState(Boolean(initial));
   const [saving, setSaving] = useState(false);
-  const [advancedOpen, setAdvancedOpen] = useState(Boolean(recipe?.isPublic));
+  const [advancedOpen, setAdvancedOpen] = useState(Boolean(seed?.isPublic));
 
   const ingredientRefs = useRef(new Map<string, HTMLInputElement>());
   const instructionRefs = useRef(new Map<string, HTMLTextAreaElement>());
@@ -139,8 +145,9 @@ export function RecipeComposer({ recipe, userId, onSave }: { recipe?: Recipe; us
     const nextRecipe: Recipe = {
       id: recipe?.id || `recipe-${crypto.randomUUID()}`, name: name.trim(), servings: Number(servings), servingGrams: gramsPerServing,
       ingredients: ingredientItems.map((item, index) => ({ ...recipe?.ingredients[index], id: recipe?.ingredients[index]?.id || `ingredient-${crypto.randomUUID()}`, name: item.name, quantity: item.quantity || undefined })),
-      instructions: instructionSteps, cuisine: recipe?.cuisine, dietaryTags: recipe?.dietaryTags,
-      nutritionPerServing: values, imageUrls, isPublic: recipe?.isPublic, publicRecipeId: recipe?.publicRecipeId, origin: recipe?.origin,
+      instructions: instructionSteps, cuisine: seed?.cuisine, dietaryTags: seed?.dietaryTags,
+      nutritionPerServing: values, imageUrls, isPublic: seed?.isPublic, publicRecipeId: seed?.publicRecipeId, origin: seed?.origin,
+      importedFrom: seed?.importedFrom,
       createdAt: recipe?.createdAt || now, updatedAt: now,
     };
     setSaving(true);
@@ -158,7 +165,7 @@ export function RecipeComposer({ recipe, userId, onSave }: { recipe?: Recipe; us
         }
       }
       onSave(finalRecipe);
-      if (!recipe) { setName(""); setIngredientRows([makeIngredientRow()]); setInstructionRows([makeRow()]); setServings("2"); setServingGrams("100"); setNutrition(defaultNutrition); setImageUrls([]); setShare(false); setEstimateNote(""); setEstimated(false); setAdvancedOpen(false); }
+      if (!seed) { setName(""); setIngredientRows([makeIngredientRow()]); setInstructionRows([makeRow()]); setServings("2"); setServingGrams("100"); setNutrition(defaultNutrition); setImageUrls([]); setShare(false); setEstimateNote(""); setEstimated(false); setAdvancedOpen(false); }
     } catch (error) {
       setEstimateNote(error instanceof Error ? error.message : "Saved locally, but the catalogue could not be updated.");
       onSave(nextRecipe);
@@ -235,6 +242,7 @@ export function RecipeComposer({ recipe, userId, onSave }: { recipe?: Recipe; us
       </div>
 
       {userId && <label className={`recipe-share-toggle${canShare ? "" : " disabled"}`}><input type="checkbox" checked={share} disabled={!canShare} onChange={(event) => setShare(event.target.checked)} /><span><Share2 size={15} /><strong>Share to catalogue</strong><small>{canShare ? "Other users can discover and plan this recipe." : "Add a photo above to unlock sharing."}</small></span></label>}
+      {share && seed?.importedFrom && <div className="inline-alert" role="status">This recipe came from {seed.importedFrom.siteName || "another site"}. Only share it publicly if you have the right to republish it.</div>}
     </details>
 
     <div className="recipe-composer-actions">
