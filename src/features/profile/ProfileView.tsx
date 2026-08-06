@@ -262,9 +262,9 @@ export function ProfileView({
   return (
     <main className="page profile-page">
       <header className="profile-handoff-header"><div className="profile-handoff-avatar">{profile.avatarUrl ? <img src={profile.avatarUrl} alt="" /> : (profile.name || accountDisplayName(user) || "You").slice(0, 1).toUpperCase()}</div><div><span>Profile</span><h1>{profile.name || accountDisplayName(user) || "Your profile"}</h1></div></header>
-      <div className="profile-tabs" role="tablist" aria-label="Profile sections">
-        <button id="profile-tab" type="button" role="tab" aria-selected={profileSection === "profile"} aria-controls="profile-panel" className={profileSection === "profile" ? "active" : ""} onClick={() => setProfileSection("profile")}><UserRound size={15} />Profile</button>
-        <button id="customize-tab" type="button" role="tab" aria-selected={profileSection === "customize"} aria-controls="customize-panel" className={profileSection === "customize" ? "active" : ""} onClick={() => setProfileSection("customize")}><SlidersHorizontal size={15} />Customize</button>
+      <div className="workspace-tabs" role="tablist" aria-label="Profile sections">
+        <button id="profile-tab" type="button" role="tab" aria-selected={profileSection === "profile"} aria-controls="profile-panel" aria-label="Profile" className={profileSection === "profile" ? "active" : ""} onClick={() => setProfileSection("profile")}><UserRound size={15} /><span>Profile</span></button>
+        <button id="customize-tab" type="button" role="tab" aria-selected={profileSection === "customize"} aria-controls="customize-panel" aria-label="Customize" className={profileSection === "customize" ? "active" : ""} onClick={() => setProfileSection("customize")}><SlidersHorizontal size={15} /><span>Customize</span></button>
       </div>
       {profileSection === "profile" ? <div id="profile-panel" role="tabpanel" aria-labelledby="profile-tab" tabIndex={0}>
         <ProfileSectionLabel>Daily targets</ProfileSectionLabel>
