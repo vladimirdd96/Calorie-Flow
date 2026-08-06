@@ -1,5 +1,6 @@
 import type { Food } from "./types";
 import { produceFoods } from "./produce";
+import { referenceFoods } from "./reference-foods";
 
 export const seedFoods: Food[] = [
   {
@@ -78,4 +79,6 @@ export const seedFoods: Food[] = [
   },
 ];
 
-seedFoods.push(...produceFoods.filter((food) => !seedFoods.some((existing) => existing.id === food.id)));
+[...produceFoods, ...referenceFoods].forEach((food) => {
+  if (!seedFoods.some((existing) => existing.id === food.id)) seedFoods.push(food);
+});

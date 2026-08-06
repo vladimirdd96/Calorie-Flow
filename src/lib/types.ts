@@ -44,6 +44,8 @@ export type Food = {
   packageGrams?: number;
   pieceGrams?: number;
   nutrientsPer100: Nutrition;
+  /** Extra search terms, such as local-language names, that are never displayed. */
+  keywords?: string[];
   source: FoodSource;
   verified?: boolean;
   lastUsedAt?: string;

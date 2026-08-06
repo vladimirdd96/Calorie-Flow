@@ -5,6 +5,7 @@ import { ArrowLeft, BookOpen, Camera, ChevronLeft, ChevronRight, Database, Image
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AddFoodView } from "@/features/food-capture/types";
 import { ClearableInput } from "@/features/shared/ClearableInput";
+import { foodMatchesQuery } from "@/lib/food-search";
 import { localDateKey } from "@/lib/nutrition";
 import { findByBarcode, searchOpenFoodFacts } from "@/lib/openfoodfacts";
 import { normalizeVoiceFoodQuery } from "@/lib/voice";
@@ -114,9 +115,9 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
     });
     return [...uniqueRecipes.values()].filter((recipe) => normalizedQuery && recipe.name.toLocaleLowerCase().includes(normalizedQuery));
   }, [meals, normalizedQuery, recipes]);
-  const matchingPersonalFoods = useMemo(() => foods.filter((food) => normalizedQuery && food.source === "custom" && `${food.name} ${food.brand || ""} ${food.barcode || ""}`.toLocaleLowerCase().includes(normalizedQuery)), [foods, normalizedQuery]);
-  const matchingDiaryFoods = useMemo(() => foods.filter((food) => normalizedQuery && food.source !== "custom" && diaryFoodIds.has(food.id) && `${food.name} ${food.brand || ""} ${food.barcode || ""}`.toLocaleLowerCase().includes(normalizedQuery)), [foods, diaryFoodIds, normalizedQuery]);
-  const matchingReferenceFoods = useMemo(() => foods.filter((food) => normalizedQuery && food.source === "seed" && `${food.name} ${food.brand || ""}`.toLocaleLowerCase().includes(normalizedQuery)), [foods, normalizedQuery]);
+  const matchingPersonalFoods = useMemo(() => foods.filter((food) => food.source === "custom" && foodMatchesQuery(food, normalizedQuery)), [foods, normalizedQuery]);
+  const matchingDiaryFoods = useMemo(() => foods.filter((food) => food.source !== "custom" && diaryFoodIds.has(food.id) && foodMatchesQuery(food, normalizedQuery)), [foods, diaryFoodIds, normalizedQuery]);
+  const matchingReferenceFoods = useMemo(() => foods.filter((food) => food.source === "seed" && foodMatchesQuery(food, normalizedQuery)), [foods, normalizedQuery]);
   const matchingOwnFoods = useMemo(() => [...new Map([...matchingPersonalFoods, ...matchingReferenceFoods, ...matchingDiaryFoods].map((food) => [food.id, food])).values()], [matchingDiaryFoods, matchingPersonalFoods, matchingReferenceFoods]);
   const changeView = (nextView: AddView) => {
     if (view === "search" && nextView !== "search") {

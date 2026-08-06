@@ -20,6 +20,16 @@ Do not copy a global product catalogue into `user_foods`: it is a private, per-u
 
 If a hosted catalogue is needed later, keep it in a separate public, read-only table with a compact normalized schema (barcode, name, brand, package/serving quantities, nutrients, source revision). Import a country/category subset first, measure its data plus index size, and leave headroom below Supabase Free's 500 MB database-size limit. Open Food Facts data is ODbL: attribution and share-alike obligations apply to a derived database.
 
+## Bundled reference foods
+
+Product catalogues answer barcodes, so they cannot answer "shopska salad", "mojito" or "walnuts". Those foods ship with the app as `source: "seed"` rows: `src/lib/seed.ts` (staples), `src/lib/produce.ts` (raw fruit and vegetables) and `src/lib/reference-foods/` (Bulgarian and European dishes, alcoholic drinks and cocktails, and single foods missing from `produce.ts`). Rows are compact tuples expanded by `buildReferenceFoods`; the id is derived from the name, so renaming a food creates a new row rather than editing the old one.
+
+Nutrition is per 100 g as eaten — per 100 ml for drinks, which the app logs as grams. Only single foods with published composition data set `verified: true`; prepared dishes and mixed drinks stay unverified so meals logged from them are marked estimated.
+
+`Food.keywords` holds local-language search terms, including Cyrillic spellings, that are never displayed. Every search surface must match through `foodMatchesQuery` in `src/lib/food-search.ts` rather than concatenating fields itself.
+
+`initializeFoods` writes seed rows the IndexedDB cache is missing and rewrites the ones whose shipped data has changed, preserving only `lastUsedAt`, so catalogue additions and corrected values reach existing installs. Nothing else on a seed row is user-editable; a user's own edits belong to a `custom` food.
+
 ## Recipe catalogue
 
 `public_recipes` (`supabase/migrations/202608030001_public_recipes.sql`) follows the same separate-public-table pattern: it is not part of the per-user `user_profiles` blob, since it must be readable across accounts. Rows come from two sources — `community` (a user's own `Recipe`, mirrored here when they toggle "Share to catalogue"; `author_id` set, deletable only by that author) and `ai` (server-generated via `/api/recipes/generate`; `author_id` null, not user-deletable). A generated `search_key` column (normalized, lowercased name) carries a unique index so the catalogue cannot accumulate near-duplicate recipes regardless of source; callers must check for an existing `search_key` before inserting and link to the existing row instead.
