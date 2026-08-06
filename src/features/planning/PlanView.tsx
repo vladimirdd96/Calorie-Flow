@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, CalendarDays, CalendarPlus, CalendarRange, ChefHat, ChevronDown, ChevronLeft, ChevronRight, Library, ListChecks, ListPlus, Pencil, Plus, Share2, Sparkles, Trash2 } from "lucide-react";
+import { BookOpen, CalendarDays, CalendarPlus, CalendarRange, ChefHat, ChevronLeft, ChevronRight, Library, ListChecks, ListPlus, Pencil, Plus, Share2, Sparkles, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Sheet } from "@/features/shared/Sheet";
 import { PortionSheet } from "@/features/food-capture/FoodCapture";
@@ -83,6 +83,7 @@ export function PlanView({ profile, foods, meals, userId, planEnabled, onSave, o
   const recipes = profile.recipes || [];
   const entries = (profile.mealPlanEntries || []).filter((entry) => entry.recipeId ? recipes.some((recipe) => recipe.id === entry.recipeId) : foods.some((food) => food.id === entry.foodId)).sort((a, b) => a.date.localeCompare(b.date));
   const [recipeComposerOpen, setRecipeComposerOpen] = useState(false);
+  const [recipeImportOpen, setRecipeImportOpen] = useState(false);
   const [date, setDate] = useState(localDateKey());
   const fallbackSection = planEnabled ? "week" : "recipes";
   const [section, setSection] = useState<PlanSection>(initialSection && (planEnabled || (initialSection !== "week" && initialSection !== "shopping")) ? initialSection : fallbackSection);
@@ -162,13 +163,11 @@ export function PlanView({ profile, foods, meals, userId, planEnabled, onSave, o
     </section>}
 
     {section === "recipes" && <section id="plan-recipes-panel" role="tabpanel" aria-labelledby="plan-recipes-tab" className="workspace-panel">
-      <details className="recipe-create card" open={recipeComposerOpen} onToggle={(event) => setRecipeComposerOpen(event.currentTarget.open)}>
-        <summary><span><BookOpen size={18} /><strong>Save a recipe</strong><small>Store the portions and nutrition you use.</small></span><ChevronDown size={17} /></summary>
-        <RecipeComposer userId={userId} onSave={(recipe) => { addRecipe(recipe); setRecipeComposerOpen(false); }} />
-      </details>
       <section className="recipe-library" aria-labelledby="recipe-library-heading">
         <div className="section-heading"><div><span className="eyebrow">Your library</span><h2 id="recipe-library-heading">Your recipes</h2></div><span className="subtle">{ownRecipes.length} saved</span></div>
-        {ownRecipes.length ? <div className="recipe-list">{ownRecipes.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} sharing={sharingRecipeId === recipe.id} onOpen={() => openRecipe(recipe)} onLog={() => setLoggingRecipe(recipe)} onPlan={planEnabled ? () => setQuickPlanRecipe(recipe) : undefined} onEdit={() => setEditingRecipe(recipe)} onDelete={() => setDeletingRecipe(recipe)} onToggleShare={userId ? () => void toggleShare(recipe) : undefined} />)}</div>
+        {ownRecipes.length ? <div className="recipe-list">
+          <button type="button" className="recipe-add-tile" onClick={() => setRecipeComposerOpen(true)}><Plus size={16} /><span>Save a recipe</span><small>Store the portions and nutrition you use.</small></button>
+          {ownRecipes.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} sharing={sharingRecipeId === recipe.id} onOpen={() => openRecipe(recipe)} onLog={() => setLoggingRecipe(recipe)} onPlan={planEnabled ? () => setQuickPlanRecipe(recipe) : undefined} onEdit={() => setEditingRecipe(recipe)} onDelete={() => setDeletingRecipe(recipe)} onToggleShare={userId ? () => void toggleShare(recipe) : undefined} />)}</div>
           : <div className="recipe-empty card"><span className="action-icon mint"><BookOpen size={22} /></span><strong>Your regular meals belong here.</strong><p>Save one recipe and it can be logged or planned without rebuilding it.</p><button type="button" className="secondary-button" onClick={() => setRecipeComposerOpen(true)}><Plus size={16} />Save your first recipe</button></div>}
       </section>
       {savedRecipes.length > 0 && <section className="recipe-library" aria-labelledby="recipe-saved-heading">
@@ -183,6 +182,8 @@ export function PlanView({ profile, foods, meals, userId, planEnabled, onSave, o
 
     {planCalendarOpen && <Sheet label="Choose a plan date" onClose={() => setPlanCalendarOpen(false)}><PlanCalendarSheet dateKey={date} entries={entries} onSelect={(nextDate) => { setDate(nextDate); setPlanCalendarOpen(false); }} /></Sheet>}
     {loggingRecipe && <Sheet onClose={() => setLoggingRecipe(undefined)} wide showClose={false} className="add-food-sheet-shell"><PortionSheet food={recipeAsFood(loggingRecipe, foods, {}, profile.macroRoundingDigits ?? 1)} recipeId={loggingRecipe.id} hideCalories={profile.hideCalories} onLog={(meal) => void onLog(meal)} onClose={() => setLoggingRecipe(undefined)} mealTimeBoundaries={profile.mealTimeBoundaries} servingOverrides={{ tbspGrams: profile.tbspGrams, tspGrams: profile.tspGrams }} macroRoundingDigits={profile.macroRoundingDigits} /></Sheet>}
+    {recipeComposerOpen && <Sheet onClose={() => setRecipeComposerOpen(false)} label="Save a recipe" wide><div className="recipe-edit-sheet"><div className="sheet-header"><div><span className="eyebrow">Your library</span><h2>Save a recipe</h2></div><span /></div><RecipeComposer userId={userId} onSave={(recipe) => { addRecipe(recipe); setRecipeComposerOpen(false); }} /></div></Sheet>}
+    {recipeImportOpen && <Sheet onClose={() => setRecipeImportOpen(false)} label="Import a recipe from a link" wide><RecipeImportSheet userId={userId} onSave={(recipe) => { addRecipe(recipe); setRecipeImportOpen(false); }} /></Sheet>}
     {editingRecipe && <Sheet onClose={() => setEditingRecipe(undefined)} label={`Edit ${editingRecipe.name}`} wide><div className="recipe-edit-sheet"><div className="sheet-header"><div><span className="eyebrow">Saved recipe</span><h2>Edit recipe</h2></div><span /></div><RecipeComposer recipe={editingRecipe} userId={userId} onSave={(recipe) => { saveRecipe(recipe); setEditingRecipe(undefined); }} /></div></Sheet>}
     {deletingRecipe && <Sheet onClose={() => setDeletingRecipe(undefined)} label={`Delete ${deletingRecipe.name}`}><div className="recipe-delete-sheet"><div className="sheet-header"><div><span className="eyebrow">Saved recipe</span><h2>Delete recipe?</h2></div><span /></div><p><strong>{deletingRecipe.name}</strong> will be removed from your recipe library and any future meal plans. Meals you already logged will stay in your diary.</p><div className="sheet-actions"><button type="button" className="secondary-button" onClick={() => setDeletingRecipe(undefined)}>Cancel</button><button type="button" className="primary-button danger-button" onClick={() => deleteRecipe(deletingRecipe)}><Trash2 size={17} />Delete recipe</button></div></div></Sheet>}
     {quickPlanRecipe && <Sheet onClose={() => setQuickPlanRecipe(undefined)} label={`Plan ${quickPlanRecipe.name}`}><QuickPlanSheet entries={entries} initialDate={date} itemName={quickPlanRecipe.name} onConfirm={(entryDate, mealType) => { planRecipeEntry(quickPlanRecipe, entryDate, mealType); setQuickPlanRecipe(undefined); }} /></Sheet>}

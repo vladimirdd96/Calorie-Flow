@@ -672,7 +672,6 @@ p { color: var(--muted); line-height: 1.55; }
 .fasting-status span { color: var(--muted); font-size: 11px; }
 @media (min-width: 720px) { .daily-rhythm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } }
 @media (prefers-reduced-motion: reduce) { .habit-progress > i, .fasting-summary > svg { transition: none; } }
-.recipe-create { overflow: visible; padding: 0; }
 .recipe-save-sheet, .recipe-log-sheet { display: grid; gap: 18px; }
 .recipe-save-sheet > .sheet-header, .recipe-log-sheet > .sheet-header { display: flex; width: 100%; min-width: 0; }
 .recipe-save-sheet .sheet-header h2, .recipe-log-sheet .sheet-header h2 { max-width: none; overflow: visible; white-space: normal; font-size: clamp(24px, 5vw, 32px); line-height: 1.05; }
@@ -755,11 +754,11 @@ p { color: var(--muted); line-height: 1.55; }
   .meal-add-primary, .meal-add-recipe { gap: 4px; padding: 0 2px; font-size: 10px; }
   .meal-add-recipe-copy small { display: none; }
 }
-.recipe-create summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; cursor: pointer; list-style: none; }
-.recipe-create summary::-webkit-details-marker { display: none; }
-.recipe-create summary > span { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: center; }
-.recipe-create summary strong { font-size: 14px; }
-.recipe-create summary small { grid-column: 2; color: var(--muted); font-size: 11px; }
+.recipe-add-tile { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 10px; align-items: center; width: 100%; min-height: 62px; padding: 12px 14px; text-align: left; color: var(--text); border: 1px dashed var(--border-strong); border-radius: 16px; background: color-mix(in oklch, var(--mint) 5%, transparent); }
+.recipe-add-tile span { font-size: 14px; font-weight: 800; }
+.recipe-add-tile small { grid-column: 2; color: var(--muted); font-size: 11px; }
+.recipe-add-tile svg { color: var(--mint); }
+.recipe-add-tile:hover, .recipe-add-tile:focus-visible { border-color: var(--mint); background: color-mix(in oklch, var(--mint) 10%, transparent); }
 .recipe-composer { display: grid; gap: 14px; margin-top: 0; padding: 18px; border-top: 1px solid var(--border); }
 .recipe-edit-sheet, .recipe-delete-sheet { display: grid; gap: 16px; }
 .recipe-edit-sheet .recipe-composer { padding: 0; border-top: 0; }
@@ -2029,7 +2028,7 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 .plan-picker-sheet { display: grid; gap: 14px; }
 .plan-picker-sheet > label { display: grid; gap: 6px; color: var(--muted-2); font-size: 12px; font-weight: 800; }
 .plan-picker-sheet .primary-button { color: var(--bg); background: var(--text); }
-.plan-page .recipe-create, .plan-page .recipe-card, .plan-page .planned-groceries { background: var(--panel); border: 0; border-radius: 16px; box-shadow: 0 6px 16px color-mix(in oklch, var(--text) 8%, transparent); }
+.plan-page .recipe-card, .plan-page .planned-groceries { background: var(--panel); border: 0; border-radius: 16px; box-shadow: 0 6px 16px color-mix(in oklch, var(--text) 8%, transparent); }
 
 /* Insights handoff */
 .insights-page { width: min(100%, clamp(420px, 62vw, 780px)); max-width: none; margin: 0 auto; padding: max(clamp(20px, 5vw, 40px), env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); }
