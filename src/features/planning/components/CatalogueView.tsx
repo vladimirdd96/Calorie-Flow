@@ -35,7 +35,7 @@ function RecipeBrowseCard({ item, hideCalories, onOpen, featured = false }: { it
   </button>;
 }
 
-function CatalogueRow({ title, items, hideCalories, onOpen }: { title: string; items: PublicRecipe[]; hideCalories?: boolean; onOpen: (item: PublicRecipe) => void }) {
+function CatalogueRow({ title, items, hideCalories, onOpen, featuredId }: { title: string; items: PublicRecipe[]; hideCalories?: boolean; onOpen: (item: PublicRecipe) => void; featuredId?: string }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [canScrollBack, setCanScrollBack] = useState(false);
   const [canScrollForward, setCanScrollForward] = useState(false);
@@ -63,7 +63,7 @@ function CatalogueRow({ title, items, hideCalories, onOpen }: { title: string; i
 
   return <section className="catalogue-row">
     <h3>{title}</h3>
-    <div ref={trackRef} className="catalogue-row-track">{items.map((item) => <RecipeBrowseCard key={item.id} item={item} hideCalories={hideCalories} onOpen={() => onOpen(item)} />)}</div>
+    <div ref={trackRef} className="catalogue-row-track">{items.map((item) => <RecipeBrowseCard key={item.id} item={item} featured={item.id === featuredId} hideCalories={hideCalories} onOpen={() => onOpen(item)} />)}</div>
     {canScrollBack && <button type="button" className="catalogue-row-control previous" aria-label={`Show earlier recipes in ${title}`} onClick={() => scroll(-1)}><ChevronLeft /></button>}
     {canScrollForward && <button type="button" className="catalogue-row-control next" aria-label={`Show more recipes in ${title}`} onClick={() => scroll(1)}><ChevronRight /></button>}
   </section>;
@@ -180,8 +180,7 @@ export function CatalogueView({ userId, meals, recipes, entries, hideCalories, c
       : filtersActive
         ? <div className="catalogue-grid">{catalogue.map((item) => <RecipeBrowseCard key={item.id} item={item} hideCalories={hideCalories} onOpen={() => openRecipe(item)} />)}</div>
         : <div className="catalogue-rows">
-            {featured && <section className="catalogue-row"><h3>Tonight&apos;s pick</h3><div className="catalogue-row-track"><RecipeBrowseCard item={featured} featured hideCalories={hideCalories} onOpen={() => openRecipe(featured)} /></div></section>}
-            {rows.map((row) => <CatalogueRow key={row.title} title={row.title} items={row.items} hideCalories={hideCalories} onOpen={openRecipe} />)}
+            {rows.map((row, index) => <CatalogueRow key={row.title} title={row.title} items={index === 0 && featured ? [featured, ...row.items] : row.items} featuredId={featured?.id} hideCalories={hideCalories} onOpen={openRecipe} />)}
           </div>}
 
     {filtersOpen && <Sheet onClose={() => setFiltersOpen(false)} label="Filter the catalogue">
