@@ -8,7 +8,7 @@ export function RecipeCard({ recipe, sharing, onOpen, onLog, onPlan, onEdit, onD
   sharing?: boolean;
   onOpen: () => void;
   onLog: () => void;
-  onPlan: () => void;
+  onPlan?: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onToggleShare?: () => void;
@@ -20,7 +20,7 @@ export function RecipeCard({ recipe, sharing, onOpen, onLog, onPlan, onEdit, onD
     </button>
     <div className="recipe-card-actions">
       <button className="text-button" type="button" onClick={onLog}><BookOpen size={15} />Log</button>
-      <button className="icon-button subtle-button" type="button" aria-label={`Plan ${recipe.name}`} onClick={onPlan}><CalendarPlus size={15} /></button>
+      {onPlan && <button className="icon-button subtle-button" type="button" aria-label={`Plan ${recipe.name}`} onClick={onPlan}><CalendarPlus size={15} /></button>}
       {onToggleShare && <button className={`icon-button subtle-button${recipe.isPublic ? " active" : ""}`} type="button" aria-label={recipe.isPublic ? `Remove ${recipe.name} from the catalogue` : `Share ${recipe.name} to the catalogue`} onClick={onToggleShare} disabled={sharing}><Share2 size={15} /></button>}
       <button className="icon-button subtle-button" type="button" aria-label={`Edit ${recipe.name}`} onClick={onEdit}><Pencil size={15} /></button>
       <button className="icon-button subtle-button danger" type="button" aria-label={`Delete ${recipe.name}`} onClick={onDelete}><Trash2 size={15} /></button>

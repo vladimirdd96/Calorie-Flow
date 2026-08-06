@@ -69,13 +69,14 @@ function CatalogueRow({ title, items, hideCalories, onOpen }: { title: string; i
   </section>;
 }
 
-export function CatalogueView({ userId, meals, recipes, entries, hideCalories, cookView, onSaveToLibrary, onPlanRecipe, onAddToShopping }: {
+export function CatalogueView({ userId, meals, recipes, entries, hideCalories, cookView, planEnabled, onSaveToLibrary, onPlanRecipe, onAddToShopping }: {
   userId?: string;
   meals: Meal[];
   recipes: Recipe[];
   entries: MealPlanEntry[];
   hideCalories?: boolean;
   cookView?: RecipeCookView;
+  planEnabled: boolean;
   onSaveToLibrary: (item: PublicRecipe) => Recipe;
   onPlanRecipe: (recipe: Recipe, date: string, mealType: MealType) => void;
   onAddToShopping: (names: string[]) => void;
@@ -203,8 +204,8 @@ export function CatalogueView({ userId, meals, recipes, entries, hideCalories, c
         checkedSteps={checkedSteps}
         onToggleStep={toggleStep}
         actions={[
-          { key: "shopping", label: "Add to shopping list", icon: ListPlus, onClick: () => onAddToShopping(selected.ingredients.map((ingredient) => ingredient.name)) },
-          { key: "plan", label: "Plan this", icon: BookOpen, onClick: () => setPlanTarget(selected), variant: "secondary" },
+          ...(planEnabled ? [{ key: "shopping", label: "Add to shopping list", icon: ListPlus, onClick: () => onAddToShopping(selected.ingredients.map((ingredient) => ingredient.name)) }] : []),
+          ...(planEnabled ? [{ key: "plan", label: "Plan this", icon: BookOpen, onClick: () => setPlanTarget(selected), variant: "secondary" as const }] : []),
           { key: "cook", label: "Start cooking", icon: CookIcon, onClick: () => setCooking(true), variant: "primary", disabled: !selected.instructions.length },
         ]}
       />

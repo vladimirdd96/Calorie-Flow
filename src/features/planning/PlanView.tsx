@@ -68,11 +68,12 @@ function addNamesToShoppingList(current: string[] | undefined, names: string[]):
   return list;
 }
 
-export function PlanView({ profile, foods, meals, userId, onSave, onLog, onOpenFoods, onOpenAdd, initialSection }: {
+export function PlanView({ profile, foods, meals, userId, planEnabled, onSave, onLog, onOpenFoods, onOpenAdd, initialSection }: {
   profile: Profile;
   foods: Food[];
   meals: Meal[];
   userId?: string;
+  planEnabled: boolean;
   onSave: (profile: Profile) => void;
   onLog: (meal: Meal) => Promise<void>;
   onOpenFoods: () => void;
@@ -83,7 +84,8 @@ export function PlanView({ profile, foods, meals, userId, onSave, onLog, onOpenF
   const entries = (profile.mealPlanEntries || []).filter((entry) => entry.recipeId ? recipes.some((recipe) => recipe.id === entry.recipeId) : foods.some((food) => food.id === entry.foodId)).sort((a, b) => a.date.localeCompare(b.date));
   const [recipeComposerOpen, setRecipeComposerOpen] = useState(false);
   const [date, setDate] = useState(localDateKey());
-  const [section, setSection] = useState<PlanSection>(initialSection || "week");
+  const fallbackSection = planEnabled ? "week" : "recipes";
+  const [section, setSection] = useState<PlanSection>(initialSection && (planEnabled || (initialSection !== "week" && initialSection !== "shopping")) ? initialSection : fallbackSection);
   const [loggingRecipe, setLoggingRecipe] = useState<Recipe>();
   const [editingRecipe, setEditingRecipe] = useState<Recipe>();
   const [deletingRecipe, setDeletingRecipe] = useState<Recipe>();
@@ -140,15 +142,15 @@ export function PlanView({ profile, foods, meals, userId, onSave, onLog, onOpenF
   const dayEntries = entries.filter((entry) => entry.date === date);
 
   return <main className="page plan-page">
-    <header className="plan-handoff-header"><span>Plan</span><div><h1>{section === "shopping" ? "Shopping list" : section === "recipes" ? "Your recipes" : section === "catalogue" ? "Recipe catalogue" : "Plan your week"}</h1><button type="button" onClick={onOpenFoods}><Library size={16} />Foods</button></div></header>
-    <div className="workspace-tabs" role="tablist" aria-label="Plan workspace">
-      <button id="plan-week-tab" type="button" role="tab" aria-selected={section === "week"} aria-controls="plan-week-panel" aria-label="This week" className={section === "week" ? "active" : ""} onClick={() => setSection("week")}><CalendarRange size={15} /><span>This week</span></button>
+    <header className="plan-handoff-header"><span>Library</span><div><h1>{section === "shopping" ? "Shopping list" : section === "recipes" ? "Your recipes" : section === "catalogue" ? "Recipe catalogue" : "Plan your week"}</h1><button type="button" onClick={onOpenFoods}><Library size={16} />Foods</button></div></header>
+    <div className="workspace-tabs" role="tablist" aria-label="Library workspace">
+      {planEnabled && <button id="plan-week-tab" type="button" role="tab" aria-selected={section === "week"} aria-controls="plan-week-panel" aria-label="This week" className={section === "week" ? "active" : ""} onClick={() => setSection("week")}><CalendarRange size={15} /><span>This week</span></button>}
       <button id="plan-recipes-tab" type="button" role="tab" aria-selected={section === "recipes"} aria-controls="plan-recipes-panel" aria-label="Recipes" className={section === "recipes" ? "active" : ""} onClick={() => setSection("recipes")}><BookOpen size={15} /><span>Recipes</span></button>
       <button id="plan-catalogue-tab" type="button" role="tab" aria-selected={section === "catalogue"} aria-controls="plan-catalogue-panel" aria-label="Catalogue" className={section === "catalogue" ? "active" : ""} onClick={() => setSection("catalogue")}><Sparkles size={15} /><span>Catalogue</span></button>
-      <button id="plan-shopping-tab" type="button" role="tab" aria-selected={section === "shopping"} aria-controls="plan-shopping-panel" aria-label={groceries.length > 0 ? `Shopping, ${groceries.length} items` : "Shopping"} className={section === "shopping" ? "active" : ""} onClick={() => setSection("shopping")}><ListChecks size={15} /><span>Shopping</span>{groceries.length > 0 && <span className="tab-badge">{groceries.length}</span>}</button>
+      {planEnabled && <button id="plan-shopping-tab" type="button" role="tab" aria-selected={section === "shopping"} aria-controls="plan-shopping-panel" aria-label={groceries.length > 0 ? `Shopping, ${groceries.length} items` : "Shopping"} className={section === "shopping" ? "active" : ""} onClick={() => setSection("shopping")}><ListChecks size={15} /><span>Shopping</span>{groceries.length > 0 && <span className="tab-badge">{groceries.length}</span>}</button>}
     </div>
 
-    {section === "week" && <section id="plan-week-panel" role="tabpanel" aria-labelledby="plan-week-tab" className="planning-workspace workspace-panel">
+    {planEnabled && section === "week" && <section id="plan-week-panel" role="tabpanel" aria-labelledby="plan-week-tab" className="planning-workspace workspace-panel">
       <WeekStrip date={date} entries={entries} recipes={recipes} foods={foods} onSelect={setDate} weekStartsOn={profile.weekStartsOn} />
       <div className="plan-day-switcher"><button type="button" aria-label="Previous day" onClick={() => movePlanDay(-1)}><ChevronLeft size={16} /></button><button type="button" className="plan-day-label" onClick={() => setPlanCalendarOpen(true)}><CalendarDays size={15} />{planDayLabel}</button><button type="button" aria-label="Next day" onClick={() => movePlanDay(1)}><ChevronRight size={16} /></button></div>
       <div className="plan-slot-list">{(Object.keys(mealLabels) as MealType[]).map((type) => {
@@ -166,18 +168,18 @@ export function PlanView({ profile, foods, meals, userId, onSave, onLog, onOpenF
       </details>
       <section className="recipe-library" aria-labelledby="recipe-library-heading">
         <div className="section-heading"><div><span className="eyebrow">Your library</span><h2 id="recipe-library-heading">Your recipes</h2></div><span className="subtle">{ownRecipes.length} saved</span></div>
-        {ownRecipes.length ? <div className="recipe-list">{ownRecipes.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} sharing={sharingRecipeId === recipe.id} onOpen={() => openRecipe(recipe)} onLog={() => setLoggingRecipe(recipe)} onPlan={() => setQuickPlanRecipe(recipe)} onEdit={() => setEditingRecipe(recipe)} onDelete={() => setDeletingRecipe(recipe)} onToggleShare={userId ? () => void toggleShare(recipe) : undefined} />)}</div>
+        {ownRecipes.length ? <div className="recipe-list">{ownRecipes.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} sharing={sharingRecipeId === recipe.id} onOpen={() => openRecipe(recipe)} onLog={() => setLoggingRecipe(recipe)} onPlan={planEnabled ? () => setQuickPlanRecipe(recipe) : undefined} onEdit={() => setEditingRecipe(recipe)} onDelete={() => setDeletingRecipe(recipe)} onToggleShare={userId ? () => void toggleShare(recipe) : undefined} />)}</div>
           : <div className="recipe-empty card"><span className="action-icon mint"><BookOpen size={22} /></span><strong>Your regular meals belong here.</strong><p>Save one recipe and it can be logged or planned without rebuilding it.</p><button type="button" className="secondary-button" onClick={() => setRecipeComposerOpen(true)}><Plus size={16} />Save your first recipe</button></div>}
       </section>
       {savedRecipes.length > 0 && <section className="recipe-library" aria-labelledby="recipe-saved-heading">
         <div className="section-heading"><div><span className="eyebrow">From the catalogue</span><h2 id="recipe-saved-heading">Saved from catalogue</h2></div><span className="subtle">{savedRecipes.length} saved</span></div>
-        <div className="recipe-list">{savedRecipes.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} sharing={sharingRecipeId === recipe.id} onOpen={() => openRecipe(recipe)} onLog={() => setLoggingRecipe(recipe)} onPlan={() => setQuickPlanRecipe(recipe)} onEdit={() => setEditingRecipe(recipe)} onDelete={() => setDeletingRecipe(recipe)} onToggleShare={userId ? () => void toggleShare(recipe) : undefined} />)}</div>
+        <div className="recipe-list">{savedRecipes.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} sharing={sharingRecipeId === recipe.id} onOpen={() => openRecipe(recipe)} onLog={() => setLoggingRecipe(recipe)} onPlan={planEnabled ? () => setQuickPlanRecipe(recipe) : undefined} onEdit={() => setEditingRecipe(recipe)} onDelete={() => setDeletingRecipe(recipe)} onToggleShare={userId ? () => void toggleShare(recipe) : undefined} />)}</div>
       </section>}
     </section>}
 
-    {section === "catalogue" && <CatalogueView userId={userId} meals={meals} recipes={recipes} entries={entries} hideCalories={profile.hideCalories} cookView={profile.recipeCookView} onSaveToLibrary={saveToLibrary} onPlanRecipe={planRecipeEntry} onAddToShopping={addToShopping} />}
+    {section === "catalogue" && <CatalogueView userId={userId} meals={meals} recipes={recipes} entries={entries} hideCalories={profile.hideCalories} cookView={profile.recipeCookView} planEnabled={planEnabled} onSaveToLibrary={saveToLibrary} onPlanRecipe={planRecipeEntry} onAddToShopping={addToShopping} />}
 
-    {section === "shopping" && <ShoppingList items={groceries} hasRecipes={recipes.length > 0} onRemoveExtra={(name) => onSave({ ...profile, extraShoppingItems: (profile.extraShoppingItems || []).filter((item) => item.toLocaleLowerCase() !== name.toLocaleLowerCase()) })} />}
+    {planEnabled && section === "shopping" && <ShoppingList items={groceries} hasRecipes={recipes.length > 0} onRemoveExtra={(name) => onSave({ ...profile, extraShoppingItems: (profile.extraShoppingItems || []).filter((item) => item.toLocaleLowerCase() !== name.toLocaleLowerCase()) })} />}
 
     {planCalendarOpen && <Sheet label="Choose a plan date" onClose={() => setPlanCalendarOpen(false)}><PlanCalendarSheet dateKey={date} entries={entries} onSelect={(nextDate) => { setDate(nextDate); setPlanCalendarOpen(false); }} /></Sheet>}
     {loggingRecipe && <Sheet onClose={() => setLoggingRecipe(undefined)} wide showClose={false} className="add-food-sheet-shell"><PortionSheet food={recipeAsFood(loggingRecipe, foods, {}, profile.macroRoundingDigits ?? 1)} recipeId={loggingRecipe.id} hideCalories={profile.hideCalories} onLog={(meal) => void onLog(meal)} onClose={() => setLoggingRecipe(undefined)} mealTimeBoundaries={profile.mealTimeBoundaries} servingOverrides={{ tbspGrams: profile.tbspGrams, tspGrams: profile.tspGrams }} macroRoundingDigits={profile.macroRoundingDigits} /></Sheet>}
@@ -202,9 +204,9 @@ export function PlanView({ profile, foods, meals, userId, onSave, onLog, onOpenF
         checkedSteps={viewCheckedSteps}
         onToggleStep={toggleViewStep}
         actions={[
-          { key: "shopping", label: "Add to shopping list", icon: ListPlus, onClick: () => addToShopping(viewingRecipe.ingredients.map((ingredient) => ingredient.name)) },
+          ...(planEnabled ? [{ key: "shopping", label: "Add to shopping list", icon: ListPlus, onClick: () => addToShopping(viewingRecipe.ingredients.map((ingredient) => ingredient.name)) }] : []),
           { key: "log", label: "Log now", icon: BookOpen, onClick: () => setLoggingRecipe(viewingRecipe) },
-          { key: "plan", label: "Plan this", icon: CalendarPlus, onClick: () => setQuickPlanRecipe(viewingRecipe) },
+          ...(planEnabled ? [{ key: "plan", label: "Plan this", icon: CalendarPlus, onClick: () => setQuickPlanRecipe(viewingRecipe) }] : []),
           { key: "cook", label: "Start cooking", icon: ChefHat, onClick: () => setCookingRecipe(viewingRecipe), variant: "primary", disabled: !(viewingRecipe.instructions || []).length },
           { key: "edit", label: "Edit", icon: Pencil, onClick: () => { setEditingRecipe(viewingRecipe); setViewingRecipe(undefined); } },
           ...(userId ? [{
