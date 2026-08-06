@@ -2913,8 +2913,15 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 .catalogue-filters-sheet { display: grid; gap: 18px; }
 .catalogue-filters-sheet h4 { margin: 0 0 8px; color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
 .catalogue-filters-wrap { flex-wrap: wrap; overflow: visible; }
-.catalogue-refresh { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-.catalogue-refresh small { color: var(--muted); font-size: 11.5px; }
+/* The search field shares its row with two controls; below this width the Filters label is dropped so the placeholder is not clipped. */
+@media (max-width: 430px) {
+  .catalogue-filters-label { display: none; }
+  .catalogue-filters-trigger { padding: 0 15px; }
+}
+.catalogue-refresh-trigger { display: grid; flex-shrink: 0; place-items: center; width: 48px; min-height: 52px; color: var(--text); background: var(--control-surface); border: 1px solid var(--border); border-radius: 14px; }
+.catalogue-refresh-trigger:disabled { color: var(--muted); opacity: .6; }
+.catalogue-refresh-note { margin: -6px 0 12px; color: var(--muted); font-size: 11.5px; }
+.catalogue-rails-sentinel { height: 1px; }
 .catalogue-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .recipe-tile { display: flex; flex-direction: column; overflow: hidden; text-align: left; background: var(--panel); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 6px 16px color-mix(in oklch, var(--text) 8%, transparent); }
 .recipe-tile img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
@@ -2955,7 +2962,32 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 .catalogue-row h3 { margin: 0 0 8px; color: var(--text); font-size: 13.5px; font-weight: 800; }
 .catalogue-row-track { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; min-width: 0; }
 .catalogue-row-track::-webkit-scrollbar { display: none; }
+.catalogue-row-viewport { position: relative; min-width: 0; }
 .catalogue-row::after { content: ""; position: absolute; top: 0; right: 0; bottom: 4px; width: 36px; background: linear-gradient(to right, transparent, var(--bg)); pointer-events: none; }
+/* The scroll control supplies its own edge scrim, so the static fade would only double up behind it. */
+.catalogue-row:has(.catalogue-row-control.next)::after { display: none; }
+
+/* Edge-anchored scroll controls: a scrim the height of the track carrying a single thin chevron — no chrome around it. */
+.catalogue-row-control {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  bottom: 4px;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  padding: 0;
+  color: #f4fff9;
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+.catalogue-row-control::before { content: ""; position: absolute; inset: 0; }
+.catalogue-row-control.previous { left: 0; }
+.catalogue-row-control.next { right: 0; }
+.catalogue-row-control.previous::before { background: linear-gradient(to right, color-mix(in oklch, var(--text) 62%, transparent), transparent); }
+.catalogue-row-control.next::before { background: linear-gradient(to left, color-mix(in oklch, var(--text) 62%, transparent), transparent); }
+.catalogue-row-control svg { position: relative; }
 .poster-tile { display: flex; flex-direction: column; overflow: hidden; flex: 0 0 auto; width: 148px; text-align: left; background: var(--panel); border: 1px solid var(--border); border-radius: 18px; box-shadow: 0 6px 16px color-mix(in oklch, var(--text) 8%, transparent); }
 .poster-tile img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; }
 .poster-tile-icon { display: grid; place-items: center; aspect-ratio: 2 / 3; color: var(--mint-strong); background: color-mix(in oklch, var(--mint) 10%, var(--control-surface)); }
@@ -3043,26 +3075,8 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 .catalogue-row h3 { margin-bottom: 10px; font-size: 15px; }
 .catalogue-row-track { gap: 14px; padding: 2px 2px 10px; scroll-padding-inline: 2px; }
 .catalogue-row::after { right: 0; bottom: 10px; width: 64px; background: linear-gradient(to right, transparent, var(--bg) 88%); }
-.catalogue-row-control {
-  position: absolute;
-  z-index: 2;
-  top: calc(50% + 12px);
-  width: 42px;
-  height: 42px;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  color: var(--text);
-  background: color-mix(in oklch, var(--panel) 92%, transparent);
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  box-shadow: 0 8px 20px color-mix(in oklch, var(--text) 16%, transparent);
-  transform: translateY(-50%);
-}
-.catalogue-row-control svg { width: 20px; height: 20px; }
-.catalogue-row-control.previous { left: 10px; }
-.catalogue-row-control.next { right: 10px; }
-.catalogue-row-control:hover { color: var(--mint-strong); background: var(--panel); border-color: var(--border-strong); }
+.catalogue-row-control { top: 2px; bottom: 10px; width: 46px; }
+.catalogue-row-control svg { width: 28px; height: 28px; stroke-width: 1.5; }
 .catalogue-empty { min-height: 220px; place-content: center; }
 .catalogue-loading { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
 .catalogue-skeleton-card { min-height: 0; aspect-ratio: 16 / 9; border-radius: 16px; }
@@ -3070,18 +3084,25 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 @keyframes catalogue-shimmer { to { background-position: -120% 0; } }
 
 @media (hover: hover) and (pointer: fine) {
+  /* Dimmed rather than hidden on pointer devices: hovering the row brings them forward, but they never
+     become undiscoverable if the hover never lands. */
+  .catalogue-row-control { opacity: .68; transition: opacity .18s ease; }
+  .catalogue-row:hover .catalogue-row-control, .catalogue-row-control:focus-visible { opacity: 1; }
+  .catalogue-row-control:hover svg { transform: scale(1.18); }
+  .catalogue-row-control svg { transition: transform .18s ease; }
   .recipe-browse-card:hover, .recipe-browse-card:focus-visible, .catalogue-feature-card:hover, .catalogue-feature-card:focus-visible { border-color: var(--border-strong); box-shadow: 0 18px 34px color-mix(in oklch, var(--text) 20%, transparent); transform: translateY(-4px); }
   .recipe-browse-card:hover img, .recipe-browse-card:focus-visible img, .catalogue-feature-card:hover img, .catalogue-feature-card:focus-visible img { transform: scale(1.045); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .recipe-browse-card, .catalogue-feature-card, .recipe-browse-card img, .catalogue-feature-card img, .catalogue-skeleton-card { animation: none; transition: none; }
+  .recipe-browse-card, .catalogue-feature-card, .recipe-browse-card img, .catalogue-feature-card img, .catalogue-skeleton-card, .catalogue-row-control, .catalogue-row-control svg { animation: none; transition: none; }
 }
 @media (max-width: 759px) {
   .catalogue-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .catalogue-grid .recipe-browse-card { min-width: 0; }
   .recipe-browse-card, .catalogue-feature-card { width: 210px; }
   .catalogue-loading { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .catalogue-row-control { display: none; }
+  .catalogue-row-control { width: 30px; }
+  .catalogue-row-control svg { width: 22px; height: 22px; }
 }
 
 /* Plan v2 — quick plan sheet */
