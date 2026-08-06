@@ -57,7 +57,7 @@ export function RecipeDetail({
         <button type="button" aria-label="More servings" onClick={() => onServingsChange(Math.min(100, servingsCount + 1))}><Plus size={14} /></button>
       </div>
     </div>
-    <ul className="recipe-view-ingredients">{ingredients.map((ingredient) => <li key={ingredient.id}>{ingredient.quantity ? `${scaleIngredientQuantity(ingredient.quantity, scaleFactor)} ` : ""}{ingredient.name}</li>)}</ul>
+    <ul className="recipe-view-ingredients">{ingredients.map((ingredient) => <li key={ingredient.id}>{ingredient.quantity && <strong>{scaleIngredientQuantity(ingredient.quantity, scaleFactor)}</strong>}<span>{ingredient.name}</span></li>)}</ul>
     <h3 className="catalogue-instructions-heading">Instructions</h3>
     {instructions.length > 0
       ? <ol className="catalogue-instructions">

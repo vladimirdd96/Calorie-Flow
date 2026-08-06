@@ -63,7 +63,8 @@ export function scaleIngredientQuantity(quantity: string, factor: number): strin
   const fracEntry = fractionLabels.find(([value]) => Math.abs(value - roundedFrac) < 0.01);
   const fracLabel = fracEntry ? fracEntry[1] : "";
   const numberLabel = roundedWhole > 0 ? `${roundedWhole}${fracLabel}` : fracLabel || "0";
-  return `${numberLabel}${rest}`;
+  const separator = rest && !/^[\s,]/.test(rest) ? " " : "";
+  return `${numberLabel}${separator}${rest}`;
 }
 
 /** Turns a camelCase taxonomy key ("glutenFree") into a display label ("Gluten-Free"). */
