@@ -2059,7 +2059,7 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 
 /* Above phone width, stretching one tab edge-to-edge to fill the row reads as an oversized, lopsided bar. Keep the same pill vocabulary (dark active pill, ghost inactive icon+label) but size every tab to its own content and left-align them, the way a desktop segmented control would. */
 @media (min-width: 640px) {
-  .workspace-tabs { justify-content: flex-start; }
+  .workspace-tabs { width: fit-content; max-width: 100%; justify-content: flex-start; }
   .workspace-tabs button { flex: 0 0 auto; padding: 0 16px; }
   .workspace-tabs button > span:not(.tab-badge) { display: inline; }
   .workspace-tabs button.active { flex: 0 0 auto; padding: 0 16px; }
