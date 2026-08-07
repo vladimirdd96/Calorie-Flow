@@ -548,8 +548,10 @@ p { color: var(--muted); line-height: 1.55; }
 .home-screen-prompt-heading p { margin: 4px 0 0; font-size: 11px; line-height: 1.45; }
 .home-screen-prompt-steps { display: flex; flex-wrap: wrap; gap: 8px 14px; padding-top: 11px; border-top: 1px solid var(--border); color: var(--muted); font-size: 10px; font-weight: 700; }
 .home-screen-prompt-steps span { display: inline-flex; align-items: center; gap: 6px; }
+.home-screen-prompt-steps svg { flex: none; color: var(--text); }
 .home-screen-prompt-steps b { width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; color: var(--bg); background: var(--mint); font-size: 9px; }
 .home-screen-prompt-steps strong { color: var(--text); }
+.home-screen-prompt-install { justify-self: start; min-height: 40px; }
 .home-screen-prompt-dismiss { justify-self: start; padding: 0; font-size: 11px; }
 .coach-check-in > span:nth-child(2) { min-width: 0; display: grid; gap: 3px; }
 .coach-check-in strong { font-size: 12px; }

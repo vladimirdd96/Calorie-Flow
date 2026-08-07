@@ -33,7 +33,9 @@ export function TodayView({
   onDropMeal,
   onMove,
   showHomeScreenPrompt,
+  homeScreenPromptPlatform,
   onDismissHomeScreenPrompt,
+  onInstallHomeScreenPrompt,
   onOpenCalendar,
   onOpenInsights,
   onSaveProfile,
@@ -55,7 +57,9 @@ export function TodayView({
   onDropMeal: (meal: Meal, mealType: MealType, targetMealId?: string, insertAfter?: boolean) => void;
   onMove: (meal: Meal) => void;
   showHomeScreenPrompt: boolean;
+  homeScreenPromptPlatform: "ios" | "android" | null;
   onDismissHomeScreenPrompt: () => void;
+  onInstallHomeScreenPrompt: () => void;
   onOpenCalendar: () => void;
   onOpenInsights: (section?: InsightsSection) => void;
   onSaveProfile: (profile: Profile) => void;
@@ -150,7 +154,7 @@ export function TodayView({
         <div className="today-header-actions"><button type="button" className="today-coach-button" onClick={onOpenCoach} aria-label="Ask Coach"><MessageCircle /></button></div>
       </header>
 
-      {showHomeScreenPrompt && <HomeScreenPrompt onDismiss={onDismissHomeScreenPrompt} />}
+      {showHomeScreenPrompt && homeScreenPromptPlatform && <HomeScreenPrompt platform={homeScreenPromptPlatform} onDismiss={onDismissHomeScreenPrompt} onInstall={onInstallHomeScreenPrompt} />}
 
       <TodaySummary profile={profile} total={total} targets={targets} onOpenTargets={onOpenTargets} dateNav={<div className="today-date-control"><button type="button" onClick={() => onDateChange(changeDate(dateKey, -1))} aria-label="Previous day"><ChevronLeft /></button><button type="button" className="today-date-label" onClick={onOpenCalendar} aria-label={`Open calendar for ${dayLabel(dateKey)}`}><CalendarDays /><span>{dayLabel(dateKey)}</span></button><button type="button" disabled={dateKey >= localDateKey()} onClick={() => onDateChange(changeDate(dateKey, 1))} aria-label="Next day"><ChevronRight /></button></div>} />
       <HabitStrip profile={profile} meals={meals} dateKey={dateKey} onSaveProfile={onSaveProfile} onOpenInsights={onOpenInsights} />

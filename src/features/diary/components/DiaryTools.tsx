@@ -16,15 +16,16 @@ import { AddFoodSheet } from "@/features/food-capture/FoodCapture";
 import { mealLabels, ProgressRing } from "./DiaryPrimitives";
 import { readMealImage } from "./DiaryPrimitives";
 
-export function HomeScreenPrompt({ onDismiss }: { onDismiss: () => void }) {
+export function HomeScreenPrompt({ platform, onDismiss, onInstall }: { platform: "ios" | "android"; onDismiss: () => void; onInstall: () => void }) {
+  const isIos = platform === "ios";
   return (
     <section className="home-screen-prompt card" aria-labelledby="home-screen-prompt-title">
       <button className="home-screen-prompt-close icon-button ghost" type="button" onClick={onDismiss} aria-label="Dismiss Home Screen tip"><X size={17} /></button>
       <div className="home-screen-prompt-heading">
         <span className="action-icon mint"><Share2 size={19} /></span>
-        <div><strong id="home-screen-prompt-title">Keep Calorie Flow close</strong><p>Add it to your Home Screen for one-tap logging, even when you’re offline.</p></div>
+        <div><strong id="home-screen-prompt-title">{isIos ? "Add Calorie Flow to your Home Screen" : "Install Calorie Flow"}</strong><p>{isIos ? "Save Calorie Flow as an app icon on your phone for one-tap logging, even offline." : "Add Calorie Flow to your phone for one-tap logging, even offline."}</p></div>
       </div>
-      <div className="home-screen-prompt-steps"><span><b>1</b>Tap Share</span><span><b>2</b>Choose <strong>Add to Home Screen</strong></span></div>
+      {isIos ? <div className="home-screen-prompt-steps"><span><b>1</b>Tap the <Share2 size={13} aria-label="Share" /> Share icon</span><span><b>2</b>Choose <strong>Add to Home Screen</strong></span></div> : <button className="primary-button home-screen-prompt-install" type="button" onClick={onInstall}>Install Calorie Flow</button>}
       <button className="home-screen-prompt-dismiss text-button muted" type="button" onClick={onDismiss}>Not now</button>
     </section>
   );

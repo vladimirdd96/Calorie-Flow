@@ -16,21 +16,18 @@ const chatTextSizes = { compact: "compact", comfortable: "comfortable", large: "
 type ChatTextSize = typeof chatTextSizes[keyof typeof chatTextSizes];
 const THEME_SETTING = "appearance:theme";
 const CHAT_TEXT_SIZE_SETTING = "appearance:chat-text-size";
-const HOME_SCREEN_PROMPT_SETTING = "homeScreenPromptCompleted";
 const syncRetryDelaysMs = [2_000, 5_000, 15_000] as const;
 const DEFAULT_PROFILE: Profile = { name: "", sex: "male", age: 30, heightCm: 180, weightKg: 80, activity: "moderate", goalMode: "maintain", dietPreset: "balanced", calorieTarget: 2750, proteinTarget: 145, carbsTarget: 375, fatTarget: 70, fiberTarget: 30, sugarTarget: 50, saturatedFatTarget: 20, sodiumTarget: 2300, potassiumTarget: 3500, hideCalories: false, onboardingDone: false, weightEntries: [], waterEntries: [], waterTargetMl: 2000, enabledHabitFeatures: [...defaultHabitFeatures], planEnabled: true, fastingGoalHours: 16, fastingRecords: [] };
 const isThemeMode = (value: unknown): value is ThemeMode => value === themeModes.light || value === themeModes.dark;
 const isChatTextSize = (value: unknown): value is ChatTextSize => value === chatTextSizes.compact || value === chatTextSizes.comfortable || value === chatTextSizes.large;
-const isStandaloneDisplay = () => window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
-const isMobileDevice = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
 const accountDisplayName = (user: CloudUser | null) => [user?.user_metadata?.full_name, user?.user_metadata?.name].find((candidate): candidate is string => typeof candidate === "string" && Boolean(candidate.trim()))?.trim();
 
-type UiEffects = { setAdding: (open: boolean) => void; setInitialAddView: (view: "start" | "scan") => void; setShowHomeScreenPrompt: (open: boolean) => void; setToast: (message: string) => void };
+type UiEffects = { setAdding: (open: boolean) => void; setInitialAddView: (view: "start" | "scan") => void; setToast: (message: string) => void };
 type Auth = { configured: boolean; ready: boolean; user: CloudUser | null };
 
 /** Owns local hydration, optional cloud synchronization, and persisted preferences. */
 export function useLocalFirstData(auth: Auth, ui: UiEffects) {
-  const { setAdding, setInitialAddView, setShowHomeScreenPrompt, setToast } = ui;
+  const { setAdding, setInitialAddView, setToast } = ui;
   const [ready, setReady] = useState(false);
   const [startupError, setStartupError] = useState("");
   const [profile, setProfile] = useState(DEFAULT_PROFILE);
@@ -130,20 +127,6 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
     }).catch(() => undefined);
     return () => { active = false; };
   }, []);
-  useEffect(() => {
-    if (!ready || !isMobileDevice()) return;
-    if (isStandaloneDisplay()) {
-      void setSetting(HOME_SCREEN_PROMPT_SETTING, true);
-      return;
-    }
-    let active = true;
-    getSetting<boolean>(HOME_SCREEN_PROMPT_SETTING).then((completed) => {
-      if (active) setShowHomeScreenPrompt(completed !== true);
-    }).catch(() => {
-      if (active) setShowHomeScreenPrompt(true);
-    });
-    return () => { active = false; };
-  }, [ready, setShowHomeScreenPrompt]);
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
   useEffect(() => {
     const retry = () => retryCloudSync();
