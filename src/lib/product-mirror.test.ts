@@ -18,13 +18,18 @@ const { findMirrorProduct, shardIndex, shardKey } = await import("./product-mirr
 
 const barcodes = ["4056489814795", "5449000000996", "3800123456789", "20961800", "012345678905"];
 
-/** Stands in for the deployed assets, storing shards exactly as the builder writes them. */
-function serveShards(shards: Record<string, unknown[]>) {
+/**
+ * Stands in for the deployed assets. `encoding` mirrors the two ways a shard can arrive:
+ * as the gzip bytes the builder wrote, or already decoded because the asset was served
+ * with `content-encoding: gzip`.
+ */
+function serveShards(shards: Record<string, unknown[]>, encoding: "gzip" | "plain" = "gzip") {
   assets.fetch = async (request: Request) => {
     const path = new URL(request.url).pathname;
     const shard = shards[path];
     if (!shard) return new Response("not found", { status: 404 });
-    return new Response(gzipSync(Buffer.from(JSON.stringify(shard))));
+    const json = JSON.stringify(shard);
+    return new Response(encoding === "gzip" ? gzipSync(Buffer.from(json)) : json);
   };
 }
 
@@ -98,6 +103,16 @@ describe("findMirrorProduct", () => {
 
     await expect(find("012345678905")).resolves.toMatchObject({ product_name: "Padded product" });
     await expect(find("0012345678905")).resolves.toMatchObject({ product_name: "Padded product" });
+  });
+
+  it("reads a shard that arrived already decoded", async () => {
+    // Cloudflare may serve the asset with `content-encoding: gzip` and have it decoded
+    // before the Worker sees it; assuming gzip would then fail every single lookup.
+    const canonical = toGtin14("4056489814795");
+    serveShards({ [shardKey(canonical)]: [[canonical, "Plain JSON shard", null, 74, 10, 4, 1.9, 0, 3.5, null, null, null]] }, "plain");
+    const { findMirrorProduct: find } = await import("./product-mirror");
+
+    await expect(find("4056489814795")).resolves.toMatchObject({ product_name: "Plain JSON shard" });
   });
 
   it("returns a miss for a barcode the shard does not hold", async () => {

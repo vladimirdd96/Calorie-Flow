@@ -320,9 +320,14 @@ async function mirrorProductByBarcode(barcode, env) {
   let shard = shardCache.get(key);
   if (!shard) {
     const response = await env.ASSETS.fetch(new Request(`https://assets.local${key}`));
-    if (!response.ok || !response.body) return null;
-    // Shards ship gzipped to keep the deploy small; the assets binding returns them as stored.
-    shard = await new Response(response.body.pipeThrough(new DecompressionStream("gzip"))).json();
+    if (!response.ok) return null;
+    // Shards ship gzipped, but an asset served with `content-encoding: gzip` may already
+    // be decoded by the time we see it. Sniff the magic number instead of assuming.
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (!bytes.length) return null;
+    shard = bytes[0] === 0x1f && bytes[1] === 0x8b
+      ? await new Response(new Response(bytes).body.pipeThrough(new DecompressionStream("gzip"))).json()
+      : await new Response(bytes).json();
     if (!Array.isArray(shard)) return null;
     if (shardCache.size >= 6) shardCache.delete(shardCache.keys().next().value);
     shardCache.set(key, shard);

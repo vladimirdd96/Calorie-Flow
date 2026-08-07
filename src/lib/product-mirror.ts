@@ -72,10 +72,18 @@ async function loadShard(key: string): Promise<ProductTuple[] | null> {
   if (!assets) return null;
   // The hostname is ignored by the assets binding; only the path selects the file.
   const response = await assets.fetch(new Request(`https://assets.local${key}`));
-  if (!response.ok || !response.body) return null;
-  // Shards are stored gzipped to keep the deploy small. The assets binding hands back
-  // exactly the stored bytes, so the Worker decompresses them itself.
-  const tuples: unknown = await new Response(response.body.pipeThrough(new DecompressionStream("gzip"))).json();
+  if (!response.ok) return null;
+  // Shards are stored gzipped to keep the deploy small, but whether they arrive that way
+  // is not ours to decide: an asset served with `content-encoding: gzip` may already have
+  // been decoded by the time we see it. Sniff the gzip magic number rather than assume —
+  // guessing wrong here fails every lookup while every other signal still looks healthy.
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  if (!bytes.length) return null;
+  const gzipped = bytes[0] === 0x1f && bytes[1] === 0x8b;
+  const body = gzipped
+    ? await new Response(new Response(bytes).body!.pipeThrough(new DecompressionStream("gzip"))).json()
+    : await new Response(bytes).json();
+  const tuples: unknown = body;
   if (!Array.isArray(tuples)) return null;
   const shard = tuples as ProductTuple[];
   // Bounded FIFO: an isolate serving many users must not accumulate shards forever.
