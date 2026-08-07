@@ -32,7 +32,17 @@ Products are stored as positional tuples (`PRODUCT_FIELDS` in `scripts/catalogue
 
 Run `npm run mirror:verify` before staging a build. Totals cannot detect absence — the truncated build below had the right shard count, zero misplacements and a plausible size — so the verifier names specific products that must be present and samples mirrored rows against the live API. Both catalogue scripts read the export through `scripts/catalogue/dump.mjs`, which exists because of a failure worth remembering: `source.pipe(gunzip)` does not forward errors, so a connection dropped partway through the 12 GB download arrived at the line reader as a clean end-of-file. The build reported success with roughly three quarters of the products, and the only symptom was that well-known barcodes were missing from a mirror that looked healthy. The reader now latches every stream error and rethrows it, and checks a network read against its `Content-Length`. For a full build, prefer downloading the export to disk first (`curl -C -`, resumable) and passing `--source=<path>`.
 
-The mirror is queried in parallel with the live providers, not instead of them: a live Open Food Facts answer wins because it carries the micronutrients the mirror drops to stay small, and the mirror carries the scan when that API is unreachable. Deployment stages the shards with `npm run mirror:stage` (OpenNext) or automatically in `scripts/prepare-sites.mjs` (static Sites); both are optional, and barcode lookup degrades to live-provider-only when the shards are absent.
+The mirror is queried in parallel with the live providers, not instead of them: a live Open Food Facts answer wins because it carries the micronutrients the mirror drops to stay small, and the mirror carries the scan when that API is unreachable. Staging is order-dependent, because `npm run build:cloudflare` recreates `.open-next/assets` from scratch and would wipe shards copied in beforehand:
+
+```
+npm run mirror:build      # once; downloading the export to disk first is more reliable
+npm run mirror:verify     # refuses to pass a partial build
+npm run build:cloudflare
+npm run mirror:stage      # after the build, before the deploy
+npx wrangler deploy
+```
+
+The static-Sites path needs no separate step: `scripts/prepare-sites.mjs` copies `.product-mirror` into the artifact itself. Both are optional — with no shards present, barcode lookup degrades to live-provider-only exactly as it behaved before the mirror existed.
 
 `npm run seed:catalogue` (`scripts/catalogue/import-open-food-facts.mjs`) can also seed `product_catalogue` itself from the ~12 GB Open Food Facts JSONL export, streamed and filtered in flight so nothing lands on disk. The default filter keeps Bulgarian products plus the house-brand list in `scripts/catalogue/brands.mjs` — brand matching is what catches a Lidl range that Open Food Facts happens to have tagged to Germany or Serbia. `--countries`, `--brands`, `--all-brands`, `--limit`, `--source` and `--dry-run` widen or rehearse a run; batches insert with `resolution=ignore-duplicates`, so re-running is idempotent and never overwrites a row a user contributed from the package in their hand. Measure data plus index size after widening the filter and leave headroom below Supabase Free's 500 MB database-size limit. Open Food Facts data is ODbL: attribution and share-alike obligations apply to a derived database, which is why every imported row keeps `source = 'open-food-facts'` and its upstream code in `source_ref`.
 
