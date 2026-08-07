@@ -21,14 +21,11 @@
  *   --source=<path|url>   Read a local .jsonl.gz instead of downloading the export
  *   --limit=50000         Stop after N products (for a rehearsal)
  */
-import { appendFileSync, createReadStream, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { createInterface } from "node:readline";
-import { createGunzip, gzipSync } from "node:zlib";
-import { Readable } from "node:stream";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { gzipSync } from "node:zlib";
 import { join } from "node:path";
 import { SHARD_COUNT, shardIndex } from "./shard.mjs";
-
-const DUMP_URL = "https://static.openfoodfacts.org/data/openfoodfacts-products.jsonl.gz";
+import { DUMP_URL, readDump } from "./dump.mjs";
 /** Flush buffered shard lines once this many products are held in memory. */
 const FLUSH_EVERY = 200_000;
 
@@ -91,13 +88,6 @@ function toTuple(product) {
   ];
 }
 
-async function openDump(source) {
-  if (!/^https?:\/\//.test(source)) return createReadStream(source).pipe(createGunzip());
-  const response = await fetch(source, { headers: { "User-Agent": "Calorie Flow/1.0 (catalogue-mirror)" } });
-  if (!response.ok || !response.body) throw new Error(`Could not download the Open Food Facts export: ${response.status}`);
-  return Readable.fromWeb(response.body).pipe(createGunzip());
-}
-
 function shardPath(directory, index) {
   return join(directory, `${index.toString(16).padStart(3, "0")}.ndjson`);
 }
@@ -109,7 +99,6 @@ async function main() {
   mkdirSync(staging, { recursive: true });
 
   console.log(`Streaming ${options.source}`);
-  const lines = createInterface({ input: await openDump(options.source), crlfDelay: Infinity });
   const buffers = new Map();
   let buffered = 0;
   let scanned = 0;
@@ -121,12 +110,9 @@ async function main() {
     buffered = 0;
   };
 
-  for await (const line of lines) {
-    if (!line) continue;
+  for await (const product of readDump(options.source)) {
     scanned += 1;
     if (scanned % 500_000 === 0) console.log(`  scanned ${scanned.toLocaleString()} · kept ${kept.toLocaleString()}`);
-    let product;
-    try { product = JSON.parse(line); } catch { continue; }
     const tuple = toTuple(product);
     if (!tuple) continue;
     const index = shardIndex(tuple[0]);

@@ -20,15 +20,10 @@
  *   --limit=5000                         Stop after N matching products
  *   --dry-run                            Filter and report without writing to Supabase
  */
-import { createGunzip } from "node:zlib";
-import { createReadStream } from "node:fs";
-import { createInterface } from "node:readline";
-import { Readable } from "node:stream";
 import { houseBrandTags, defaultCountryTags } from "./brands.mjs";
 import { supabaseFetch } from "../lib/supabase-rest.mjs";
 import { getAccessToken } from "../lib/supabase-auth.mjs";
-
-const DUMP_URL = "https://static.openfoodfacts.org/data/openfoodfacts-products.jsonl.gz";
+import { DUMP_URL, readDump } from "./dump.mjs";
 // Small batches on purpose: matches are sparse and spread across a 12 GB stream, so a
 // large buffer means a long run can die holding hundreds of unwritten rows. Re-running
 // is idempotent but re-downloads everything, which is the cost worth avoiding.
@@ -147,13 +142,6 @@ function toRow(product, contributedBy) {
   };
 }
 
-async function openDump(source) {
-  if (!/^https?:\/\//.test(source)) return createReadStream(source).pipe(createGunzip());
-  const response = await fetch(source, { headers: { "User-Agent": "Calorie Flow/1.0 (catalogue-seed)" } });
-  if (!response.ok || !response.body) throw new Error(`Could not download the Open Food Facts export: ${response.status}`);
-  return Readable.fromWeb(response.body).pipe(createGunzip());
-}
-
 /**
  * The insert policy requires `contributed_by = auth.uid()`, so a run authenticated as a
  * user has to stamp that user's id. A service-role key bypasses RLS entirely and leaves
@@ -191,18 +179,14 @@ async function main() {
   console.log(`Brands: ${options.allBrands ? "(all)" : `${options.brands.size} house labels`}`);
   if (options.dryRun) console.log("Dry run — nothing will be written.");
 
-  const lines = createInterface({ input: await openDump(options.source), crlfDelay: Infinity });
   let scanned = 0;
   let matched = 0;
   let written = 0;
   let batch = [];
 
-  for await (const line of lines) {
-    if (!line) continue;
+  for await (const product of readDump(options.source)) {
     scanned += 1;
     if (scanned % 250_000 === 0) console.log(`  scanned ${scanned.toLocaleString()} · matched ${matched.toLocaleString()} · written ${written.toLocaleString()}`);
-    let product;
-    try { product = JSON.parse(line); } catch { continue; }
     if (!matches(product, options)) continue;
     const row = toRow(product, contributedBy);
     if (!row) continue;
