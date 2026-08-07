@@ -77,7 +77,7 @@ export const foodSchema = z.object({
   pieceGrams: positiveFinite.optional(),
   nutrientsPer100: nutritionSchema,
   keywords: z.array(z.string().trim().min(1).max(120)).max(40).optional(),
-  source: z.enum(["seed", "open-food-facts", "food-data-central", "restaurant", "ai-label", "custom"]),
+  source: z.enum(["seed", "open-food-facts", "food-data-central", "restaurant", "branded", "ai-label", "custom"]),
   verified: z.boolean().optional(),
   lastUsedAt: z.string().datetime({ offset: true }).optional(),
 }).strict() satisfies z.ZodType<Food>;
@@ -99,7 +99,7 @@ export const mealSchema = z.object({
   loggedDate: localDateSchema.optional(),
   imageUrl: optionalAvatar,
   fastingSessionId: z.string().trim().max(240).optional(),
-  source: z.enum(["seed", "open-food-facts", "food-data-central", "restaurant", "ai-label", "custom"]),
+  source: z.enum(["seed", "open-food-facts", "food-data-central", "restaurant", "branded", "ai-label", "custom"]),
   estimated: z.boolean().optional(),
 }).strict() satisfies z.ZodType<Meal>;
 

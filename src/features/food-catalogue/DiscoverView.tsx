@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AddFoodView } from "@/features/food-capture/types";
 import { ClearableInput } from "@/features/shared/ClearableInput";
 import { foodMatchesQuery } from "@/lib/food-search";
-import { searchOpenFoodFacts } from "@/lib/openfoodfacts";
+import { searchPackagedFoods } from "@/lib/food-lookup";
 import type { Food, Meal, Recipe } from "@/lib/types";
 
 function FoodAvatar({ food }: { food: Food }) {
@@ -15,7 +15,7 @@ function FoodAvatar({ food }: { food: Food }) {
 }
 
 function FoodRow({ food, onSelect, hideCalories }: { food: Food; onSelect: () => void; hideCalories: boolean }) {
-  const detail = food.brand || (food.source === "custom" ? "Your custom food" : food.source === "seed" ? food.servingLabel || "Reference food" : food.source === "food-data-central" ? "USDA FoodData Central" : food.source === "restaurant" ? "Restaurant menu" : "Saved food");
+  const detail = food.brand || (food.source === "custom" ? "Your custom food" : food.source === "seed" ? food.servingLabel || "Reference food" : food.source === "food-data-central" ? "USDA FoodData Central" : food.source === "restaurant" ? "Restaurant menu" : food.source === "branded" ? "Branded product" : "Saved food");
   return <button className="food-row" type="button" onClick={onSelect}><FoodAvatar food={food} /><span className="food-copy"><strong>{food.name}</strong><small>{detail}</small></span>{!hideCalories && <span className="food-calories"><strong>{Math.round(food.nutrientsPer100.calories)}</strong><small>kcal / 100 g</small></span>}<ChevronRight size={18} /></button>;
 }
 
@@ -66,7 +66,7 @@ export function DiscoverView({ foods, recipes, meals, onSelect, onSelectRecipe, 
     if (normalized.length < 2) { setRemoteResults([]); setLoading(false); setSearchError(""); return; }
     setLoading(true); setSearchError(""); setRemoteResults([]);
     try {
-      const results = await searchOpenFoodFacts(normalized);
+      const results = await searchPackagedFoods(normalized);
       if (requestId !== searchRequestRef.current) return;
       const localIds = new Set(foods.map((food) => food.id));
       setRemoteResults(results.filter((food) => !localIds.has(food.id)).slice(0, 20));

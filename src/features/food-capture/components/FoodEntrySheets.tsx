@@ -17,7 +17,7 @@ function dayLabel(dateKey: string) { const today = localDateKey(); if (dateKey =
 function FoodAvatar({ food, name }: { food?: Food; name?: string }) { if (food?.imageUrl) return <img className="food-avatar" src={food.imageUrl} alt="" />; return <div className="food-avatar fallback">{(name || food?.name || "F").slice(0, 1).toUpperCase()}</div>; }
 
 function foodSourceLabel(food: Food) {
-  return food.brand || (food.source === "custom" ? "Your custom food" : food.source === "seed" ? food.servingLabel || "Reference food" : food.source === "food-data-central" ? "USDA FoodData Central" : food.source === "restaurant" ? "Restaurant menu" : "Saved food");
+  return food.brand || (food.source === "custom" ? "Your custom food" : food.source === "seed" ? food.servingLabel || "Reference food" : food.source === "food-data-central" ? "USDA FoodData Central" : food.source === "restaurant" ? "Restaurant menu" : food.source === "branded" ? "Branded product" : "Saved food");
 }
 
 export function FoodDetailsSheet({ food, meal, hideCalories, showEstimatedBadge = true, onLog, onEdit, onEditEntry }: { food: Food; meal?: Meal; hideCalories: boolean; showEstimatedBadge?: boolean; onLog?: () => void; onEdit?: () => void; onEditEntry?: () => void }) {
@@ -85,7 +85,7 @@ export function FoodEditor({ food, hideCalories, onSave, onClose }: { food: Food
 }
 
 export function FoodRow({ food, onSelect, hideCalories = false }: { food: Food; onSelect: () => void; hideCalories?: boolean }) {
-  const detail = food.brand || (food.source === "custom" ? "Your custom food" : food.source === "seed" ? food.servingLabel || "Reference food" : food.source === "food-data-central" ? "USDA FoodData Central" : food.source === "restaurant" ? "Restaurant menu" : "Saved food");
+  const detail = food.brand || (food.source === "custom" ? "Your custom food" : food.source === "seed" ? food.servingLabel || "Reference food" : food.source === "food-data-central" ? "USDA FoodData Central" : food.source === "restaurant" ? "Restaurant menu" : food.source === "branded" ? "Branded product" : "Saved food");
   return (
     <button className="food-row" onClick={onSelect}>
       <FoodAvatar food={food} />
@@ -165,7 +165,7 @@ export function PortionSheet({ food, questions, initialMealType, initialLoggedDa
         <div className="field-block"><span id="meal-type-label">Add to</span><div className="segmented four" role="group" aria-labelledby="meal-type-label">{(Object.keys(mealLabels) as MealType[]).map((type) => <button type="button" key={type} aria-pressed={mealType === type} className={mealType === type ? "active" : ""} onClick={() => setMealType(type)}>{mealLabels[type]}</button>)}</div></div>
       <DatePickerField className="meal-date-field" label="Meal date" value={loggedDate} max={localDateKey()} onChange={(value) => setLoggedDate(value || localDateKey())} />
       {!editingMeal && <div className="multi-date-log"><button type="button" className="text-button" aria-expanded={additionalDatesOpen} onClick={() => setAdditionalDatesOpen((open) => !open)}>{additionalDatesOpen ? "Log one day instead" : "Log this on multiple days"}</button>{additionalDatesOpen && <div className="multi-date-options" role="group" aria-label="Days to log this food">{recentLogDates().map((date) => <button type="button" key={date} className={loggedDates.includes(date) ? "active" : ""} aria-pressed={loggedDates.includes(date)} onClick={() => setLoggedDates((current) => current.includes(date) ? current.filter((item) => item !== date) : [...current, date])}>{dayLabel(date)}</button>)}</div>}</div>}
-      <div className="portion-submit"><button className="primary-button full" type="submit" disabled={!editingMeal && additionalDatesOpen && loggedDates.length === 0}>{editingMeal ? <Check size={18} /> : <Plus size={18} />}{editingMeal ? "Save changes" : hideCalories ? "Log food" : `Log ${nutrition.calories} kcal`}</button><p className="form-footnote">{grams} g total · {food.source === "open-food-facts" ? "Open Food Facts" : food.source === "food-data-central" ? "USDA FoodData Central" : food.source === "restaurant" ? "Restaurant menu nutrition" : food.source === "ai-label" ? "AI-extracted—check the package" : food.source === "custom" ? "Your custom food" : "Generic reference value"}</p></div>
+      <div className="portion-submit"><button className="primary-button full" type="submit" disabled={!editingMeal && additionalDatesOpen && loggedDates.length === 0}>{editingMeal ? <Check size={18} /> : <Plus size={18} />}{editingMeal ? "Save changes" : hideCalories ? "Log food" : `Log ${nutrition.calories} kcal`}</button><p className="form-footnote">{grams} g total · {food.source === "open-food-facts" ? "Open Food Facts" : food.source === "food-data-central" ? "USDA FoodData Central" : food.source === "restaurant" ? "Restaurant menu nutrition" : food.source === "branded" ? "Branded product data" : food.source === "ai-label" ? "AI-extracted—check the package" : food.source === "custom" ? "Your custom food" : "Generic reference value"}</p></div>
       </div>
     </form>
   );

@@ -30,7 +30,7 @@ export type Micronutrients = {
   folateMcg: number;
 };
 
-export type FoodSource = "seed" | "open-food-facts" | "food-data-central" | "restaurant" | "ai-label" | "custom";
+export type FoodSource = "seed" | "open-food-facts" | "food-data-central" | "restaurant" | "branded" | "ai-label" | "custom";
 
 export type Food = {
   id: string;

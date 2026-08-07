@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync, appendFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
-import { getAccessToken, supabaseRestUrl, restApiKey } from "./auth.mjs";
+import { getAccessToken, supabaseRestUrl, restApiKey } from "../lib/supabase-auth.mjs";
 import { enrichEntry } from "./enrich.mjs";
 
 const dataDir = new URL("./data/", import.meta.url);

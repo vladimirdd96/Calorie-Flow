@@ -7,7 +7,7 @@ import type { AddFoodView } from "@/features/food-capture/types";
 import { ClearableInput } from "@/features/shared/ClearableInput";
 import { foodMatchesQuery } from "@/lib/food-search";
 import { localDateKey } from "@/lib/nutrition";
-import { findByBarcode, searchOpenFoodFacts } from "@/lib/openfoodfacts";
+import { lookupBarcode, searchPackagedFoods, shareResolvedProduct } from "@/lib/food-lookup";
 import { normalizeVoiceFoodQuery } from "@/lib/voice";
 import type { Food, Meal, MealPhotoAnalysis, MealTimeBoundaries, MealType, Recipe } from "@/lib/types";
 import { repeatItems, type RepeatItem } from "@/features/recipes/repeatItems";
@@ -140,7 +140,7 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
     setRemoteResults([]); setLoading(true); setSearchError("");
     if (normalized.length < 2) { setLoading(false); return; }
     try {
-      const remote = await searchOpenFoodFacts(value.trim());
+      const remote = await searchPackagedFoods(value.trim());
       if (requestId !== searchRequestRef.current) return;
       const localIds = new Set(foods.map((food) => food.id));
       setRemoteResults(remote.filter((food) => !localIds.has(food.id)).slice(0, 25));
@@ -212,6 +212,10 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
   };
   const saveAndPick = async (food: Food, followUps: string[] = []) => {
     await onSaveFood(food);
+    // Publishing to the shared catalogue is deliberately not awaited: the user gets
+    // their portion sheet immediately, and the next account to scan this package gets
+    // the product even though nobody's database had it before.
+    void shareResolvedProduct(food);
     pick(food, followUps);
   };
   const barcode = async (code: string, fallback?: Food, followUps: string[] = [], persistFallback = false) => {
@@ -224,21 +228,20 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
       return;
     }
     try {
-      const food = await findByBarcode(code);
-      if (food) {
-        if (persistFallback && fallback) await saveAndPick(fallback, followUps);
-        else pick(food, followUps);
-      } else if (fallback) {
-        if (persistFallback) await saveAndPick(fallback, followUps);
-        else pick(fallback, followUps);
-      } else { setUnknownBarcode(code); setManualNotice("No product matched this barcode. You can scan its nutrition label or add the food by hand."); changeView("barcode-not-found"); }
-    } catch {
-      if (fallback) {
-        if (persistFallback) await saveAndPick(fallback, followUps);
-        else pick(fallback, followUps);
-      } else { setUnknownBarcode(code); setManualNotice("We couldn’t look up this barcode right now. You can scan its nutrition label or add the food by hand."); changeView("barcode-not-found"); }
-    }
-    finally { setLoading(false); }
+      const result = await lookupBarcode(code);
+      // A label the user just read describes the package in front of them, so it wins
+      // over a catalogue hit whenever the caller asked for it to be persisted.
+      if (fallback && persistFallback) await saveAndPick(fallback, followUps);
+      else if (result.status === "found") pick(result.food, followUps);
+      else if (fallback) pick(fallback, followUps);
+      else {
+        setUnknownBarcode(code);
+        setManualNotice(result.status === "unavailable"
+          ? "We couldn’t look up this barcode right now. You can scan its nutrition label or add the food by hand."
+          : "No product matched this barcode. You can scan its nutrition label or add the food by hand.");
+        changeView("barcode-not-found");
+      }
+    } finally { setLoading(false); }
   };
   const handleLabelFood = async (food: Food, followUps: string[]) => {
     const labeledFood = food.barcode || !unknownBarcode ? food : { ...food, barcode: unknownBarcode };

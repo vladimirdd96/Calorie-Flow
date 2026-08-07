@@ -28,8 +28,10 @@ type FdcProduct = {
 };
 
 type RestaurantProduct = {
-  _source?: "restaurant";
+  /** "branded" marks a packaged product matched by UPC; "restaurant" a menu-item hit. */
+  _source?: "restaurant" | "branded";
   nix_item_id?: string;
+  upc?: string;
   food_name?: string;
   brand_name?: string;
   serving_qty?: number;
@@ -157,7 +159,7 @@ function mapFdcProduct(product: FdcProduct): Food | null {
   };
 }
 
-function mapRestaurantProduct(product: RestaurantProduct): Food | null {
+function mapRestaurantProduct(product: RestaurantProduct, source: "restaurant" | "branded" = "restaurant"): Food | null {
   const grams = numberValue(product.serving_weight_grams);
   const calories = numberValue(product.nf_calories);
   const protein = numberValue(product.nf_protein);
@@ -166,9 +168,10 @@ function mapRestaurantProduct(product: RestaurantProduct): Food | null {
   if (!product.nix_item_id || !product.food_name || !grams || (!calories && !protein && !carbs && !fat)) return null;
   const per100 = (value: number) => Number((value / grams * 100).toFixed(1));
   return {
-    id: `restaurant-${product.nix_item_id}`,
+    id: `${source}-${product.nix_item_id}`,
     name: product.food_name,
     brand: product.brand_name,
+    barcode: product.upc,
     servingGrams: grams,
     servingLabel: product.serving_qty && product.serving_unit ? `${product.serving_qty} ${product.serving_unit}` : undefined,
     imageUrl: product.photo?.thumb,
@@ -180,14 +183,14 @@ function mapRestaurantProduct(product: RestaurantProduct): Food | null {
       fiber: per100(numberValue(product.nf_dietary_fiber)),
       sugar: per100(numberValue(product.nf_sugars)),
     },
-    source: "restaurant",
+    source,
     verified: true,
   };
 }
 
 function mapProduct(product: OffProduct | FdcProduct | RestaurantProduct): Food | null {
   if (product._source === "food-data-central") return mapFdcProduct(product);
-  if (product._source === "restaurant") return mapRestaurantProduct(product);
+  if (product._source === "restaurant" || product._source === "branded") return mapRestaurantProduct(product, product._source);
   const offProduct = product as OffProduct;
   const name = offProduct.product_name || offProduct.generic_name;
   const nutrition = mapNutrition(offProduct);
@@ -216,7 +219,9 @@ export async function findByBarcode(barcode: string): Promise<Food | null> {
   const record = data as { products?: unknown; product?: unknown };
   const products = Array.isArray(record.products) ? record.products : record.product ? [record.product] : [];
   return products.filter((product): product is Record<string, unknown> => Boolean(product) && typeof product === "object" && !Array.isArray(product))
-    .map((product) => mapProduct({ ...product, code: product.code || barcode } as OffProduct | FdcProduct | RestaurantProduct)).find(Boolean) || null;
+    // Providers name the scanned number differently (`code` on Open Food Facts, `upc`
+    // on Nutritionix); backfill both so every mapped food carries the barcode home.
+    .map((product) => mapProduct({ ...product, code: product.code || barcode, upc: product.upc || barcode } as OffProduct | FdcProduct | RestaurantProduct)).find(Boolean) || null;
 }
 
 export async function searchOpenFoodFacts(query: string): Promise<Food[]> {

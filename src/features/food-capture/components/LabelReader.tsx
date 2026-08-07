@@ -2,7 +2,7 @@
 
 import { ArrowLeft, Camera, Info, Upload } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { searchOpenFoodFacts } from "@/lib/openfoodfacts";
+import { searchPackagedFoods } from "@/lib/food-lookup";
 import { labelAnalysisSchema } from "@/lib/schemas";
 import { getSupabase } from "@/lib/supabase";
 import type { Food } from "@/lib/types";
@@ -74,7 +74,7 @@ export function LabelReader({ onFood, onClose, initialFiles = [], initialAction 
       if (result.productName) {
         try {
           const query = [result.brand, result.productName].filter(Boolean).join(" ");
-          const match = (await searchOpenFoodFacts(query))[0];
+          const match = (await searchPackagedFoods(query))[0];
           if (match) {
             onFood({ ...scannedFood, brand: scannedFood.brand || match.brand, imageUrl: match.imageUrl, quantityLabel: match.quantityLabel, barcode: scannedFood.barcode || match.barcode }, result.followUpQuestions);
             return;

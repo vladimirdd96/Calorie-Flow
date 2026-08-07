@@ -112,6 +112,24 @@ async function searchRestaurantMenus(query: string): Promise<Record<string, unkn
   return items.filter((item): item is Record<string, unknown> => item !== null);
 }
 
+/**
+ * Nutritionix keeps a large branded-grocery UPC index that overlaps Open Food Facts
+ * only partially, so it answers a share of the packages Open Food Facts has never
+ * seen. Unlike the instant-search path above — whose `branded` array mixes chain menu
+ * items in — a UPC hit is always a packaged product, so it carries `_source: "branded"`.
+ */
+async function findBrandedProductByBarcode(barcode: string): Promise<Record<string, unknown> | null> {
+  if (!serverEnv.NUTRITIONIX_APP_ID || !serverEnv.NUTRITIONIX_APP_KEY) return null;
+  const url = new URL("https://trackapi.nutritionix.com/v2/search/item");
+  url.searchParams.set("upc", barcode);
+  const upstream = await fetch(url, { headers: nutritionixHeaders(), cache: "no-store" });
+  if (!upstream.ok) return null;
+  const payload: unknown = await upstream.json();
+  if (!payload || typeof payload !== "object" || !Array.isArray((payload as { foods?: unknown }).foods)) return null;
+  const item = (payload as { foods: unknown[] }).foods[0];
+  return item && typeof item === "object" && !Array.isArray(item) ? { ...(item as Record<string, unknown>), _source: "branded" } : null;
+}
+
 async function findProductByBarcode(barcode: string): Promise<unknown> {
   const url = new URL(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json`);
   url.searchParams.set("fields", fields);
@@ -127,15 +145,25 @@ async function findProductByBarcode(barcode: string): Promise<unknown> {
 export async function GET(request: NextRequest) {
   const barcode = normalizeBarcode(request.nextUrl.searchParams.get("barcode")?.trim() || "");
   if (barcode.length >= 8 && barcode.length <= 18) {
-    try {
-      const [openFoodFactsProduct, foodDataCentralProducts] = await Promise.all([
-        findProductByBarcode(barcode).catch(() => null),
-        searchFoodDataCentral(barcode),
-      ]);
-      return response({ product: openFoodFactsProduct, products: [openFoodFactsProduct, ...foodDataCentralProducts].filter(Boolean) });
-    } catch {
+    // Every provider is queried in parallel and every provider is allowed to fail:
+    // one database missing a supermarket private label must not turn into a failed
+    // scan. `settled` still separates "nobody has this package" from "nobody
+    // answered", so the app can tell a genuine miss from an outage.
+    const [openFoodFacts, branded, foodDataCentral] = await Promise.allSettled([
+      findProductByBarcode(barcode),
+      findBrandedProductByBarcode(barcode),
+      searchFoodDataCentral(barcode),
+    ]);
+    const openFoodFactsProduct = openFoodFacts.status === "fulfilled" ? openFoodFacts.value : null;
+    const brandedProduct = branded.status === "fulfilled" ? branded.value : null;
+    const foodDataCentralProducts = foodDataCentral.status === "fulfilled" ? foodDataCentral.value : [];
+    const products = [openFoodFactsProduct, brandedProduct, ...foodDataCentralProducts].filter(Boolean);
+    // Empty plus a provider that never answered is not the same claim as "no database
+    // holds this package", and the app words the two outcomes differently.
+    if (!products.length && [openFoodFacts, branded, foodDataCentral].some((result) => result.status === "rejected")) {
       return response({ error: "Online product lookup is temporarily unavailable." }, 503);
     }
+    return response({ product: openFoodFactsProduct || brandedProduct, products });
   }
 
   const query = request.nextUrl.searchParams.get("q")?.trim() || "";

@@ -202,7 +202,17 @@ function chatChoices(response) {
 function labelRequestPayload(images, strict = true) {
   return {
     messages: [
-      { role: "system", content: "Read one or more photos of the same food package. They may show a nutrition label, barcode, front of pack, ingredients, serving information, or package size. Extract package nutrition accurately and combine facts across images. Normalize all nutrients to 100 g or 100 ml. If the label only gives a serving, calculate per 100 from the visible serving weight. Use 0 only when the label explicitly indicates zero; otherwise return 0 and ask a short follow-up question naming the missing value. Never guess product weight, serving weight, or package weight. Calories are kcal." },
+      { role: "system", content: [
+        "Read one or more photos of the same food package. They may show a nutrition label, barcode, front of pack, ingredients, serving information, or package size. Extract package nutrition accurately and combine facts across images. Normalize all nutrients to 100 g or 100 ml. If the label only gives a serving, calculate per 100 from the visible serving weight. Use 0 only when the label explicitly indicates zero; otherwise return 0 and ask a short follow-up question naming the missing value. Never guess product weight, serving weight, or package weight. Calories are kcal.",
+        // Kept in step with src/app/api/analyze-label/route.ts: European packages print
+        // one table in a dozen languages in small type, and naming that layout is what
+        // lets the model read a supermarket private-label table instead of giving up.
+        "European packages print the same table in many languages at once (Bulgarian, Czech, Estonian, Latvian, Lithuanian, Hungarian, Romanian, Polish, Slovak, Greek, German). Read whichever language you can resolve; they all state the same numbers. Header rows such as 'Хранителна стойност', 'Nutrition', 'Nährwerte', 'Toitumisalane teave', 'Výživové údaje', 'Valori nutritivi' introduce that table.",
+        "Such a table usually has two numeric columns: per 100 g / 100 ml first, then per portion or per pack. Always take the per-100 column. Rows run in the fixed EU order: energy (kJ then kcal), fat, 'of which saturates', carbohydrate, 'of which sugars', fibre, protein, salt. Indented 'of which' rows belong to the line above them and are not separate totals.",
+        "Salt is not sodium: sodium in mg is salt in grams multiplied by 400. When only salt is printed, leave sodium out rather than reporting the salt figure.",
+        "A front-of-pack claim ('36 g protein per cup', 'high protein', 'low fat') is a real fact about the package — use it to fill or cross-check a value, and combine it with the cup weight when the table itself is unreadable.",
+        "If the table is blurred, cropped, or angled beyond reading, do not invent numbers. Return what you could read, leave the rest at 0, set confidence to 'low', and ask for a straight-on photo of the nutrition table.",
+      ].join(" ") },
       { role: "user", content: [{ type: "text", text: "Identify this food package and return the structured result. A barcode alone is useful: return it even if other nutrition details are unavailable." }, ...images.map((image) => ({ type: "image_url", image_url: { url: image } }))] },
     ],
     ...(strict ? { response_format: { type: "json_schema", json_schema: { name: "nutrition_label", strict: true, schema: nutritionSchema } } } : { response_format: { type: "json_object" } }),
@@ -247,6 +257,39 @@ async function searchFoodDataCentral(query, env) {
   }
 }
 
+/**
+ * Nutritionix indexes a large branded-grocery UPC catalogue that only partly overlaps
+ * Open Food Facts, so it answers a share of the supermarket packages Open Food Facts
+ * has never seen. A UPC hit is always a packaged product, hence `_source: "branded"`.
+ */
+async function brandedProductByBarcode(barcode, env) {
+  if (!env.NUTRITIONIX_APP_ID || !env.NUTRITIONIX_APP_KEY) return null;
+  const url = new URL("https://trackapi.nutritionix.com/v2/search/item");
+  url.searchParams.set("upc", barcode);
+  const upstream = await fetch(url, {
+    headers: {
+      "User-Agent": "Calorie Flow/1.0 (food-search)",
+      "x-app-id": env.NUTRITIONIX_APP_ID,
+      "x-app-key": env.NUTRITIONIX_APP_KEY,
+    },
+  });
+  if (!upstream.ok) return null;
+  const payload = await upstream.json();
+  const item = Array.isArray(payload?.foods) ? payload.foods[0] : null;
+  return item && typeof item === "object" && !Array.isArray(item) ? { ...item, _source: "branded" } : null;
+}
+
+async function openFoodFactsProductByBarcode(barcode, fields) {
+  const productUrl = new URL(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json`);
+  productUrl.searchParams.set("fields", fields);
+  productUrl.searchParams.set("lc", "bg,en");
+  productUrl.searchParams.set("cc", "bg");
+  const upstream = await fetch(productUrl, { headers: { "User-Agent": "Calorie Flow/1.0 (food-search)" } });
+  if (!upstream.ok) throw new Error("Open Food Facts product lookup failed");
+  const data = await upstream.json();
+  return data?.status === 1 && data?.product ? { ...data.product, code: data.code || barcode } : null;
+}
+
 async function foodSearch(request, env) {
   const requestUrl = new URL(request.url);
   const barcode = (requestUrl.searchParams.get("barcode")?.trim() || "").replace(/\D/g, "");
@@ -256,20 +299,23 @@ async function foodSearch(request, env) {
     "product_quantity", "image_front_small_url", "image_front_url", "nutrition_data_per", "nutriments",
   ].join(",");
   if (barcode.length >= 8 && barcode.length <= 18) {
-    const productUrl = new URL(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json`);
-    productUrl.searchParams.set("fields", fields);
-    productUrl.searchParams.set("lc", "bg,en");
-    productUrl.searchParams.set("cc", "bg");
-    try {
-      const upstream = await fetch(productUrl, { headers: { "User-Agent": "Calorie Flow/1.0 (food-search)" } });
-      if (!upstream.ok) return json({ error: "Online product lookup is temporarily unavailable." }, 503);
-      const data = await upstream.json();
-      const product = data?.status === 1 && data?.product ? { ...data.product, code: data.code || barcode } : null;
-      const products = [...(product ? [product] : []), ...await searchFoodDataCentral(barcode, env)];
-      return json({ product, products });
-    } catch {
+    // Providers are queried in parallel and each may fail on its own: one database
+    // missing a supermarket private label must not turn into a failed scan. An empty
+    // result alongside a provider that never answered is reported as an outage rather
+    // than as "no database holds this package", which the app words differently.
+    const [openFoodFacts, branded, foodDataCentral] = await Promise.allSettled([
+      openFoodFactsProductByBarcode(barcode, fields),
+      brandedProductByBarcode(barcode, env),
+      searchFoodDataCentral(barcode, env),
+    ]);
+    const product = openFoodFacts.status === "fulfilled" ? openFoodFacts.value : null;
+    const brandedProduct = branded.status === "fulfilled" ? branded.value : null;
+    const fdc = foodDataCentral.status === "fulfilled" ? foodDataCentral.value : [];
+    const products = [product, brandedProduct, ...fdc].filter(Boolean);
+    if (!products.length && [openFoodFacts, branded, foodDataCentral].some((result) => result.status === "rejected")) {
       return json({ error: "Online product lookup is temporarily unavailable." }, 503);
     }
+    return json({ product: product || brandedProduct, products });
   }
   const query = requestUrl.searchParams.get("q")?.trim() || "";
   if (query.length < 2 || query.length > 100) return json({ error: "Search for between 2 and 100 characters." }, 400);

@@ -112,7 +112,18 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: "system",
-          content: "Read one or more photos of the same food package. They may show a nutrition label, barcode, front of pack, ingredients, serving information, or package size. Extract package nutrition accurately and combine facts across images. Normalize all nutrients to 100 g or 100 ml. If the label only gives a serving, calculate per 100 from the visible serving weight. Use 0 only when the label explicitly indicates zero; otherwise return 0 and add a short follow-up question naming the missing value. Never guess product weight, serving weight, or package weight. Calories are kcal. Keep questions concise and ask only facts needed to log the consumed amount.",
+          content: [
+            "Read one or more photos of the same food package. They may show a nutrition label, barcode, front of pack, ingredients, serving information, or package size. Extract package nutrition accurately and combine facts across images. Normalize all nutrients to 100 g or 100 ml. If the label only gives a serving, calculate per 100 from the visible serving weight. Use 0 only when the label explicitly indicates zero; otherwise return 0 and add a short follow-up question naming the missing value. Never guess product weight, serving weight, or package weight. Calories are kcal. Keep questions concise and ask only facts needed to log the consumed amount.",
+            // European packages carry one table repeated across a dozen languages in small
+            // type, with the per-100 column first and a per-serving column beside it. Naming
+            // that layout and its row labels is what lets the model read a Lidl or Kaufland
+            // private-label table instead of returning nothing.
+            "European packages print the same table in many languages at once (Bulgarian, Czech, Estonian, Latvian, Lithuanian, Hungarian, Romanian, Polish, Slovak, Greek, German). Read whichever language you can resolve; they all state the same numbers. Header rows such as 'Хранителна стойност', 'Nutrition', 'Nährwerte', 'Toitumisalane teave', 'Výživové údaje', 'Valori nutritivi' introduce that table.",
+            "Such a table usually has two numeric columns: per 100 g / 100 ml first, then per portion or per pack. Always take the per-100 column. Rows run in the fixed EU order: energy (kJ then kcal), fat, 'of which saturates', carbohydrate, 'of which sugars', fibre, protein, salt. Indented 'of which' rows belong to the line above them and are not separate totals.",
+            "Salt is not sodium: sodium in mg is salt in grams multiplied by 400. When only salt is printed, leave sodium out rather than reporting the salt figure.",
+            "A front-of-pack claim ('36 g protein per cup', 'high protein', 'low fat') is a real fact about the package — use it to fill or cross-check a value, and combine it with the cup weight when the table itself is unreadable.",
+            "If the table is blurred, cropped, or angled beyond reading, do not invent numbers. Return what you could read, leave the rest at 0, set confidence to 'low', and ask for a straight-on photo of the nutrition table.",
+          ].join(" "),
         },
         {
           role: "user",
