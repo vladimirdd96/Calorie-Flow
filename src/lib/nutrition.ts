@@ -59,6 +59,21 @@ export function resolveMealCalorieTarget(profile: Pick<Profile, "mealCalorieTarg
   return profile.mealCalorieTargets?.[mealType];
 }
 
+export type LowMacroKey = "calories" | "protein" | "carbs" | "fat" | "fiber";
+
+/** Same tolerance-band convention as Insights' on-track check, applied per macro instead of just calories. */
+export function lowestTrackedMacros(total: Nutrition, targets: DailyTargets, options: { tolerancePercent?: number; includeCalories?: boolean; max?: number } = {}): Array<{ key: LowMacroKey; current: number; target: number }> {
+  const tolerance = (options.tolerancePercent ?? 10) / 100;
+  const candidates: LowMacroKey[] = [...(options.includeCalories ? (["calories"] as const) : []), "protein", "fiber", "carbs", "fat"];
+  const loggedEnough = targets.calories > 0 ? total.calories >= targets.calories * 0.15 : (total.protein + total.carbs + total.fat) >= 15;
+  if (!loggedEnough) return [];
+  return candidates
+    .map((key) => ({ key, current: total[key], target: targets[key] }))
+    .filter(({ current, target }) => target > 0 && current < target * (1 - tolerance))
+    .sort((a, b) => (a.current / a.target) - (b.current / b.target))
+    .slice(0, options.max ?? 2);
+}
+
 export function sumNutrition(items: Nutrition[]): Nutrition {
   const total = items.reduce(
     (total, item) => ({

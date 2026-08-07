@@ -1,23 +1,23 @@
 "use client";
 
-import { ArrowLeft, Camera, Check, ChevronRight, Info, Mail, Menu, MessageCircle, MoreHorizontal, ListChecks, Package, Pencil, Plus, ScanLine, Search, Send, ShieldCheck, Sparkles, Trash2, X } from "lucide-react";
+import { ArrowLeft, Camera, Check, ChevronRight, Copy, Info, Mail, Menu, MessageCircle, MoreHorizontal, ListChecks, Package, Pencil, Plus, RotateCcw, ScanLine, Search, Send, ShieldCheck, Sparkles, Square, Trash2, X } from "lucide-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { ThemedSelect } from "@/features/shared/ThemedSelect";
 import { ClearableInput } from "@/features/shared/ClearableInput";
 import { Sheet } from "@/features/shared/Sheet";
 import { getSetting, setSetting } from "@/lib/db";
 import { deleteCloudCoachChat, getCloudCoachChats, getCloudCoachMessages, saveCloudCoachMessage, saveCloudCoachChat } from "@/lib/cloud";
-import { localDateKey } from "@/lib/nutrition";
+import { localDateKey, lowestTrackedMacros, resolveDailyTargets, sumNutrition, type LowMacroKey } from "@/lib/nutrition";
 import { coachMealActionSchema, coachMealChoiceSchema } from "@/lib/schemas";
 import { getSupabase, type CloudUser } from "@/lib/supabase";
-import type { CoachChat, CoachMealAction, CoachMealChoice } from "@/lib/types";
+import type { CoachChat, CoachMealAction, CoachMealChoice, Meal, Profile } from "@/lib/types";
 
 import { groceryItemsFromReply, hideCalorieValues, titleFromQuestion } from "./lib/coachFormatting";
 import { GROCERY_ITEMS_SETTING, isGroceryItem, mealLabels } from "./types";
 import type { AddView, ChatTextSize, CoachSection, DisplayCoachMessage, GroceryList } from "./types";
 import type { CoachSection as NavigationCoachSection } from "@/features/navigation/types";
 
-export function CoachView({ configured, user, onBack, onOpenAccount, onOpenAdd, onLogCoachMeal, hideCalories, chatTextSize, initialSection }: { configured: boolean; user: CloudUser | null; onBack: () => void; onOpenAccount: () => void; onOpenAdd: (view: AddView) => void; onLogCoachMeal: (action: CoachMealAction) => Promise<void>; hideCalories: boolean; chatTextSize: ChatTextSize; initialSection?: NavigationCoachSection }) {
+export function CoachView({ configured, user, profile, meals, onBack, onOpenAccount, onOpenAdd, onLogCoachMeal, hideCalories, chatTextSize, initialSection }: { configured: boolean; user: CloudUser | null; profile: Profile; meals: Meal[]; onBack: () => void; onOpenAccount: () => void; onOpenAdd: (view: AddView) => void; onLogCoachMeal: (action: CoachMealAction) => Promise<void>; hideCalories: boolean; chatTextSize: ChatTextSize; initialSection?: NavigationCoachSection }) {
   const [messages, setMessages] = useState<DisplayCoachMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
@@ -42,9 +42,11 @@ export function CoachView({ configured, user, onBack, onOpenAccount, onOpenAdd, 
   const [pendingGroceries, setPendingGroceries] = useState<string[]>([]);
   const [attachedImage, setAttachedImage] = useState<string | null>(null);
   const [loggedChoiceLabels, setLoggedChoiceLabels] = useState<string[]>([]);
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const coachImageInputRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const coachHistoryRef = useRef<HTMLElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (!menuChatId && !mobileHistoryOpen) return;
@@ -154,6 +156,38 @@ export function CoachView({ configured, user, onBack, onOpenAccount, onOpenAdd, 
   }, [activeChatId, user]);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [messages, loading]);
 
+  const requestCoachReply = async (content: string, image: string | null | undefined, history: Array<{ role: "user" | "assistant"; content: string }>, signal: AbortSignal) => {
+    const session = await getSupabase()?.auth.getSession();
+    const token = session?.data.session?.access_token;
+    if (!token) throw new Error("Your session expired. Please sign in again.");
+    const response = await fetch("/api/coach", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        message: content,
+        ...(image ? { image } : {}),
+        history,
+        localDate: localDateKey(),
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      }),
+      signal,
+    });
+    const body: unknown = await response.json();
+    const bodyRecord = body && typeof body === "object" ? body as Record<string, unknown> : {};
+    if (!response.ok) throw new Error(typeof bodyRecord.error === "string" ? bodyRecord.error : "The Coach is unavailable right now.");
+    if (typeof bodyRecord.reply !== "string") throw new Error("The Coach returned an invalid response.");
+    const mealActionResult = coachMealActionSchema.safeParse(bodyRecord.mealAction);
+    const mealChoices = Array.isArray(bodyRecord.mealChoices) ? bodyRecord.mealChoices.flatMap((choice) => {
+      const parsed = coachMealChoiceSchema.safeParse(choice);
+      return parsed.success ? [parsed.data] : [];
+    }) : [];
+    const sources = Array.isArray(bodyRecord.sources) ? bodyRecord.sources.flatMap((source) => {
+      if (!source || typeof source !== "object") return [];
+      const record = source as Record<string, unknown>;
+      return typeof record.title === "string" && typeof record.url === "string" ? [{ title: record.title, url: record.url }] : [];
+    }).slice(0, 6) : undefined;
+    return { reply: hideCalories ? hideCalorieValues(bodyRecord.reply) : bodyRecord.reply, sources, mealActionResult, mealChoices };
+  };
   const send = async (suggestion?: string) => {
     const image = suggestion ? undefined : attachedImage;
     const content = (suggestion ?? draft).trim() || (image ? "Please take a look at this photo." : "");
@@ -171,55 +205,69 @@ export function CoachView({ configured, user, onBack, onOpenAccount, onOpenAdd, 
       try { await saveCloudCoachChat(user.id, titledChat); } catch { setError("Your question was sent, but the chat title could not be saved yet."); }
     }
     setMessages((current) => [...current, userMessage]); setDraft(""); setAttachedImage(null); setError(""); setLoading(true);
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
     try {
       try { await saveCloudCoachMessage(user.id, userMessage); } catch { setError("This reply will continue, but cloud history is temporarily unavailable."); }
-      const session = await getSupabase()?.auth.getSession();
-      const token = session?.data.session?.access_token;
-      if (!token) throw new Error("Your session expired. Please sign in again.");
-      const response = await fetch("/api/coach", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          message: content,
-          ...(image ? { image } : {}),
-          history,
-          localDate: localDateKey(),
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        }),
-      });
-      const body: unknown = await response.json();
-      const bodyRecord = body && typeof body === "object" ? body as Record<string, unknown> : {};
-      if (!response.ok) throw new Error(typeof bodyRecord.error === "string" ? bodyRecord.error : "The Coach is unavailable right now.");
-      if (typeof bodyRecord.reply !== "string") throw new Error("The Coach returned an invalid response.");
-      const mealActionResult = coachMealActionSchema.safeParse(bodyRecord.mealAction);
-      const mealChoices = Array.isArray(bodyRecord.mealChoices) ? bodyRecord.mealChoices.flatMap((choice) => {
-        const parsed = coachMealChoiceSchema.safeParse(choice);
-        return parsed.success ? [parsed.data] : [];
-      }) : [];
-      const sources = Array.isArray(bodyRecord.sources) ? bodyRecord.sources.flatMap((source) => {
-        if (!source || typeof source !== "object") return [];
-        const record = source as Record<string, unknown>;
-        return typeof record.title === "string" && typeof record.url === "string" ? [{ title: record.title, url: record.url }] : [];
-      }).slice(0, 6) : undefined;
+      const result = await requestCoachReply(content, image, history, controller.signal);
       const assistantMessage: DisplayCoachMessage = {
         id: crypto.randomUUID(),
         chatId: activeChatId,
         role: "assistant",
-        content: hideCalories ? hideCalorieValues(bodyRecord.reply) : bodyRecord.reply,
+        content: result.reply,
         createdAt: new Date().toISOString(),
-        sources,
-        ...(mealActionResult.success ? { mealAction: mealActionResult.data } : {}),
-        ...(mealChoices.length ? { mealChoices } : {}),
+        sources: result.sources,
+        ...(result.mealActionResult.success ? { mealAction: result.mealActionResult.data } : {}),
+        ...(result.mealChoices.length ? { mealChoices: result.mealChoices } : {}),
       };
       setMessages((current) => [...current, assistantMessage]);
       try { await saveCloudCoachMessage(user.id, assistantMessage); } catch { setError("Reply received. Cloud history is temporarily unavailable."); }
-      if (mealActionResult.success) {
-        try { await onLogCoachMeal(mealActionResult.data); } catch { setError("The Coach found the meal, but it could not be saved yet. Please try again."); }
+      if (result.mealActionResult.success) {
+        try { await onLogCoachMeal(result.mealActionResult.data); } catch { setError("The Coach found the meal, but it could not be saved yet. Please try again."); }
       }
     } catch (caught) {
+      const aborted = caught instanceof DOMException && caught.name === "AbortError";
       if (image) setAttachedImage(image);
-      setError(caught instanceof Error ? caught.message : "The Coach is unavailable right now.");
-    } finally { setLoading(false); }
+      if (!aborted) setError(caught instanceof Error ? caught.message : "The Coach is unavailable right now.");
+    } finally { abortControllerRef.current = null; setLoading(false); }
+  };
+  const stop = () => { abortControllerRef.current?.abort(); };
+  const regenerate = async () => {
+    if (!user || loading || loadedUserId !== user.id || !activeChatId) return;
+    const lastMessage = messages[messages.length - 1];
+    if (!lastMessage || lastMessage.role !== "assistant") return;
+    const sourceIndex = messages.slice(0, -1).map((message) => message.role).lastIndexOf("user");
+    if (sourceIndex === -1) return;
+    const sourceMessage = messages[sourceIndex];
+    const history = messages.slice(0, sourceIndex).slice(-12).map(({ role, content }) => ({ role, content }));
+    setError(""); setLoading(true);
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    try {
+      const result = await requestCoachReply(sourceMessage.content, sourceMessage.imageUrl, history, controller.signal);
+      const replacement: DisplayCoachMessage = {
+        id: lastMessage.id,
+        chatId: activeChatId,
+        role: "assistant",
+        content: result.reply,
+        createdAt: new Date().toISOString(),
+        sources: result.sources,
+        ...(result.mealActionResult.success ? { mealAction: result.mealActionResult.data } : {}),
+        ...(result.mealChoices.length ? { mealChoices: result.mealChoices } : {}),
+      };
+      setMessages((current) => current.map((message) => message.id === lastMessage.id ? replacement : message));
+      try { await saveCloudCoachMessage(user.id, replacement); } catch { setError("Regenerated reply is shown, but cloud history is temporarily unavailable."); }
+    } catch (caught) {
+      const aborted = caught instanceof DOMException && caught.name === "AbortError";
+      if (!aborted) setError(caught instanceof Error ? caught.message : "The Coach is unavailable right now.");
+    } finally { abortControllerRef.current = null; setLoading(false); }
+  };
+  const copyMessage = async (message: DisplayCoachMessage, content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedMessageId(message.id);
+      setTimeout(() => setCopiedMessageId((current) => current === message.id ? null : current), 1500);
+    } catch { setError("Could not copy. Your browser may not allow clipboard access."); }
   };
   const logChoice = async (choice: CoachMealChoice) => {
     if (loggedChoiceLabels.includes(choice.label)) return;
@@ -340,7 +388,15 @@ export function CoachView({ configured, user, onBack, onOpenAccount, onOpenAdd, 
     <main className="page coach-page"><header className="page-header"><span className="eyebrow">Your diary, in context</span><h1>Coach</h1></header><section className="coach-gate card"><span className="coach-loader" /><h2>Loading your private Coach…</h2></section></main>
   );
 
-  const starters = [hideCalories ? "How are my nutrients today?" : "How am I doing today?", "Plan a quick dinner and make a grocery list", "What can I make with chicken and broccoli?"];
+  const todayNutrition = sumNutrition(meals.filter((meal) => (meal.loggedDate || localDateKey(new Date(meal.createdAt))) === localDateKey()).map((meal) => meal.nutrition));
+  const todayTargets = resolveDailyTargets(profile, localDateKey());
+  const lowMacros = lowestTrackedMacros(todayNutrition, todayTargets, { tolerancePercent: profile.insightsTolerancePercent, includeCalories: !hideCalories, max: 2 });
+  const macroLabels: Record<LowMacroKey, string> = { calories: "calories", protein: "protein", carbs: "carbs", fat: "fat", fiber: "fibre" };
+  const dynamicStarters = lowMacros.map(({ key, current, target }) => key === "calories"
+    ? `I'm at ${Math.round(current)} of ${Math.round(target)} calories today — any easy ideas to round it out?`
+    : `What's a good source of ${macroLabels[key]}? I'm at ${Math.round(current)}g of ${Math.round(target)}g today.`);
+  const starters = [...dynamicStarters, hideCalories ? "How are my nutrients today?" : "How am I doing today?", "Plan a quick dinner and make a grocery list", "What can I make with chicken and broccoli?"].slice(0, 3);
+  const filteredChats = chats.filter((chat) => chat.title.toLocaleLowerCase().includes(chatSearch.trim().toLocaleLowerCase()));
   const activeGroceryList = groceryLists.find((list) => list.id === activeGroceryListId) || groceryLists[0];
   const activeChat = chats.find((chat) => chat.id === activeChatId) || draftChat;
   const accountGroceryItems = loadedGroceryKey === grocerySettingKey ? activeGroceryList?.items || [] : [];
@@ -358,17 +414,17 @@ export function CoachView({ configured, user, onBack, onOpenAccount, onOpenAdd, 
       </header>
       {section === "chat" && mobileHistoryOpen && <button className="coach-mobile-backdrop" type="button" aria-label="Close previous chats" onClick={() => setMobileHistoryOpen(false)} />}
       <div className="coach-layout">
-        {section === "chat" && <aside ref={coachHistoryRef} id="coach-history-drawer" className={`coach-history ${mobileHistoryOpen ? "mobile-open" : ""}`} aria-label="Previous chats"><div className="coach-history-heading"><strong>Chats</strong><button className="icon-button ghost" type="button" onClick={() => setMobileHistoryOpen(false)} aria-label="Close previous chats"><X size={16} /></button></div><label className="coach-history-search"><Search size={14} /><input value={chatSearch} onChange={(event) => setChatSearch(event.target.value)} placeholder="Search chats" /></label><button className="coach-grocery-link" type="button" onClick={() => { setSection("groceries"); setMobileHistoryOpen(false); }}><ListChecks size={15} /><span>Groceries</span>{remainingGroceries > 0 && <small>{remainingGroceries}</small>}</button><div className="coach-history-list">{chats.filter((chat) => chat.title.toLocaleLowerCase().includes(chatSearch.trim().toLocaleLowerCase())).map((chat) => <div className={`coach-history-row ${chat.id === activeChatId ? "active" : ""}`} key={chat.id}>{renamingChatId === chat.id ? <form className="coach-rename-form" onSubmit={(event) => { event.preventDefault(); void saveRename(); }}><input autoFocus value={renameDraft} onChange={(event) => setRenameDraft(event.target.value)} maxLength={120} aria-label="Chat name" placeholder="Chat name" /><button type="submit" aria-label="Save chat name"><Check size={14} /></button></form> : <><button className="coach-history-chat" type="button" title={chat.title} onClick={() => { void switchChat(chat.id); setMobileHistoryOpen(false); }}><span>{chat.title}</span><small>{new Date(chat.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</small></button><span className="coach-history-menu-wrap"><button className="coach-history-menu-trigger" type="button" aria-label={`Chat options for ${chat.title}`} aria-expanded={menuChatId === chat.id} onClick={() => setMenuChatId((current) => current === chat.id ? null : chat.id)}><MoreHorizontal size={17} /></button>{menuChatId === chat.id && <span className="coach-chat-menu" role="menu"><button type="button" role="menuitem" onClick={() => beginRename(chat)}><Pencil size={14} />Rename</button><button type="button" role="menuitem" className="danger" onClick={() => void removeChat(chat.id)}><Trash2 size={14} />Delete</button></span>}</span></>}</div>)}</div></aside>}
+        {section === "chat" && <aside ref={coachHistoryRef} id="coach-history-drawer" className={`coach-history ${mobileHistoryOpen ? "mobile-open" : ""}`} aria-label="Previous chats"><div className="coach-history-heading"><strong>Chats</strong><button className="icon-button ghost" type="button" onClick={() => setMobileHistoryOpen(false)} aria-label="Close previous chats"><X size={16} /></button></div><label className="coach-history-search"><Search size={14} /><input value={chatSearch} onChange={(event) => setChatSearch(event.target.value)} placeholder="Search chats" /></label><button className="coach-grocery-link" type="button" onClick={() => { setSection("groceries"); setMobileHistoryOpen(false); }}><ListChecks size={15} /><span>Groceries</span>{remainingGroceries > 0 && <small>{remainingGroceries}</small>}</button><div className="coach-history-list">{filteredChats.length === 0 && chatSearch.trim() ? <div className="search-empty coach-history-empty"><strong>No chats found</strong><p>Try a different search term.</p></div> : filteredChats.map((chat) => <div className={`coach-history-row ${chat.id === activeChatId ? "active" : ""}`} key={chat.id}>{renamingChatId === chat.id ? <form className="coach-rename-form" onSubmit={(event) => { event.preventDefault(); void saveRename(); }}><input autoFocus value={renameDraft} onChange={(event) => setRenameDraft(event.target.value)} maxLength={120} aria-label="Chat name" placeholder="Chat name" /><button type="submit" aria-label="Save chat name"><Check size={14} /></button></form> : <><button className="coach-history-chat" type="button" title={chat.title} onClick={() => { void switchChat(chat.id); setMobileHistoryOpen(false); }}><span>{chat.title}</span><small>{new Date(chat.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</small></button><span className="coach-history-menu-wrap"><button className="coach-history-menu-trigger" type="button" aria-label={`Chat options for ${chat.title}`} aria-expanded={menuChatId === chat.id} onClick={() => setMenuChatId((current) => current === chat.id ? null : chat.id)}><MoreHorizontal size={17} /></button>{menuChatId === chat.id && <span className="coach-chat-menu" role="menu"><button type="button" role="menuitem" onClick={() => beginRename(chat)}><Pencil size={14} />Rename</button><button type="button" role="menuitem" className="danger" onClick={() => void removeChat(chat.id)}><Trash2 size={14} />Delete</button></span>}</span></>}</div>)}</div></aside>}
         <div className="coach-main">
       {section === "chat" && <>
         <section className="coach-thread" aria-live="polite">
           {messages.length === 0 && <><div className="coach-scope"><ShieldCheck size={15} /><span>{hideCalories ? "Food and nutrition only" : "Food, calories & nutrition only"} · recipes and lists saved only when you choose</span></div><div className="coach-welcome"><span className="coach-orb"><Sparkles /></span><h2>What should we make?</h2><p>Talk through dinner, use up what you have, or log a food by scanning it.</p><div className="coach-starters">{starters.map((starter) => <button key={starter} onClick={() => send(starter)}>{starter}</button>)}</div></div></>}
-          {messages.map((message) => { const visibleContent = hideCalories ? hideCalorieValues(message.content) : message.content; const groceries = message.role === "assistant" ? groceryItemsFromReply(visibleContent) : []; return <article key={message.id} className={`coach-message ${message.role}`}><span>{message.role === "assistant" ? "Coach" : "You"}</span>{message.imageUrl && <img className="coach-message-image" src={message.imageUrl} alt="Photo shared with Coach" />}<p>{visibleContent}</p>{message.mealAction && <div className="coach-log-confirmation"><Check size={16} /><span>Logged as {mealLabels[message.mealAction.mealType]} · {message.mealAction.loggedDate}</span></div>}{message.mealChoices && <div className="coach-meal-choices"><strong>Choose where to log it</strong>{message.mealChoices.map((choice) => <button key={choice.label} type="button" disabled={loggedChoiceLabels.includes(choice.label)} onClick={() => void logChoice(choice)}>{loggedChoiceLabels.includes(choice.label) ? "Logged · " : ""}{choice.label}</button>)}</div>}{groceries.length > 0 && <div className="recipe-grocery-action"><strong>Want to cook this?</strong><button className="add-groceries" onClick={() => addGroceries(groceries)}><ListChecks size={15} />Add {groceries.length} {groceries.length === 1 ? "ingredient" : "ingredients"} to groceries</button></div>}{!!message.sources?.length && <div className="coach-sources"><strong>Sources</strong>{message.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.title}</a>)}</div>}</article>; })}
+          {messages.map((message, index) => { const visibleContent = hideCalories ? hideCalorieValues(message.content) : message.content; const groceries = message.role === "assistant" ? groceryItemsFromReply(visibleContent) : []; return <article key={message.id} className={`coach-message ${message.role}`}><span>{message.role === "assistant" ? "Coach" : "You"}<small>{new Date(message.createdAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</small></span>{message.imageUrl && <img className="coach-message-image" src={message.imageUrl} alt="Photo shared with Coach" />}<p>{visibleContent}</p><div className="coach-message-actions"><button type="button" className="coach-message-copy" onClick={() => void copyMessage(message, visibleContent)} aria-label="Copy message">{copiedMessageId === message.id ? <Check size={13} /> : <Copy size={13} />}{copiedMessageId === message.id ? "Copied" : "Copy"}</button>{message.role === "assistant" && index === messages.length - 1 && !loading && <button type="button" className="coach-message-regenerate" onClick={() => void regenerate()}><RotateCcw size={13} />Regenerate</button>}</div>{message.mealAction && <div className="coach-log-confirmation"><Check size={16} /><span>Logged as {mealLabels[message.mealAction.mealType]} · {message.mealAction.loggedDate}</span></div>}{message.mealChoices && <div className="coach-meal-choices"><strong>Choose where to log it</strong>{message.mealChoices.map((choice) => <button key={choice.label} type="button" disabled={loggedChoiceLabels.includes(choice.label)} onClick={() => void logChoice(choice)}>{loggedChoiceLabels.includes(choice.label) ? "Logged · " : ""}{choice.label}</button>)}</div>}{groceries.length > 0 && <div className="recipe-grocery-action"><strong>Want to cook this?</strong><button className="add-groceries" onClick={() => addGroceries(groceries)}><ListChecks size={15} />Add {groceries.length} {groceries.length === 1 ? "ingredient" : "ingredients"} to groceries</button></div>}{!!message.sources?.length && <div className="coach-sources"><strong>Sources</strong>{message.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.title}</a>)}</div>}</article>; })}
           {loading && <div className="coach-typing" aria-label="Coach is typing"><i /><i /><i /></div>}
           {error && <div className="inline-alert error" role="alert"><Info size={17} /><span>{error}</span><button className="text-button" type="button" onClick={() => { setError(""); setLoadedUserId(""); setHistoryAttempt((value) => value + 1); }}>Retry</button></div>}
           <div ref={endRef} />
         </section>
-        <div className="coach-composer-wrap"><div className="coach-log-actions"><button type="button" onClick={() => onOpenAdd("scan")}><ScanLine size={16} />Scan barcode</button><button type="button" onClick={() => onOpenAdd("camera")}><Camera size={16} />Read label</button></div><form className="coach-composer" onSubmit={(event) => { event.preventDefault(); void send(); }}>{attachedImage && <div className="coach-attachment"><img src={attachedImage} alt="Photo attached to your message" /><button type="button" onClick={() => setAttachedImage(null)} aria-label="Remove attached photo"><X size={15} /></button></div>}<input ref={coachImageInputRef} className="visually-hidden-file" type="file" accept="image/*" onChange={(event) => { void attachCoachImage(event.target.files?.[0]); event.currentTarget.value = ""; }} /><button className="coach-attach" type="button" aria-label="Attach photo" onClick={() => coachImageInputRef.current?.click()}><Plus /></button><ClearableInput aria-label="Message the nutrition Coach" value={draft} onChange={(event) => setDraft(event.target.value)} onClear={() => setDraft("")} maxLength={6000} placeholder={attachedImage ? "Add a note about this photo…" : "Ask about dinner, recipes, or your food log…"} clearLabel="Clear Coach message" /><button className="coach-send" type="submit" disabled={(!draft.trim() && !attachedImage) || loading} aria-label="Send"><Send /></button></form></div>
+        <div className="coach-composer-wrap"><div className="coach-log-actions"><button type="button" onClick={() => onOpenAdd("scan")}><ScanLine size={16} />Scan barcode</button><button type="button" onClick={() => onOpenAdd("camera")}><Camera size={16} />Read label</button></div><form className="coach-composer" onSubmit={(event) => { event.preventDefault(); void send(); }}>{attachedImage && <div className="coach-attachment"><img src={attachedImage} alt="Photo attached to your message" /><button type="button" onClick={() => setAttachedImage(null)} aria-label="Remove attached photo"><X size={15} /></button></div>}<input ref={coachImageInputRef} className="visually-hidden-file" type="file" accept="image/*" onChange={(event) => { void attachCoachImage(event.target.files?.[0]); event.currentTarget.value = ""; }} /><button className="coach-attach" type="button" aria-label="Attach photo" onClick={() => coachImageInputRef.current?.click()}><Plus /></button><ClearableInput aria-label="Message the nutrition Coach" value={draft} onChange={(event) => setDraft(event.target.value)} onClear={() => setDraft("")} maxLength={6000} placeholder={attachedImage ? "Add a note about this photo…" : "Ask about dinner, recipes, or your food log…"} clearLabel="Clear Coach message" /><button className={loading ? "coach-send coach-stop" : "coach-send"} type={loading ? "button" : "submit"} onClick={loading ? (event) => { event.preventDefault(); stop(); } : undefined} disabled={!loading && !draft.trim() && !attachedImage} aria-label={loading ? "Stop generating" : "Send"}>{loading ? <Square size={14} /> : <Send />}</button></form></div>
       </>}
       {section === "groceries" && <section className="grocery-workspace"><div className="grocery-intro"><span className="coach-orb"><ListChecks /></span><div><h2>{activeGroceryList?.name || "Your groceries"}</h2><p>Keep separate lists for meal plans, weekly shopping, or different stores.</p></div><button className="icon-button ghost" type="button" onClick={() => { setGroceryListDraft(activeGroceryList?.name || ""); setGroceryModal("manage"); }} aria-label="Manage grocery lists"><Pencil size={16} /></button></div><div className="grocery-list-toolbar"><label htmlFor="grocery-list-select">List</label><ThemedSelect ariaLabel="Grocery list" value={activeGroceryListId} onChange={setActiveGroceryListId} options={groceryLists.map((list) => ({ value: list.id, label: list.name }))} /><button type="button" className="secondary-button" onClick={() => { setGroceryListDraft(""); setGroceryModal("manage"); }}><Plus size={15} />New list</button></div><form className="grocery-composer" onSubmit={addGrocery}><ClearableInput value={groceryDraft} onChange={(event) => setGroceryDraft(event.target.value)} onClear={() => setGroceryDraft("")} placeholder="Add an item yourself" maxLength={120} clearLabel="Clear grocery item" /><button type="submit" disabled={!groceryDraft.trim()}>Add</button></form>{accountGroceryItems.length > 0 ? <div className="grocery-list">{accountGroceryItems.map((item) => <div key={item.id} className={item.checked ? "checked" : ""}><button className="grocery-toggle" onClick={() => updateGroceryLists((current) => current.map((list) => list.id === activeGroceryListId ? { ...list, items: list.items.map((candidate) => candidate.id === item.id ? { ...candidate, checked: !candidate.checked } : candidate), updatedAt: new Date().toISOString() } : list))} aria-label={`Mark ${item.name} as ${item.checked ? "needed" : "picked up"}`}>{item.checked && <Check size={14} />}</button><span>{item.name}</span><button className="grocery-remove" onClick={() => updateGroceryLists((current) => current.map((list) => list.id === activeGroceryListId ? { ...list, items: list.items.filter((candidate) => candidate.id !== item.id), updatedAt: new Date().toISOString() } : list))} aria-label={`Remove ${item.name}`}><X size={16} /></button></div>)}</div> : <div className="grocery-empty"><Package size={28} /><strong>Start with a dinner idea</strong><p>Ask Coach for a recipe or meal plan, then add the suggested ingredients here.</p><button className="secondary-button" onClick={() => setSection("chat")}><MessageCircle size={16} />Open Coach</button></div>}{accountGroceryItems.some((item) => item.checked) && <button className="text-button muted clear-picked" onClick={() => updateGroceryLists((current) => current.map((list) => list.id === activeGroceryListId ? { ...list, items: list.items.filter((item) => !item.checked), updatedAt: new Date().toISOString() } : list))}>Clear picked-up items</button>}</section>}
       {groceryModal === "choose" && <Sheet label="Choose a grocery list" onClose={() => { setGroceryModal(null); setPendingGroceries([]); }}><div className="sheet-header"><span /><div><span className="eyebrow">Add ingredients</span><h2>Choose a list</h2></div><span /></div><p className="grocery-modal-copy">Where should {pendingGroceries.length === 1 ? "this" : "these"} {pendingGroceries.length} {pendingGroceries.length === 1 ? "ingredient" : "ingredients"} go?</p><div className="grocery-list-choices">{groceryLists.map((list) => <button key={list.id} type="button" onClick={() => { addGroceriesToList(list.id, pendingGroceries); setPendingGroceries([]); setGroceryModal(null); }}><span><strong>{list.name}</strong><small>{list.items.filter((item) => !item.checked).length} {list.items.filter((item) => !item.checked).length === 1 ? "item" : "items"} still needed</small></span><ChevronRight size={17} /></button>)}</div><button type="button" className="secondary-button full" onClick={() => { setGroceryModal("manage"); setGroceryListDraft(""); }}><Plus size={16} />Create a new list</button></Sheet>}

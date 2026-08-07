@@ -2157,7 +2157,9 @@ body:has(.onboarding-overlay) { overflow: hidden; }
   border: 0;
   border-radius: 16px;
 }
-.coach-message > span { margin-bottom: 3px; font-size: 11px; letter-spacing: 0; text-transform: none; }
+.coach-message > span { display: flex; align-items: baseline; gap: 6px; margin-bottom: 3px; font-size: 11px; letter-spacing: 0; text-transform: none; }
+.coach-message > span small { color: var(--muted-2); font-size: 10px; font-weight: 500; }
+.coach-message p, .coach-message { user-select: text; -webkit-user-select: text; -webkit-touch-callout: default; }
 .coach-message p { font-size: var(--coach-message-size); line-height: 1.55; }
 .coach-message.user {
   color: var(--panel);
@@ -2167,6 +2169,7 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 }
 .coach-message.user p,
 .coach-message.user > span { color: inherit; }
+.coach-message.user > span small { color: color-mix(in oklch, var(--panel) 70%, transparent); }
 .coach-message.assistant {
   background: var(--panel);
   border: 0;
@@ -2174,6 +2177,11 @@ body:has(.onboarding-overlay) { overflow: hidden; }
   box-shadow: 0 4px 12px color-mix(in oklch, var(--text) 8%, transparent);
 }
 .coach-message-image { display: block; width: min(100%, 260px); max-height: 260px; margin: 0 0 10px; object-fit: cover; border-radius: 12px; border: 1px solid var(--border-strong); }
+.coach-message-actions { display: flex; gap: 6px; margin-top: 8px; }
+.coach-message-actions button { display: flex; align-items: center; gap: 4px; min-height: 26px; padding: 0 8px; color: var(--muted-2); background: transparent; border: 0; border-radius: 8px; font-size: 10.5px; font-weight: 700; }
+.coach-message-actions button:hover, .coach-message-actions button:focus-visible { color: var(--text); background: color-mix(in oklch, var(--mint) 10%, transparent); }
+.coach-message.user .coach-message-actions button { color: color-mix(in oklch, var(--panel) 75%, transparent); }
+.coach-message.user .coach-message-actions button:hover, .coach-message.user .coach-message-actions button:focus-visible { color: var(--panel); background: color-mix(in oklch, var(--panel) 12%, transparent); }
 .coach-log-confirmation { display: flex; align-items: center; gap: 7px; margin-top: 12px; padding-top: 10px; color: var(--mint-strong); border-top: 1px solid var(--border); font-size: 11px; font-weight: 800; }
 .coach-meal-choices { display: grid; gap: 7px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
 .coach-meal-choices strong { color: var(--muted); font-size: 10px; }
@@ -2230,6 +2238,7 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 .coach-composer button { width: 40px; height: 40px; border-radius: 12px; }
 .coach-composer .coach-attach { color: var(--muted-2); background: color-mix(in oklch, var(--carbs) 12%, var(--panel)); border: 0; }
 .coach-composer .coach-send { width: 36px; height: 36px; color: var(--panel); background: var(--text); border-radius: 11px; }
+.coach-composer .coach-stop { color: var(--panel); background: var(--red); }
 .coach-composer button svg { width: 15px; }
 .coach-attachment { grid-column: 1 / -1; position: relative; width: fit-content; padding: 2px; }
 .coach-attachment img { display: block; width: 68px; height: 68px; object-fit: cover; border-radius: 11px; border: 1px solid var(--border-strong); }
@@ -2282,6 +2291,9 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 .coach-grocery-link span { flex: 1; text-align: left; }
 .coach-grocery-link small { min-width: 20px; height: 20px; display: grid; place-items: center; color: var(--panel); background: var(--mint); border-radius: 999px; }
 .coach-history-list { display: grid; gap: 3px; max-height: min(52vh, 480px); overflow-y: auto; }
+.coach-history-empty { min-height: 120px; padding: 24px 12px; }
+.coach-history-empty strong { font-size: 12px; }
+.coach-history-empty p { font-size: 11px; }
 .coach-history-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 32px; align-items: center; min-height: 48px; border-radius: 11px; border: 0; }
 .coach-history-row:hover { background: color-mix(in oklch, var(--panel-strong) 34%, transparent); }
 .coach-history-row.active { color: var(--panel); background: var(--text); }
