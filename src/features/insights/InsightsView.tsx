@@ -3,10 +3,9 @@
 import { Activity, Droplets, Filter, Flame, Pencil, Plus, Scale, Sparkles, Timer, Trash2, Utensils, Wheat } from "lucide-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { localDateKey, round, startOfWeek, sumNutrition } from "@/lib/nutrition";
-import { hydrationTotal } from "@/lib/hydration";
+import { hydrationDayTotals } from "@/lib/hydration";
 import { activeFast, fastingWindowHours, formatFastingDuration, uniqueFastingRecords } from "@/lib/fasting";
 import { isHabitFeatureEnabled } from "@/lib/habit-settings";
-import { recentLogDates } from "@/lib/logging";
 import { NumericInput } from "@/features/shared/NumericInput";
 import { DatePickerField } from "@/features/shared/DatePicker";
 import type { InsightsSection } from "@/features/navigation/types";
@@ -52,7 +51,7 @@ function validFastingRecords(records: Profile["fastingRecords"]): FastingRecord[
 
 export function InsightsView({ meals, profile, onSave, weightTrackingEnabled, initialSection }: { meals: Meal[]; profile: Profile; onSave: (profile: Profile) => void; weightTrackingEnabled: boolean; initialSection?: InsightsSection }) {
   const fastingEnabled = isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting);
-  const [fastingPeriod, setFastingPeriod] = useState<FastingPeriod>("week");
+  const [fastingPeriod, setFastingPeriod] = useState<FastingPeriod>("all");
   const [section, setSection] = useState<InsightsSection>(initialSection || "overview");
   const [range, setRange] = useState<InsightsRange>(profile.insightsDefaultRange ?? "week");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -102,7 +101,8 @@ export function InsightsView({ meals, profile, onSave, weightTrackingEnabled, in
   const rangeLoggedDays = rangeDays.filter((day) => day.total.calories > 0 || day.total.protein > 0);
   const targetDays = profile.hideCalories ? rangeLoggedDays.filter((day) => day.total.protein >= proteinLow).length : rangeLoggedDays.filter((day) => day.total.calories >= calorieLow && day.total.calories <= calorieHigh).length;
   const waterTarget = profile.waterTargetMl || 2000;
-  const waterDays = recentLogDates().filter((date) => hydrationTotal(profile.waterEntries, date) >= waterTarget * .8).length;
+  const waterLoggedDays = hydrationDayTotals(profile.waterEntries);
+  const waterDays = waterLoggedDays.filter((day) => day.amountMl >= waterTarget * .8).length;
   const MAX_PLAUSIBLE_FASTING_HOURS = 48;
   const fastingRecords = uniqueFastingRecords(validFastingRecords(profile.fastingRecords));
   const completedFasts = fastingRecords.filter((record) => record.endedAt && fastingWindowHours(record.startedAt, record.endedAt) >= (profile.fastingGoalHours || 16) && fastingWindowHours(record.startedAt, record.endedAt) <= MAX_PLAUSIBLE_FASTING_HOURS).length;
@@ -122,7 +122,7 @@ export function InsightsView({ meals, profile, onSave, weightTrackingEnabled, in
   const plausibleFastingDurations = fastingDurations.filter((hours) => hours <= MAX_PLAUSIBLE_FASTING_HOURS);
   const averageFast = plausibleFastingDurations.length ? plausibleFastingDurations.reduce((sum, hours) => sum + hours, 0) / plausibleFastingDurations.length : 0;
   const longestFast = plausibleFastingDurations.length ? Math.max(...plausibleFastingDurations) : 0;
-  const [weightPeriod, setWeightPeriod] = useState<WeightPeriod>("week");
+  const [weightPeriod, setWeightPeriod] = useState<WeightPeriod>("all");
   const activeSection: InsightsSection = (section === "weight" && !weightTrackingEnabled) || (section === "fasting" && !fastingEnabled) ? "overview" : section;
   const [editingFastingId, setEditingFastingId] = useState<string>();
   const [fastingDraft, setFastingDraft] = useState<{ startedAt: string; endedAt: string }>({ startedAt: "", endedAt: "" });
@@ -222,7 +222,7 @@ export function InsightsView({ meals, profile, onSave, weightTrackingEnabled, in
         <section className="insights-panel card"><div className="section-heading compact"><div><span className="eyebrow">Consistency</span><h2>How the week looked</h2></div><span className="subtle">{Math.round(loggedDays.length / 7 * 100)}%</span></div><div className="week-activity">{days.map((day) => <div className="week-activity-day" key={day.key}><span className={day.total.calories || day.total.protein ? "logged" : ""} aria-label={`${day.label}: ${day.total.protein ? "logged" : "not logged"}`} /><small>{day.label}</small></div>)}</div><p className="panel-note">{targetDays ? `${targetDays} of ${rangeLoggedDays.length} logged days were close to your ${profile.hideCalories ? "protein" : "daily energy"} guide.` : "Keep logging complete days to make this comparison useful."}</p></section>
         <section className="insights-panel card"><div className="section-heading compact"><div><span className="eyebrow">Patterns</span><h2>What stands out</h2></div><Utensils size={18} /></div><div className="insight-list"><div><span>Most logged</span><strong>{mostLoggedMeal?.count ? mealLabels[mostLoggedMeal.type] : "—"}</strong></div><div><span>Meals per logged day</span><strong>{averageMeals ? averageMeals.toFixed(1) : "—"}</strong></div><div><span>Guide days</span><strong>{targetDays || "—"}</strong></div></div></section>
       </div>
-      {(isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.water) || isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting)) && <section className="insights-panel card habit-insights"><div className="section-heading compact"><div><span className="eyebrow">Optional rhythms</span><h2>Beyond food</h2></div><span className="subtle">last 7 days</span></div><div className="habit-insight-grid">{isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.water) && <div><Droplets size={17} /><span>Water days</span><strong>{waterDays}<small> / 7</small></strong></div>}{isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting) && <div><Timer size={17} /><span>Fasts completed</span><strong>{completedFasts}</strong></div>}</div></section>}
+      {(isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.water) || isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting)) && <section className="insights-panel card habit-insights"><div className="section-heading compact"><div><span className="eyebrow">Optional rhythms</span><h2>Beyond food</h2></div><span className="subtle">all time</span></div><div className="habit-insight-grid">{isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.water) && <div><Droplets size={17} /><span>Water days</span><strong>{waterDays}<small> / {waterLoggedDays.length} days</small></strong></div>}{isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting) && <div><Timer size={17} /><span>Fasts completed</span><strong>{completedFasts}</strong></div>}</div></section>}
       </section>}
       {activeSection === "weight" && weightTrackingEnabled && <section id="insights-weight-panel" role="tabpanel" aria-labelledby="insights-weight-tab" className="weight-section workspace-panel">
         <div className="section-heading"><div><span className="eyebrow">Optional progress</span><h2 id="weight-heading">Weight history</h2></div><span className="subtle">{entries.length} {entries.length === 1 ? "entry" : "entries"}</span></div>

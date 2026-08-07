@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hydrationTotal, setWaterAmount } from "./hydration";
+import { hydrationDayTotals, hydrationTotal, setWaterAmount } from "./hydration";
 
 describe("hydration", () => {
   it("totals only the selected local day", () => {
@@ -12,8 +12,17 @@ describe("hydration", () => {
     expect(setWaterAmount(entries, "2026-07-20", 0)).toEqual([]);
   });
 
+  it("sums every logged day for all-time history", () => {
+    expect(hydrationDayTotals([{ date: "2026-07-21", amountMl: 350 }, { date: "2026-07-20", amountMl: 600 }, { date: "2026-07-20", amountMl: 250 }])).toEqual([
+      { date: "2026-07-20", amountMl: 850 },
+      { date: "2026-07-21", amountMl: 350 },
+    ]);
+  });
+
   it("treats malformed legacy stored entries as empty", () => {
     expect(hydrationTotal({} as never, "2026-07-20")).toBe(0);
+    expect(hydrationDayTotals({} as never)).toEqual([]);
+    expect(hydrationDayTotals([{ date: 4, amountMl: 600 }, { date: "2026-07-20", amountMl: Number.NaN }] as never)).toEqual([]);
     expect(setWaterAmount({} as never, "2026-07-20", 900)).toEqual([{ date: "2026-07-20", amountMl: 900 }]);
   });
 });
