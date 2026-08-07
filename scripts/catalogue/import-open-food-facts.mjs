@@ -29,7 +29,10 @@ import { supabaseFetch } from "../lib/supabase-rest.mjs";
 import { getAccessToken } from "../lib/supabase-auth.mjs";
 
 const DUMP_URL = "https://static.openfoodfacts.org/data/openfoodfacts-products.jsonl.gz";
-const BATCH_SIZE = 500;
+// Small batches on purpose: matches are sparse and spread across a 12 GB stream, so a
+// large buffer means a long run can die holding hundreds of unwritten rows. Re-running
+// is idempotent but re-downloads everything, which is the cost worth avoiding.
+const BATCH_SIZE = 200;
 const BARCODE = /^[0-9]{8,14}$/;
 
 function parseArgs(argv) {
@@ -210,6 +213,7 @@ async function main() {
     if (batch.length >= BATCH_SIZE) {
       written += await writeBatch(batch, options);
       batch = [];
+      console.log(`  wrote ${written.toLocaleString()} products (scanned ${scanned.toLocaleString()})`);
     }
     if (matched >= options.limit) break;
   }

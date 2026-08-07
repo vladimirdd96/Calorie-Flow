@@ -81,15 +81,25 @@ export function parseCatalogueRow(value: unknown): Food | null {
  * network/RLS failure: a barcode scan must fall through to the online providers
  * rather than fail because the shared catalogue was unreachable.
  */
-export async function findCatalogueProduct(barcode: string): Promise<Food | null> {
-  const normalized = normalizeBarcode(barcode);
-  if (!catalogueBarcodePattern.test(normalized)) return null;
+export async function findCatalogueProduct(barcode: string | string[]): Promise<Food | null> {
+  // Callers pass every equivalent GTIN spelling at once so one round trip covers a
+  // package filed under its UPC-A in one database and its padded EAN-13 in another.
+  const candidates = (Array.isArray(barcode) ? barcode : [barcode])
+    .map(normalizeBarcode)
+    .filter((value) => catalogueBarcodePattern.test(value));
+  if (!candidates.length) return null;
   const supabase = getSupabase();
   if (!supabase) return null;
   try {
-    const { data, error } = await supabase.from("product_catalogue").select(catalogueColumns).eq("barcode", normalized).maybeSingle();
-    if (error || !data) return null;
-    return parseCatalogueRow(data);
+    const { data, error } = await supabase.from("product_catalogue").select(catalogueColumns).in("barcode", candidates).limit(candidates.length);
+    if (error || !Array.isArray(data)) return null;
+    // Preserve caller order: the form the scanner actually read is the best match.
+    for (const candidate of candidates) {
+      const row = data.find((entry) => (entry as { barcode?: string }).barcode === candidate);
+      const food = row ? parseCatalogueRow(row) : null;
+      if (food) return food;
+    }
+    return null;
   } catch {
     return null;
   }

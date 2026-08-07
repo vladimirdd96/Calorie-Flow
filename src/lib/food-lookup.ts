@@ -1,4 +1,5 @@
-import { contributeCatalogueProduct, findCatalogueProduct, normalizeBarcode, searchCatalogue } from "./product-catalogue";
+import { contributeCatalogueProduct, findCatalogueProduct, searchCatalogue } from "./product-catalogue";
+import { gtinVariants } from "./gtin";
 import { findByBarcode, searchOpenFoodFacts } from "./openfoodfacts";
 import type { Food } from "./types";
 
@@ -17,15 +18,25 @@ export type BarcodeLookup =
   | { status: "unavailable" };
 
 export async function lookupBarcode(code: string): Promise<BarcodeLookup> {
-  const barcode = normalizeBarcode(code);
-  const shared = await findCatalogueProduct(barcode);
+  // Databases disagree about how to spell the same GTIN — Open Food Facts pads a UPC-A
+  // to thirteen digits, Nutritionix does not — so every equivalent form is tried before
+  // concluding that nobody has the package.
+  const variants = gtinVariants(code);
+  if (!variants.length) return { status: "not-found" };
+
+  const shared = await findCatalogueProduct(variants);
   if (shared) return { status: "found", food: shared, from: "catalogue" };
-  try {
-    const food = await findByBarcode(barcode || code);
-    return food ? { status: "found", food, from: "providers" } : { status: "not-found" };
-  } catch {
-    return { status: "unavailable" };
+
+  let providerFailed = false;
+  for (const variant of variants) {
+    try {
+      const food = await findByBarcode(variant);
+      if (food) return { status: "found", food, from: "providers" };
+    } catch {
+      providerFailed = true;
+    }
   }
+  return providerFailed ? { status: "unavailable" } : { status: "not-found" };
 }
 
 /**

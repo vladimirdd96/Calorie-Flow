@@ -57,11 +57,20 @@ describe("lookupBarcode", () => {
     await expect(lookupBarcode("4056489814795")).resolves.toEqual({ status: "found", food: remote, from: "providers" });
   });
 
-  it("normalizes a hand-typed barcode before either lookup", async () => {
+  it("normalizes a hand-typed barcode and offers every equivalent GTIN spelling", async () => {
     await lookupBarcode(" 4056-489814795 ");
 
-    expect(findCatalogueProduct).toHaveBeenCalledWith("4056489814795");
-    expect(findByBarcode).toHaveBeenCalledWith("4056489814795");
+    expect(findCatalogueProduct).toHaveBeenCalledWith(["4056489814795", "04056489814795"]);
+    expect(findByBarcode).toHaveBeenNthCalledWith(1, "4056489814795");
+  });
+
+  it("retries the padded spelling when a provider only stores the UPC-A form", async () => {
+    const remote = food({ barcode: "012345678905" });
+    findByBarcode.mockImplementation(async (barcode) => barcode === "0012345678905" ? remote : null);
+
+    await expect(lookupBarcode("012345678905")).resolves.toEqual({ status: "found", food: remote, from: "providers" });
+    expect(findByBarcode).toHaveBeenCalledWith("012345678905");
+    expect(findByBarcode).toHaveBeenCalledWith("0012345678905");
   });
 
   it("separates a genuine miss from an outage so the app can word them differently", async () => {
