@@ -11,6 +11,7 @@
     "seed:recipes:update": "node scripts/seed-recipes/update.mjs",
     "seed:catalogue": "node scripts/catalogue/import-open-food-facts.mjs",
     "mirror:build": "node scripts/catalogue/build-product-mirror.mjs",
+    "mirror:verify": "node scripts/catalogue/verify-mirror.mjs",
     "mirror:stage": "mkdir -p .open-next/assets/catalogue/p && cp .product-mirror/*.json.gz .open-next/assets/catalogue/p/",
     "preview:cloudflare": "opennextjs-cloudflare preview",
     "start": "next start",
