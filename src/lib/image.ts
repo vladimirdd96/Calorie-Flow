@@ -2,16 +2,11 @@ const MAX_FOOD_IMAGE_DATA_URL_LENGTH = 360_000;
 const IMAGE_DIMENSIONS = [1024, 896, 768, 640];
 const IMAGE_QUALITIES = [0.78, 0.68, 0.58, 0.48];
 
-/** Read and resize a private food photo so it is safe for local and cloud JSON storage. */
-export async function readFoodImage(file: File) {
-  if (!file.type.startsWith("image/")) throw new Error("Choose an image file.");
-  if (file.size > 8_000_000) throw new Error("That image is too large. Choose one under 8 MB.");
-  const source = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("The image could not be read."));
-    reader.onerror = () => reject(new Error("The image could not be read."));
-    reader.readAsDataURL(file);
-  });
+/**
+ * Resize an already-decoded image source so it is safe for local and cloud JSON storage.
+ * A meal photo taken for analysis is sent to the model at full detail but stored small.
+ */
+export async function resizeFoodImage(source: string) {
   const image = await new Promise<HTMLImageElement>((resolve, reject) => {
     const element = new window.Image();
     element.onload = () => resolve(element);
@@ -35,4 +30,17 @@ export async function readFoodImage(file: File) {
     }
   }
   throw new Error("That photo could not be added. Try another photo.");
+}
+
+/** Read and resize a private food photo so it is safe for local and cloud JSON storage. */
+export async function readFoodImage(file: File) {
+  if (!file.type.startsWith("image/")) throw new Error("Choose an image file.");
+  if (file.size > 8_000_000) throw new Error("That image is too large. Choose one under 8 MB.");
+  const source = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("The image could not be read."));
+    reader.onerror = () => reject(new Error("The image could not be read."));
+    reader.readAsDataURL(file);
+  });
+  return resizeFoodImage(source);
 }

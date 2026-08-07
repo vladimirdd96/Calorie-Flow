@@ -37,20 +37,27 @@ const nutritionSchema = {
   ],
 };
 
+const visionModel = "@cf/meta/llama-4-scout-17b-16e-instruct";
+
 const mealPhotoSchema = {
   type: "object", additionalProperties: false,
   properties: {
     name: { type: "string" },
     mealType: { type: "string", enum: ["breakfast", "lunch", "dinner", "snack"] },
-    amount: { type: "number" },
-    unit: { type: "string", enum: ["serving", "g", "100g", "package", "piece", "tbsp", "tsp", "ml"] },
-    grams: { type: "number" },
-    nutrition: { type: "object", additionalProperties: false, properties: {
-      calories: { type: "number" }, protein: { type: "number" }, carbs: { type: "number" }, fat: { type: "number" }, fiber: { type: "number" }, sugar: { type: "number" },
-    }, required: ["calories", "protein", "carbs", "fat", "fiber", "sugar"] },
-    components: { type: "array", items: { type: "string" }, maxItems: 20 },
     confidence: { type: "string", enum: ["low", "medium", "high"] },
-  }, required: ["name", "mealType", "amount", "unit", "grams", "nutrition", "components", "confidence"],
+    items: {
+      type: "array", minItems: 1, maxItems: 12,
+      items: {
+        type: "object", additionalProperties: false,
+        properties: {
+          name: { type: "string" }, portion: { type: "string" }, grams: { type: "number" },
+          nutrition: { type: "object", additionalProperties: false, properties: {
+            calories: { type: "number" }, protein: { type: "number" }, carbs: { type: "number" }, fat: { type: "number" }, fiber: { type: "number" }, sugar: { type: "number" },
+          }, required: ["calories", "protein", "carbs", "fat", "fiber", "sugar"] },
+        }, required: ["name", "portion", "grams", "nutrition"],
+      },
+    },
+  }, required: ["name", "mealType", "confidence", "items"],
 };
 
 const coachTools = [
@@ -157,14 +164,19 @@ function parseLabelAnalysis(value) {
   return value;
 }
 
+function parseMealPhotoItem(value) {
+  if (!isRecord(value) || typeof value.name !== "string" || !value.name.trim()) return false;
+  if (value.portion !== undefined && typeof value.portion !== "string") return false;
+  if (!(typeof value.grams === "number" && Number.isFinite(value.grams) && value.grams > 0 && value.grams <= 5_000)) return false;
+  if (!isRecord(value.nutrition)) return false;
+  return ["calories", "protein", "carbs", "fat", "fiber", "sugar"].every((key) => isFiniteNonNegative(value.nutrition[key]));
+}
+
 function parseMealPhoto(value) {
   if (!isRecord(value) || typeof value.name !== "string" || !value.name.trim() || !["breakfast", "lunch", "dinner", "snack"].includes(value.mealType)) return null;
-  if (!(typeof value.amount === "number" && Number.isFinite(value.amount) && value.amount > 0) || !(typeof value.grams === "number" && Number.isFinite(value.grams) && value.grams > 0)) return null;
-  if (!["serving", "g", "100g", "package", "piece", "tbsp", "tsp", "ml"].includes(value.unit) || !isRecord(value.nutrition)) return null;
-  if (!["calories", "protein", "carbs", "fat", "fiber", "sugar"].every((key) => isFiniteNonNegative(value.nutrition[key]))) return null;
-  if (!Array.isArray(value.components) || value.components.length > 20 || value.components.some((item) => typeof item !== "string" || !item.trim())) return null;
   if (!["low", "medium", "high"].includes(value.confidence)) return null;
-  return value;
+  if (!Array.isArray(value.items) || !value.items.length || value.items.length > 12 || !value.items.every(parseMealPhotoItem)) return null;
+  return { ...value, items: value.items.map((item) => ({ ...item, portion: typeof item.portion === "string" ? item.portion : "" })) };
 }
 
 function visionText(value) {
@@ -610,7 +622,7 @@ async function coach(request, env) {
     let mealAction;
     let mealChoices;
     for (let turn = 0; turn < 4; turn += 1) {
-      response = await workersAiResponse(env, image ? "@cf/moonshotai/kimi-k2.6" : "@cf/zai-org/glm-4.7-flash", {
+      response = await workersAiResponse(env, image ? visionModel : "@cf/zai-org/glm-4.7-flash", {
         messages: [{ role: "system", content: `${coachInstructions}${visibilityInstruction}\n\nTIME CONTEXT:\n- The user's current local date is ${localDate}.\n- Their browser time zone is ${timezone}. Use this context when they say today, yesterday, or this week.` }, ...messages],
         tools,
         tool_choice: "auto",
@@ -654,10 +666,10 @@ async function analyzeLabel(request, env) {
     }
 
     let outputText = "";
-    try { outputText = extractVisionText(await env.AI.run("@cf/moonshotai/kimi-k2.6", labelRequestPayload(images))); } catch { /* Retry below without strict schema support. */ }
+    try { outputText = extractVisionText(await env.AI.run(visionModel, labelRequestPayload(images))); } catch { /* Retry below without strict schema support. */ }
     let parsed = outputText ? parseLabelAnalysis(parseEmbeddedJson(outputText)) : null;
     if (!parsed) {
-      try { outputText = extractVisionText(await env.AI.run("@cf/moonshotai/kimi-k2.6", labelRequestPayload(images, false))); } catch { outputText = ""; }
+      try { outputText = extractVisionText(await env.AI.run(visionModel, labelRequestPayload(images, false))); } catch { outputText = ""; }
       parsed = outputText ? parseLabelAnalysis(parseEmbeddedJson(outputText)) : null;
     }
     if (!parsed) return json({ error: "The label service returned invalid nutrition data." }, 502);
@@ -675,15 +687,19 @@ async function analyzeMealPhoto(request, env) {
     const image = body?.image;
     if (typeof image !== "string" || !image.startsWith("data:image/") || image.length > 10_000_000) return json({ error: "Add one photo under 10 MB." }, 400);
     if (!env.AI?.run) return json({ error: "Workers AI is not configured for this deployment." }, 503);
-    const system = "Analyze any food-related image, not only packaging. It may be a screenshot of another calorie app, a plated meal, a recipe, a menu, or a mixed meal. First read all visible text, especially meal names, dates, calories, protein, carbs, fat, fibre/fiber, sugar, and descriptions. Treat explicit nutrition numbers in the image as authoritative for the combined meal; do not replace them with a fresh estimate. If the image describes components, include them in components. If a meal type is not visible, choose breakfast, lunch, dinner, or snack from the visible time/context or use the most likely type and keep confidence low. If numbers are missing, estimate each component conservatively and mark confidence low or medium. Return one combined meal with a positive amount and grams. Never invent certainty.";
-    const ask = (strict) => env.AI.run("@cf/moonshotai/kimi-k2.6", {
+    const hint = typeof body?.hint === "string" ? body.hint.trim().slice(0, 280) : "";
+    const system = "You estimate meals from images for a calorie diary. These are estimates, not laboratory values: always return your best reasonable guess and never refuse or return an empty item list. The image may be a plated meal, a lunchbox, a takeaway tray, a menu, a recipe card, or a screenshot of another calorie app. Read every piece of visible text first. When the image already shows nutrition numbers — a calorie-app screenshot, a menu line, a recipe card, a nutrition table — copy those numbers exactly instead of estimating them, and set confidence high. Otherwise split the meal into the distinct foods you can see and estimate each one's served weight in grams from visual cues: plate and bowl diameter, cutlery, hands, cans, and packaging. List visible cooking oil, butter, sauces, and dressings as their own item whenever they materially change the calories. portion is a short human phrase for what is shown, such as \"1 medium breast\", \"1 cup cooked\", or \"2 tbsp\". grams is that portion's weight, and nutrition describes that exact portion — never per 100 g. Pick mealType from the food and any visible time. Use confidence low when the photo is blurry, food is hidden or stacked, or the portion is genuinely hard to judge, and medium when the foods are clear but the weights are inferred.";
+    const userText = hint
+      ? `Estimate this meal for my diary and return only the JSON. The user adds: "${hint}". Trust their description over your visual guess wherever the two disagree, and fold it into the items.`
+      : "Estimate this meal for my diary and return only the JSON.";
+    const ask = (strict) => env.AI.run(visionModel, {
       messages: [
         { role: "system", content: system },
-        { role: "user", content: [{ type: "text", text: "Read this food photo or screenshot and return only the meal JSON needed for my diary. Use exact visible totals when the image contains a nutrition summary." }, { type: "image_url", image_url: { url: image } }] },
+        { role: "user", content: [{ type: "text", text: userText }, { type: "image_url", image_url: { url: image } }] },
       ],
       ...(strict ? { response_format: { type: "json_schema", json_schema: { name: "meal_photo", strict: true, schema: mealPhotoSchema } } } : { response_format: { type: "json_object" } }),
       chat_template_kwargs: { thinking: false },
-      max_completion_tokens: 900, temperature: 0,
+      max_completion_tokens: 1_400, temperature: 0,
     });
     let text = "";
     try { text = extractVisionText(await ask(true)); } catch { /* Retry below without strict schema support. */ }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { backupSchema, diaryShareSchema, generatedRecipeSchema, labelAnalysisSchema, mealSchema, mealPlanEntrySchema, profileSchema, publicRecipeSchema, recipeNutritionEstimateSchema } from "./schemas";
+import { backupSchema, diaryShareSchema, generatedRecipeSchema, labelAnalysisSchema, mealPhotoAnalysisSchema, mealSchema, mealPlanEntrySchema, profileSchema, publicRecipeSchema, recipeNutritionEstimateSchema } from "./schemas";
 
 const nutrition = { calories: 120, protein: 10, carbs: 12, fat: 4, fiber: 3, sugar: 2 };
 
@@ -167,6 +167,23 @@ describe("recipe catalogue schemas", () => {
   it("validates the nutrition-estimate response shape", () => {
     expect(recipeNutritionEstimateSchema.parse({ nutritionPerServing: nutrition, confidence: "medium" }).confidence).toBe("medium");
     expect(() => recipeNutritionEstimateSchema.parse({ nutritionPerServing: nutrition, confidence: "certain" })).toThrow();
+  });
+
+  it("accepts a real meal-photo response and rejects one without foods", () => {
+    // Captured from @cf/meta/llama-4-scout-17b-16e-instruct for a plated chicken dinner.
+    const analysis = {
+      name: "chicken, rice, and broccoli",
+      mealType: "dinner",
+      confidence: "medium",
+      items: [
+        { name: "grilled chicken breast", portion: "1 medium breast", grams: 120, nutrition: { calories: 140, protein: 30, carbs: 0, fat: 3, fiber: 0, sugar: 0 } },
+        { name: "white rice", portion: "1/2 cup cooked", grams: 150, nutrition: { calories: 200, protein: 2, carbs: 45, fat: 0, fiber: 0, sugar: 0 } },
+      ],
+    };
+    expect(mealPhotoAnalysisSchema.parse(analysis).items).toHaveLength(2);
+    // An empty plate is a failed read, not a zero-calorie meal.
+    expect(() => mealPhotoAnalysisSchema.parse({ ...analysis, items: [] })).toThrow();
+    expect(() => mealPhotoAnalysisSchema.parse({ ...analysis, items: [{ ...analysis.items[0], grams: 0 }] })).toThrow();
   });
 
   it("requires at least one ingredient for an AI-generated recipe candidate", () => {

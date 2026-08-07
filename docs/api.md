@@ -2,7 +2,9 @@
 
 # API surfaces
 
-The meal-photo endpoint accepts a user-selected food image or calorie-app screenshot and returns an estimated meal for confirmation before diary logging.
+The meal-photo endpoint accepts a user-selected food image or calorie-app screenshot and returns an estimated meal for confirmation before diary logging. It answers with a per-item breakdown — `{ name, mealType, confidence, items[{ name, portion, grams, nutrition }] }` — not a single combined total, because the review sheet lets the user re-weigh, exclude, or add individual foods and derives the meal totals from what they kept. Item `nutrition` describes that item's `grams`, never per 100 g. An empty `items` array is rejected as a failed read rather than logged as a zero-calorie meal. The request may carry an optional `hint` (≤280 characters): a user note such as "fried in two tablespoons of olive oil" that the model must trust over its visual guess.
+
+Image models must be callable on the Workers **Free** plan. `@cf/moonshotai/kimi-k2.6` carries `require_workers_paid`, so on a free account every meal-photo, label, and Coach-image request failed with a 403 that the routes could only surface as "the photo could not be understood" — vision therefore runs on `@cf/meta/llama-4-scout-17b-16e-instruct`, which supports strict JSON schemas on both plans. Check `require_workers_paid` in the Workers AI model catalogue before changing any model id in `src/lib/workers-ai.ts` or `cloudflare/sites-worker.js`.
 
 Coach responses may also include a validated `mealAction` for explicit logging requests or `mealChoices` for ambiguous date/meal-type requests. The browser owns the final local/cloud diary write; the server never writes diary rows during AI inference.
 
@@ -14,6 +16,6 @@ Recipe import (`src/app/api/recipes/import/route.ts`) turns a pasted link — or
 
 Import is the one place the app follows a URL it did not choose, so `src/lib/recipe-import/fetch.ts` owns the guards rather than trusting the runtime: https only, no IP-literal/loopback/`.local`/`.internal` hosts, every redirect hop re-validated (max 3), an 8 s timeout, an HTML content-type requirement, and a 512 KB read cap. The `global_fetch_strictly_public` compatibility flag protects the deployed Worker but not `next dev`. A rolling 20-imports-per-hour per-user quota (`recipe_import_log`) bounds that fetch surface. A blocked or unreadable page returns 502 and a 404-for-recipes returns 422 — both messages steer the user to the paste-the-text fallback.
 
-AI calls require the Cloudflare Workers AI `AI` binding and a verified Supabase bearer session. The browser never receives an AI credential. Do not send data to Workers AI until the user explicitly invokes an AI feature. The Coach uses GLM-4.7-Flash and label reading uses Kimi K2.6. When `hideCalories` is enabled, Coach tools omit calorie fields and the server redacts numeric calorie output before returning it.
+AI calls require the Cloudflare Workers AI `AI` binding and a verified Supabase bearer session. The browser never receives an AI credential. Do not send data to Workers AI until the user explicitly invokes an AI feature. The text-only Coach uses GLM-4.7-Flash; every image path — Coach photos, label reading, and meal photos — uses Llama 4 Scout. When `hideCalories` is enabled, Coach tools omit calorie fields and the server redacts numeric calorie output before returning it.
 
 Validate request bodies and external responses at the boundary. Return actionable JSON errors with appropriate HTTP status codes, and never return credentials, access tokens, or private diary data beyond the authenticated user.

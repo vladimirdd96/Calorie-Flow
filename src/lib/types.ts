@@ -335,15 +335,21 @@ export type LabelAnalysis = {
   followUpQuestions: string[];
 };
 
+/** One food the vision model separated out of a meal photo, weighed as served. */
+export type MealPhotoItem = {
+  name: string;
+  /** Short human phrase for the serving shown, e.g. "1 medium breast" or "2 tbsp". */
+  portion: string;
+  grams: number;
+  /** Nutrition for this item's `grams`, not per 100 g. */
+  nutrition: Nutrition;
+};
+
 export type MealPhotoAnalysis = {
   name: string;
   mealType: MealType;
-  amount: number;
-  unit: ServingUnit;
-  grams: number;
-  nutrition: Nutrition;
-  components: string[];
   confidence: "low" | "medium" | "high";
+  items: MealPhotoItem[];
 };
 
 export type CoachMealAction = {

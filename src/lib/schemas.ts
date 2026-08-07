@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { defaultNutritionTargets, recipeOrigins, type CoachChat, type CoachMealAction, type CoachMealChoice, type CoachMessage, type DailyTargets, type DiaryShare, type FastingRecord, type Food, type LabelAnalysis, type MacroPresetOverride, type Meal, type MealPhotoAnalysis, type MealPlanEntry, type Nutrition, type Profile, type PublicRecipe, type Recipe, type WaterEntry, type WeightEntry } from "./types";
+import { defaultNutritionTargets, recipeOrigins, type CoachChat, type CoachMealAction, type CoachMealChoice, type CoachMessage, type DailyTargets, type DiaryShare, type FastingRecord, type Food, type LabelAnalysis, type MacroPresetOverride, type Meal, type MealPhotoAnalysis, type MealPhotoItem, type MealPlanEntry, type Nutrition, type Profile, type PublicRecipe, type Recipe, type WaterEntry, type WeightEntry } from "./types";
 
 const dietaryTagSchema = z.enum(["vegetarian", "vegan", "glutenFree", "dairyFree", "pescatarian", "keto", "paleo"]);
 const recipeOriginSchema = z.enum([recipeOrigins.created, recipeOrigins.saved, recipeOrigins.imported]);
@@ -210,15 +210,18 @@ export const labelAnalysisSchema = z.object({
   followUpQuestions: z.array(z.string().trim().min(1).max(240)).max(3),
 }).strict() satisfies z.ZodType<LabelAnalysis>;
 
+export const mealPhotoItemSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  portion: z.string().trim().max(60),
+  grams: positiveFinite.max(5_000),
+  nutrition: nutritionSchema,
+}).strict() satisfies z.ZodType<MealPhotoItem>;
+
 export const mealPhotoAnalysisSchema = z.object({
   name: z.string().trim().min(1).max(240),
   mealType: z.enum(["breakfast", "lunch", "dinner", "snack"]),
-  amount: positiveFinite,
-  unit: z.enum(["serving", "g", "100g", "package", "piece", "tbsp", "tsp", "ml"]),
-  grams: positiveFinite,
-  nutrition: nutritionSchema,
-  components: z.array(z.string().trim().min(1).max(120)).max(20),
   confidence: z.enum(["low", "medium", "high"]),
+  items: z.array(mealPhotoItemSchema).min(1).max(12),
 }).strict() satisfies z.ZodType<MealPhotoAnalysis>;
 
 export const publicRecipeSchema = z.object({

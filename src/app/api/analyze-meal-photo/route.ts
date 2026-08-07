@@ -5,18 +5,27 @@ import { getWorkersAi, workersAiModels } from "@/lib/workers-ai";
 
 export const runtime = "nodejs";
 
+const nutritionSchema = {
+  type: "object", additionalProperties: false,
+  properties: { calories: { type: "number" }, protein: { type: "number" }, carbs: { type: "number" }, fat: { type: "number" }, fiber: { type: "number" }, sugar: { type: "number" } },
+  required: ["calories", "protein", "carbs", "fat", "fiber", "sugar"],
+};
+
 const responseSchema = {
   type: "object", additionalProperties: false,
   properties: {
-    name: { type: "string" }, mealType: { type: "string", enum: ["breakfast", "lunch", "dinner", "snack"] },
-    amount: { type: "number" }, unit: { type: "string", enum: ["serving", "g", "100g", "package", "piece", "tbsp", "tsp", "ml"] },
-    grams: { type: "number" },
-    nutrition: { type: "object", additionalProperties: false, properties: {
-      calories: { type: "number" }, protein: { type: "number" }, carbs: { type: "number" }, fat: { type: "number" }, fiber: { type: "number" }, sugar: { type: "number" },
-      micronutrients: { type: "object", additionalProperties: false, properties: { sodiumMg: { type: "number" }, cholesterolMg: { type: "number" }, saturatedFatG: { type: "number" }, potassiumMg: { type: "number" }, calciumMg: { type: "number" }, ironMg: { type: "number" }, magnesiumMg: { type: "number" }, zincMg: { type: "number" }, vitaminAMcg: { type: "number" }, vitaminCMg: { type: "number" }, vitaminDMcg: { type: "number" }, vitaminEMg: { type: "number" }, vitaminKMcg: { type: "number" }, vitaminB12Mcg: { type: "number" }, folateMcg: { type: "number" } }, required: ["sodiumMg", "cholesterolMg", "saturatedFatG", "potassiumMg", "calciumMg", "ironMg", "magnesiumMg", "zincMg", "vitaminAMcg", "vitaminCMg", "vitaminDMcg", "vitaminEMg", "vitaminKMcg", "vitaminB12Mcg", "folateMcg"] },
-    }, required: ["calories", "protein", "carbs", "fat", "fiber", "sugar"] },
-    components: { type: "array", items: { type: "string" }, maxItems: 20 }, confidence: { type: "string", enum: ["low", "medium", "high"] },
-  }, required: ["name", "mealType", "amount", "unit", "grams", "nutrition", "components", "confidence"],
+    name: { type: "string" },
+    mealType: { type: "string", enum: ["breakfast", "lunch", "dinner", "snack"] },
+    confidence: { type: "string", enum: ["low", "medium", "high"] },
+    items: {
+      type: "array", minItems: 1, maxItems: 12,
+      items: {
+        type: "object", additionalProperties: false,
+        properties: { name: { type: "string" }, portion: { type: "string" }, grams: { type: "number" }, nutrition: nutritionSchema },
+        required: ["name", "portion", "grams", "nutrition"],
+      },
+    },
+  }, required: ["name", "mealType", "confidence", "items"],
 };
 
 function imageData(value: unknown): value is string {
@@ -62,17 +71,30 @@ function parseJson(text: string) {
   }
 }
 
-const systemPrompt = "Analyze any food-related image, not only packaging. It may be a screenshot of another calorie app, a plated meal, a recipe, a menu, or a mixed meal. First read all visible text, especially meal names, dates, calories, protein, carbs, fat, fibre/fiber, sugar, and descriptions. Treat explicit nutrition numbers in the image as authoritative for the combined meal; do not replace them with a fresh estimate. If the image describes components, include them in components. If a meal type is not visible, choose breakfast, lunch, dinner, or snack from the time/context or use the most likely type and keep confidence low. If numbers are missing, estimate each component conservatively and mark confidence low or medium. Return one combined meal with a positive amount and grams. Never invent certainty.";
+const systemPrompt = [
+  "You estimate meals from images for a calorie diary. These are estimates, not laboratory values: always return your best reasonable guess and never refuse or return an empty item list.",
+  "The image may be a plated meal, a lunchbox, a takeaway tray, a menu, a recipe card, or a screenshot of another calorie app. Read every piece of visible text first.",
+  "When the image already shows nutrition numbers — a calorie-app screenshot, a menu line, a recipe card, a nutrition table — copy those numbers exactly instead of estimating them, and set confidence high.",
+  "Otherwise split the meal into the distinct foods you can see and estimate each one's served weight in grams from visual cues: plate and bowl diameter, cutlery, hands, cans, and packaging.",
+  "List visible cooking oil, butter, sauces, and dressings as their own item whenever they materially change the calories.",
+  "portion is a short human phrase for what is shown, such as \"1 medium breast\", \"1 cup cooked\", or \"2 tbsp\". grams is that portion's weight, and nutrition describes that exact portion — never per 100 g.",
+  "Pick mealType from the food and any visible time. Use confidence low when the photo is blurry, food is hidden or stacked, or the portion is genuinely hard to judge, and medium when the foods are clear but the weights are inferred.",
+].join(" ");
 
-async function askVision(ai: Awaited<ReturnType<typeof getWorkersAi>>, image: string, strict: boolean) {
-  return ai.run(workersAiModels.label, {
+function userPrompt(hint: string) {
+  const base = "Estimate this meal for my diary and return only the JSON.";
+  return hint ? `${base} The user adds: "${hint}". Trust their description over your visual guess wherever the two disagree, and fold it into the items.` : base;
+}
+
+async function askVision(ai: Awaited<ReturnType<typeof getWorkersAi>>, image: string, hint: string, strict: boolean) {
+  return ai.run(workersAiModels.mealPhoto, {
     messages: [
       { role: "system", content: systemPrompt },
-      { role: "user", content: [{ type: "text", text: "Read this food photo or screenshot and return only the meal JSON needed for my diary. Use the exact visible totals when the image contains a nutrition summary." }, { type: "image_url", image_url: { url: image } }] },
+      { role: "user", content: [{ type: "text", text: userPrompt(hint) }, { type: "image_url", image_url: { url: image } }] },
     ],
     ...(strict ? { response_format: { type: "json_schema", json_schema: { name: "meal_photo", strict: true, schema: responseSchema } } } : { response_format: { type: "json_object" } }),
     chat_template_kwargs: { thinking: false },
-    max_completion_tokens: 900, temperature: 0,
+    max_completion_tokens: 1_400, temperature: 0,
   });
 }
 
@@ -81,14 +103,16 @@ export async function POST(request: NextRequest) {
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
   try {
     const body: unknown = await request.json();
-    const image = body && typeof body === "object" ? (body as { image?: unknown }).image : undefined;
+    const payload = body && typeof body === "object" ? body as { image?: unknown; hint?: unknown } : {};
+    const image = payload.image;
     if (!imageData(image)) return NextResponse.json({ error: "Add one photo under 10 MB." }, { status: 400 });
+    const hint = typeof payload.hint === "string" ? payload.hint.trim().slice(0, 280) : "";
     const ai = await getWorkersAi();
     let text = "";
-    try { text = outputText(await askVision(ai, image, true)) || ""; } catch { /* Some deployments do not support strict vision schemas. */ }
+    try { text = outputText(await askVision(ai, image, hint, true)) || ""; } catch { /* Some deployments do not support strict vision schemas. */ }
     let parsed = text ? mealPhotoAnalysisSchema.safeParse(parseJson(text)) : { success: false } as const;
     if (!parsed.success) {
-      try { text = outputText(await askVision(ai, image, false)) || ""; } catch { text = ""; }
+      try { text = outputText(await askVision(ai, image, hint, false)) || ""; } catch { text = ""; }
       parsed = text ? mealPhotoAnalysisSchema.safeParse(parseJson(text)) : { success: false } as const;
     }
     if (!parsed.success) return NextResponse.json({ error: text ? "The photo service returned invalid meal data." : "The photo service did not return readable meal data. Try again or choose a clearer photo." }, { status: 502 });

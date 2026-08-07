@@ -9,7 +9,7 @@ import { foodMatchesQuery } from "@/lib/food-search";
 import { localDateKey } from "@/lib/nutrition";
 import { lookupBarcode, searchPackagedFoods, shareResolvedProduct } from "@/lib/food-lookup";
 import { normalizeVoiceFoodQuery } from "@/lib/voice";
-import type { Food, Meal, MealPhotoAnalysis, MealTimeBoundaries, MealType, Recipe } from "@/lib/types";
+import type { Food, Meal, MealTimeBoundaries, MealType, Recipe } from "@/lib/types";
 import { repeatItems, type RepeatItem } from "@/features/recipes/repeatItems";
 import { BarcodeScanner } from "./components/BarcodeScanner";
 import { FoodRow, ManualFood, PortionSheet, QuickMacroSheet } from "./components/FoodEntrySheets";
@@ -27,6 +27,8 @@ type VoicePhase = "idle" | "recording" | "processing";
 
 export function hideCalorieValues(content: string) { return content.replace(/\b\d[\d,.]*\s*(?:-|–|—)?\s*(?:kcal|calories?)\b/gi, "energy hidden"); }
 export { FoodDetailsSheet, FoodEditor, PortionSheet } from "./components/FoodEntrySheets";
+export { MealPhotoReader } from "./components/MealPhotoReader";
+export { MealPhotoReview } from "./components/MealPhotoReview";
 
 function RecipeSearchRow({ recipe, hideCalories, onSelect }: { recipe: Recipe; hideCalories: boolean; onSelect: () => void }) {
   return <button className="food-row recipe-row" type="button" onClick={onSelect}>{recipe.imageUrls?.[0] ? <img className="food-avatar" src={recipe.imageUrls[0]} alt="" /> : <span className="recipe-row-icon"><BookOpen size={18} /></span>}<span className="food-copy"><strong>{recipe.name}</strong><small>{recipe.ingredients.length} {recipe.ingredients.length === 1 ? "food" : "foods"} · your recipe</small></span>{!hideCalories && <span className="food-calories"><strong>{Math.round(recipe.nutritionPerServing.calories)}</strong><small>kcal total</small></span>}<ChevronRight size={18} /></button>;
@@ -75,7 +77,7 @@ function loggingDateLabel(dateKey: string) {
   return new Date(`${dateKey}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 }
 
-export function AddFoodSheet({ foods, meals, recipes, initialView = "start", initialMealType, initialLoggedDate = localDateKey(), onLog, onMealPhoto, onSaveFood, onSelectRecipe, onSelectFood, onClose, hideCalories, purpose = "log", mealTimeBoundaries, servingOverrides, macroRoundingDigits }: { foods: Food[]; meals: Meal[]; recipes: Recipe[]; initialView?: AddView; initialMealType?: MealType; initialLoggedDate?: string; onLog: (meal: Meal, food: Food) => void; onMealPhoto: (analysis: MealPhotoAnalysis) => void; onSaveFood: (food: Food) => Promise<void>; onSelectRecipe: (recipe: Recipe) => void; onSelectFood?: (food: Food) => void; onClose?: () => void; hideCalories: boolean; purpose?: AddFoodPurpose; mealTimeBoundaries?: MealTimeBoundaries; servingOverrides?: { tbspGrams?: number; tspGrams?: number }; macroRoundingDigits?: 0 | 1 | 2 }) {
+export function AddFoodSheet({ foods, meals, recipes, initialView = "start", initialMealType, initialLoggedDate = localDateKey(), onLog, onMealPhoto, onSaveFood, onSelectRecipe, onSelectFood, onClose, hideCalories, purpose = "log", mealTimeBoundaries, servingOverrides, macroRoundingDigits }: { foods: Food[]; meals: Meal[]; recipes: Recipe[]; initialView?: AddView; initialMealType?: MealType; initialLoggedDate?: string; onLog: (meal: Meal, food: Food) => void; onMealPhoto: (meal: Meal) => void; onSaveFood: (food: Food) => Promise<void>; onSelectRecipe: (recipe: Recipe) => void; onSelectFood?: (food: Food) => void; onClose?: () => void; hideCalories: boolean; purpose?: AddFoodPurpose; mealTimeBoundaries?: MealTimeBoundaries; servingOverrides?: { tbspGrams?: number; tspGrams?: number }; macroRoundingDigits?: 0 | 1 | 2 }) {
   const [view, setView] = useState<AddView>(initialView);
   const [selected, setSelected] = useState<Food>();
   const [questions, setQuestions] = useState<string[]>([]);
@@ -251,7 +253,7 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
   if (selected) return <PortionSheet food={selected} questions={questions} initialMealType={initialMealType} initialLoggedDate={loggedDate} hideCalories={hideCalories} onLog={onLog} onClose={() => setSelected(undefined)} mealTimeBoundaries={mealTimeBoundaries} servingOverrides={servingOverrides} macroRoundingDigits={macroRoundingDigits} />;
   if (view === "scan") return <>{loading && <div className="global-loader"><i />Looking up product…</div>}<BarcodeScanner onResult={barcode} onClose={() => changeView("start")} /></>;
   if (view === "camera") return <LabelReader initialFiles={pendingImages} initialAction="camera" onFood={(food, followUps) => { void handleLabelFood(food, followUps); }} onClose={() => { setPendingImages([]); changeView("start"); }} />;
-  if (view === "photo") return <MealPhotoReader onMeal={onMealPhoto} onClose={() => changeView("start")} />;
+  if (view === "photo") return <MealPhotoReader initialMealType={initialMealType} initialLoggedDate={loggedDate} hideCalories={hideCalories} mealTimeBoundaries={mealTimeBoundaries} onLogMeal={onMealPhoto} onClose={() => changeView("start")} />;
   if (view === "label") return <LabelReader initialFiles={pendingImages} onFood={(food, followUps) => { void handleLabelFood(food, followUps); }} onClose={() => { setPendingImages([]); changeView("start"); }} />;
   if (view === "manual") return <ManualFood initialBarcode={unknownBarcode} notice={manualNotice} hideCalories={hideCalories} onSave={(food) => void saveAndPick(food)} onClose={() => changeView("start")} />;
   if (view === "quick") return <QuickMacroSheet initialLoggedDate={loggedDate} hideCalories={hideCalories} onLog={onLog} onClose={() => changeView("start")} />;
@@ -278,10 +280,10 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
       </div>}
       <form className="add-food-search" onSubmit={search}><Search size={18} /><ClearableInput value={query} onChange={(event) => setQuery(event.target.value)} onClear={() => setQuery("")} placeholder="Search foods and recipes" clearLabel="Clear food search" /></form>
       <div className="add-food-actions">
-        <button type="button" onClick={() => changeView("scan")}><ScanLine className="blue" size={19} /><span>Barcode</span></button>
-         <button type="button" aria-label="Add photos to scan label" onClick={() => changeView("camera")}><Camera className="carbs" size={19} /><span>Scan label</span></button>
-        <button type="button" onClick={startVoiceSearch} disabled={voicePhase !== "idle"}><Mic className="fat" size={19} /><span>Voice</span></button>
         {purpose === "log" && <button type="button" onClick={() => changeView("photo")}><ImagePlus className="mint" size={19} /><span>Meal photo</span></button>}
+        <button type="button" onClick={() => changeView("scan")}><ScanLine className="blue" size={19} /><span>Barcode</span></button>
+        <button type="button" aria-label="Add photos to scan label" onClick={() => changeView("camera")}><Camera className="carbs" size={19} /><span>Scan label</span></button>
+        <button type="button" onClick={startVoiceSearch} disabled={voicePhase !== "idle"}><Mic className="fat" size={19} /><span>Voice</span></button>
         {purpose === "log" && <button type="button" className="quick-add-action" onClick={() => changeView("quick")}><Zap className="carbs" size={19} /><span><strong>Quick add</strong><small>Just calories, no food record</small></span></button>}
       </div>
       {voicePhase !== "idle" && <section className={`voice-capture ${voicePhase}`} aria-live="polite" aria-label="Voice food entry">

@@ -1,9 +1,17 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
+/**
+ * Vision models are not interchangeable across Workers AI plans: `@cf/moonshotai/kimi-k2.6`
+ * carries `require_workers_paid`, so on a Workers Free account every image request fails
+ * with a 403 the routes could only report as "the photo could not be understood". Keep the
+ * image models on a plan-independent one so meal photos, labels, and Coach images work on
+ * both plans; `@cf/meta/llama-4-scout-17b-16e-instruct` also supports strict JSON schemas.
+ */
 export const workersAiModels = {
   coach: "@cf/zai-org/glm-4.7-flash",
-  coachVision: "@cf/moonshotai/kimi-k2.6",
-  label: "@cf/moonshotai/kimi-k2.6",
+  coachVision: "@cf/meta/llama-4-scout-17b-16e-instruct",
+  label: "@cf/meta/llama-4-scout-17b-16e-instruct",
+  mealPhoto: "@cf/meta/llama-4-scout-17b-16e-instruct",
 } as const;
 
 export type WorkersAi = {

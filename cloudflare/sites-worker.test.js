@@ -104,11 +104,34 @@ describe("Sites Worker", () => {
       environment({
         SUPABASE_URL: "https://project.supabase.co",
         SUPABASE_PUBLISHABLE_KEY: "public-key",
-        AI: { run: async () => ({ response: JSON.stringify({ name: "Eggs and bread", mealType: "breakfast", amount: 1, unit: "serving", grams: 300, nutrition: { calories: 490, protein: 43, carbs: 17, fat: 27, fiber: 7, sugar: 4 }, components: ["3 eggs", "protein bread"], confidence: "high" }) }) },
+        AI: { run: async () => ({ response: JSON.stringify({ name: "Eggs and bread", mealType: "breakfast", confidence: "high", items: [
+          { name: "Scrambled eggs", portion: "3 eggs", grams: 165, nutrition: { calories: 250, protein: 21, carbs: 2, fat: 18, fiber: 0, sugar: 1 } },
+          { name: "Protein bread", portion: "2 slices", grams: 90, nutrition: { calories: 240, protein: 22, carbs: 15, fat: 9, fiber: 7, sugar: 3 } },
+        ] }) }) },
       }),
     );
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({ name: "Eggs and bread", nutrition: { calories: 490 } });
+    await expect(response.json()).resolves.toMatchObject({ name: "Eggs and bread", items: [{ name: "Scrambled eggs", grams: 165 }, { name: "Protein bread", grams: 90 }] });
+  });
+
+  it("rejects a meal photo response that carries no foods", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url) => {
+      if (String(url).includes("/auth/v1/user")) return Response.json({ id: "00000000-0000-0000-0000-000000000001" });
+      throw new Error(`Unexpected fetch: ${url}`);
+    }));
+    const response = await worker.fetch(
+      new Request("https://example.com/api/analyze-meal-photo", {
+        method: "POST",
+        headers: { Authorization: "Bearer valid-session" },
+        body: JSON.stringify({ image: "data:image/jpeg;base64,AA==" }),
+      }),
+      environment({
+        SUPABASE_URL: "https://project.supabase.co",
+        SUPABASE_PUBLISHABLE_KEY: "public-key",
+        AI: { run: async () => ({ response: JSON.stringify({ name: "Empty plate", mealType: "lunch", confidence: "low", items: [] }) }) },
+      }),
+    );
+    expect(response.status).toBe(502);
   });
 
   it("blocks unrelated app-building requests inside the Coach", async () => {
@@ -180,7 +203,9 @@ describe("Sites Worker", () => {
       }),
     );
     expect(response.status).toBe(200);
-    expect(requestedModel).toBe("@cf/moonshotai/kimi-k2.6");
+    // Vision must stay on a model that Workers Free accounts can call; a paid-only model
+    // turns every image request into an opaque 403 for anyone who has not upgraded.
+    expect(requestedModel).toBe("@cf/meta/llama-4-scout-17b-16e-instruct");
   });
 
   it("returns a validated meal action when the Coach is asked to log a photo", async () => {

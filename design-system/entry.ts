@@ -7,7 +7,7 @@ export { ClearableInput } from "../src/features/shared/ClearableInput";
 export { ThemedSelect } from "../src/features/shared/ThemedSelect";
 export { AuthGateway } from "../src/features/auth/AuthGateway";
 export { CoachView } from "../src/features/coach/CoachView";
-export { AddFoodSheet, FoodDetailsSheet, FoodEditor, PortionSheet } from "../src/features/food-capture/FoodCapture";
+export { AddFoodSheet, FoodDetailsSheet, FoodEditor, MealPhotoReader, MealPhotoReview, PortionSheet } from "../src/features/food-capture/FoodCapture";
 export { DiscoverView } from "../src/features/food-catalogue/DiscoverView";
 export { InsightsView } from "../src/features/insights/InsightsView";
 export { PlanView } from "../src/features/planning/PlanView";

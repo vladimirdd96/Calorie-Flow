@@ -7,7 +7,7 @@ import { localDateKey } from "@/lib/nutrition";
 import type { BackupData } from "@/lib/db";
 import type { AddFoodView } from "@/features/food-capture/types";
 import type { CloudUser } from "@/lib/supabase";
-import type { CoachMealAction, Food, Meal, MealPhotoAnalysis, MealType, Profile, Recipe } from "@/lib/types";
+import type { CoachMealAction, Food, Meal, MealType, Profile, Recipe } from "@/lib/types";
 import type { MealTimingPrompt } from "./useTrackerUiState";
 
 const mealLabels: Record<MealType, string> = { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snack" };
@@ -201,10 +201,12 @@ export function useTrackerActions(dependencies: Dependencies) {
     };
     prepareMeal(meal, (nextMeal) => { void persistCoachMeal(nextMeal, action.loggedDate); });
   };
-  const addPhotoMeal = (analysis: MealPhotoAnalysis) => {
-    const details = analysis.components.length ? ` · ${analysis.components.join(", ")}` : "";
-    const meal: Meal = { id: `photo-${crypto.randomUUID()}`, name: `${analysis.name}${details}`.slice(0, 240), mealType: analysis.mealType, amount: analysis.amount, unit: analysis.unit, grams: analysis.grams, nutrition: analysis.nutrition, createdAt: new Date().toISOString(), loggedDate: dateKey, source: "custom", estimated: analysis.confidence !== "high" };
-    setAdding(false); setEditingMeal(meal);
+  // The photo review sheet already collected the foods, portions, meal, and date, so the
+  // estimate goes straight into the diary instead of through a second edit sheet.
+  const addPhotoMeal = (meal: Meal) => {
+    setAdding(false);
+    setDateKey(meal.loggedDate || dateKey);
+    void saveNewMeal(meal);
   };
   const deleteMeal = async (id: string) => {
     const deletedMeal = meals.find((meal) => meal.id === id);

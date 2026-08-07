@@ -22,6 +22,14 @@ The hero card (`TodaySummary`) carries nutrition only: the day navigator straddl
 
 A tile opens that habit's `Sheet`, not an inline panel: current value, a seven-point trend, and only the controls needed to log today (fasting goal chips, one weight field, water plus/minus). Deeper editing stays in Insights, reached from the sheet's history link via `onOpenInsights`. Add a new optional habit by extending `habitTileKeys` and its sheet, not by putting another control back in the hero.
 
+### Meal photo capture and review
+
+`MealPhotoReader` (`src/features/food-capture/components/MealPhotoReader.tsx`) owns one linear flow — capture → analyzing → review, or capture → failed — as a discriminated `Phase` union rather than a set of booleans. The camera opens on an explicit tap, never on mount: mobile browsers gate `getUserMedia` behind a user gesture, and an unrequested permission prompt reads as an ambush. The stream is released whenever the sheet leaves the capture step.
+
+`MealPhotoReview` is where a photo estimate becomes trustworthy, and it is the only place a photo meal can be logged from — the flow never hands off to `MealEditor`. It shows the item breakdown the endpoint returned and lets the user rename the dish, re-weigh a food (macros scale with the grams), exclude one, add a missed one, or apply a Smaller/As shown/Larger multiplier to the whole plate; totals recompute from whatever remains included. The free-text hint field re-runs the estimate with the user's own words, which corrects invisible calories — oil, sauces, portion size — far more cheaply than editing six macro fields.
+
+Portion arithmetic lives in `src/features/food-capture/mealPhoto.ts`, not in the component, and is unit-tested: scaling always re-derives from the model's original items so repeated chip taps cannot compound. Every entry this flow writes is marked `estimated`, whatever confidence the model reported, and carries the photo as its `imageUrl`.
+
 ### Signaling a configurable feature
 
 When a card or section surfaces a value the user can tune (a target, a threshold, a preference), add `ConfigShortcut` (`src/features/shared/ConfigShortcut.tsx`) rather than inventing a settings affordance per feature. It renders the shared `.config-shortcut` ghost icon-button (`SlidersHorizontal`, dimmed until hover/focus) and takes a single `onClick`. It never opens an inline settings sheet — wire `onClick` to `navigateTo` (the `AppNavigationTarget` contract in `src/features/navigation/types.ts`) so it redirects to the feature's real configuration screen, the same one reachable from Profile.
