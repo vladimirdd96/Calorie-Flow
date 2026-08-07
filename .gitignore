@@ -22,3 +22,6 @@ design-system/globals.css
 .design-sync/.cache/
 .design-sync/learnings/
 .design-sync/node_modules
+
+# Built Open Food Facts mirror shards, staged into the deploy rather than committed
+.product-mirror/

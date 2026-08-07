@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { serverEnv } from "@/lib/env";
+import { findMirrorProduct } from "@/lib/product-mirror";
 
 export const runtime = "nodejs";
 
@@ -149,21 +150,26 @@ export async function GET(request: NextRequest) {
     // one database missing a supermarket private label must not turn into a failed
     // scan. `settled` still separates "nobody has this package" from "nobody
     // answered", so the app can tell a genuine miss from an outage.
-    const [openFoodFacts, branded, foodDataCentral] = await Promise.allSettled([
+    const [openFoodFacts, mirror, branded, foodDataCentral] = await Promise.allSettled([
       findProductByBarcode(barcode),
+      findMirrorProduct(barcode),
       findBrandedProductByBarcode(barcode),
       searchFoodDataCentral(barcode),
     ]);
     const openFoodFactsProduct = openFoodFacts.status === "fulfilled" ? openFoodFacts.value : null;
+    // The mirror is a snapshot of the same database, minus the micronutrients it drops to
+    // stay small, so a live answer is preferred and the mirror carries the scan when Open
+    // Food Facts is unreachable — which is the whole reason it is shipped with the Worker.
+    const mirrorProduct = mirror.status === "fulfilled" ? mirror.value : null;
     const brandedProduct = branded.status === "fulfilled" ? branded.value : null;
     const foodDataCentralProducts = foodDataCentral.status === "fulfilled" ? foodDataCentral.value : [];
-    const products = [openFoodFactsProduct, brandedProduct, ...foodDataCentralProducts].filter(Boolean);
+    const products = [openFoodFactsProduct, mirrorProduct, brandedProduct, ...foodDataCentralProducts].filter(Boolean);
     // Empty plus a provider that never answered is not the same claim as "no database
     // holds this package", and the app words the two outcomes differently.
     if (!products.length && [openFoodFacts, branded, foodDataCentral].some((result) => result.status === "rejected")) {
       return response({ error: "Online product lookup is temporarily unavailable." }, 503);
     }
-    return response({ product: openFoodFactsProduct || brandedProduct, products });
+    return response({ product: openFoodFactsProduct || mirrorProduct || brandedProduct, products });
   }
 
   const query = request.nextUrl.searchParams.get("q")?.trim() || "";

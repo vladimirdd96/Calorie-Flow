@@ -279,6 +279,63 @@ async function brandedProductByBarcode(barcode, env) {
   return item && typeof item === "object" && !Array.isArray(item) ? { ...item, _source: "branded" } : null;
 }
 
+/**
+ * Product mirror: the whole Open Food Facts dataset sharded into static assets, so a scan
+ * is answered locally when the live API is unreachable. Layout is defined in
+ * scripts/catalogue/shard.mjs and must stay identical here and in src/lib/product-mirror.ts.
+ */
+const SHARD_COUNT = 4096;
+const shardCache = new Map();
+
+function toGtin14(code) {
+  const digits = String(code || "").replace(/\D/g, "");
+  return digits.length >= 8 && digits.length <= 14 ? digits.padStart(14, "0") : "";
+}
+
+function shardKey(gtin14) {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < gtin14.length; index += 1) {
+    hash ^= gtin14.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return `/catalogue/p/${(hash % SHARD_COUNT).toString(16).padStart(3, "0")}.json.gz`;
+}
+
+async function mirrorProductByBarcode(barcode, env) {
+  const canonical = toGtin14(barcode);
+  if (!canonical || !env.ASSETS) return null;
+  const key = shardKey(canonical);
+  let shard = shardCache.get(key);
+  if (!shard) {
+    const response = await env.ASSETS.fetch(new Request(`https://assets.local${key}`));
+    if (!response.ok || !response.body) return null;
+    // Shards ship gzipped to keep the deploy small; the assets binding returns them as stored.
+    shard = await new Response(response.body.pipeThrough(new DecompressionStream("gzip"))).json();
+    if (!Array.isArray(shard)) return null;
+    if (shardCache.size >= 6) shardCache.delete(shardCache.keys().next().value);
+    shardCache.set(key, shard);
+  }
+  const match = shard.find((tuple) => tuple[0] === canonical);
+  if (!match) return null;
+  const [gtin14, name, brand, calories, protein, carbs, fat, fiber, sugar, servingGrams, packageGrams, imageUrl] = match;
+  return {
+    code: gtin14.replace(/^0+(?=\d{8})/, ""),
+    product_name: name,
+    brands: brand || undefined,
+    serving_quantity: servingGrams || undefined,
+    product_quantity: packageGrams || undefined,
+    image_front_small_url: imageUrl || undefined,
+    nutriments: {
+      "energy-kcal_100g": calories,
+      proteins_100g: protein,
+      carbohydrates_100g: carbs,
+      fat_100g: fat,
+      fiber_100g: fiber,
+      sugars_100g: sugar,
+    },
+  };
+}
+
 async function openFoodFactsProductByBarcode(barcode, fields) {
   const productUrl = new URL(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json`);
   productUrl.searchParams.set("fields", fields);
@@ -303,19 +360,23 @@ async function foodSearch(request, env) {
     // missing a supermarket private label must not turn into a failed scan. An empty
     // result alongside a provider that never answered is reported as an outage rather
     // than as "no database holds this package", which the app words differently.
-    const [openFoodFacts, branded, foodDataCentral] = await Promise.allSettled([
+    const [openFoodFacts, mirror, branded, foodDataCentral] = await Promise.allSettled([
       openFoodFactsProductByBarcode(barcode, fields),
+      mirrorProductByBarcode(barcode, env),
       brandedProductByBarcode(barcode, env),
       searchFoodDataCentral(barcode, env),
     ]);
     const product = openFoodFacts.status === "fulfilled" ? openFoodFacts.value : null;
+    // Live data wins when it arrives — it carries micronutrients the mirror drops to stay
+    // small — and the mirror carries the scan when Open Food Facts is unreachable.
+    const mirrorProduct = mirror.status === "fulfilled" ? mirror.value : null;
     const brandedProduct = branded.status === "fulfilled" ? branded.value : null;
     const fdc = foodDataCentral.status === "fulfilled" ? foodDataCentral.value : [];
-    const products = [product, brandedProduct, ...fdc].filter(Boolean);
+    const products = [product, mirrorProduct, brandedProduct, ...fdc].filter(Boolean);
     if (!products.length && [openFoodFacts, branded, foodDataCentral].some((result) => result.status === "rejected")) {
       return json({ error: "Online product lookup is temporarily unavailable." }, 503);
     }
-    return json({ product: product || brandedProduct, products });
+    return json({ product: product || mirrorProduct || brandedProduct, products });
   }
   const query = requestUrl.searchParams.get("q")?.trim() || "";
   if (query.length < 2 || query.length > 100) return json({ error: "Search for between 2 and 100 characters." }, 400);
