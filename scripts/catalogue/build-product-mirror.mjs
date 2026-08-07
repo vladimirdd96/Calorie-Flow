@@ -26,6 +26,7 @@ import { gzipSync } from "node:zlib";
 import { join } from "node:path";
 import { SHARD_COUNT, shardIndex } from "./shard.mjs";
 import { DUMP_URL, readDump } from "./dump.mjs";
+import { normalizeProduct } from "./product.mjs";
 /** Flush buffered shard lines once this many products are held in memory. */
 const FLUSH_EVERY = 200_000;
 
@@ -41,50 +42,27 @@ function parseArgs(argv) {
   return options;
 }
 
-function numberValue(value) {
-  const parsed = typeof value === "number" ? value : Number.parseFloat(String(value ?? ""));
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function positive(value) {
-  const parsed = numberValue(value);
-  return parsed > 0 ? Math.round(parsed * 10) / 10 : null;
-}
-
-function round(value) {
-  return Math.round(numberValue(value) * 10) / 10;
-}
-
 function toGtin14(code) {
   const digits = String(code || "").replace(/\D/g, "");
   return digits.length >= 8 && digits.length <= 14 ? digits.padStart(14, "0") : "";
 }
 
-/** Positional tuple; see PRODUCT_FIELDS in shard.mjs. Nulls compress away. */
-function toTuple(product) {
+/**
+ * Positional tuple; see PRODUCT_FIELDS in shard.mjs. Objects would repeat the same twelve
+ * keys three million times, which costs more than the values themselves. Micronutrients
+ * are deliberately left out: they roughly double the payload, and the live providers still
+ * supply them whenever they are reachable.
+ */
+function toTuple(record) {
+  const product = normalizeProduct(record);
+  if (!product) return null;
   const gtin14 = toGtin14(product.code);
   if (!gtin14) return null;
-  const name = (product.product_name || product.generic_name || "").trim().slice(0, 200);
-  if (!name) return null;
-  const nutriments = product.nutriments;
-  if (!nutriments || typeof nutriments !== "object") return null;
-  const calories = Math.round(numberValue(nutriments["energy-kcal_100g"]) || numberValue(nutriments.energy_100g) / 4.184 || 0);
-  const protein = round(nutriments.proteins_100g);
-  const carbs = round(nutriments.carbohydrates_100g);
-  const fat = round(nutriments.fat_100g);
-  // Energy-and-macro-free rows cannot answer "how much did I eat" and only cost space.
-  if (!calories && !protein && !carbs && !fat) return null;
-  const image = product.image_front_small_url || product.image_small_url;
+  const { calories, protein, carbs, fat, fiber, sugar } = product.nutrition;
   return [
-    gtin14,
-    name,
-    (product.brands || "").split(",")[0]?.trim().slice(0, 80) || null,
-    calories, protein, carbs, fat,
-    round(nutriments.fiber_100g),
-    round(nutriments.sugars_100g),
-    positive(product.serving_quantity),
-    positive(product.product_quantity),
-    typeof image === "string" && image.startsWith("https://") ? image : null,
+    gtin14, product.name.slice(0, 200), product.brand ? product.brand.slice(0, 80) : null,
+    calories, protein, carbs, fat, fiber, sugar,
+    product.servingGrams, product.packageGrams, product.imageUrl,
   ];
 }
 

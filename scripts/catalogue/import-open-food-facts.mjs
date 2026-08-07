@@ -24,11 +24,11 @@ import { houseBrandTags, defaultCountryTags } from "./brands.mjs";
 import { supabaseFetch } from "../lib/supabase-rest.mjs";
 import { getAccessToken } from "../lib/supabase-auth.mjs";
 import { DUMP_URL, readDump } from "./dump.mjs";
+import { normalizeProduct } from "./product.mjs";
 // Small batches on purpose: matches are sparse and spread across a 12 GB stream, so a
 // large buffer means a long run can die holding hundreds of unwritten rows. Re-running
 // is idempotent but re-downloads everything, which is the cost worth avoiding.
 const BATCH_SIZE = 200;
-const BARCODE = /^[0-9]{8,14}$/;
 
 function parseArgs(argv) {
   const options = { dryRun: false, allBrands: false, limit: Infinity, source: DUMP_URL };
@@ -47,59 +47,28 @@ function parseArgs(argv) {
   return options;
 }
 
-function numberValue(value) {
-  const parsed = typeof value === "number" ? value : Number.parseFloat(String(value ?? ""));
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function positive(value) {
-  const parsed = numberValue(value);
-  return parsed > 0 ? parsed : null;
-}
-
-/** Mirrors `mapNutrition` in src/lib/openfoodfacts.ts so seeded rows match live lookups. */
-function mapNutrition(nutriments) {
-  const micronutrients = {
-    sodiumMg: numberValue(nutriments.sodium_100g) * 1000,
-    cholesterolMg: numberValue(nutriments.cholesterol_100g),
-    saturatedFatG: numberValue(nutriments["saturated-fat_100g"]),
-    potassiumMg: numberValue(nutriments.potassium_100g),
-    calciumMg: numberValue(nutriments.calcium_100g),
-    ironMg: numberValue(nutriments.iron_100g),
-    magnesiumMg: numberValue(nutriments.magnesium_100g),
-    zincMg: numberValue(nutriments.zinc_100g),
-    vitaminAMcg: numberValue(nutriments["vitamin-a_100g"]),
-    vitaminCMg: numberValue(nutriments["vitamin-c_100g"]),
-    vitaminDMcg: numberValue(nutriments["vitamin-d_100g"]),
-    vitaminEMg: numberValue(nutriments["vitamin-e_100g"]),
-    vitaminKMcg: numberValue(nutriments["vitamin-k_100g"]),
-    vitaminB12Mcg: numberValue(nutriments["vitamin-b12_100g"]),
-    folateMcg: numberValue(nutriments.folates_100g),
+function toRow(record, contributedBy) {
+  const product = normalizeProduct(record);
+  if (!product) return null;
+  return {
+    barcode: product.code,
+    name: product.name.slice(0, 240),
+    brand: product.brand,
+    quantity_label: product.quantityLabel,
+    serving_label: product.servingLabel,
+    serving_grams: product.servingGrams,
+    package_grams: product.packageGrams,
+    image_url: product.imageUrl && product.imageUrl.length <= 600 ? product.imageUrl : null,
+    nutrients_per_100: product.nutrition,
+    keywords: product.keywords,
+    source: "open-food-facts",
+    source_ref: product.code,
+    countries: product.countriesTags.slice(0, 12),
+    // Only published composition data earns `verified`; Open Food Facts rows are
+    // crowd-entered from packaging, which is exactly what "unverified" is for.
+    verified: false,
+    contributed_by: contributedBy,
   };
-  const kilocalories = numberValue(nutriments["energy-kcal_100g"]);
-  const kilojoules = numberValue(nutriments.energy_100g);
-  const nutrition = {
-    calories: Math.round(kilocalories || kilojoules / 4.184 || 0),
-    protein: numberValue(nutriments.proteins_100g),
-    carbs: numberValue(nutriments.carbohydrates_100g),
-    fat: numberValue(nutriments.fat_100g),
-    fiber: numberValue(nutriments.fiber_100g),
-    sugar: numberValue(nutriments.sugars_100g),
-  };
-  if (Object.values(micronutrients).some(Boolean)) nutrition.micronutrients = micronutrients;
-  return nutrition;
-}
-
-/** Local-language names Open Food Facts stores per language, kept as hidden search terms. */
-function collectKeywords(product, name) {
-  const terms = new Set();
-  for (const [key, value] of Object.entries(product)) {
-    if (!key.startsWith("product_name_") && !key.startsWith("generic_name_")) continue;
-    if (typeof value !== "string") continue;
-    const term = value.trim();
-    if (term && term !== name && term.length <= 120) terms.add(term);
-  }
-  return [...terms].slice(0, 20);
 }
 
 function matches(product, options) {
@@ -107,39 +76,6 @@ function matches(product, options) {
   if (!options.allBrands && brandTags.some((tag) => options.brands.has(tag))) return true;
   const countryTags = Array.isArray(product.countries_tags) ? product.countries_tags : [];
   return countryTags.some((tag) => options.countries.has(tag));
-}
-
-function toRow(product, contributedBy) {
-  const barcode = String(product.code || "").trim();
-  if (!BARCODE.test(barcode)) return null;
-  const name = (product.product_name || product.generic_name || "").trim();
-  if (!name || name.length > 240) return null;
-  const nutriments = product.nutriments;
-  if (!nutriments || typeof nutriments !== "object") return null;
-  const nutrition = mapNutrition(nutriments);
-  // A row with neither energy nor macros cannot answer "how much did I eat".
-  if (!nutrition.calories && !nutrition.protein && !nutrition.carbs && !nutrition.fat) return null;
-
-  const image = product.image_front_small_url || product.image_small_url || product.image_front_url;
-  return {
-    barcode,
-    name,
-    brand: (product.brands || "").split(",")[0]?.trim().slice(0, 120) || null,
-    quantity_label: (product.quantity || "").trim().slice(0, 60) || null,
-    serving_label: (product.serving_size || "").trim().slice(0, 60) || null,
-    serving_grams: positive(product.serving_quantity),
-    package_grams: positive(product.product_quantity),
-    image_url: typeof image === "string" && image.startsWith("https://") && image.length <= 600 ? image : null,
-    nutrients_per_100: nutrition,
-    keywords: collectKeywords(product, name),
-    source: "open-food-facts",
-    source_ref: barcode,
-    countries: Array.isArray(product.countries_tags) ? product.countries_tags.slice(0, 12) : [],
-    // Only published composition data earns `verified`; Open Food Facts rows are
-    // crowd-entered from packaging, which is exactly what "unverified" is for.
-    verified: false,
-    contributed_by: contributedBy,
-  };
 }
 
 /**
