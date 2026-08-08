@@ -28,7 +28,6 @@ export function NumericInput({ value = "", onChange, onBlur, decimalPlaces, onVa
       // Native number inputs reject a comma before React receives it in some locales.
       type={acceptsDecimal ? "text" : "number"}
       inputMode={acceptsDecimal ? "decimal" : props.inputMode}
-      pattern={acceptsDecimal ? "[0-9]*[.,]?[0-9]*" : props.pattern}
       step={precision === undefined ? props.step : 1 / (10 ** precision)}
       value={draft}
       onFocus={() => { focused.current = true; }}
