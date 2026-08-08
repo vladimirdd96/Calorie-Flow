@@ -3,7 +3,9 @@ import { join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const featuresRoot = resolve(process.cwd(), "src/features");
-const privateFolderImport = /@\/features\/([^/]+)\/(?:components|hooks|lib)\//g;
+// The slice name cannot contain a quote, whitespace or slash, so the match stays
+// inside one import specifier instead of spanning two consecutive import lines.
+const privateFolderImport = /@\/features\/([^/"'\s]+)\/(?:components|hooks|lib)\//g;
 
 function sourceFiles(directory: string): string[] {
   return readdirSync(directory).flatMap((entry) => {

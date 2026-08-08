@@ -15,6 +15,7 @@ import { RecipeDetail } from "./components/RecipeDetail";
 import { CookMode } from "./components/CookMode";
 import { CatalogueView } from "./components/CatalogueView";
 import { ShoppingList } from "./components/ShoppingList";
+import { GroceryWorkspace, type GroceryListsApi } from "@/features/groceries";
 import type { PlanSection } from "@/features/navigation/types";
 import { localDateKey } from "@/lib/nutrition";
 import { groceryItemsForPlan } from "@/lib/planning";
@@ -69,16 +70,18 @@ function addNamesToShoppingList(current: string[] | undefined, names: string[]):
   return list;
 }
 
-export function PlanView({ profile, foods, meals, userId, planEnabled, onSave, onLog, onOpenFoods, onOpenAdd, initialSection }: {
+export function PlanView({ profile, foods, meals, userId, groceries, planEnabled, onSave, onLog, onOpenFoods, onOpenAdd, onOpenCoach, initialSection }: {
   profile: Profile;
   foods: Food[];
   meals: Meal[];
   userId?: string;
+  groceries: GroceryListsApi;
   planEnabled: boolean;
   onSave: (profile: Profile) => void;
   onLog: (meal: Meal) => Promise<void>;
   onOpenFoods: () => void;
   onOpenAdd: (date: string, mealType: MealType) => void;
+  onOpenCoach: () => void;
   initialSection?: PlanSection;
 }) {
   const recipes = profile.recipes || [];
@@ -87,7 +90,7 @@ export function PlanView({ profile, foods, meals, userId, planEnabled, onSave, o
   const [recipeImportOpen, setRecipeImportOpen] = useState(false);
   const [date, setDate] = useState(localDateKey());
   const fallbackSection = planEnabled ? "week" : "recipes";
-  const [section, setSection] = useState<PlanSection>(initialSection && (planEnabled || (initialSection !== "week" && initialSection !== "shopping")) ? initialSection : fallbackSection);
+  const [section, setSection] = useState<PlanSection>(initialSection && (planEnabled || initialSection !== "week") ? initialSection : fallbackSection);
   const [loggingRecipe, setLoggingRecipe] = useState<Recipe>();
   const [editingRecipe, setEditingRecipe] = useState<Recipe>();
   const [deletingRecipe, setDeletingRecipe] = useState<Recipe>();
@@ -131,7 +134,7 @@ export function PlanView({ profile, foods, meals, userId, planEnabled, onSave, o
   };
 
   const plannedRecipes = entries.map((entry) => entry.recipeId ? recipes.find((recipe) => recipe.id === entry.recipeId) : undefined).filter((recipe): recipe is Recipe => Boolean(recipe));
-  const groceries = groceryItemsForPlan(plannedRecipes, profile.extraShoppingItems);
+  const plannedGroceries = groceryItemsForPlan(plannedRecipes, profile.extraShoppingItems);
   const ownRecipes = recipes.filter((recipe) => recipe.origin !== recipeOrigins.saved);
   const savedRecipes = recipes.filter((recipe) => recipe.origin === recipeOrigins.saved);
   const viewScaleFactor = viewingRecipe ? viewServings / viewingRecipe.servings : 1;
@@ -140,6 +143,7 @@ export function PlanView({ profile, foods, meals, userId, planEnabled, onSave, o
     next.setDate(next.getDate() + offset);
     setDate(localDateKey(next));
   };
+  const shoppingCount = groceries.remainingCount + (planEnabled ? plannedGroceries.length : 0);
   const planDayLabel = date === localDateKey() ? "Today" : new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
   const dayEntries = entries.filter((entry) => entry.date === date);
 
@@ -149,7 +153,7 @@ export function PlanView({ profile, foods, meals, userId, planEnabled, onSave, o
       {planEnabled && <button id="plan-week-tab" type="button" role="tab" aria-selected={section === "week"} aria-controls="plan-week-panel" aria-label="This week" className={section === "week" ? "active" : ""} onClick={() => setSection("week")}><CalendarRange size={15} /><span>This week</span></button>}
       <button id="plan-recipes-tab" type="button" role="tab" aria-selected={section === "recipes"} aria-controls="plan-recipes-panel" aria-label="Recipes" className={section === "recipes" ? "active" : ""} onClick={() => setSection("recipes")}><BookOpen size={15} /><span>Recipes</span></button>
       <button id="plan-catalogue-tab" type="button" role="tab" aria-selected={section === "catalogue"} aria-controls="plan-catalogue-panel" aria-label="Catalogue" className={section === "catalogue" ? "active" : ""} onClick={() => setSection("catalogue")}><Sparkles size={15} /><span>Catalogue</span></button>
-      {planEnabled && <button id="plan-shopping-tab" type="button" role="tab" aria-selected={section === "shopping"} aria-controls="plan-shopping-panel" aria-label={groceries.length > 0 ? `Shopping, ${groceries.length} items` : "Shopping"} className={section === "shopping" ? "active" : ""} onClick={() => setSection("shopping")}><ListChecks size={15} /><span>Shopping</span>{groceries.length > 0 && <span className="tab-badge">{groceries.length}</span>}</button>}
+      <button id="plan-shopping-tab" type="button" role="tab" aria-selected={section === "shopping"} aria-controls="plan-shopping-panel" aria-label={shoppingCount > 0 ? `Shopping, ${shoppingCount} items` : "Shopping"} className={section === "shopping" ? "active" : ""} onClick={() => setSection("shopping")}><ListChecks size={15} /><span>Shopping</span>{shoppingCount > 0 && <span className="tab-badge">{shoppingCount}</span>}</button>
     </div>
 
     {planEnabled && section === "week" && <section id="plan-week-panel" role="tabpanel" aria-labelledby="plan-week-tab" className="planning-workspace workspace-panel">
@@ -178,7 +182,10 @@ export function PlanView({ profile, foods, meals, userId, planEnabled, onSave, o
 
     {section === "catalogue" && <CatalogueView userId={userId} meals={meals} recipes={recipes} entries={entries} hideCalories={profile.hideCalories} cookView={profile.recipeCookView} planEnabled={planEnabled} onSaveToLibrary={saveToLibrary} onPlanRecipe={planRecipeEntry} onAddToShopping={addToShopping} />}
 
-    {planEnabled && section === "shopping" && <ShoppingList items={groceries} hasRecipes={recipes.length > 0} onRemoveExtra={(name) => onSave({ ...profile, extraShoppingItems: (profile.extraShoppingItems || []).filter((item) => item.toLocaleLowerCase() !== name.toLocaleLowerCase()) })} />}
+    {section === "shopping" && <section id="plan-shopping-panel" role="tabpanel" aria-labelledby="plan-shopping-tab" className="shopping-workspace">
+      <GroceryWorkspace api={groceries} onOpenCoach={onOpenCoach} />
+      {planEnabled && <ShoppingList items={plannedGroceries} hasRecipes={recipes.length > 0} onAddToList={(names) => groceries.activeListId && groceries.addItems(groceries.activeListId, names)} onRemoveExtra={(name) => onSave({ ...profile, extraShoppingItems: (profile.extraShoppingItems || []).filter((item) => item.toLocaleLowerCase() !== name.toLocaleLowerCase()) })} />}
+    </section>}
 
     {planCalendarOpen && <Sheet label="Choose a plan date" onClose={() => setPlanCalendarOpen(false)}><PlanCalendarSheet dateKey={date} entries={entries} onSelect={(nextDate) => { setDate(nextDate); setPlanCalendarOpen(false); }} /></Sheet>}
     {loggingRecipe && <Sheet onClose={() => setLoggingRecipe(undefined)} wide showClose={false} className="add-food-sheet-shell"><PortionSheet food={recipeAsFood(loggingRecipe, foods, {}, profile.macroRoundingDigits ?? 1)} recipeId={loggingRecipe.id} hideCalories={profile.hideCalories} onLog={(meal) => void onLog(meal)} onClose={() => setLoggingRecipe(undefined)} mealTimeBoundaries={profile.mealTimeBoundaries} servingOverrides={{ tbspGrams: profile.tbspGrams, tspGrams: profile.tspGrams }} macroRoundingDigits={profile.macroRoundingDigits} /></Sheet>}

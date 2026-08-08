@@ -145,8 +145,13 @@ function profileForCoach(profile: Profile | undefined, hideCalories: boolean) {
   return rest;
 }
 
+/**
+ * Safety net for a reply that names energy values despite the display
+ * instruction. Redacting the number reads as a deliberate omission; splicing a
+ * phrase like "energy hidden" into the sentence does not.
+ */
 function hideCalorieValues(content: string) {
-  return content.replace(/\b\d[\d,.]*\s*(?:-|–|—)?\s*(?:kcal|calories?)\b/gi, "energy hidden");
+  return content.replace(/\b\d[\d,.]*\s*(?:-|–|—)?\s*(?:kcal|calories?)\b/gi, "[hidden]");
 }
 
 async function supabaseRead(auth: VerifiedAuth, table: string, params: Array<[string, string]>) {
