@@ -2,17 +2,68 @@
 
 import { ArrowLeft, Camera, Info, Upload } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ClearableInput } from "@/features/shared/ClearableInput";
 import { searchPackagedFoods } from "@/lib/food-lookup";
 import { labelAnalysisSchema } from "@/lib/schemas";
 import { getSupabase } from "@/lib/supabase";
 import type { Food } from "@/lib/types";
-import { imageToDataUrl, requestContinuousFocus } from "./captureMedia";
+import { dataUrlToThumbnail, imageToDataUrl, requestContinuousFocus } from "./captureMedia";
 
-export function LabelReader({ onFood, onClose, initialFiles = [], initialAction }: { onFood: (food: Food, questions: string[]) => void; onClose: () => void; initialFiles?: File[]; initialAction?: "camera" | "photo" }) {
+/** Names a package whose own label never showed one, so it stays findable in search. */
+export function describeUnnamedProduct(food: Food) {
+  const parts = [food.brand, food.quantityLabel].filter(Boolean);
+  if (parts.length) return `${parts.join(" ")} (scanned)`;
+  return food.barcode ? `Scanned product ${food.barcode}` : "Scanned product";
+}
+
+export type LabelAnalysis = {
+  productName: string | null;
+  brand: string | null;
+  barcode: string | null;
+  per100: Food["nutrientsPer100"];
+  servingSizeG: number | null;
+  packageSizeG: number | null;
+};
+
+/**
+ * Combines what the label reader saw with the barcode the user scanned, and — only when
+ * a catalogue row is provably the same package — its picture and package wording.
+ *
+ * The identity rules matter more than they look. The scanned barcode always wins, and a
+ * catalogue row may never donate its barcode: matching on name alone once handed over
+ * another product's photo *and* its code, which meant the scanned barcode was thrown
+ * away, the package stayed unfindable on every later scan, and a mislabelled row was
+ * published to the shared catalogue for every other account.
+ */
+export function buildLabelFood(analysis: LabelAnalysis, knownBarcode?: string, candidates: Food[] = []): Food {
+  const barcode = knownBarcode || analysis.barcode || undefined;
+  const food: Food = {
+    id: `ai-${crypto.randomUUID()}`,
+    name: analysis.productName || "",
+    brand: analysis.brand || undefined,
+    barcode,
+    servingGrams: analysis.servingSizeG || undefined,
+    packageGrams: analysis.packageSizeG || undefined,
+    nutrientsPer100: analysis.per100,
+    source: "ai-label",
+  };
+  const same = barcode ? candidates.find((candidate) => candidate.barcode === barcode) : undefined;
+  if (!same) return food;
+  return {
+    ...food,
+    name: food.name || same.name,
+    brand: food.brand || same.brand,
+    imageUrl: same.imageUrl,
+    quantityLabel: same.quantityLabel,
+  };
+}
+
+export function LabelReader({ onFood, onClose, initialFiles = [], initialAction, knownBarcode }: { onFood: (food: Food, questions: string[]) => void; onClose: () => void; initialFiles?: File[]; initialAction?: "camera" | "photo"; knownBarcode?: string }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const initialFilesRef = useRef(initialFiles);
   const initialActionRef = useRef(initialAction);
   const analyzeRef = useRef<(files?: FileList | File[]) => Promise<void>>(undefined);
+  const knownBarcodeRef = useRef(knownBarcode);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | undefined>(undefined);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
@@ -21,6 +72,12 @@ export function LabelReader({ onFood, onClose, initialFiles = [], initialAction 
   const [error, setError] = useState("");
   const [cameraLive, setCameraLive] = useState(false);
   const [starting, setStarting] = useState(false);
+  // Set when the label carried no legible product name and the user must supply one.
+  const [pendingFood, setPendingFood] = useState<Food>();
+  const [pendingQuestions, setPendingQuestions] = useState<string[]>([]);
+  const [nameDraft, setNameDraft] = useState("");
+
+  useEffect(() => { knownBarcodeRef.current = knownBarcode; }, [knownBarcode]);
 
   const stopCamera = () => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -57,33 +114,33 @@ export function LabelReader({ onFood, onClose, initialFiles = [], initialAction 
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || "The label could not be read.");
       const result = labelAnalysisSchema.parse(body);
-      const scannedFood: Food = {
-        id: `ai-${crypto.randomUUID()}`,
-        name: result.productName || "Scanned label",
-        brand: result.brand || undefined,
-        barcode: result.barcode || undefined,
-        servingGrams: result.servingSizeG || undefined,
-        packageGrams: result.packageSizeG || undefined,
-        nutrientsPer100: result.per100,
-        source: "ai-label",
-      };
-
-      // The image reader supplies the nutrition facts; the catalogue can still
-      // supply a product thumbnail and cleaner package metadata when the name
-      // is recognized, even when no barcode was visible.
-      if (result.productName) {
+      const barcode = knownBarcodeRef.current || result.barcode || undefined;
+      let candidates: Food[] = [];
+      if (barcode) {
         try {
-          const query = [result.brand, result.productName].filter(Boolean).join(" ");
-          const match = (await searchPackagedFoods(query))[0];
-          if (match) {
-            onFood({ ...scannedFood, brand: scannedFood.brand || match.brand, imageUrl: match.imageUrl, quantityLabel: match.quantityLabel, barcode: scannedFood.barcode || match.barcode }, result.followUpQuestions);
-            return;
-          }
+          const query = [result.brand, result.productName].filter(Boolean).join(" ").trim();
+          candidates = query ? await searchPackagedFoods(query) : [];
         } catch {
           // AI-extracted nutrition remains useful when the optional catalogue is offline.
         }
       }
-      onFood(scannedFood, result.followUpQuestions);
+      let enriched = buildLabelFood(result, knownBarcodeRef.current, candidates);
+
+      // Failing a catalogue picture, the photo in hand beats no picture at all.
+      if (!enriched.imageUrl) {
+        const thumbnail = await dataUrlToThumbnail(images[0]);
+        if (thumbnail) enriched = { ...enriched, imageUrl: thumbnail };
+      }
+
+      if (!enriched.name) {
+        // The package name was never legible. Ask rather than invent: a wrong name makes
+        // the product unfindable by search and pollutes the shared catalogue.
+        setPendingFood(enriched);
+        setPendingQuestions(result.followUpQuestions);
+        setNameDraft("");
+        return;
+      }
+      onFood(enriched, result.followUpQuestions);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The label could not be read.");
     } finally { setLoading(false); }
@@ -147,6 +204,29 @@ export function LabelReader({ onFood, onClose, initialFiles = [], initialAction 
     stopCamera();
     await analyzeImages([image]);
   };
+
+  const confirmName = (name: string) => {
+    if (!pendingFood) return;
+    const food = { ...pendingFood, name: name.trim() || describeUnnamedProduct(pendingFood) };
+    setPendingFood(undefined);
+    onFood(food, pendingQuestions);
+  };
+
+  if (pendingFood) {
+    const suggestion = describeUnnamedProduct(pendingFood);
+    return (
+      <div className="label-reader">
+        <div className="sheet-header"><button className="icon-button ghost" onClick={() => setPendingFood(undefined)} aria-label="Back to the package photos"><ArrowLeft /></button><div><span className="eyebrow">Almost there</span><h2>Name this product</h2></div><span /></div>
+        {!!previews.length && <div className={`package-previews count-${previews.length}`}>{previews.map((preview) => <img key={preview} src={preview} alt="Package detail you captured" />)}</div>}
+        <div className="barcode-not-found-copy"><span className="action-icon amber"><Info /></span><div><strong>The nutrition is read and saved</strong><p>{pendingFood.barcode ? `We couldn’t read a product name, so tell us what ${pendingFood.barcode} is. Everyone scanning this barcode gets your answer.` : "We couldn’t read a product name off the package. Name it so you can find it again later."}</p></div></div>
+        <form className="manual-barcode stacked" onSubmit={(event) => { event.preventDefault(); confirmName(nameDraft); }}>
+          <label><span>Product name</span><ClearableInput autoFocus value={nameDraft} onChange={(event) => setNameDraft(event.target.value)} onClear={() => setNameDraft("")} placeholder="e.g. Pilos High Protein Yogurt" clearLabel="Clear product name" /></label>
+          <button className="primary-button full" type="submit">Save this name</button>
+        </form>
+        <button className="text-button camera-cancel" type="button" onClick={() => confirmName("")}>Skip — call it “{suggestion}”</button>
+      </div>
+    );
+  }
 
   return (
     <div className="label-reader">

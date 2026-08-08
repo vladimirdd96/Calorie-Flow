@@ -1197,6 +1197,8 @@ p { color: var(--muted); line-height: 1.55; }
 .scan-corners { position: absolute; inset: 18%; border: 2px solid rgba(125,255,213,.7); border-left-color: transparent; border-right-color: transparent; border-radius: 16px; }
 .camera-hint { text-align: center; font-size: 11px; margin: -3px 0 2px; }
 .manual-barcode { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
+/* A product name needs the whole row; a short barcode does not. */
+.manual-barcode.stacked { grid-template-columns: 1fr; gap: 12px; }
 .manual-barcode .secondary-button { min-height: 50px; }
 .barcode-not-found { display: grid; gap: 18px; padding-bottom: 8px; }
 .barcode-not-found-copy { display: flex; align-items: flex-start; gap: 13px; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-md); background: rgba(255,190,92,.055); }

@@ -11,6 +11,37 @@ export function requestContinuousFocus(source: MediaProvider | null | undefined)
   });
 }
 
+/**
+ * Shrinks an already-captured data URL down to a stored thumbnail.
+ *
+ * A package photo the user just took is a better product picture than nothing, and far
+ * better than a picture borrowed from a similarly named product. Saved foods cap the
+ * image at 400,000 characters (`optionalAvatar`), so the full-resolution capture sent to
+ * the label reader cannot be reused directly.
+ */
+export async function dataUrlToThumbnail(dataUrl: string, maxDimension = 320) {
+  try {
+    const blob = await (await fetch(dataUrl)).blob();
+    const image = await createImageBitmap(blob);
+    const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(image.width * scale);
+    canvas.height = Math.round(image.height * scale);
+    canvas.getContext("2d")?.drawImage(image, 0, 0, canvas.width, canvas.height);
+    image.close();
+    let quality = 0.78;
+    let result = canvas.toDataURL("image/jpeg", quality);
+    while (result.length > 380_000 && quality > 0.4) {
+      quality -= 0.08;
+      result = canvas.toDataURL("image/jpeg", quality);
+    }
+    return result.length <= 380_000 ? result : undefined;
+  } catch {
+    // A thumbnail is a nicety; never let it block logging the food.
+    return undefined;
+  }
+}
+
 export async function imageToDataUrl(file: File, options: { maxDimension?: number; quality?: number } = {}) {
   const image = await createImageBitmap(file);
   const max = options.maxDimension || 2200;
