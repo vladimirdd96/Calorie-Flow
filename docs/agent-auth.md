@@ -1,10 +1,10 @@
 <!-- read_when: agent, login, authentication, Supabase, CI, pipeline, browser, visual verification, test account -->
 
-# Agent and CI authentication
+# Agent authentication and local UI verification
 
 ## Dedicated hosted staging account
 
-Visual testing uses one dedicated email/password account in the separate `calorie-flow-agent-ui` Supabase project. It has the same migrations and RLS policies as Calorie Flow, but contains no production users or diary data. It exists solely for agents and automated visual checks.
+Visual testing uses one dedicated email/password account in the separate `calorie-flow-agent-ui` Supabase project. It has the same migrations and RLS policies as Calorie Flow, but contains no production users or diary data. It exists solely for agents' local visual checks.
 
 This is deliberately a hosted account—not a Docker fixture—because the visual task is to verify the browser application. The account can sign into a locally built app configured with the staging project's URL and publishable key, which verifies the real Supabase Auth/session/RLS path without touching production.
 
@@ -30,17 +30,8 @@ npm run test:visual
 
 It signs in, verifies the authenticated diary shell, and captures phone (`390×844`) and desktop (`1440×960`) screenshots under `artifacts/e2e/`.
 
-## CI configuration
+## CI boundary
 
-GitHub environment `agent-ui` must contain these secrets:
+Visual verification is deliberately **not** part of CI. CI runs the regular typecheck, lint, test, and build checks only. Agents must complete the local narrow-and-desktop visual check before pushing UI changes.
 
-| Secret | Purpose |
-| --- | --- |
-| `E2E_SUPABASE_URL` | Isolated staging project URL |
-| `E2E_SUPABASE_PUBLISHABLE_KEY` | Isolated staging project public key |
-| `E2E_EMAIL` | Dedicated agent account email |
-| `E2E_PASSWORD` | Dedicated agent account password |
-
-The `visual-auth` CI job builds the application with the staging URL/key, starts it locally, signs in through agent-browser, and uploads screenshots even when the test fails. It does not start Docker or use a Supabase service-role key.
-
-Rotate the password in Supabase Auth and replace the browser-vault and GitHub environment values together. If credentials are unavailable, visual verification is unavailable; do not bypass the rule with a personal login.
+When rotating the staging password, update the browser vault and system secret store together. If credentials are unavailable, visual verification is unavailable; do not bypass the rule with a personal login.

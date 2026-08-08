@@ -35,7 +35,7 @@ A task worked on a dedicated branch is not done when the commit is pushed. Befor
 | TypeScript | `npm run typecheck` |
 | Any code | `npm run lint` |
 | Behavior with tests | `npm test` |
-| Supabase authentication, CI, browser login, or visual sign-in | Read `docs/agent-auth.md`; use the `calorie-flow-agent-ui` browser-vault profile and run `npm run test:visual` |
+| Supabase authentication, browser login, or visual sign-in | Read `docs/agent-auth.md`; use the `calorie-flow-agent-ui` browser-vault profile and run `npm run test:visual` locally |
 
 ## Agent test authentication
 

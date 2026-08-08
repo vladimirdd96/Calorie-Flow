@@ -21,4 +21,4 @@ See `CLOUD_SYNC_SETUP.md` for redirect URLs and deployment setup.
 
 ## Automated test authentication
 
-Agent and CI authentication never uses a personal Google or Supabase account. They use a dedicated password user in the isolated `calorie-flow-agent-ui` staging project, so browser sessions can persist while production data and auth settings remain untouched. See `agent-auth.md` for the required workflow.
+Agent authentication never uses a personal Google or Supabase account. Agents use a dedicated password user in the isolated `calorie-flow-agent-ui` staging project, so browser sessions can persist while production data and auth settings remain untouched. See `agent-auth.md` for the required local visual-verification workflow.
