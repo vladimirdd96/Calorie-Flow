@@ -1,4 +1,4 @@
 # Calorie Flow is a quality-first product workspace. This project layer leaves
 # provider, auth, notification, and machine-specific configuration to the user.
 personality = "friendly"
-model_reasoning_effort = "ultra"
+model_reasoning_effort = "xhigh"
