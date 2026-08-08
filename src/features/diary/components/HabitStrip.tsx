@@ -153,7 +153,7 @@ export function HabitStrip({ profile, dateKey, onSaveProfile, onOpenInsights }: 
   const waterGoal = Math.max(1, Math.round((profile.waterTargetMl || 2000) / glassMl));
   const tiles: Array<{ key: HabitTileKey; icon: ReactNode; value: string; label: string }> = [];
   if (isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.fasting)) tiles.push({ key: habitTileKeys.fasting, icon: <Timer size={15} />, value: fast ? `${round(fastingWindowHours(fast.startedAt, new Date().toISOString()))}h` : "—", label: "fasted" });
-  if (profile.weightTracking === "enabled") tiles.push({ key: habitTileKeys.weight, icon: <Scale size={15} />, value: `${round(latestWeight)} kg`, label: "weight" });
+  if (profile.weightTracking === "enabled") tiles.push({ key: habitTileKeys.weight, icon: <Scale size={15} />, value: `${round(displayWeight(latestWeight, profile.measurementSystem))} ${weightUnitFor(profile.measurementSystem)}`, label: "weight" });
   if (isHabitFeatureEnabled(profile.enabledHabitFeatures, habitFeatures.water)) tiles.push({ key: habitTileKeys.water, icon: <Droplet size={15} />, value: `${waterCount} / ${waterGoal}`, label: "water" });
   if (!tiles.length) return null;
   const closeSheet = () => setOpenTile(undefined);
