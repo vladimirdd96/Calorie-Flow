@@ -1,14 +1,23 @@
 "use client";
 
-import { BookOpen, Plus, Sun, TrendingUp, UserRound } from "lucide-react";
+import { BookOpen, MessageCircle, Plus, Sun, TrendingUp, UserRound } from "lucide-react";
 import type { AppTab } from "@/features/navigation/types";
 
+const tabs = [
+  { tab: "today", label: "Today", Icon: Sun },
+  { tab: "plan", label: "Library", Icon: BookOpen },
+  { tab: "coach", label: "Coach", Icon: MessageCircle },
+  { tab: "insights", label: "Insights", Icon: TrendingUp },
+  { tab: "profile", label: "Profile", Icon: UserRound },
+] as const satisfies ReadonlyArray<{ tab: AppTab; label: string; Icon: typeof Sun }>;
+
 export function BottomNav({ tab, onChange, onAdd }: { tab: AppTab; onChange: (tab: AppTab) => void; onAdd: () => void }) {
+  const [before, after] = [tabs.slice(0, 2), tabs.slice(2)];
+  const item = ({ tab: target, label, Icon }: typeof tabs[number]) => <button key={target} type="button" aria-current={tab === target ? "page" : undefined} className={tab === target ? "active" : ""} onClick={() => onChange(target)}><Icon /><span>{label}</span></button>;
+
   return <nav className="bottom-nav" aria-label="Primary navigation">
-    <button type="button" aria-current={tab === "today" ? "page" : undefined} className={tab === "today" ? "active" : ""} onClick={() => onChange("today")}><Sun /><span>Today</span></button>
-    <button type="button" aria-current={tab === "plan" ? "page" : undefined} className={tab === "plan" ? "active" : ""} onClick={() => onChange("plan")}><BookOpen /><span>Library</span></button>
+    {before.map(item)}
     <button type="button" className="bottom-nav-add" onClick={onAdd} aria-label="Add food"><Plus /></button>
-    <button type="button" aria-current={tab === "insights" ? "page" : undefined} className={tab === "insights" ? "active" : ""} onClick={() => onChange("insights")}><TrendingUp /><span>Insights</span></button>
-    <button type="button" aria-current={tab === "profile" ? "page" : undefined} className={tab === "profile" ? "active" : ""} onClick={() => onChange("profile")}><UserRound /><span>Profile</span></button>
+    {after.map(item)}
   </nav>;
 }

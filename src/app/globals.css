@@ -111,8 +111,6 @@ select { appearance: none; cursor: pointer; padding-right: 40px; background-imag
 .themed-select-option.selected { color: var(--mint-strong); font-weight: 800; }
 .themed-select-option.selected svg { color: var(--mint); }
 .themed-select-option-placeholder { display: block; width: 16px; }
-.grocery-list-toolbar .themed-select-trigger { min-height: 42px; padding: 0 10px; font-size: 11px; }
-.grocery-list-toolbar .themed-select-menu { font-size: 11px; }
 html[data-theme="dark"] .themed-select-menu { box-shadow: 0 20px 48px oklch(0.04 0.01 145 / 0.5); }
 label { display: grid; gap: 8px; color: var(--muted); font-size: 13px; font-weight: 700; }
 label > span small, .field-block > span small { color: var(--muted-2); font-weight: 500; }
@@ -994,30 +992,40 @@ p { color: var(--muted); line-height: 1.55; }
 .coach-gate > svg { width: 42px; height: 42px; color: var(--mint); }
 .coach-gate p { max-width: 470px; font-size: 12px; }
 .coach-loader { width: 26px; height: 26px; border-radius: 50%; border: 2px solid rgba(125,255,213,.2); border-top-color: var(--mint); animation: spin .8s linear infinite; }
-.grocery-workspace { min-height: calc(100vh - 260px); display: grid; align-content: start; gap: 16px; padding: 18px 0 40px; }
-.grocery-intro { display: flex; align-items: center; gap: 15px; padding: 10px 2px; }
 .coach-orb { display: grid; place-items: center; }
-.grocery-intro .coach-orb { width: 48px; height: 48px; margin: 0; border-radius: 16px; flex: 0 0 auto; }
-.grocery-intro h2 { font-size: 20px; margin-bottom: 4px; }
-.grocery-intro p { margin: 0; font-size: 11px; }
-.grocery-list-toolbar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; }
-.grocery-list-toolbar label { color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
-.grocery-list-toolbar select { min-width: 0; min-height: 42px; padding: 0 40px 0 10px; }
-.grocery-list-toolbar .secondary-button { min-height: 42px; padding: 0 11px; font-size: 11px; }
+/* The grocery workspace lives in the Library's Shopping tab and grows with the page, so the list is never clipped. */
+.shopping-workspace { display: grid; gap: 20px; padding-bottom: 8px; }
+.grocery-workspace { display: grid; align-content: start; gap: 14px; }
+.grocery-toolbar { display: grid; gap: 10px; }
+.grocery-list-menu { position: relative; }
+.grocery-list-trigger { width: 100%; min-height: 48px; display: flex; align-items: center; gap: 10px; padding: 0 12px; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 13px; text-align: left; }
+.grocery-list-trigger:hover, .grocery-list-trigger:focus-visible { border-color: var(--border-strong); background: var(--control-surface-strong); }
+.grocery-list-trigger > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 800; }
+.grocery-list-trigger small { flex: 0 0 auto; color: var(--muted); font-size: 11px; font-weight: 700; }
+.grocery-list-trigger svg { flex: 0 0 auto; color: var(--muted); }
+.grocery-list-dropdown { position: absolute; z-index: 12; top: calc(100% + 6px); right: 0; left: 0; display: grid; gap: 2px; padding: 6px; background: var(--panel); border: 1px solid var(--border-strong); border-radius: 15px; box-shadow: var(--shadow); }
+.grocery-list-dropdown > button { min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 10px; color: var(--text); background: transparent; border: 0; border-radius: 10px; text-align: left; }
+.grocery-list-dropdown > button:hover, .grocery-list-dropdown > button:focus-visible { background: var(--control-surface-selected); }
+.grocery-list-dropdown > button > span { min-width: 0; display: grid; gap: 2px; font-size: 13px; font-weight: 750; }
+.grocery-list-dropdown > button small { color: var(--muted); font-size: 10.5px; font-weight: 500; }
+.grocery-list-dropdown > button > svg { flex: 0 0 auto; color: var(--mint); }
+.grocery-list-dropdown-actions { display: grid; gap: 2px; margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--border); }
+.grocery-list-dropdown-actions button { min-height: 40px; display: flex; align-items: center; gap: 9px; padding: 0 10px; color: var(--text); background: transparent; border: 0; border-radius: 10px; font-size: 12.5px; font-weight: 750; text-align: left; }
+.grocery-list-dropdown-actions button:hover, .grocery-list-dropdown-actions button:focus-visible { background: var(--control-surface-selected); }
+.grocery-list-dropdown-actions button.danger { color: var(--red); }
+.grocery-undo { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 13px; color: var(--muted); background: color-mix(in oklch, var(--mint) 9%, transparent); border-radius: 12px; font-size: 12px; font-weight: 700; }
+.grocery-undo .text-button { flex: 0 0 auto; gap: 5px; color: var(--mint-strong); }
+.planned-groceries .section-heading.compact { flex-wrap: wrap; gap: 8px; }
 .grocery-modal-copy { margin: -3px 2px 16px; color: var(--muted); font-size: 12px; }
-.grocery-list-choices, .grocery-manage-list { display: grid; gap: 8px; margin-bottom: 18px; }
-.grocery-list-choices button, .grocery-manage-list button { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 13px; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 13px; text-align: left; }
-.grocery-list-choices button:hover, .grocery-list-choices button:focus-visible, .grocery-manage-list button.active { border-color: var(--border-strong); background: color-mix(in oklch, var(--panel-strong) 54%, var(--panel)); }
-.grocery-list-choices span, .grocery-manage-list span { display: grid; gap: 3px; min-width: 0; }
-.grocery-list-choices strong, .grocery-manage-list span { font-size: 12px; }
-.grocery-list-choices small, .grocery-manage-list small { color: var(--muted); font-size: 10px; }
+.grocery-list-choices { display: grid; gap: 8px; margin-bottom: 18px; }
+.grocery-list-choices button { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 13px; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 13px; text-align: left; }
+.grocery-list-choices button:hover, .grocery-list-choices button:focus-visible { border-color: var(--border-strong); background: color-mix(in oklch, var(--panel-strong) 54%, var(--panel)); }
+.grocery-list-choices span { display: grid; gap: 3px; min-width: 0; }
+.grocery-list-choices strong { font-size: 12px; }
+.grocery-list-choices small { color: var(--muted); font-size: 10px; }
 .grocery-list-create { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-bottom: 18px; }
 .grocery-list-create input { min-height: 44px; }
 .grocery-list-create .primary-button { min-height: 44px; padding: 0 13px; }
-.grocery-manage-list button svg { color: var(--mint); opacity: 0; }
-.grocery-manage-list button.active svg { opacity: 1; }
-.grocery-manage-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 14px; border-top: 1px solid var(--border); }
-.grocery-manage-actions .secondary-button { min-height: 40px; font-size: 11px; }
 .text-button.danger { color: var(--red, #ff8f8f); }
 .grocery-composer { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
 .grocery-composer input { min-height: 46px; }
@@ -1041,9 +1049,7 @@ p { color: var(--muted); line-height: 1.55; }
 .bottom-nav > button svg { width: 20px; }
 .bottom-nav > button span { font-size: 9px; font-weight: 800; }
 .bottom-nav > button:active { transform: scale(.97); }
-.bottom-nav .coach-nav-item { color: var(--muted-2); }
 .bottom-nav > button.active { color: var(--bg); background: var(--mint); border-color: var(--mint); box-shadow: 0 8px 20px color-mix(in oklch, var(--mint) 28%, transparent); }
-.bottom-nav .coach-nav-item svg { width: 22px; }
 .sheet-open { overflow: hidden; }
 .sheet-backdrop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: end; justify-content: center; padding-top: max(14px, env(safe-area-inset-top)); background: rgba(0,6,5,.72); backdrop-filter: blur(12px); animation: fade-in .18s ease; }
 .sheet { position: relative; flex: 0 1 610px; min-width: 0; width: min(100%, calc(100vw - 24px), 610px); max-height: calc(100vh - max(14px, env(safe-area-inset-top))); overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; padding: 7px 18px calc(22px + env(safe-area-inset-bottom)); border-radius: 29px 29px 0 0; background: #0c1815; border: 1px solid var(--border); box-shadow: var(--shadow); animation: sheet-up .28s cubic-bezier(.2,.8,.2,1); }
@@ -1440,42 +1446,6 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
    the mobile viewport steady while allowing deliberately larger controls to
    retain their own sizing. */
 @media (max-width: 759px) {
-  .coach-page { min-height: calc(100dvh - 92px); display: flex; flex-direction: column; padding-bottom: 12px; }
-  .coach-header { min-height: 72px; display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: end; padding-top: max(16px, env(safe-area-inset-top)); padding-bottom: 10px; }
-  .coach-mobile-menu { width: 34px; height: 34px; display: grid; place-items: center; align-self: end; color: var(--text); background: transparent; border: 1px solid transparent; border-radius: 11px; }
-  .coach-mobile-menu:hover, .coach-mobile-menu:focus-visible { color: var(--mint-strong); background: color-mix(in oklch, var(--mint) 8%, transparent); border-color: var(--border-strong); }
-  .coach-mobile-backdrop { position: fixed; inset: 0; z-index: 30; display: block; padding: 0; border: 0; background: rgba(4, 10, 9, .46); }
-  .coach-new-chat { min-height: 34px; gap: 4px; padding: 0 7px; }
-  .coach-new-chat-label { display: none; }
-  .coach-header h1 { max-width: 24ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 20px; }
-  .coach-layout { display: flex; flex-direction: column; gap: 8px; min-height: 0; flex: 1 1 0; }
-  .coach-history { position: fixed; inset: 0 auto 0 0; z-index: 40; width: min(86vw, 320px); display: grid; align-content: start; padding: max(22px, env(safe-area-inset-top)) 14px 22px; overflow-y: auto; border-radius: 0 24px 24px 0; background: var(--panel); box-shadow: 18px 0 50px rgba(0, 0, 0, .22); transform: translateX(-105%); transition: transform .22s ease; }
-  .coach-history.mobile-open { transform: translateX(0); }
-  .coach-history-heading { gap: 8px; padding: 0 1px; }
-  .coach-history-label { display: block; }
-  .coach-history-mobile-toggle { min-width: 0; flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 0; overflow: hidden; color: var(--text); background: transparent; border: 0; font-size: 12px; font-weight: 800; text-align: left; }
-  .coach-history-mobile-toggle span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .coach-history-mobile-toggle svg { flex: 0 0 auto; color: var(--muted); }
-  .coach-history-heading .icon-button { width: 28px; height: 28px; }
-  .coach-history-list { display: grid; gap: 3px; max-height: none; margin-top: 8px; overflow-y: visible; }
-  .coach-history-row { min-width: 0; grid-template-columns: minmax(0, 1fr) 36px; background: var(--panel-strong); border: 1px solid var(--border); }
-  .coach-history-row.active { border-color: var(--border-strong); background: color-mix(in oklch, var(--panel-strong) 68%, var(--panel)); }
-  .coach-history-chat { padding: 7px 5px 7px 8px; }
-  .coach-history-menu-trigger { width: 28px; }
-  .coach-rename-form { min-width: 145px; }
-  .coach-main { min-height: 0; display: flex; flex-direction: column; flex: 1 1 0; }
-  .coach-tabs { margin-bottom: 8px; }
-  .coach-scope { margin-bottom: 8px; }
-  .coach-thread { min-height: 0; flex: 1 1 0; overflow-y: auto; overscroll-behavior: contain; padding-top: 4px; }
-  .coach-welcome { padding: 16px 8px; }
-  .coach-welcome .coach-orb { width: 50px; height: 50px; margin-bottom: 12px; border-radius: 18px; }
-  .coach-welcome h2 { font-size: 21px; }
-  .coach-welcome p { margin-top: 8px; margin-bottom: 14px; }
-  .coach-composer-wrap { position: static; flex: 0 0 auto; }
-  .coach-log-actions { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
-  .coach-log-actions::-webkit-scrollbar { display: none; }
-  .coach-log-actions button { flex: 0 0 auto; }
-  .grocery-workspace { min-height: 0; }
   input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 16px; }
   .amount-control input { font-size: 28px; }
 }
@@ -1674,7 +1644,7 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 .calendar-view-day { width: 100%; min-height: 48px; margin-top: 12px; color: var(--bg); background: var(--text); }
 
 /* Five-item notched navigation from the mobile handoff. */
-.bottom-nav { left: 50%; top: auto; bottom: 0; width: min(100%, clamp(420px, 62vw, 780px)); height: auto; grid-template-columns: 1fr 1fr 64px 1fr 1fr; grid-template-rows: 1fr; align-items: end; gap: 4px; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); overflow: visible; border: 0; border-radius: 0; background: var(--panel); box-shadow: 0 -6px 14px color-mix(in oklch, var(--text) 14%, transparent); filter: none; backdrop-filter: none; transform: translateX(-50%); }
+.bottom-nav { left: 50%; top: auto; bottom: 0; width: min(100%, clamp(420px, 62vw, 780px)); height: auto; grid-template-columns: 1fr 1fr 64px 1fr 1fr 1fr; grid-template-rows: 1fr; align-items: end; gap: 4px; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); overflow: visible; border: 0; border-radius: 0; background: var(--panel); box-shadow: 0 -6px 14px color-mix(in oklch, var(--text) 14%, transparent); filter: none; backdrop-filter: none; transform: translateX(-50%); }
 .bottom-nav::before { content: ""; position: absolute; top: -30px; left: 50%; width: 90px; height: 46px; background: var(--panel); border-radius: 56px 56px 0 0; transform: translateX(-50%); }
 .bottom-nav > button { position: relative; height: 54px; gap: 3px; padding: 6px 2px; color: var(--muted); background: transparent; border: 0; border-radius: 10px; box-shadow: none; }
 .bottom-nav > button svg { width: 20px; height: 20px; }
@@ -1908,10 +1878,8 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 .nutrition-detail-card.sugar { background: color-mix(in oklch, var(--mint) 7%, var(--panel)); }
 .nutrition-detail-card.sugar strong { color: var(--carbs); }
 
-.grocery-list-choices,
-.grocery-manage-list { display: grid; gap: 7px; }
-.grocery-list-choices button,
-.grocery-manage-list button {
+.grocery-list-choices { display: grid; gap: 7px; }
+.grocery-list-choices button {
   min-height: 58px;
   display: flex;
   align-items: center;
@@ -1925,12 +1893,9 @@ body:has(.onboarding-overlay) { overflow: hidden; }
   text-align: left;
 }
 .grocery-list-choices button:hover,
-.grocery-list-choices button:focus-visible,
-.grocery-manage-list button.active { border-color: var(--border-strong); background: color-mix(in oklch, var(--mint) 8%, var(--panel)); }
-.grocery-list-choices button span,
-.grocery-manage-list button span { min-width: 0; display: grid; gap: 3px; }
-.grocery-list-choices small,
-.grocery-manage-list small { color: var(--muted); font-size: 11px; }
+.grocery-list-choices button:focus-visible { border-color: var(--border-strong); background: color-mix(in oklch, var(--mint) 8%, var(--panel)); }
+.grocery-list-choices button span { min-width: 0; display: grid; gap: 3px; }
+.grocery-list-choices small { color: var(--muted); font-size: 11px; }
 .grocery-modal-copy { margin: 0; font-size: 13px; }
 
 @media (max-width: 520px) {
@@ -2128,7 +2093,7 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 /* Coach handoff */
 .coach-page {
   --coach-message-size: 14px;
-  width: min(100%, clamp(420px, 62vw, 780px));
+  width: min(100%, clamp(360px, 62vw, 780px));
   max-width: none;
   height: calc(100dvh - 78px - env(safe-area-inset-bottom));
   min-height: 0;
@@ -2145,8 +2110,8 @@ body:has(.onboarding-overlay) { overflow: hidden; }
   display: block;
   padding: max(clamp(16px, 4vw, 28px), env(safe-area-inset-top)) 16px 0;
 }
-.coach-header-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-.coach-header-row .eyebrow { flex: 1; color: var(--carbs); font-size: 12px; font-weight: 800; letter-spacing: .1em; }
+.coach-header-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.coach-header-row h1 { flex: 1; min-width: 0; margin: 0; overflow: hidden; font-size: 19px; letter-spacing: -0.02em; text-overflow: ellipsis; white-space: nowrap; }
 .coach-back,
 .coach-history-trigger {
   width: 40px;
@@ -2161,34 +2126,33 @@ body:has(.onboarding-overlay) { overflow: hidden; }
   border-radius: 12px;
   box-shadow: 0 4px 10px color-mix(in oklch, var(--text) 8%, transparent);
 }
-.coach-new-chat {
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 0 11px;
-  color: var(--muted-2);
-  background: var(--panel);
-  border: 0;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px color-mix(in oklch, var(--text) 8%, transparent);
-  font-size: 12.5px;
-  font-weight: 700;
-}
-.coach-header h1 { margin: 0 0 14px; overflow: hidden; font-size: 19px; text-overflow: ellipsis; white-space: nowrap; }
+.coach-back:hover, .coach-history-trigger:hover,
+.coach-back:focus-visible, .coach-history-trigger:focus-visible { color: var(--mint-strong); }
 .coach-layout,
 .coach-main { min-height: 0; flex: 1 1 0; }
 .coach-layout { display: flex; align-items: stretch; }
-.coach-main { width: 100%; display: flex; flex-direction: column; }
+.coach-main { width: 100%; min-width: 0; display: flex; flex-direction: column; }
+
+/* The thread is a flex column so message gaps apply and each bubble can take its own side. */
 .coach-thread {
   min-height: 0;
   flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
   padding: 0 16px 8px;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
+.coach-thread:focus-visible { outline: 2px solid var(--mint); outline-offset: -2px; }
+.coach-thread-entry { display: flex; flex-direction: column; gap: 12px; }
+.coach-day-divider { display: flex; align-items: center; gap: 10px; margin: 2px 0; color: var(--muted-2); font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.coach-day-divider::before, .coach-day-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.coach-live-region { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .coach-scope {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 2px;
   padding: 10px 12px;
   color: var(--muted-2);
@@ -2197,7 +2161,7 @@ body:has(.onboarding-overlay) { overflow: hidden; }
   font-size: 12px;
 }
 .coach-scope svg { color: var(--mint); flex: 0 0 auto; }
-.coach-welcome { margin: 0; padding: 20px 10px; }
+.coach-welcome { margin: 0; padding: 20px 10px; text-align: center; }
 .coach-welcome .coach-orb {
   width: 48px;
   height: 48px;
@@ -2209,29 +2173,32 @@ body:has(.onboarding-overlay) { overflow: hidden; }
   box-shadow: none;
 }
 .coach-welcome .coach-orb svg { width: 22px; }
-.coach-welcome h2 { font-size: 16px; }
-.coach-welcome p { margin: 6px auto 16px; font-size: 13px; line-height: 1.5; }
+.coach-welcome h2 { font-size: 21px; }
+.coach-welcome p { max-width: 40ch; margin: 6px auto 16px; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .coach-starters { display: flex; flex-direction: column; gap: 8px; }
 .coach-starters button { min-height: 44px; padding: 10px 14px; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 12px; font-size: 13px; text-align: left; }
+.coach-starters button:hover, .coach-starters button:focus-visible { border-color: var(--border-strong); background: color-mix(in oklch, var(--mint) 6%, var(--panel)); }
+
 .coach-message {
   max-width: 82%;
   padding: 11px 14px;
   border: 0;
   border-radius: 16px;
 }
-.coach-message > span { display: flex; align-items: baseline; gap: 6px; margin-bottom: 3px; font-size: 11px; letter-spacing: 0; text-transform: none; }
-.coach-message > span small { color: var(--muted-2); font-size: 10px; font-weight: 500; }
+.coach-message.assistant { align-self: flex-start; }
+.coach-message.user { align-self: flex-end; }
+.coach-message-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.coach-message-head time { color: var(--muted-2); font-size: 10px; font-weight: 600; }
 .coach-message p, .coach-message { user-select: text; -webkit-user-select: text; -webkit-touch-callout: default; }
-.coach-message p { font-size: var(--coach-message-size); line-height: 1.55; }
+.coach-message p { margin: 0; font-size: var(--coach-message-size); line-height: 1.55; white-space: pre-wrap; }
 .coach-message.user {
   color: var(--panel);
   background: var(--text);
   border: 0;
   border-radius: 16px 16px 4px 16px;
 }
-.coach-message.user p,
-.coach-message.user > span { color: inherit; }
-.coach-message.user > span small { color: color-mix(in oklch, var(--panel) 70%, transparent); }
+.coach-message.user p { color: inherit; }
+.coach-message.user .coach-message-head time { color: color-mix(in oklch, var(--panel) 70%, transparent); }
 .coach-message.assistant {
   background: var(--panel);
   border: 0;
@@ -2239,92 +2206,131 @@ body:has(.onboarding-overlay) { overflow: hidden; }
   box-shadow: 0 4px 12px color-mix(in oklch, var(--text) 8%, transparent);
 }
 .coach-message-image { display: block; width: min(100%, 260px); max-height: 260px; margin: 0 0 10px; object-fit: cover; border-radius: 12px; border: 1px solid var(--border-strong); }
-.coach-message-actions { display: flex; gap: 6px; margin-top: 8px; }
-.coach-message-actions button { display: flex; align-items: center; gap: 4px; min-height: 26px; padding: 0 8px; color: var(--muted-2); background: transparent; border: 0; border-radius: 8px; font-size: 10.5px; font-weight: 700; }
-.coach-message-actions button:hover, .coach-message-actions button:focus-visible { color: var(--text); background: color-mix(in oklch, var(--mint) 10%, transparent); }
-.coach-message.user .coach-message-actions button { color: color-mix(in oklch, var(--panel) 75%, transparent); }
-.coach-message.user .coach-message-actions button:hover, .coach-message.user .coach-message-actions button:focus-visible { color: var(--panel); background: color-mix(in oklch, var(--panel) 12%, transparent); }
+
+/* One overflow menu per message keeps Copy, Regenerate and Edit out of the reading flow. */
+.coach-message-menu-wrap { position: relative; flex: 0 0 auto; }
+.coach-message-menu-trigger { width: 26px; height: 22px; display: grid; place-items: center; padding: 0; color: var(--muted-2); background: transparent; border: 0; border-radius: 7px; opacity: .75; }
+.coach-message-menu-trigger:hover, .coach-message-menu-trigger:focus-visible, .coach-message-menu-trigger[aria-expanded="true"] { opacity: 1; color: var(--text); background: color-mix(in oklch, var(--mint) 12%, transparent); }
+.coach-message.user .coach-message-menu-trigger { color: color-mix(in oklch, var(--panel) 75%, transparent); }
+.coach-message.user .coach-message-menu-trigger:hover, .coach-message.user .coach-message-menu-trigger:focus-visible, .coach-message.user .coach-message-menu-trigger[aria-expanded="true"] { color: var(--panel); background: color-mix(in oklch, var(--panel) 16%, transparent); }
+.coach-message-menu { position: absolute; top: 26px; right: 0; z-index: 9; display: grid; min-width: 168px; gap: 2px; padding: 4px; background: var(--panel); border: 1px solid var(--border-strong); border-radius: 11px; box-shadow: var(--shadow); }
+.coach-message-menu button { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 9px; color: var(--text); background: transparent; border: 0; border-radius: 7px; font: inherit; font-size: 12px; font-weight: 700; text-align: left; white-space: nowrap; }
+.coach-message-menu button:hover, .coach-message-menu button:focus-visible { background: color-mix(in oklch, var(--mint) 10%, transparent); }
+/* The newest turn sits against the bottom of the scroller, so its menu opens upward instead of being clipped. */
+.coach-thread-entry:last-of-type .coach-message-menu { top: auto; bottom: 26px; }
+
 .coach-log-confirmation { display: flex; align-items: center; gap: 7px; margin-top: 12px; padding-top: 10px; color: var(--mint-strong); border-top: 1px solid var(--border); font-size: 11px; font-weight: 800; }
 .coach-meal-choices { display: grid; gap: 7px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
 .coach-meal-choices strong { color: var(--muted); font-size: 10px; }
 .coach-meal-choices button { min-height: 40px; padding: 0 11px; border: 1px solid var(--border-strong); border-radius: 10px; color: var(--mint-strong); background: rgba(125,255,213,.07); font: inherit; font-size: 11px; font-weight: 800; text-align: left; }
 .coach-meal-choices button:disabled { color: var(--muted); background: var(--panel); opacity: .8; }
-.coach-sources {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
-  padding: 0;
-  border: 0;
-}
-.coach-sources strong { display: none; }
-.coach-sources a { max-width: 180px; padding: 5px 10px; color: var(--muted-2); background: var(--panel); border: 1px solid var(--border); border-radius: 999px; font-size: 11.5px; font-weight: 700; }
+.coach-sources { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+.coach-sources strong { display: block; margin-bottom: 6px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.coach-sources > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.coach-sources a { max-width: 100%; overflow: hidden; padding: 5px 10px; color: var(--muted-2); background: var(--panel-soft); border: 1px solid var(--border); border-radius: 999px; font-size: 11.5px; font-weight: 700; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+.coach-sources a:hover, .coach-sources a:focus-visible { color: var(--mint-strong); border-color: var(--border-strong); }
+
 .coach-typing {
+  align-self: flex-start;
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  gap: 5px;
   padding: 14px 16px;
   background: var(--panel);
   border-radius: 16px 16px 16px 4px;
   box-shadow: 0 4px 12px color-mix(in oklch, var(--text) 8%, transparent);
 }
-.coach-typing i { width: 6px; height: 6px; background: var(--muted); animation: coach-bounce 1.2s ease-in-out infinite; }
+.coach-typing i { display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: coach-bounce 1.2s ease-in-out infinite; }
+.coach-typing i:nth-child(2) { animation-delay: .15s; }
+.coach-typing i:nth-child(3) { animation-delay: .3s; }
+.coach-thread .inline-alert { align-items: center; }
+.coach-thread .inline-alert .icon-button { width: 28px; height: 28px; flex: 0 0 auto; }
+
+/* One input bar: the plus menu holds attach, scan and label capture. */
 .coach-composer-wrap {
   position: static;
   flex: 0 0 auto;
-  padding: 10px 16px 10px;
+  padding: 8px 16px 12px;
   background: var(--bg);
 }
-.coach-log-actions { display: flex; flex-wrap: nowrap; gap: 8px; margin-bottom: 10px; padding: 0; overflow: visible; }
-.coach-log-actions button {
-  min-height: 44px;
-  flex: 1;
-  justify-content: center;
-  padding: 0 8px;
-  color: var(--blue);
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 11px;
-  font-size: 12.5px;
-}
-.coach-log-actions button:last-child { color: var(--carbs); }
 .coach-composer {
+  display: grid;
   grid-template-columns: 40px minmax(0, 1fr) 36px;
+  align-items: end;
   gap: 8px;
   padding: 6px 6px 6px 8px;
   background: var(--panel);
   border: 0;
-  border-radius: 16px;
+  border-radius: 18px;
   box-shadow: 0 6px 16px color-mix(in oklch, var(--text) 8%, transparent);
   backdrop-filter: none;
 }
-.coach-composer input { min-height: 40px; font-size: 13px; }
-.coach-composer input:focus { outline: 0; }
-.coach-composer button { width: 40px; height: 40px; border-radius: 12px; }
-.coach-composer .coach-attach { color: var(--muted-2); background: color-mix(in oklch, var(--carbs) 12%, var(--panel)); border: 0; }
-.coach-composer .coach-send { width: 36px; height: 36px; color: var(--panel); background: var(--text); border-radius: 11px; }
+.coach-input {
+  width: 100%;
+  min-height: 40px;
+  max-height: 148px;
+  padding: 10px 4px;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  outline: 0;
+  resize: none;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.coach-input::placeholder { color: var(--muted-2); }
+.coach-attach-wrap { position: relative; }
+.coach-composer .coach-attach { width: 40px; height: 40px; display: grid; place-items: center; color: var(--muted-2); background: color-mix(in oklch, var(--carbs) 12%, var(--panel)); border: 0; border-radius: 12px; }
+.coach-composer .coach-attach:hover, .coach-composer .coach-attach:focus-visible, .coach-composer .coach-attach[aria-expanded="true"] { color: var(--carbs); }
+.coach-attach-menu { position: absolute; bottom: 48px; left: 0; z-index: 9; display: grid; min-width: 186px; gap: 2px; padding: 5px; background: var(--panel); border: 1px solid var(--border-strong); border-radius: 13px; box-shadow: var(--shadow); }
+.coach-attach-menu button { display: flex; align-items: center; gap: 9px; min-height: 42px; padding: 0 10px; color: var(--text); background: transparent; border: 0; border-radius: 9px; font: inherit; font-size: 12.5px; font-weight: 750; text-align: left; white-space: nowrap; }
+.coach-attach-menu button:hover, .coach-attach-menu button:focus-visible { background: color-mix(in oklch, var(--mint) 10%, transparent); }
+.coach-attach-menu button svg { flex: 0 0 auto; color: var(--muted); }
+.coach-composer .coach-send { width: 36px; height: 36px; display: grid; place-items: center; margin-bottom: 2px; color: var(--panel); background: var(--text); border: 0; border-radius: 11px; }
 .coach-composer .coach-stop { color: var(--panel); background: var(--red); }
 .coach-composer button svg { width: 15px; }
 .coach-attachment { grid-column: 1 / -1; position: relative; width: fit-content; padding: 2px; }
 .coach-attachment img { display: block; width: 68px; height: 68px; object-fit: cover; border-radius: 11px; border: 1px solid var(--border-strong); }
-.coach-attachment button { position: absolute; top: -5px; right: -5px; width: 23px; height: 23px; color: var(--text); background: var(--panel-strong); border: 1px solid var(--border-strong); border-radius: 999px; }
+.coach-attachment button { position: absolute; top: -5px; right: -5px; width: 23px; height: 23px; display: grid; place-items: center; color: var(--text); background: var(--panel-strong); border: 1px solid var(--border-strong); border-radius: 999px; }
+
+/* Off-canvas until the workspace is wide enough to dock it; flush to the edge it slides from. */
 .coach-history {
   position: fixed;
-  inset: 0 max(16px, calc((100vw - min(100vw, 780px)) / 2)) 0 auto;
+  inset: 0 0 0 auto;
   z-index: 41;
-  width: min(300px, calc(100vw - 32px));
+  width: min(88vw, 320px);
   display: grid;
   align-content: start;
   gap: 10px;
-  padding: 70px 14px 18px;
+  padding: max(20px, env(safe-area-inset-top)) 14px calc(20px + env(safe-area-inset-bottom));
   overflow-y: auto;
   background: var(--panel);
   border: 0;
-  border-radius: 0;
-  box-shadow: -8px 0 24px color-mix(in oklch, var(--text) 15%, transparent);
-  transform: translateX(110vw);
+  border-radius: 22px 0 0 22px;
+  box-shadow: -8px 0 30px color-mix(in oklch, var(--text) 22%, transparent);
+  transform: translateX(105%);
   transition: transform .2s ease;
 }
 .coach-history.mobile-open { transform: translateX(0); }
-.coach-history-heading { padding: 0; }
-.coach-history-heading strong { font-size: 13px; }
+.coach-history-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0; }
+.coach-history-heading strong { font-size: 15px; }
+.coach-new-chat {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  color: var(--mint-strong);
+  background: color-mix(in oklch, var(--mint) 10%, var(--panel));
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 800;
+}
+.coach-new-chat:hover, .coach-new-chat:focus-visible { background: color-mix(in oklch, var(--mint) 16%, var(--panel)); }
 .coach-history-search {
   min-height: 38px;
   display: flex;
@@ -2332,27 +2338,29 @@ body:has(.onboarding-overlay) { overflow: hidden; }
   gap: 8px;
   padding: 0 10px;
   color: var(--muted);
-  background: var(--panel-strong);
+  background: var(--control-surface);
   border: 1px solid var(--border);
   border-radius: 11px;
 }
 .coach-history-search input { min-width: 0; flex: 1; padding: 9px 0; color: var(--text); background: transparent; border: 0; outline: 0; font: inherit; font-size: 13px; }
 .coach-grocery-link {
-  min-height: 44px;
+  min-height: 42px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 12px;
-  color: var(--muted-2);
-  background: transparent;
+  gap: 9px;
+  padding: 0 11px;
+  color: var(--text);
+  background: var(--control-surface);
   border: 1px solid var(--border);
   border-radius: 11px;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 12.5px;
+  font-weight: 750;
 }
+.coach-grocery-link:hover, .coach-grocery-link:focus-visible { border-color: var(--border-strong); color: var(--mint-strong); }
+.coach-grocery-link svg { flex: 0 0 auto; color: var(--muted); }
 .coach-grocery-link span { flex: 1; text-align: left; }
-.coach-grocery-link small { min-width: 20px; height: 20px; display: grid; place-items: center; color: var(--panel); background: var(--mint); border-radius: 999px; }
-.coach-history-list { display: grid; gap: 3px; max-height: min(52vh, 480px); overflow-y: auto; }
+.coach-grocery-link small { min-width: 20px; height: 20px; display: grid; place-items: center; padding: 0 5px; color: var(--panel); background: var(--mint); border-radius: 999px; font-size: 10px; font-weight: 800; }
+.coach-history-list { min-height: 0; display: grid; align-content: start; gap: 3px; overflow-y: auto; }
 .coach-history-empty { min-height: 120px; padding: 24px 12px; }
 .coach-history-empty strong { font-size: 12px; }
 .coach-history-empty p { font-size: 11px; }
@@ -2360,10 +2368,12 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 .coach-history-row:hover { background: color-mix(in oklch, var(--panel-strong) 34%, transparent); }
 .coach-history-row.active { color: var(--panel); background: var(--text); }
 .coach-history-row.active .coach-history-chat span { color: var(--panel); }
+.coach-history-row.active .coach-history-chat small,
+.coach-history-row.active .coach-history-menu-trigger { color: color-mix(in oklch, var(--panel) 70%, transparent); }
 .coach-history-chat { min-width: 0; display: grid; gap: 3px; padding: 8px 7px 8px 9px; color: var(--muted); background: transparent; border: 0; text-align: left; }
 .coach-history-chat:hover { color: var(--text); }
-.coach-history-chat span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: inherit; font-size: 11px; font-weight: 750; }
-.coach-history-chat small { color: var(--muted-2); font-size: 9px; }
+.coach-history-chat span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: inherit; font-size: 12px; font-weight: 750; }
+.coach-history-chat small { color: var(--muted-2); font-size: 9.5px; }
 .coach-history-menu-wrap { position: relative; display: grid; place-items: center; }
 .coach-history-menu-trigger { width: 28px; height: 30px; display: grid; place-items: center; color: var(--muted-2); background: transparent; border: 0; border-radius: 8px; }
 .coach-history-menu-trigger:hover, .coach-history-menu-trigger:focus-visible { color: var(--mint); background: color-mix(in oklch, var(--mint) 10%, transparent); }
@@ -2376,13 +2386,35 @@ body:has(.onboarding-overlay) { overflow: hidden; }
 .coach-rename-form button { display: grid; place-items: center; color: var(--mint); background: transparent; border: 0; }
 .coach-mobile-backdrop { position: fixed; inset: 0; z-index: 40; background: color-mix(in oklch, var(--text) 35%, transparent); border: 0; }
 
+/* Docked history as soon as the workspace can hold it, rather than waiting for a desktop width. */
+@media (min-width: 900px) {
+  .coach-page { width: min(100%, 1120px); padding: 0 clamp(16px, 3vw, 32px); }
+  .coach-header, .coach-thread, .coach-composer-wrap { padding-right: 0; padding-left: 0; }
+  .coach-layout { gap: 22px; }
+  .coach-history {
+    position: static;
+    z-index: auto;
+    width: 268px;
+    flex: 0 0 268px;
+    padding: 0 0 8px;
+    overflow: visible;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    transform: none;
+  }
+  .coach-history-close, .coach-history-trigger { display: none; }
+  .coach-history-list { max-height: none; }
+  .coach-main { max-width: 860px; }
+  .coach-message { max-width: min(80%, 680px); }
+}
+
 @media (max-width: 560px) {
   .coach-page { width: 100%; height: calc(100dvh - 78px - env(safe-area-inset-bottom)); }
   .coach-header { padding-top: max(16px, env(safe-area-inset-top)); }
   .coach-header-row { gap: 8px; }
-  .coach-header-row .eyebrow { font-size: 10px; }
-  .coach-new-chat { min-height: 40px; padding: 0 9px; font-size: 11.5px; }
-  .coach-header h1 { max-width: none; font-size: 19px; }
+  .coach-header-row h1 { font-size: 18px; }
+  .coach-message { max-width: 88%; }
   .coach-thread { padding-top: 0; }
 }
 
@@ -2866,7 +2898,7 @@ body:has(.onboarding-overlay) { overflow: hidden; }
     height: auto;
     min-height: 350px;
     grid-template-columns: 1fr;
-    grid-template-rows: repeat(5, 1fr);
+    grid-template-rows: repeat(6, 1fr);
     align-items: stretch;
     gap: 4px;
     padding: 10px 8px;
@@ -3050,7 +3082,7 @@ body:has(.onboarding-overlay) { overflow: hidden; }
   .content-shell { width: min(100%, var(--content-workspace)); max-width: none; margin: 0 auto; }
   .page { padding-right: var(--workspace-gutter); padding-left: var(--workspace-gutter); }
 
-  .today-page, .profile-page, .food-library-page, .plan-page, .insights-page, .coach-page { width: min(100%, var(--content-workspace)); max-width: none; }
+  .today-page, .profile-page, .food-library-page, .plan-page, .insights-page { width: min(100%, var(--content-workspace)); max-width: none; }
 
   /* Keep Today’s familiar mobile order on desktop; only the canvas grows. */
   .today-page > .log-section { max-width: none; }
@@ -3060,13 +3092,10 @@ body:has(.onboarding-overlay) { overflow: hidden; }
   .insights-page .insights-grid, .insights-page .nutrition-insights-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .insights-page > .workspace-panel, .insights-page .chart-card, .insights-page .insight-card, .insights-page .fasting-history-section, .insights-page .weight-section, .insights-page .weight-log { width: 100%; max-width: none; }
 
-  .coach-page { height: calc(100dvh - 32px); }
+  /* Docking already happened at 900px; the desktop rail only frees the extra height. */
+  .coach-page { height: calc(100dvh - 32px); padding: 0 var(--workspace-gutter); }
   .coach-layout { gap: 24px; }
-  .coach-history { position: static; width: 290px; flex: 0 0 290px; padding: 0; transform: none; box-shadow: none; background: transparent; }
-  .coach-history-heading .icon-button, .coach-history-trigger { display: none; }
-  .coach-main { min-width: 0; max-width: 860px; }
-  .coach-thread, .coach-composer-wrap { padding-right: 0; padding-left: 0; }
-  .coach-message { max-width: min(82%, 680px); }
+  .coach-history { width: 290px; flex: 0 0 290px; }
 }
 
 /* Catalogue browse mode */

@@ -49,3 +49,23 @@ Two rules keep the stack readable, and both live in `claimRailItems`. A recipe a
 `useCatalogueRails` (`src/features/planning/hooks/useCatalogueRails.ts`) fetches a batch of rails at a time, each with its own `fetchCatalogue` query, and an `IntersectionObserver` in `CatalogueRails` loads the next batch before it scrolls into view. Batches must resolve in spec order because claiming does — do not fetch a later rail ahead of an earlier one. The hook has no reset path: `CatalogueRails` is mounted only while no filter is active, and unmounting is what clears the claims. Applying a filter replaces the rails entirely with the flat `.catalogue-grid`.
 
 Rail scroll controls (`.catalogue-row-control`) are edge-anchored scrims spanning the track, carrying a chevron and no other chrome. They show on every viewport, dimmed on pointer devices until the row is hovered, and are never hidden outright — a control the user cannot find is worse than one that is always faintly present.
+
+### Coach conversation surface
+
+`CoachView` (`src/features/coach/CoachView.tsx`) is orchestration only: it resolves the gates (unconfigured, signed out, loading), derives conversation starters from today's lowest tracked macros, and wires three presentational children. All conversation state — chats, the active thread, the draft, the attachment, loading, and errors — belongs to `useCoachChats` (`src/features/coach/hooks/useCoachChats.ts`); the endpoint contract and image downscaling live in `lib/coachApi.ts`.
+
+The thread is a flex column, not a block: that is what makes the message gap apply and lets `.coach-message.user` take `align-self: flex-end` so a question and its answer sit on opposite sides. Do not give `.coach-thread` a `display` that drops flex, and do not add per-message role captions — the side and fill already say who is speaking. Consecutive messages are grouped under a `.coach-day-divider` whenever the day changes.
+
+One input bar, one plus menu. Everything that hands the Coach an image — attach a photo, scan a barcode, read a label — is a `role="menuitem"` inside `.coach-attach-menu`; never add a second row of capture buttons above the composer. `.coach-composer` must keep its `display: grid`, since its `grid-template-columns` is what keeps the plus, the auto-growing textarea and the send button on one line. The textarea grows to `MAX_ROWS_HEIGHT` and sends on Enter, with Shift+Enter for a newline, so keep the placeholder short enough to fit a 360px phone on one line.
+
+Per-message actions live in one `⋯` menu (`.coach-message-menu`): Copy always, Regenerate only on the newest assistant reply, and Edit & resend only on a question. Edit & resend rewinds the thread — it deletes that message and everything after it locally and through `deleteCloudCoachMessages`, then puts the text back in the composer — so an edited question replaces its original instead of stacking a near-duplicate.
+
+Failures are a `CoachError` discriminated union, not a string, because the recovery differs: `history` offers Reload, `reply` offers Try again and re-asks the last question, and `sync`/`notice` are dismiss-only. Never wire a generic Retry that reloads the whole history for an error that had nothing to do with it. Everything scoped to one conversation — draft, attachment, logged meal choices, the error — is cleared by `resetConversationState` on every chat switch; logged choices are keyed by message id **and** label so the same label in another chat is not shown as already logged.
+
+The chat list is a sidebar that docks at 900px and is an edge-flush drawer below that, with its own focus trap and Escape handling. It owns `New chat`, search, and the cross-link into the grocery lists. Unsaved draft conversations appear in the list like any other chat, so the active row is never empty.
+
+### Grocery lists
+
+Grocery lists are their own slice (`src/features/groceries`) and live in the Library's **Shopping** tab, next to the plan-derived `ShoppingList`. Coach only links to them: an assistant reply offering a recipe adds its ingredients through `ChooseGroceryListSheet` (or straight to the only list) and then navigates to `{ tab: "plan", section: "shopping" }`. Do not re-add a grocery section to Coach.
+
+`useGroceryLists` stores state as `{ key, lists }` where `key` is the per-account setting key, so a signed-out or mid-switch render yields an empty list rather than the previous account's groceries. Every list operation — pick, create, rename, delete — is one `.grocery-list-menu` dropdown on the list name; deleting the last list leaves a fresh empty one instead of an unusable workspace. The shopping tab is always available, whether or not meal planning is enabled.

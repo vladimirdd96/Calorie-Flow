@@ -403,6 +403,17 @@ export async function clearCloudCoachMessages(userId: string, chatId?: string) {
   }
 }
 
+/** Drops specific messages from one chat, so editing a question can rewind the thread that followed it. */
+export async function deleteCloudCoachMessages(userId: string, chatId: string, messageIds: string[]) {
+  if (!messageIds.length) return;
+  const { error } = await client().from("coach_messages").delete().eq("user_id", userId).eq("chat_id", chatId).in("id", messageIds);
+  if (error) {
+    if (!isCoachThreadsUnavailable(error)) throw error;
+    const { error: legacyError } = await client().from("coach_messages").delete().eq("user_id", userId).in("id", messageIds);
+    if (legacyError) throw legacyError;
+  }
+}
+
 export async function deleteCloudCoachChat(userId: string, chatId: string) {
   const { error } = await client().from("coach_chats").delete().eq("user_id", userId).eq("id", chatId);
   if (error && !isCoachThreadsUnavailable(error)) throw error;
