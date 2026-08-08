@@ -1644,7 +1644,7 @@ html[data-theme="dark"] .nutrition-entry { box-shadow: none; }
 .calendar-view-day { width: 100%; min-height: 48px; margin-top: 12px; color: var(--bg); background: var(--text); }
 
 /* Five-item notched navigation from the mobile handoff. */
-.bottom-nav { left: 50%; top: auto; bottom: 0; width: min(100%, clamp(420px, 62vw, 780px)); height: auto; grid-template-columns: 1fr 1fr 64px 1fr 1fr 1fr; grid-template-rows: 1fr; align-items: end; gap: 4px; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); overflow: visible; border: 0; border-radius: 0; background: var(--panel); box-shadow: 0 -6px 14px color-mix(in oklch, var(--text) 14%, transparent); filter: none; backdrop-filter: none; transform: translateX(-50%); }
+.bottom-nav { left: 50%; top: auto; bottom: 0; width: min(100%, clamp(420px, 62vw, 780px)); height: auto; grid-template-columns: 1fr 1fr 64px 1fr 1fr; grid-template-rows: 1fr; align-items: end; gap: 4px; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); overflow: visible; border: 0; border-radius: 0; background: var(--panel); box-shadow: 0 -6px 14px color-mix(in oklch, var(--text) 14%, transparent); filter: none; backdrop-filter: none; transform: translateX(-50%); }
 .bottom-nav::before { content: ""; position: absolute; top: -30px; left: 50%; width: 90px; height: 46px; background: var(--panel); border-radius: 56px 56px 0 0; transform: translateX(-50%); }
 .bottom-nav > button { position: relative; height: 54px; gap: 3px; padding: 6px 2px; color: var(--muted); background: transparent; border: 0; border-radius: 10px; box-shadow: none; }
 .bottom-nav > button svg { width: 20px; height: 20px; }
@@ -2898,7 +2898,7 @@ body:has(.onboarding-overlay) { overflow: hidden; }
     height: auto;
     min-height: 350px;
     grid-template-columns: 1fr;
-    grid-template-rows: repeat(6, 1fr);
+    grid-template-rows: repeat(5, 1fr);
     align-items: stretch;
     gap: 4px;
     padding: 10px 8px;

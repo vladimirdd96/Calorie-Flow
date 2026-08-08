@@ -1,12 +1,16 @@
 "use client";
 
-import { BookOpen, MessageCircle, Plus, Sun, TrendingUp, UserRound } from "lucide-react";
+import { BookOpen, Plus, Sun, TrendingUp, UserRound } from "lucide-react";
 import type { AppTab } from "@/features/navigation/types";
 
+/**
+ * Four destinations and the add action, deliberately. Coach is reached from the
+ * Today header and from Profile — it does not get a slot here, because a sixth
+ * item costs every other item the width that keeps this usable one-handed.
+ */
 const tabs = [
   { tab: "today", label: "Today", Icon: Sun },
   { tab: "plan", label: "Library", Icon: BookOpen },
-  { tab: "coach", label: "Coach", Icon: MessageCircle },
   { tab: "insights", label: "Insights", Icon: TrendingUp },
   { tab: "profile", label: "Profile", Icon: UserRound },
 ] as const satisfies ReadonlyArray<{ tab: AppTab; label: string; Icon: typeof Sun }>;

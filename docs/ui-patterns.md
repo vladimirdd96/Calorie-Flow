@@ -64,6 +64,8 @@ Failures are a `CoachError` discriminated union, not a string, because the recov
 
 The chat list is a sidebar that docks at 900px and is an edge-flush drawer below that, with its own focus trap and Escape handling. It owns `New chat`, search, and the cross-link into the grocery lists. Unsaved draft conversations appear in the list like any other chat, so the active row is never empty.
 
+Coach is reached from the Today header action (`.today-coach-button`) and the Profile link row, not from `BottomNav`. The nav carries four destinations plus the add action; a fifth destination there costs every other item the width that keeps it usable one-handed, so route new entry points through an existing screen instead of adding a slot.
+
 ### Grocery lists
 
 Grocery lists are their own slice (`src/features/groceries`) and live in the Library's **Shopping** tab, next to the plan-derived `ShoppingList`. Coach only links to them: an assistant reply offering a recipe adds its ingredients through `ChooseGroceryListSheet` (or straight to the only list) and then navigates to `{ tab: "plan", section: "shopping" }`. Do not re-add a grocery section to Coach.
