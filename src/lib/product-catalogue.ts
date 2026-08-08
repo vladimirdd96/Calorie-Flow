@@ -52,6 +52,23 @@ export function normalizeBarcode(value: string) {
   return value.replace(/\D/g, "");
 }
 
+/**
+ * Names a package whose own label never showed a legible product name, so the barcode
+ * stays findable in search rather than sitting blank.
+ *
+ * The two shapes this returns are load-bearing beyond display: the `placeholder`
+ * column on `product_catalogue` (`supabase/migrations/202608080001_correctable_placeholder_names.sql`)
+ * is a generated column matching these exact patterns, which is how the database tells
+ * a name nobody actually supplied from a real one without trusting a client-sent flag.
+ * Changing this format requires a matching migration, or existing placeholder rows will
+ * stop being recognized as correctable by anyone but their original contributor.
+ */
+export function describeUnnamedProduct(food: Pick<Food, "brand" | "quantityLabel" | "barcode">) {
+  const parts = [food.brand, food.quantityLabel].filter(Boolean);
+  if (parts.length) return `${parts.join(" ")} (scanned)`;
+  return food.barcode ? `Scanned product ${food.barcode}` : "Scanned product";
+}
+
 export function catalogueRowToFood(row: CatalogueRow): Food {
   return {
     id: `catalogue-${row.barcode}`,
@@ -175,14 +192,20 @@ export async function contributeCatalogueProduct({ food, source }: CatalogueCont
 }
 
 /**
- * Corrects the name on a catalogue row the current account contributed.
+ * Corrects the name on a catalogue row.
  *
- * Renaming a food in the portion sheet is optional and never blocks logging, but when the
- * food came from an unnamed barcode scan the wrong name may already be live for every
- * other account. RLS scopes the update to `contributed_by = auth.uid()`: if this account
- * did not contribute the row — someone else answered it first, or it came from a bulk
- * import — the update silently affects zero rows rather than erroring, which is exactly
- * the "best effort, never disturb the user" contract `contributeCatalogueProduct` uses.
+ * Renaming a food in the portion sheet is optional and never blocks logging, but a wrong
+ * name published under a barcode used to be permanent unless the *original* contributor
+ * happened to fix it themselves — including the common case where nobody had a name yet
+ * and the row was saved under a generated placeholder like "Scanned product 4056489814795".
+ * Routed through the `correct_product_catalogue_name` RPC rather than a table `update()`:
+ * it is the one place allowed to touch a row this account did not contribute, and it can
+ * only ever change `name`, on a row that is either this account's own contribution or
+ * still carries a placeholder name — never a product someone already properly named, and
+ * never a row from Open Food Facts or another public provider, which the app has no
+ * authority to rewrite. An ineligible or invalid request quietly corrects nothing rather
+ * than erroring, which is the same "best effort, never disturb the user" contract
+ * `contributeCatalogueProduct` uses.
  */
 export async function correctCatalogueProduct(barcode: string, name: string): Promise<void> {
   const normalized = normalizeBarcode(barcode);
@@ -191,7 +214,7 @@ export async function correctCatalogueProduct(barcode: string, name: string): Pr
   const supabase = getSupabase();
   if (!supabase) return;
   try {
-    await supabase.from("product_catalogue").update({ name: trimmed.slice(0, 240) }).eq("barcode", normalized);
+    await supabase.rpc("correct_product_catalogue_name", { p_barcode: normalized, p_name: trimmed.slice(0, 240) });
   } catch {
     // Best effort: the user's own copy of the food is already corrected regardless.
   }

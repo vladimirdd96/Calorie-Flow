@@ -4,17 +4,15 @@ import { ArrowLeft, Camera, Info, Upload } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ClearableInput } from "@/features/shared/ClearableInput";
 import { searchPackagedFoods } from "@/lib/food-lookup";
+// The generator lives in product-catalogue.ts because its exact output format is a
+// contract with the database — see the `placeholder` column it drives — not just UI copy.
+import { describeUnnamedProduct } from "@/lib/product-catalogue";
 import { labelAnalysisSchema } from "@/lib/schemas";
 import { getSupabase } from "@/lib/supabase";
 import type { Food } from "@/lib/types";
 import { dataUrlToThumbnail, imageToDataUrl, requestContinuousFocus } from "./captureMedia";
 
-/** Names a package whose own label never showed one, so it stays findable in search. */
-export function describeUnnamedProduct(food: Food) {
-  const parts = [food.brand, food.quantityLabel].filter(Boolean);
-  if (parts.length) return `${parts.join(" ")} (scanned)`;
-  return food.barcode ? `Scanned product ${food.barcode}` : "Scanned product";
-}
+export { describeUnnamedProduct };
 
 export type LabelAnalysis = {
   productName: string | null;
