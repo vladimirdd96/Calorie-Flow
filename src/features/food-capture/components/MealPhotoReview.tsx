@@ -8,6 +8,7 @@ import { DatePickerField } from "@/features/shared/DatePicker";
 import { NumericInput } from "@/features/shared/NumericInput";
 import { resizeFoodImage } from "@/lib/image";
 import { round, suggestedMealType } from "@/lib/nutrition";
+import { roundDecimal } from "@/lib/decimal";
 import type { Meal, MealPhotoAnalysis, MealTimeBoundaries, MealType } from "@/lib/types";
 import { mealPhotoTotals, mealFromPhoto, portionScales, reviewItems, resizeItem, scaleItems, type PortionScaleId, type ReviewItem } from "../mealPhoto";
 
@@ -59,7 +60,7 @@ export function MealPhotoReview({ analysis, image, hideCalories, initialMealType
     baseItems.current = [...baseItems.current, item];
   };
   const rename = (id: string, name: string) => setItems((current) => current.map((item) => item.id === id ? { ...item, name } : item));
-  const setCalories = (id: string, calories: number) => setItems((current) => current.map((item) => item.id === id ? { ...item, nutrition: { ...item.nutrition, calories: round(Math.max(0, calories), 0) } } : item));
+  const setCalories = (id: string, calories: number) => setItems((current) => current.map((item) => item.id === id ? { ...item, nutrition: { ...item.nutrition, calories: roundDecimal(Math.max(0, calories)) } } : item));
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -116,8 +117,8 @@ export function MealPhotoReview({ analysis, image, hideCalories, initialMealType
             <small>{item.portion}</small>
           </div>
           <div className="meal-photo-item-fields">
-            <label className="meal-photo-item-field"><span>Grams</span><NumericInput min="1" step="5" value={String(item.grams)} onChange={(event) => setGrams(item.id, Number(event.target.value))} /></label>
-            {!hideCalories && <label className="meal-photo-item-field"><span>kcal</span><NumericInput min="0" step="5" value={String(Math.round(item.nutrition.calories))} onChange={(event) => setCalories(item.id, Number(event.target.value))} /></label>}
+            <label className="meal-photo-item-field"><span>Grams</span><NumericInput min="1" decimalPlaces={2} value={String(item.grams)} onChange={(event) => setGrams(item.id, Number(event.target.value))} /></label>
+            {!hideCalories && <label className="meal-photo-item-field"><span>kcal</span><NumericInput min="0" decimalPlaces={2} value={String(item.nutrition.calories)} onChange={(event) => setCalories(item.id, Number(event.target.value))} /></label>}
           </div>
           <button type="button" className="icon-button ghost meal-photo-item-remove" onClick={() => removeItem(item.id)} aria-label={`Remove ${item.name || "this food"}`}><Trash2 size={17} /></button>
         </div>)}

@@ -45,6 +45,11 @@ Apply these rules to every task, regardless of size.
 - For dialogs and sheets, verify the first and last interactive elements, scrolling behavior, close action, keyboard focus, and the primary action at the target viewport. Fix layout defects before running the final checks.
 - Do not mark a UI task complete or push it until the visual check passes. If visual verification is unavailable, report the task as unverified rather than complete.
 
-## Local UI test sign-in
+## Test authentication and UI verification
 
-- For local visual testing only, agents may use the user's designated Google account to sign in through the existing Google flow. This authorization does not cover sending email, changing account settings, granting permissions, or accessing unrelated Google services.
+- Never sign in with a user's personal Google, email, or Supabase account for agent work or CI. Do not create a hosted test user in the production project as a shortcut.
+- The required default is the disposable local Supabase project in `supabase/config.toml`. Start it with `supabase start --exclude vector`, export its locally generated URL/key with `supabase status -o env`, then run `npm run test:auth`. That script creates and signs in a local-only password account, verifies its RLS-protected profile write/read/delete cycle, and leaves no cloud data behind.
+- Read `docs/agent-auth.md` before any login, authentication, Supabase, pipeline, CI, browser-session, or visual-verification work. It is the source of truth for commands and the narrow exception for a separately provisioned staging account.
+- Browser session state belongs only in the ignored `.agent-browser/` directory. Never commit credentials, JWTs, storage state, cookies, `.env*`, or a Supabase service-role key. Public anon/publishable keys are not a substitute for an authenticated session.
+- A hosted staging account may be used only when the task explicitly requires the deployed environment, the account is in a non-production Supabase project, and its credentials are supplied through the local secret store or CI secrets. Its email, password, and any session must never appear in commands, logs, documentation, or source.
+- If local Supabase/Docker is unavailable, report visual verification as unavailable; do not fall back to personal Google authentication.

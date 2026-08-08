@@ -7,6 +7,7 @@ import { readMealImage } from "@/features/diary/DiaryView";
 import { getSupabase } from "@/lib/supabase";
 import { publishRecipeToCatalogue, unpublishRecipe } from "@/lib/cloud";
 import { recipeNutritionEstimateSchema } from "@/lib/schemas";
+import { roundDecimal } from "@/lib/decimal";
 import type { Recipe, RecipeDraft } from "@/lib/types";
 
 type NutritionFields = { calories: string; protein: string; carbs: string; fat: string; fiber: string; sugar: string };
@@ -114,9 +115,9 @@ export function RecipeComposer({ recipe, initial, userId, onSave }: { recipe?: R
       const parsed = recipeNutritionEstimateSchema.parse(body);
       const { nutritionPerServing } = parsed;
       setNutrition({
-        calories: String(Math.round(nutritionPerServing.calories)), protein: String(Math.round(nutritionPerServing.protein)),
-        carbs: String(Math.round(nutritionPerServing.carbs)), fat: String(Math.round(nutritionPerServing.fat)),
-        fiber: String(Math.round(nutritionPerServing.fiber)), sugar: String(Math.round(nutritionPerServing.sugar)),
+        calories: String(roundDecimal(nutritionPerServing.calories)), protein: String(roundDecimal(nutritionPerServing.protein)),
+        carbs: String(roundDecimal(nutritionPerServing.carbs)), fat: String(roundDecimal(nutritionPerServing.fat)),
+        fiber: String(roundDecimal(nutritionPerServing.fiber)), sugar: String(roundDecimal(nutritionPerServing.sugar)),
       });
       setEstimateNote(`Estimated (${parsed.confidence} confidence) — check it against what you actually used.`);
       setEstimated(true);
@@ -143,10 +144,10 @@ export function RecipeComposer({ recipe, initial, userId, onSave }: { recipe?: R
     if (!basicsValid || Object.values(values).some((value) => !Number.isFinite(value) || value < 0)) return;
     const now = new Date().toISOString();
     const nextRecipe: Recipe = {
-      id: recipe?.id || `recipe-${crypto.randomUUID()}`, name: name.trim(), servings: Number(servings), servingGrams: gramsPerServing,
+      id: recipe?.id || `recipe-${crypto.randomUUID()}`, name: name.trim(), servings: roundDecimal(Number(servings)), servingGrams: roundDecimal(gramsPerServing),
       ingredients: ingredientItems.map((item, index) => ({ ...recipe?.ingredients[index], id: recipe?.ingredients[index]?.id || `ingredient-${crypto.randomUUID()}`, name: item.name, quantity: item.quantity || undefined })),
       instructions: instructionSteps, cuisine: seed?.cuisine, dietaryTags: seed?.dietaryTags,
-      nutritionPerServing: values, imageUrls, isPublic: seed?.isPublic, publicRecipeId: seed?.publicRecipeId, origin: seed?.origin,
+      nutritionPerServing: Object.fromEntries(Object.entries(values).map(([key, value]) => [key, roundDecimal(value)])) as typeof values, imageUrls, isPublic: seed?.isPublic, publicRecipeId: seed?.publicRecipeId, origin: seed?.origin,
       importedFrom: seed?.importedFrom,
       createdAt: recipe?.createdAt || now, updatedAt: now,
     };
@@ -175,8 +176,8 @@ export function RecipeComposer({ recipe, initial, userId, onSave }: { recipe?: R
   return <form className="recipe-composer" onSubmit={submit}>
     <div className="form-grid two">
       <label className="span-two"><span>Recipe name</span><input required value={name} maxLength={240} onChange={(event) => setName(event.target.value)} placeholder="e.g. Weeknight lentil bowl" /></label>
-      <label><span>Servings</span><NumericInput required min="0.5" max="100" step="0.5" value={servings} onChange={(event) => setServings(event.target.value)} /></label>
-      <label><span>Grams per serving</span><NumericInput required min="1" max="20000" step="1" value={servingGrams} onChange={(event) => setServingGrams(event.target.value)} /></label>
+      <label><span>Servings</span><NumericInput required min="0.01" max="100" decimalPlaces={2} value={servings} onChange={(event) => setServings(event.target.value)} /></label>
+      <label><span>Grams per serving</span><NumericInput required min="0.01" max="20000" decimalPlaces={2} value={servingGrams} onChange={(event) => setServingGrams(event.target.value)} /></label>
     </div>
 
     <div className="recipe-field-group">

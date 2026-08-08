@@ -12,6 +12,10 @@ describe("hydration", () => {
     expect(setWaterAmount(entries, "2026-07-20", 0)).toEqual([]);
   });
 
+  it("retains a user-entered hydration amount to two decimals", () => {
+    expect(setWaterAmount([], "2026-07-20", 900.126)).toEqual([{ date: "2026-07-20", amountMl: 900.13 }]);
+  });
+
   it("sums every logged day for all-time history", () => {
     expect(hydrationDayTotals([{ date: "2026-07-21", amountMl: 350 }, { date: "2026-07-20", amountMl: 600 }, { date: "2026-07-20", amountMl: 250 }])).toEqual([
       { date: "2026-07-20", amountMl: 850 },

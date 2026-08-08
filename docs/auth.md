@@ -18,3 +18,7 @@ The browser receives only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_P
 The account screen supports magic links and Google OAuth. Auth redirects use the configured canonical app URL in production and the current origin during local development. The canonical production URL is `https://calorie-flow.vladimirdd96.workers.dev`, which must be in Supabase Auth's redirect allow list. Provider credentials live only in Google Cloud and Supabase Auth provider settings; never store them in this repository.
 
 See `CLOUD_SYNC_SETUP.md` for redirect URLs and deployment setup.
+
+## Automated test authentication
+
+Agent and CI authentication never uses a personal Google or Supabase account. The repository carries a reproducible local Supabase configuration instead; it creates a disposable password user for each local database and exercises the same public Auth and RLS boundaries as the browser. See `agent-auth.md` for the required workflow and the deliberately narrow staging exception.

@@ -22,3 +22,25 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+
+  auth-smoke:
+    name: Local Supabase auth smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.105.0
+      - run: npm ci
+      - name: Start disposable local Supabase
+        run: supabase start --exclude vector
+      - name: Export local test credentials
+        run: supabase status -o env >> "$GITHUB_ENV"
+      - name: Verify password authentication and profile RLS
+        run: npm run test:auth

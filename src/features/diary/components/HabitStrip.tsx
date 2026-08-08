@@ -3,6 +3,8 @@
 import { ChevronRight, Droplet, Scale, Timer } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { Sheet } from "@/features/shared/Sheet";
+import { NumericInput } from "@/features/shared/NumericInput";
+import { roundDecimal } from "@/lib/decimal";
 import { activeFast, fastingWindowHours, formatFastingDuration, uniqueFastingRecords } from "@/lib/fasting";
 import { isHabitFeatureEnabled } from "@/lib/habit-settings";
 import { hydrationTotal, setWaterAmount } from "@/lib/hydration";
@@ -87,7 +89,8 @@ function WeightSheet({ profile, onSave, onOpenHistory }: { profile: Profile; onS
     const weightKg = Number(draft);
     if (!Number.isFinite(weightKg) || weightKg < 20 || weightKg > 500) return;
     const date = new Date().toISOString().slice(0, 10);
-    onSave({ ...profile, weightKg, weightEntries: [...entries.filter((entry) => entry.date !== date), { date, weightKg }].sort((a, b) => a.date.localeCompare(b.date)) });
+    const normalizedWeight = roundDecimal(weightKg);
+    onSave({ ...profile, weightKg: normalizedWeight, weightEntries: [...entries.filter((entry) => entry.date !== date), { date, weightKg: normalizedWeight }].sort((a, b) => a.date.localeCompare(b.date)) });
   };
   const points: TrendPoint[] = entries.slice(-trendPointCount).map((entry) => ({ key: entry.date, label: dayLabel(new Date(`${entry.date}T12:00:00`)), value: entry.weightKg }));
   const change = points.length > 1 ? points[points.length - 1].value - points[0].value : 0;
@@ -101,7 +104,7 @@ function WeightSheet({ profile, onSave, onOpenHistory }: { profile: Profile; onS
     <HabitTrend points={points} scale="band" caption="Log two weigh-ins to see your trend here." />
     <span className="habit-sheet-label">Today&apos;s weigh-in</span>
     <div className="today-weigh-row">
-      <label><span className="visually-hidden">Weight in kilograms</span><input autoFocus inputMode="decimal" value={draft} onChange={(event) => setDraft(event.target.value)} /><small>kg</small></label>
+      <label><span className="visually-hidden">Weight in kilograms</span><NumericInput autoFocus decimalPlaces={2} value={draft} onChange={(event) => setDraft(event.target.value)} /><small>kg</small></label>
       <button type="button" className="primary-button" onClick={save}>Save</button>
     </div>
   </SheetShell>;

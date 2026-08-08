@@ -35,6 +35,11 @@ A task worked on a dedicated branch is not done when the commit is pushed. Befor
 | TypeScript | `npm run typecheck` |
 | Any code | `npm run lint` |
 | Behavior with tests | `npm test` |
+| Supabase authentication, CI, browser login, or visual sign-in | Read `docs/agent-auth.md`; run `npm run test:auth` against the disposable local Supabase stack |
+
+## Agent test authentication
+
+Personal Google and Supabase accounts are prohibited for agent testing. Use the disposable local Supabase project and its on-demand local-only password account; never add credentials, browser state, or service-role keys to the repository. `docs/agent-auth.md` defines the exact workflow and the only allowed staging exception.
 
 ## Patterns
 

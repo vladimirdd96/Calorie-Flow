@@ -6,6 +6,7 @@ import { ThemedSelect } from "@/features/shared/ThemedSelect";
 import { NumericInput } from "@/features/shared/NumericInput";
 import { ClearableInput } from "@/features/shared/ClearableInput";
 import { round } from "@/lib/nutrition";
+import { roundDecimal } from "@/lib/decimal";
 import type { Meal, MealType } from "@/lib/types";
 import { mealLabels, readMealImage } from "./DiaryPrimitives";
 
@@ -62,7 +63,7 @@ export function MealEditor({ meal, onSave, onClose, hideCalories }: { meal: Meal
   const [mealType, setMealType] = useState<MealType>(meal.mealType);
   const [tab, setTab] = useState<MealEditorTab>("details");
   const [nutrition, setNutrition] = useState(() => ({
-    calories: String(Math.round(meal.nutrition.calories)),
+    calories: String(meal.nutrition.calories),
     protein: String(meal.nutrition.protein),
     carbs: String(meal.nutrition.carbs),
     fat: String(meal.nutrition.fat),
@@ -80,7 +81,7 @@ export function MealEditor({ meal, onSave, onClose, hideCalories }: { meal: Meal
     if (!name.trim() || !Number.isFinite(nextAmount) || nextAmount <= 0) { setTab("details"); setError("Add a meal name and a positive amount."); return; }
     if (Object.values(nextNutrition).some((value) => !Number.isFinite(value) || value < 0)) { setTab("nutrition"); setError("Use zero or positive nutrition values."); return; }
     const ratio = meal.amount > 0 ? nextAmount / meal.amount : 1;
-    onSave({ ...meal, name: name.trim(), amount: nextAmount, mealType, imageUrl, grams: round(meal.grams * ratio), nutrition: { ...meal.nutrition, ...nextNutrition, calories: Math.round(nextNutrition.calories) } });
+    onSave({ ...meal, name: name.trim(), amount: roundDecimal(nextAmount), mealType, imageUrl, grams: roundDecimal(meal.grams * ratio), nutrition: Object.fromEntries(Object.entries({ ...meal.nutrition, ...nextNutrition }).map(([key, value]) => [key, typeof value === "number" ? roundDecimal(value) : value])) as typeof meal.nutrition });
   };
   const chooseImage = async (file: File | undefined) => {
     if (!file) return;
@@ -106,7 +107,7 @@ export function MealEditor({ meal, onSave, onClose, hideCalories }: { meal: Meal
         {tab === "nutrition" && <section className="editor-nutrition" aria-labelledby="meal-nutrition-heading">
           <div className="editor-nutrition-heading"><div><span className="eyebrow" id="meal-nutrition-heading">Nutrition for this entry</span><small>Adjust what you actually ate.</small></div><Pencil size={17} aria-hidden="true" /></div>
           <div className="form-grid three editor-nutrition-fields">
-            {!hideCalories && <label><span>Calories <small>kcal</small></span><NumericInput required min="0" step="1" inputMode="numeric" value={nutrition.calories} onChange={(event) => updateNutrition("calories", event.target.value)} /></label>}
+            {!hideCalories && <label><span>Calories <small>kcal</small></span><NumericInput required min="0" decimalPlaces={2} value={nutrition.calories} onChange={(event) => updateNutrition("calories", event.target.value)} /></label>}
             <label><span>Protein <small>g</small></span><NumericInput min="0" step="0.1" inputMode="decimal" value={nutrition.protein} onChange={(event) => updateNutrition("protein", event.target.value)} /></label>
             <label><span>Carbs <small>g</small></span><NumericInput min="0" step="0.1" inputMode="decimal" value={nutrition.carbs} onChange={(event) => updateNutrition("carbs", event.target.value)} /></label>
             <label><span>Fat <small>g</small></span><NumericInput min="0" step="0.1" inputMode="decimal" value={nutrition.fat} onChange={(event) => updateNutrition("fat", event.target.value)} /></label>

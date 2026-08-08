@@ -77,7 +77,7 @@ function loggingDateLabel(dateKey: string) {
   return new Date(`${dateKey}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 }
 
-export function AddFoodSheet({ foods, meals, recipes, initialView = "start", initialMealType, initialLoggedDate = localDateKey(), onLog, onMealPhoto, onSaveFood, onSelectRecipe, onSelectFood, onClose, hideCalories, purpose = "log", mealTimeBoundaries, servingOverrides, macroRoundingDigits }: { foods: Food[]; meals: Meal[]; recipes: Recipe[]; initialView?: AddView; initialMealType?: MealType; initialLoggedDate?: string; onLog: (meal: Meal, food: Food) => void; onMealPhoto: (meal: Meal) => void; onSaveFood: (food: Food) => Promise<void>; onSelectRecipe: (recipe: Recipe) => void; onSelectFood?: (food: Food) => void; onClose?: () => void; hideCalories: boolean; purpose?: AddFoodPurpose; mealTimeBoundaries?: MealTimeBoundaries; servingOverrides?: { tbspGrams?: number; tspGrams?: number }; macroRoundingDigits?: 0 | 1 | 2 }) {
+export function AddFoodSheet({ foods, meals, recipes, initialView = "start", initialMealType, initialLoggedDate = localDateKey(), onLog, onMealPhoto, onSaveFood, onSelectRecipe, onSelectFood, onClose, hideCalories, purpose = "log", mealTimeBoundaries, servingOverrides }: { foods: Food[]; meals: Meal[]; recipes: Recipe[]; initialView?: AddView; initialMealType?: MealType; initialLoggedDate?: string; onLog: (meal: Meal, food: Food) => void; onMealPhoto: (meal: Meal) => void; onSaveFood: (food: Food) => Promise<void>; onSelectRecipe: (recipe: Recipe) => void; onSelectFood?: (food: Food) => void; onClose?: () => void; hideCalories: boolean; purpose?: AddFoodPurpose; mealTimeBoundaries?: MealTimeBoundaries; servingOverrides?: { tbspGrams?: number; tspGrams?: number } }) {
   const [view, setView] = useState<AddView>(initialView);
   const [selected, setSelected] = useState<Food>();
   const [questions, setQuestions] = useState<string[]>([]);
@@ -250,7 +250,7 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
     if (labeledFood.barcode) await barcode(labeledFood.barcode, labeledFood, followUps, true);
     else await saveAndPick(labeledFood, followUps);
   };
-  if (selected) return <PortionSheet food={selected} questions={questions} initialMealType={initialMealType} initialLoggedDate={loggedDate} hideCalories={hideCalories} onLog={onLog} onClose={() => setSelected(undefined)} mealTimeBoundaries={mealTimeBoundaries} servingOverrides={servingOverrides} macroRoundingDigits={macroRoundingDigits} />;
+  if (selected) return <PortionSheet food={selected} questions={questions} initialMealType={initialMealType} initialLoggedDate={loggedDate} hideCalories={hideCalories} onLog={onLog} onClose={() => setSelected(undefined)} mealTimeBoundaries={mealTimeBoundaries} servingOverrides={servingOverrides} />;
   if (view === "scan") return <>{loading && <div className="global-loader"><i />Looking up product…</div>}<BarcodeScanner onResult={barcode} onClose={() => changeView("start")} /></>;
   if (view === "camera") return <LabelReader initialFiles={pendingImages} initialAction="camera" onFood={(food, followUps) => { void handleLabelFood(food, followUps); }} onClose={() => { setPendingImages([]); changeView("start"); }} />;
   if (view === "photo") return <MealPhotoReader initialMealType={initialMealType} initialLoggedDate={loggedDate} hideCalories={hideCalories} mealTimeBoundaries={mealTimeBoundaries} onLogMeal={onMealPhoto} onClose={() => changeView("start")} />;

@@ -50,3 +50,8 @@ This is the durable record of product requirements stated in user requests. Read
 ## In-app section navigation — 2026-08-05
 
 - Cross-page links to a tabbed workspace must name both the destination page and its intended tab. For example, the Today weight and fasting shortcuts open the matching Insights histories instead of the default overview.
+
+## Measurement precision — 2026-08-08
+
+- Meaningful user-entered measurements, nutrition values, and kcal values accept up to two digits after the decimal point and round to the nearest hundredth on blur/save.
+- Integer/discrete controls and free-form recipe ingredient quantities retain their existing behavior.

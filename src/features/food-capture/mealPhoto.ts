@@ -1,4 +1,5 @@
-import { localDateKey, round } from "@/lib/nutrition";
+import { localDateKey } from "@/lib/nutrition";
+import { roundDecimal } from "@/lib/decimal";
 import type { Meal, MealPhotoAnalysis, MealPhotoItem, MealType, Nutrition } from "@/lib/types";
 
 /** Multipliers behind the "Smaller / As shown / Larger" review chips. */
@@ -17,12 +18,12 @@ const emptyNutrition: Nutrition = { calories: 0, protein: 0, carbs: 0, fat: 0, f
 
 function factorNutrition(nutrition: Nutrition, factor: number): Nutrition {
   const scaled: Nutrition = {
-    calories: round(nutrition.calories * factor, 0),
-    protein: round(nutrition.protein * factor, 1),
-    carbs: round(nutrition.carbs * factor, 1),
-    fat: round(nutrition.fat * factor, 1),
-    fiber: round(nutrition.fiber * factor, 1),
-    sugar: round(nutrition.sugar * factor, 1),
+    calories: roundDecimal(nutrition.calories * factor),
+    protein: roundDecimal(nutrition.protein * factor),
+    carbs: roundDecimal(nutrition.carbs * factor),
+    fat: roundDecimal(nutrition.fat * factor),
+    fiber: roundDecimal(nutrition.fiber * factor),
+    sugar: roundDecimal(nutrition.sugar * factor),
   };
   if (nutrition.micronutrientsIncomplete) scaled.micronutrientsIncomplete = true;
   return scaled;
@@ -37,7 +38,7 @@ export function reviewItems(analysis: MealPhotoAnalysis): ReviewItem[] {
  * correcting the weight scales the macros with it rather than editing six fields.
  */
 export function resizeItem(item: ReviewItem, grams: number): ReviewItem {
-  const nextGrams = round(Math.max(1, grams), 0);
+  const nextGrams = roundDecimal(Math.max(1, grams));
   if (item.grams <= 0) return { ...item, grams: nextGrams };
   return { ...item, grams: nextGrams, nutrition: factorNutrition(item.nutrition, nextGrams / item.grams) };
 }
@@ -58,7 +59,7 @@ export function mealPhotoTotals(items: ReviewItem[]) {
   }), { ...emptyNutrition });
   return {
     count: included.length,
-    grams: round(included.reduce((total, item) => total + item.grams, 0), 0),
+    grams: roundDecimal(included.reduce((total, item) => total + item.grams, 0)),
     nutrition: factorNutrition(nutrition, 1),
   };
 }

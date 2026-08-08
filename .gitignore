@@ -25,3 +25,6 @@ design-system/globals.css
 
 # Built Open Food Facts mirror shards, staged into the deploy rather than committed
 .product-mirror/
+
+# Local agent-browser state can contain a Supabase session. It is never shared or committed.
+.agent-browser/

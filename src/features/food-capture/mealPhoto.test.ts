@@ -57,8 +57,8 @@ describe("resizeItem", () => {
 describe("scaleItems", () => {
   it("applies one portion multiplier across every item", () => {
     const scaled = scaleItems(reviewItems(analysis), 0.75);
-    expect(scaled.map((item) => item.grams)).toEqual([113, 113, 68]);
-    expect(scaled[0].nutrition.calories).toBe(187);
+    expect(scaled.map((item) => item.grams)).toEqual([112.5, 112.5, 67.5]);
+    expect(scaled[0].nutrition.calories).toBe(186);
   });
 });
 

@@ -49,7 +49,7 @@ function DailyTargetsSheet({ profile, onSave, onClose }: { profile: Profile; onS
   const macroCalories = Math.round(draft.proteinTarget * 4 + draft.carbsTarget * 4 + draft.fatTarget * 9);
   return <form className="profile-compact-sheet" onSubmit={(event) => { event.preventDefault(); onSave(draft); onClose(); }}>
     <div className="compact-sheet-header"><h2>Daily targets</h2><button type="button" className="icon-button ghost" aria-label="Close" onClick={onClose}><X size={17} /></button></div>
-    <div className="profile-target-fields">{(["calorieTarget", "proteinTarget", "carbsTarget", "fatTarget"] as const).map((key) => <label key={key} className={key}><span>{key === "calorieTarget" ? "Calories" : `${key.replace("Target", "")[0].toUpperCase()}${key.replace("Target", "").slice(1)} (g)`}</span><NumericInput min="0" value={draft[key]} onChange={(event) => update(key, Math.max(0, Number(event.target.value)))} /></label>)}</div>
+    <div className="profile-target-fields">{(["calorieTarget", "proteinTarget", "carbsTarget", "fatTarget"] as const).map((key) => <label key={key} className={key}><span>{key === "calorieTarget" ? "Calories" : `${key.replace("Target", "")[0].toUpperCase()}${key.replace("Target", "").slice(1)} (g)`}</span><NumericInput min="0" decimalPlaces={2} value={draft[key]} onChange={(event) => update(key, Math.max(0, Number(event.target.value)))} /></label>)}</div>
     <p>Macros add up to <strong>{macroCalories} kcal</strong> against a {draft.calorieTarget} kcal target.</p>
     <details className="nutrition-goals-advanced">
       <summary><span><strong>More nutrition goals</strong><small>Sugar, saturated fat, sodium and potassium.</small></span><ChevronRight size={16} /></summary>
@@ -66,8 +66,8 @@ function BodyActivitySheet({ profile, onSave, onClose }: { profile: Profile; onS
     <p>These only feed the target suggestion. Change them any time and we&apos;ll recalculate.</p>
     <div className="profile-body-fields">
       <label><span>Age</span><NumericInput min="16" max="100" value={draft.age} onChange={(event) => setDraft({ ...draft, age: Number(event.target.value) })} /></label>
-      <label><span>Height (cm)</span><NumericInput min="120" max="230" value={draft.heightCm} onChange={(event) => setDraft({ ...draft, heightCm: Number(event.target.value) })} /></label>
-      <label><span>Weight (kg)</span><NumericInput min="35" max="300" step=".1" value={draft.weightKg} onChange={(event) => setDraft({ ...draft, weightKg: Number(event.target.value) })} /></label>
+      <label><span>Height (cm)</span><NumericInput min="120" max="230" decimalPlaces={2} value={draft.heightCm} onChange={(event) => setDraft({ ...draft, heightCm: Number(event.target.value) })} /></label>
+      <label><span>Weight (kg)</span><NumericInput min="35" max="300" decimalPlaces={2} value={draft.weightKg} onChange={(event) => setDraft({ ...draft, weightKg: Number(event.target.value) })} /></label>
     </div>
     <label><span>Activity level</span><ThemedSelect ariaLabel="Activity level" value={draft.activity} onChange={(value) => setDraft({ ...draft, activity: value as ActivityLevel })} options={[{ value: "sedentary", label: "Mostly sitting · desk work" }, { value: "light", label: "Lightly active · 1–2 sessions" }, { value: "moderate", label: "Moderately active · 3–4 sessions" }, { value: "active", label: "Very active · 5+ sessions" }, { value: "very-active", label: "Physical work or daily training" }]} /></label>
     <button className="primary-button full" type="submit">Save</button>

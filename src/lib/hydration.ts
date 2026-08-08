@@ -14,7 +14,8 @@ export function hydrationDayTotals(entries: WaterEntry[] | undefined): Array<{ d
 }
 
 export function setWaterAmount(entries: WaterEntry[] | undefined, date: string, amountMl: number): WaterEntry[] {
-  const safeAmount = Math.round(Math.max(0, Math.min(20_000, amountMl)));
+  const safeAmount = roundDecimal(Math.max(0, Math.min(20_000, amountMl)));
   const remaining = (Array.isArray(entries) ? entries : []).filter((entry) => entry.date !== date);
   return safeAmount ? [...remaining, { date, amountMl: safeAmount }].sort((a, b) => a.date.localeCompare(b.date)) : remaining;
 }
+import { roundDecimal } from "./decimal";

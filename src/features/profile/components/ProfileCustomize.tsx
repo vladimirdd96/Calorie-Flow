@@ -109,7 +109,7 @@ export function ProfileCustomize({ profile, onSave, theme, onThemeChange, chatTe
     <h2 className="profile-section-label">Meal guides</h2>
     <section className="profile-settings-card">
       <label className="profile-simple-toggle"><span><strong>Show a guide per meal</strong><small>Split your daily target across breakfast, lunch, dinner and snacks</small></span><input className="profile-switch" type="checkbox" checked={mealGuides} onChange={() => onSave({ ...profile, mealCalorieTargets: mealGuides ? undefined : defaultMealTargets(profile) })} /></label>
-      {mealGuides && <div className="nutrition-goal-fields profile-meal-guides">{meals.map(({ key, label, share }) => { const value = mealTargets[key] || Math.round(profile.calorieTarget * share / 100); return <label key={key}><span>{label}</span><div className="input-suffix"><NumericInput required min="0" step="1" inputMode="numeric" value={value} onChange={(event) => onSave({ ...profile, mealCalorieTargets: { ...mealTargets, [key]: Math.max(0, Number(event.target.value)) } })} /><span>kcal</span></div></label>; })}</div>}
+      {mealGuides && <div className="nutrition-goal-fields profile-meal-guides">{meals.map(({ key, label, share }) => { const value = mealTargets[key] || Math.round(profile.calorieTarget * share / 100); return <label key={key}><span>{label}</span><div className="input-suffix"><NumericInput required min="0" decimalPlaces={2} value={value} onChange={(event) => onSave({ ...profile, mealCalorieTargets: { ...mealTargets, [key]: Math.max(0, Number(event.target.value)) } })} /><span>kcal</span></div></label>; })}</div>}
     </section>
 
     <h2 className="profile-section-label">Meal timing</h2>

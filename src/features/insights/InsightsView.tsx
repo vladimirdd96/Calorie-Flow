@@ -4,6 +4,7 @@ import { Activity, Droplets, Filter, Flame, Pencil, Plus, Scale, Sparkles, Timer
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { localDateKey, round, startOfWeek, sumNutrition } from "@/lib/nutrition";
 import { hydrationDayTotals } from "@/lib/hydration";
+import { roundDecimal } from "@/lib/decimal";
 import { activeFast, fastingWindowHours, formatFastingDuration, uniqueFastingRecords } from "@/lib/fasting";
 import { isHabitFeatureEnabled } from "@/lib/habit-settings";
 import { NumericInput } from "@/features/shared/NumericInput";
@@ -156,8 +157,9 @@ export function InsightsView({ meals, profile, onSave, weightTrackingEnabled, in
     event.preventDefault();
     const weightKg = measurementSystem === measurementSystems.imperial ? lbToKg(Number(weightInput)) : Number(weightInput);
     if (!Number.isFinite(weightKg) || weightKg < 20 || weightKg > 500) return;
-    const nextEntries = [...entries.filter((entry) => entry.date !== weightDate), { date: weightDate, weightKg }].sort((a, b) => a.date.localeCompare(b.date));
-    onSave({ ...profile, weightKg, weightEntries: nextEntries });
+    const normalizedWeight = roundDecimal(weightKg);
+    const nextEntries = [...entries.filter((entry) => entry.date !== weightDate), { date: weightDate, weightKg: normalizedWeight }].sort((a, b) => a.date.localeCompare(b.date));
+    onSave({ ...profile, weightKg: normalizedWeight, weightEntries: nextEntries });
   };
   const removeWeight = (entry: WeightEntry) => onSave({ ...profile, weightEntries: entries.filter((candidate) => candidate.date !== entry.date) });
   const beginFastingEdit = (record: FastingRecord) => { setEditingFastingId(record.id); setFastingDraft({ startedAt: fastingDateTimeInput(record.startedAt), endedAt: fastingDateTimeInput(record.endedAt) }); };

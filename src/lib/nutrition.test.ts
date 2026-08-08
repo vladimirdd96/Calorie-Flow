@@ -36,6 +36,11 @@ describe("nutrition calculations", () => {
     expect(gramsFor(food, 1, "tbsp")).toBe(15);
   });
 
+  it("preserves two-decimal portion precision through gram and nutrition calculations", () => {
+    expect(gramsFor(food, 0.25, "tbsp", { tbspGrams: 15.15 })).toBe(3.79);
+    expect(scaleNutrition(food.nutrientsPer100, 12.34)).toMatchObject({ calories: 24.68, protein: 1.23, carbs: 2.47 });
+  });
+
   it("calculates the user's maintenance target", () => {
     expect(calculateCalories({ sex: "male", age: 29, heightCm: 191, weightKg: 84, activity: "moderate", goalMode: "maintain" })).toBe(2925);
   });

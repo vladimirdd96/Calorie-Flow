@@ -1,4 +1,5 @@
 import { defaultNutritionTargets, goalPaces, type ActivityLevel, type DailyTargets, type DietPreset, type Food, type GoalPace, type MacroPresetOverride, type MealTimeBoundaries, type MealType, type Micronutrients, type Nutrition, type Profile, type ServingUnit, type WeekStartDay, type Weekday } from "./types";
+import { roundDecimal } from "./decimal";
 
 export const EMPTY_NUTRITION: Nutrition = {
   calories: 0,
@@ -94,10 +95,10 @@ export function sumNutrition(items: Nutrition[]): Nutrition {
   return items.some((item) => item.micronutrients) ? { ...total, micronutrients, micronutrientsIncomplete } : total;
 }
 
-export function scaleNutrition(per100: Nutrition, grams: number, macroDigits = 1): Nutrition {
+export function scaleNutrition(per100: Nutrition, grams: number, macroDigits = 2): Nutrition {
   const ratio = Math.max(0, grams) / 100;
   const scaled: Nutrition = {
-    calories: round(per100.calories * ratio, 0),
+    calories: roundDecimal(per100.calories * ratio),
     protein: round(per100.protein * ratio, macroDigits),
     carbs: round(per100.carbs * ratio, macroDigits),
     fat: round(per100.fat * ratio, macroDigits),
@@ -111,7 +112,7 @@ export function scaleNutrition(per100: Nutrition, grams: number, macroDigits = 1
 }
 
 /** Inverse of scaleNutrition: nutrition known for `grams` grams, expressed per 100 g. */
-export function nutritionPer100Grams(nutrition: Nutrition, grams: number, macroDigits = 1): Nutrition {
+export function nutritionPer100Grams(nutrition: Nutrition, grams: number, macroDigits = 2): Nutrition {
   if (!(grams > 0)) return nutrition;
   return scaleNutrition(nutrition, 10_000 / grams, macroDigits);
 }
@@ -128,7 +129,7 @@ export function gramsFor(food: Food, amount: number, unit: ServingUnit, override
     tsp: overrides?.tspGrams ?? 5,
     ml: 1,
   };
-  return round(safeAmount * unitWeights[unit]);
+  return roundDecimal(safeAmount * unitWeights[unit]);
 }
 
 export function contextualUnits(food: Food): ServingUnit[] {
