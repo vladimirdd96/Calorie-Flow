@@ -30,7 +30,6 @@ function accountDisplayName(user: CloudUser | null) {
 }
 
 import { TargetEditor } from "./components/ProfileTargets";
-import { NutritionGoalFields } from "./components/NutritionGoalFields";
 import { useModalFocus } from "./hooks/useDisclosure";
 
 import { ProfileCustomize } from "./components/ProfileCustomize";
@@ -41,22 +40,6 @@ function ProfileSectionLabel({ children }: { children: React.ReactNode }) {
 
 function ProfileLinkRow({ icon, tone, title, detail, onClick }: { icon: React.ReactNode; tone: "mint" | "carbs" | "blue" | "fat"; title: string; detail: string; onClick: () => void }) {
   return <button className="profile-link-row" type="button" onClick={onClick}><span className={`profile-link-icon ${tone}`}>{icon}</span><span><strong>{title}</strong><small>{detail}</small></span><ChevronRight size={16} /></button>;
-}
-
-function DailyTargetsSheet({ profile, onSave, onClose }: { profile: Profile; onSave: (profile: Profile) => void; onClose: () => void }) {
-  const [draft, setDraft] = useState(profile);
-  const update = <K extends keyof Profile>(key: K, value: Profile[K]) => setDraft((current) => ({ ...current, [key]: value }));
-  const macroCalories = Math.round(draft.proteinTarget * 4 + draft.carbsTarget * 4 + draft.fatTarget * 9);
-  return <form className="profile-compact-sheet" onSubmit={(event) => { event.preventDefault(); onSave(draft); onClose(); }}>
-    <div className="compact-sheet-header"><h2>Daily targets</h2><button type="button" className="icon-button ghost" aria-label="Close" onClick={onClose}><X size={17} /></button></div>
-    <div className="profile-target-fields">{(["calorieTarget", "proteinTarget", "carbsTarget", "fatTarget"] as const).map((key) => <label key={key} className={key}><span>{key === "calorieTarget" ? "Calories" : `${key.replace("Target", "")[0].toUpperCase()}${key.replace("Target", "").slice(1)} (g)`}</span><NumericInput min="0" decimalPlaces={2} value={draft[key]} onChange={(event) => update(key, Math.max(0, Number(event.target.value)))} /></label>)}</div>
-    <p>Macros add up to <strong>{macroCalories} kcal</strong> against a {draft.calorieTarget} kcal target.</p>
-    <details className="nutrition-goals-advanced">
-      <summary><span><strong>More nutrition goals</strong><small>Sugar, saturated fat, sodium and potassium.</small></span><ChevronRight size={16} /></summary>
-      <NutritionGoalFields profile={draft} onChange={(key, value) => update(key, value)} />
-    </details>
-    <button className="primary-button full" type="submit">Save targets</button>
-  </form>;
 }
 
 function BodyActivitySheet({ profile, onSave, onClose }: { profile: Profile; onSave: (profile: Profile) => void; onClose: () => void }) {
@@ -284,7 +267,7 @@ export function ProfileView({
         </section>
         {backupNotice && <p className="backup-notice" role="status">{backupNotice}</p>}
       </div> : <div id="customize-panel" role="tabpanel" aria-labelledby="customize-tab" tabIndex={0}><ProfileCustomize profile={profile} onSave={onSave} theme={theme} onThemeChange={onThemeChange} chatTextSize={chatTextSize} onChatTextSizeChange={onChatTextSizeChange} /></div>}
-      {editingTargets && <Sheet label="Daily targets" onClose={() => setEditingTargets(false)} showClose={false}><DailyTargetsSheet profile={profile} onSave={onSave} onClose={() => setEditingTargets(false)} /></Sheet>}
+      {editingTargets && <Sheet label="Daily targets" onClose={() => setEditingTargets(false)}><div className="compact-sheet-header"><h2>Daily targets</h2></div><TargetEditor profile={profile} onSave={(next) => { onSave(next); setEditingTargets(false); }} onCancel={() => setEditingTargets(false)} /></Sheet>}
       {editingBody && <Sheet label="Body and activity" onClose={() => setEditingBody(false)} showClose={false}><BodyActivitySheet profile={profile} onSave={onSave} onClose={() => setEditingBody(false)} /></Sheet>}
       {sharingOpen && <Sheet label="Share a read-only diary" onClose={() => setSharingOpen(false)} wide><DiarySharing user={user} /></Sheet>}
     </main>

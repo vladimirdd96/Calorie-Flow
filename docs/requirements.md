@@ -55,3 +55,13 @@ This is the durable record of product requirements stated in user requests. Read
 
 - Meaningful user-entered measurements, nutrition values, and kcal values accept up to two digits after the decimal point and round to the nearest hundredth on blur/save.
 - Integer/discrete controls and free-form recipe ingredient quantities retain their existing behavior.
+## Calorie targeting, pace and adaptive maintenance — 2026-08-08
+
+- Goal and pace are editable wherever targets are, not only during onboarding. Onboarding and Profile → Edit targets render the same `TargetEditor`, so the two surfaces cannot drift apart.
+- Pace is a percentage of bodyweight per week, not a fixed calorie step, so a pace means the same rate of change at any body size. Each pace shows the calorie target it produces and the weekly rate it implies at the moment it is chosen.
+- The target's derivation (BMR → maintenance → pace delta → target) is available on the target itself, collapsed by default.
+- No target is recommended below the higher of the user's BMR and a sex-specific floor. When a pace would go lower, the target is held at the floor and the UI says so.
+- A user may set their own calorie number. It is reachable through a collapsed disclosure below the calculated path, never a co-equal control, and it is annotated with the deficit and weekly rate it implies. A number above the floor is always accepted.
+- Macros respond to the goal: protein rises on a cut and is computed against goal weight, or a BMI-25 reference weight when no goal weight is set, rather than raw bodyweight. Fat has a floor, and a split that cannot fit the target reports the shortfall instead of silently zeroing carbs.
+- After enough logged days and weigh-ins, Insights may offer a maintenance figure derived from real intake and the weight trend. It is always a suggestion the user confirms, never applied automatically.
+- When a self-set target is exceeded on most logged days for three weeks, Insights offers to rebuild it from real data. Eating under a self-set target is not a failure state and never triggers this.

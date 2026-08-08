@@ -181,6 +181,14 @@ export const profileSchema = z.object({
   tspGrams: z.number().finite().min(1).max(60).optional(),
   insightsTolerancePercent: z.number().finite().min(1).max(50).optional(),
   insightsDefaultRange: z.enum(["week", "month", "all"]).optional(),
+  calorieTargetMode: z.enum(["calculated", "custom"]).optional(),
+  calorieTargetSetAt: z.string().datetime({ offset: true }).optional(),
+  goalWeightKg: z.number().finite().min(35).max(300).optional(),
+  maintenanceSource: z.enum(["formula", "observed"]).optional(),
+  observedMaintenanceKcal: positiveFinite.max(20_000).optional(),
+  observedMaintenanceUpdatedAt: z.string().datetime({ offset: true }).optional(),
+  maintenanceReviewDismissedAt: z.string().datetime({ offset: true }).optional(),
+  targetModelVersion: z.number().int().min(1).max(1_000).optional(),
 }).strict() satisfies z.ZodType<Profile>;
 
 export const coachMessageSchema = z.object({

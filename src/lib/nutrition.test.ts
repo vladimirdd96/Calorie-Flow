@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateCalories, calculateMacroTargets, gramsFor, netCarbs, resolveDailyTargets, resolveMealCalorieTarget, scaleNutrition, startOfWeek, sumNutrition, suggestedMealType } from "./nutrition";
+import { calculateMacroTargets, gramsFor, netCarbs, resolveDailyTargets, resolveMealCalorieTarget, scaleNutrition, startOfWeek, sumNutrition, suggestedMealType } from "./nutrition";
 import type { Food } from "./types";
 
 const food: Food = {
@@ -10,6 +10,8 @@ const food: Food = {
   nutrientsPer100: { calories: 200, protein: 10, carbs: 20, fat: 8, fiber: 4, sugar: 2 },
   source: "custom",
 };
+
+const macroBase = { calories: 2900, weightKg: 84, heightCm: 191, goalMode: "maintain" as const, preset: "balanced" as const };
 
 describe("nutrition calculations", () => {
   it("scales per-100g nutrition", () => {
@@ -41,12 +43,8 @@ describe("nutrition calculations", () => {
     expect(scaleNutrition(food.nutrientsPer100, 12.34)).toMatchObject({ calories: 24.68, protein: 1.23, carbs: 2.47 });
   });
 
-  it("calculates the user's maintenance target", () => {
-    expect(calculateCalories({ sex: "male", age: 29, heightCm: 191, weightKg: 84, activity: "moderate", goalMode: "maintain" })).toBe(2925);
-  });
-
   it("keeps keto carbs low", () => {
-    expect(calculateMacroTargets(2900, 84, "high-protein-keto").carbs).toBe(30);
+    expect(calculateMacroTargets({ ...macroBase, calories: 2900, preset: "high-protein-keto" }).carbs).toBe(30);
   });
 
   it("suggests the meal type from the user's local hour", () => {
@@ -77,22 +75,59 @@ describe("nutrition calculations", () => {
     expect(resolveMealCalorieTarget({ mealCalorieTargets: { lunch: 720 } }, "dinner")).toBeUndefined();
   });
 
-  it("adjusts the calorie deficit and surplus by pace", () => {
-    const base = { sex: "male" as const, age: 29, heightCm: 191, weightKg: 84, activity: "moderate" as const };
-    expect(calculateCalories({ ...base, goalMode: "lose" })).toBe(calculateCalories({ ...base, goalMode: "lose", goalPace: "moderate" }));
-    expect(calculateCalories({ ...base, goalMode: "lose", goalPace: "conservative" })).toBeGreaterThan(calculateCalories({ ...base, goalMode: "lose", goalPace: "moderate" }));
-    expect(calculateCalories({ ...base, goalMode: "lose", goalPace: "aggressive" })).toBeLessThan(calculateCalories({ ...base, goalMode: "lose", goalPace: "moderate" }));
+  it("raises protein on a cut and leaves it alone at maintenance", () => {
+    const maintaining = calculateMacroTargets({ ...macroBase, goalMode: "maintain" });
+    const cutting = calculateMacroTargets({ ...macroBase, goalMode: "lose" });
+    expect(cutting.protein).toBeGreaterThan(maintaining.protein);
   });
 
-  it("rounds the calorie target to a custom step", () => {
-    const base = { sex: "male" as const, age: 29, heightCm: 191, weightKg: 84, activity: "moderate" as const, goalMode: "maintain" as const };
-    expect(calculateCalories(base, 10) % 10).toBe(0);
-    expect(calculateCalories(base, 50) % 50).toBe(0);
+  it("scales protein off lean mass rather than a high current weight", () => {
+    const heavy = { ...macroBase, weightKg: 120, heightCm: 175, goalMode: "lose" as const };
+    const withoutGoal = calculateMacroTargets(heavy);
+    const withGoal = calculateMacroTargets({ ...heavy, goalWeightKg: 80 });
+    // Raw bodyweight would ask for 264 g. Both paths stay far below that.
+    expect(withoutGoal.protein).toBeLessThan(180);
+    expect(withGoal.protein).toBeLessThan(180);
+    // A stated goal weight is the better proxy, so it becomes the basis outright.
+    expect(withGoal.protein).toBe(Math.round((80 * 2.2) / 5) * 5);
+  });
+
+  it("keeps a preset override above the goal-bonus cap", () => {
+    const overridden = calculateMacroTargets({ ...macroBase, goalMode: "lose", overrides: { balanced: { proteinPerKg: 3 } } });
+    expect(overridden.protein).toBe(Math.round((84 * 3) / 5) * 5);
+  });
+
+  it("holds fat at a floor instead of letting a preset drive it to nothing", () => {
+    const lowFat = calculateMacroTargets({ ...macroBase, calories: 1400, preset: "low-fat" });
+    expect(lowFat.fat).toBeGreaterThanOrEqual(30);
+  });
+
+  it("reconciles macros against the calorie target rather than overshooting it", () => {
+    for (const calories of [1400, 1800, 2200, 2900]) {
+      for (const preset of ["balanced", "high-protein", "low-fat"] as const) {
+        const macros = calculateMacroTargets({ ...macroBase, calories, preset, goalMode: "lose" });
+        const total = macros.protein * 4 + macros.carbs * 4 + macros.fat * 9;
+        expect(Math.abs(total - calories - macros.shortfallKcal)).toBeLessThanOrEqual(10);
+      }
+    }
+  });
+
+  it("trims fat then protein so a tight target still fits", () => {
+    const tight = calculateMacroTargets({ calories: 900, weightKg: 120, heightCm: 175, goalMode: "lose", preset: "high-protein" });
+    expect(tight.shortfallKcal).toBe(0);
+    expect(tight.protein * 4 + tight.carbs * 4 + tight.fat * 9).toBeLessThanOrEqual(910);
+  });
+
+  it("reports the calories a preset cannot fit instead of hiding a zeroed carb target", () => {
+    // Below the protein and fat floors combined, nothing can be trimmed further.
+    const impossible = calculateMacroTargets({ calories: 700, weightKg: 120, heightCm: 175, goalMode: "lose", preset: "high-protein" });
+    expect(impossible.carbs).toBe(0);
+    expect(impossible.shortfallKcal).toBeGreaterThan(0);
   });
 
   it("merges a macro preset override onto the base rule", () => {
-    const defaultResult = calculateMacroTargets(2900, 84, "balanced");
-    const overridden = calculateMacroTargets(2900, 84, "balanced", { balanced: { proteinPerKg: 2.5 } });
+    const defaultResult = calculateMacroTargets({ ...macroBase, calories: 2900, preset: "balanced" });
+    const overridden = calculateMacroTargets({ ...macroBase, calories: 2900, preset: "balanced", overrides: { balanced: { proteinPerKg: 2.5 } } });
     expect(overridden.protein).toBeGreaterThan(defaultResult.protein);
   });
 

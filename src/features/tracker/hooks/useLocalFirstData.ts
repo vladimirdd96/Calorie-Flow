@@ -4,10 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { deleteCloudMeal, getCloudSnapshot, mergeSnapshots, pushCloudSnapshot, upsertCloudProfile } from "@/lib/cloud";
 import { getAll, getLocalSnapshot, getSetting, initializeFoods, replaceLocalSnapshot, setSetting } from "@/lib/db";
 import { syncAutomaticFasting } from "@/lib/fasting";
-import { normalizeNutritionTargets } from "@/lib/nutrition";
+import { normalizeCalorieTarget, normalizeNutritionTargets } from "@/lib/nutrition";
 import { getSupabase, type CloudUser } from "@/lib/supabase";
 import type { Food, Meal, Profile } from "@/lib/types";
-import { defaultHabitFeatures } from "@/lib/types";
+import { currentTargetModelVersion, defaultHabitFeatures } from "@/lib/types";
 
 type SyncState = "local" | "syncing" | "synced" | "offline" | "error";
 const themeModes = { light: "light", dark: "dark" } as const;
@@ -17,7 +17,7 @@ type ChatTextSize = typeof chatTextSizes[keyof typeof chatTextSizes];
 const THEME_SETTING = "appearance:theme";
 const CHAT_TEXT_SIZE_SETTING = "appearance:chat-text-size";
 const syncRetryDelaysMs = [2_000, 5_000, 15_000] as const;
-const DEFAULT_PROFILE: Profile = { name: "", sex: "male", age: 30, heightCm: 180, weightKg: 80, activity: "moderate", goalMode: "maintain", dietPreset: "balanced", calorieTarget: 2750, proteinTarget: 145, carbsTarget: 375, fatTarget: 70, fiberTarget: 30, sugarTarget: 50, saturatedFatTarget: 20, sodiumTarget: 2300, potassiumTarget: 3500, hideCalories: false, onboardingDone: false, weightEntries: [], waterEntries: [], waterTargetMl: 2000, enabledHabitFeatures: [...defaultHabitFeatures], planEnabled: true, fastingGoalHours: 16, fastingRecords: [] };
+const DEFAULT_PROFILE: Profile = { name: "", sex: "male", age: 30, heightCm: 180, weightKg: 80, activity: "moderate", goalMode: "maintain", dietPreset: "balanced", calorieTarget: 2750, proteinTarget: 145, carbsTarget: 375, fatTarget: 70, fiberTarget: 30, sugarTarget: 50, saturatedFatTarget: 20, sodiumTarget: 2300, potassiumTarget: 3500, hideCalories: false, onboardingDone: false, weightEntries: [], waterEntries: [], waterTargetMl: 2000, enabledHabitFeatures: [...defaultHabitFeatures], planEnabled: true, fastingGoalHours: 16, fastingRecords: [], targetModelVersion: currentTargetModelVersion };
 const isThemeMode = (value: unknown): value is ThemeMode => value === themeModes.light || value === themeModes.dark;
 const isChatTextSize = (value: unknown): value is ChatTextSize => value === chatTextSizes.compact || value === chatTextSizes.comfortable || value === chatTextSizes.large;
 const accountDisplayName = (user: CloudUser | null) => [user?.user_metadata?.full_name, user?.user_metadata?.name].find((candidate): candidate is string => typeof candidate === "string" && Boolean(candidate.trim()))?.trim();
@@ -296,7 +296,7 @@ export function useLocalFirstData(auth: Auth, ui: UiEffects) {
       });
   };
   const saveProfile = async (next: Profile, announce = true) => {
-    const synchronized = syncAutomaticFasting(normalizeNutritionTargets(next), meals);
+    const synchronized = syncAutomaticFasting(normalizeCalorieTarget(normalizeNutritionTargets(next)), meals);
     // Reserve the local snapshot before IndexedDB writes. A cloud hydration
     // already in flight must not replace this profile (or its related diary
     // update) before its own cloud write has been queued.

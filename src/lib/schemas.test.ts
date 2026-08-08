@@ -103,6 +103,27 @@ describe("external data schemas", () => {
     expect(() => profileSchema.parse({ ...profile, enabledHabitFeatures: ["water", "water"] })).toThrow("Habit features must not repeat");
   });
 
+  it("accepts the goal and maintenance fields, and rejects nonsense values", () => {
+    const base = {
+      name: "Target profile", sex: "male", age: 30, heightCm: 175, weightKg: 72, activity: "moderate", goalMode: "lose", dietPreset: "balanced",
+      calorieTarget: 2200, proteinTarget: 145, carbsTarget: 270, fatTarget: 60, fiberTarget: 30, hideCalories: false, onboardingDone: true,
+    };
+    expect(profileSchema.parse({
+      ...base,
+      calorieTargetMode: "custom",
+      calorieTargetSetAt: "2026-07-01T12:00:00.000Z",
+      goalWeightKg: 66,
+      maintenanceSource: "observed",
+      observedMaintenanceKcal: 2475,
+      observedMaintenanceUpdatedAt: "2026-08-08T12:00:00.000Z",
+      maintenanceReviewDismissedAt: "2026-08-08T12:00:00.000Z",
+      targetModelVersion: 2,
+    })).toMatchObject({ calorieTargetMode: "custom", goalWeightKg: 66, observedMaintenanceKcal: 2475, targetModelVersion: 2 });
+    expect(() => profileSchema.parse({ ...base, goalWeightKg: 12 })).toThrow();
+    expect(() => profileSchema.parse({ ...base, calorieTargetMode: "whatever" })).toThrow();
+    expect(() => profileSchema.parse({ ...base, calorieTargetSetAt: "last tuesday" })).toThrow();
+  });
+
   it("fills nutrition-goal defaults for legacy profiles", () => {
     const parsed = profileSchema.parse({
       name: "Legacy profile", sex: "male", age: 30, heightCm: 180, weightKg: 80, activity: "moderate", goalMode: "maintain", dietPreset: "balanced",

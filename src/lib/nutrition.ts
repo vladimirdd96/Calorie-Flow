@@ -1,5 +1,6 @@
-import { defaultNutritionTargets, goalPaces, type ActivityLevel, type DailyTargets, type DietPreset, type Food, type GoalPace, type MacroPresetOverride, type MealTimeBoundaries, type MealType, type Micronutrients, type Nutrition, type Profile, type ServingUnit, type WeekStartDay, type Weekday } from "./types";
 import { roundDecimal } from "./decimal";
+import { effectiveCalorieTarget } from "./energy";
+import { calorieTargetModes, currentTargetModelVersion, defaultNutritionTargets, type DailyTargets, type DietPreset, type Food, type GoalMode, type MacroPresetOverride, type MealTimeBoundaries, type MealType, type Micronutrients, type Nutrition, type Profile, type ServingUnit, type WeekStartDay, type Weekday } from "./types";
 
 export const EMPTY_NUTRITION: Nutrition = {
   calories: 0,
@@ -14,14 +15,6 @@ export const EMPTY_MICRONUTRIENTS: Micronutrients = {
   sodiumMg: 0, cholesterolMg: 0, saturatedFatG: 0, potassiumMg: 0, calciumMg: 0,
   ironMg: 0, magnesiumMg: 0, zincMg: 0, vitaminAMcg: 0, vitaminCMg: 0,
   vitaminDMcg: 0, vitaminEMg: 0, vitaminKMcg: 0, vitaminB12Mcg: 0, folateMcg: 0,
-};
-
-export const activityMultipliers: Record<ActivityLevel, number> = {
-  sedentary: 1.2,
-  light: 1.375,
-  moderate: 1.55,
-  active: 1.725,
-  "very-active": 1.9,
 };
 
 export function round(value: number, digits = 1) {
@@ -146,19 +139,19 @@ export function contextualUnits(food: Food): ServingUnit[] {
   return [...new Set(units)];
 }
 
-const goalPaceDeltas: Record<GoalPace, { lose: number; gain: number }> = {
-  conservative: { lose: -250, gain: 150 },
-  moderate: { lose: -450, gain: 250 },
-  aggressive: { lose: -650, gain: 350 },
-};
-
-export function calculateCalories(profile: Pick<Profile, "sex" | "age" | "heightCm" | "weightKg" | "activity" | "goalMode" | "goalPace">, roundingStep: number = 25) {
-  const sexOffset = profile.sex === "male" ? 5 : -161;
-  const bmr = 10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age + sexOffset;
-  const maintenance = bmr * activityMultipliers[profile.activity];
-  const deltas = goalPaceDeltas[profile.goalPace || goalPaces.moderate];
-  const goalAdjustment = profile.goalMode === "lose" ? deltas.lose : profile.goalMode === "gain" ? deltas.gain : 0;
-  return Math.max(1200, Math.round((maintenance + goalAdjustment) / roundingStep) * roundingStep);
+/**
+ * Keeps `calorieTarget` consistent with the inputs it is derived from, so no editor has to remember
+ * to recompute. Returns the identical reference when nothing changed — `useLocalFirstData` re-saves
+ * the profile whenever a normalizer hands back a new object, and an unstable one would loop.
+ *
+ * A profile still on an older target model is left alone: the user is shown the one-time notice in
+ * the target editor first, and the recompute lands when they acknowledge it.
+ */
+export function normalizeCalorieTarget(profile: Profile): Profile {
+  if (profile.calorieTargetMode === calorieTargetModes.custom) return profile;
+  if (profile.targetModelVersion !== currentTargetModelVersion) return profile;
+  const calorieTarget = effectiveCalorieTarget(profile);
+  return calorieTarget === profile.calorieTarget ? profile : { ...profile, calorieTarget };
 }
 
 /** Which macroPresetOverride fields each non-custom preset's calculation actually uses, for settings UI. */
@@ -170,7 +163,76 @@ export const macroPresetRuleFields: Record<Exclude<DietPreset, "custom">, Array<
   "low-fat": ["proteinPerKg", "fatPercent"],
 };
 
-export function calculateMacroTargets(calories: number, weightKg: number, preset: DietPreset, overrides?: Partial<Record<DietPreset, MacroPresetOverride>>) {
+export type MacroContext = {
+  calories: number;
+  weightKg: number;
+  heightCm: number;
+  goalMode: GoalMode;
+  goalWeightKg?: number;
+  preset: DietPreset;
+  overrides?: Partial<Record<DietPreset, MacroPresetOverride>>;
+};
+
+export type MacroTargets = {
+  protein: number;
+  carbs: number;
+  fat: number;
+  /** Calories the preset could not fit into the target even after trimming fat and protein. */
+  shortfallKcal: number;
+};
+
+/** Extra protein while cutting protects lean mass. The cap stops it compounding a preset override. */
+const goalProteinBonus: Record<GoalMode, number> = { lose: 0.4, maintain: 0, gain: 0.1 };
+const MAX_BONUS_PROTEIN_PER_KG = 2.4;
+const MIN_PROTEIN_PER_KG = 1.2;
+const FAT_FLOOR_PER_KG = 0.6;
+
+const round5 = (value: number) => Math.round(value / 5) * 5;
+
+/**
+ * Protein scales with lean mass, not total mass. Without a body-fat input, a goal weight is the best
+ * proxy available; failing that, cap at what this height would weigh at BMI 25, so a user carrying a
+ * lot of fat is not told to eat 260 g of protein a day.
+ */
+function proteinBasisKg(context: MacroContext) {
+  const goalWeightKg = context.goalWeightKg;
+  if (typeof goalWeightKg === "number" && Number.isFinite(goalWeightKg) && goalWeightKg > 0) {
+    return Math.min(context.weightKg, goalWeightKg);
+  }
+  const heightM = context.heightCm / 100;
+  return Math.min(context.weightKg, 25 * heightM * heightM);
+}
+
+/**
+ * Fits protein, fat and carbs inside the calorie target. Carbs are the remainder; when protein and
+ * fat alone already exceed the target, fat comes down to its floor first, then protein, and whatever
+ * still does not fit is reported rather than hidden behind a silent `carbs: 0`.
+ */
+function fitMacros(calories: number, protein: number, fat: number, proteinFloor: number, fatFloor: number, carbCap?: number): MacroTargets {
+  let nextProtein = protein;
+  let nextFat = fat;
+  const fixedCarbKcal = (carbCap ?? 0) * 4;
+  const overshoot = () => nextProtein * 4 + nextFat * 9 + fixedCarbKcal - calories;
+
+  if (overshoot() > 0) {
+    const cut = Math.min(Math.max(0, nextFat - fatFloor), Math.ceil(overshoot() / 9 / 5) * 5);
+    if (cut > 0) nextFat -= cut;
+  }
+  if (overshoot() > 0) {
+    const cut = Math.min(Math.max(0, nextProtein - proteinFloor), Math.ceil(overshoot() / 4 / 5) * 5);
+    if (cut > 0) nextProtein -= cut;
+  }
+
+  const remainderKcal = calories - nextProtein * 4 - nextFat * 9 - fixedCarbKcal;
+  return {
+    protein: nextProtein,
+    fat: nextFat,
+    carbs: carbCap ?? Math.max(0, round5(remainderKcal / 4)),
+    shortfallKcal: Math.max(0, Math.round(-remainderKcal)),
+  };
+}
+
+export function calculateMacroTargets(context: MacroContext): MacroTargets {
   const rules: Record<Exclude<DietPreset, "custom">, { proteinPerKg: number; fatPerKg?: number; carbCap?: number; fatPercent?: number }> = {
     balanced: { proteinPerKg: 1.8, fatPerKg: 0.9 },
     "high-protein": { proteinPerKg: 2.2, fatPerKg: 0.8 },
@@ -178,18 +240,21 @@ export function calculateMacroTargets(calories: number, weightKg: number, preset
     "high-protein-keto": { proteinPerKg: 2.2, carbCap: 30 },
     "low-fat": { proteinPerKg: 1.8, fatPercent: 0.2 },
   };
-  const rule = { ...rules[preset === "custom" ? "balanced" : preset], ...overrides?.[preset] };
-  const protein = Math.round(weightKg * rule.proteinPerKg / 5) * 5;
+  const rule = { ...rules[context.preset === "custom" ? "balanced" : context.preset], ...context.overrides?.[context.preset] };
+  const basis = proteinBasisKg(context);
+  const proteinPerKg = Math.max(rule.proteinPerKg, Math.min(rule.proteinPerKg + goalProteinBonus[context.goalMode], MAX_BONUS_PROTEIN_PER_KG));
+  const protein = round5(basis * proteinPerKg);
+  const proteinFloor = round5(basis * MIN_PROTEIN_PER_KG);
+  const fatFloor = Math.max(30, round5(basis * FAT_FLOOR_PER_KG));
+
   if (rule.carbCap) {
-    const carbs = rule.carbCap;
-    const fat = Math.max(30, Math.round((calories - protein * 4 - carbs * 4) / 9 / 5) * 5);
-    return { protein, carbs, fat };
+    const fat = Math.max(fatFloor, round5((context.calories - protein * 4 - rule.carbCap * 4) / 9));
+    return fitMacros(context.calories, protein, fat, proteinFloor, fatFloor, rule.carbCap);
   }
-  const fat = rule.fatPercent
-    ? Math.round((calories * rule.fatPercent) / 9 / 5) * 5
-    : Math.round((weightKg * (rule.fatPerKg || 0.8)) / 5) * 5;
-  const carbs = Math.max(0, Math.round((calories - protein * 4 - fat * 9) / 4 / 5) * 5);
-  return { protein, carbs, fat };
+  const fat = Math.max(fatFloor, rule.fatPercent
+    ? round5((context.calories * rule.fatPercent) / 9)
+    : round5(basis * (rule.fatPerKg || 0.8)));
+  return fitMacros(context.calories, protein, fat, proteinFloor, fatFloor);
 }
 
 /** Monday of the week containing `dateKey` (or Sunday, when `weekStartsOn` is "sunday"). */
