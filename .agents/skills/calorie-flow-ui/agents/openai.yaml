@@ -1,0 +1,4 @@
+interface:
+  display_name: "Calorie Flow UI"
+  short_description: "Build consistent, high-quality Calorie Flow product UI."
+  default_prompt: "Use $calorie-flow-ui to implement this Calorie Flow UI change with the established design system and visual checks."

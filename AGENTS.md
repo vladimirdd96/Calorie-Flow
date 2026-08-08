@@ -9,6 +9,24 @@ Apply these rules to every task, regardless of size.
 3. Keep browser-safe configuration separate from server-side secrets; never expose a secret through `NEXT_PUBLIC_*`.
 4. When fixing a bug, audit every other screen, entry point, and shared component/state path that could exhibit the same behavior. Reproduce or inspect each relevant location and fix all affected instances before handoff; do not limit the fix to the screen named in the report.
 
+## Product and design context
+
+Calorie Flow is a calm, trustworthy, mobile-first nutrition companion. People use it to log food quickly, understand their day at a glance, and keep tracking even when they are offline. The tone is clear, grounded, and supportive—not clinical, gamified, attention-seeking, or generic.
+
+- The existing token system, shared primitives, and live product patterns are the default design language. Reuse and extend them before creating a new treatment.
+- `design_handoff_calorie_flow_mobile` is the visual source of truth for the covered screens. When it applies, match its hierarchy, copy, spacing, states, and interactions precisely while preserving real data and local-first behavior.
+- `docs/design-coverage.md` maps a requested surface to its source of truth. `docs/ui-patterns.md` owns shared interaction and accessibility conventions.
+- Keep the established Avenir-based typography and semantic tokens. Do not add a font, palette, or decorative style that competes with the product’s existing system unless the user explicitly requests a visual redesign.
+
+## UI initiative and craftsmanship
+
+For every UI, component, layout, styling, accessibility, or interaction task, use `$calorie-flow-ui` as the working quality gate. For a new or materially reshaped experience, also use `$impeccable`; the project design context and explicit handoff always take precedence over a general-purpose design skill.
+
+- Inspect the closest existing screen, shared component, and interaction before choosing an implementation. Extend a proven pattern instead of producing a generic UI or a parallel visual language.
+- Make ordinary product decisions autonomously from the user’s request, the handoff, and the established system. Ask only when a decision would meaningfully change product behavior, brand direction, or a user-owned choice.
+- Treat responsive layout, empty/loading/error states, keyboard focus, action hierarchy, and touch target size as part of the feature—not cleanup for a later pass.
+- For a changed flow, visually inspect the actual result, identify defects, and iterate before declaring it ready. Never substitute a code review or typecheck for a rendered UI review.
+
 ## Commits and checks
 
 - Use conventional commits: `<type>(<scope>): <subject>`.
