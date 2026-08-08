@@ -1301,6 +1301,13 @@ p { color: var(--muted); line-height: 1.55; }
 .selected-food > div:nth-child(2) { min-width: 0; display: grid; gap: 4px; }
 .selected-food > div:nth-child(2) strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .selected-food > div:nth-child(2) span { color: var(--muted); font-size: 10px; }
+/* Subtle by design: reads as plain text until hovered/focused, never demands attention. */
+.food-name-edit { display: inline-flex; align-items: center; gap: 5px; min-width: 0; max-width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.food-name-edit strong { min-width: 0; }
+.food-name-edit svg { flex: none; color: var(--muted); opacity: 0; transition: opacity .12s ease; }
+.food-name-edit:hover svg, .food-name-edit:focus-visible svg { opacity: 1; }
+.selected-food .clearable-input { width: 100%; }
+.selected-food .clearable-input input { font-size: 15px; font-weight: 600; padding: 5px 8px; }
 .selected-calories { display: grid; text-align: right; }
 .selected-calories strong { font-size: 22px; }
 .selected-calories small { color: var(--muted); font-size: 9px; }

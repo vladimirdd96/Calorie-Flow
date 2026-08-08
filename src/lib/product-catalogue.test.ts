@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findCatalogueProduct, normalizeBarcode, parseCatalogueRow, searchCatalogue } from "./product-catalogue";
+import { correctCatalogueProduct, findCatalogueProduct, normalizeBarcode, parseCatalogueRow, searchCatalogue } from "./product-catalogue";
 
 const row = {
   barcode: "4056489814795",
@@ -63,5 +63,20 @@ describe("catalogue reads without cloud configuration", () => {
     await expect(findCatalogueProduct("4056489814795")).resolves.toBeNull();
     await expect(findCatalogueProduct("nonsense")).resolves.toBeNull();
     await expect(searchCatalogue("pilos")).resolves.toEqual([]);
+  });
+
+  it("resolves a batch lookup to a miss without touching the network", async () => {
+    await expect(findCatalogueProduct(["4056489814795", "3800123456789"])).resolves.toBeNull();
+  });
+});
+
+describe("correctCatalogueProduct without cloud configuration", () => {
+  it("never throws, since a name correction is always best-effort", async () => {
+    await expect(correctCatalogueProduct("4056489814795", "Pilos High Protein Yogurt")).resolves.toBeUndefined();
+  });
+
+  it("does nothing for an invalid barcode or a blank name", async () => {
+    await expect(correctCatalogueProduct("not-a-barcode", "Anything")).resolves.toBeUndefined();
+    await expect(correctCatalogueProduct("4056489814795", "   ")).resolves.toBeUndefined();
   });
 });

@@ -10,6 +10,7 @@ import { recentLogDates } from "@/lib/logging";
 import { readFoodImage } from "@/lib/image";
 import { roundDecimal } from "@/lib/decimal";
 import { recipeLogId } from "@/features/recipes/recipeLogging";
+import { correctResolvedProductName } from "@/lib/food-lookup";
 import type { Food, Meal, MealTimeBoundaries, MealType, Nutrition, ServingUnit } from "@/lib/types";
 
 const mealLabels: Record<MealType, string> = { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snack" };
@@ -130,7 +131,7 @@ export function ManualFood({ initialBarcode, notice, onSave, onClose, hideCalori
   );
 }
 
-export function PortionSheet({ food, questions, initialMealType, initialLoggedDate = localDateKey(), editingMeal, recipeId, onLog, onSaveEdit, onClose, hideCalories, mealTimeBoundaries, servingOverrides }: { food: Food; questions?: string[]; initialMealType?: MealType; initialLoggedDate?: string; editingMeal?: Meal; recipeId?: string; onLog?: (meal: Meal, food: Food) => void; onSaveEdit?: (meal: Meal) => void; onClose: () => void; hideCalories: boolean; mealTimeBoundaries?: MealTimeBoundaries; servingOverrides?: { tbspGrams?: number; tspGrams?: number } }) {
+export function PortionSheet({ food, questions, initialMealType, initialLoggedDate = localDateKey(), editingMeal, recipeId, onLog, onSaveEdit, onSaveFood, onClose, hideCalories, mealTimeBoundaries, servingOverrides }: { food: Food; questions?: string[]; initialMealType?: MealType; initialLoggedDate?: string; editingMeal?: Meal; recipeId?: string; onLog?: (meal: Meal, food: Food) => void; onSaveEdit?: (meal: Meal) => void; onSaveFood?: (food: Food) => Promise<void>; onClose: () => void; hideCalories: boolean; mealTimeBoundaries?: MealTimeBoundaries; servingOverrides?: { tbspGrams?: number; tspGrams?: number } }) {
   const units = contextualUnits(food);
   const initialUnit: ServingUnit = food.packageGrams ? "package" : food.servingGrams ? "serving" : "g";
   const [unit, setUnit] = useState<ServingUnit>(editingMeal?.unit || initialUnit);
@@ -139,25 +140,50 @@ export function PortionSheet({ food, questions, initialMealType, initialLoggedDa
   const [loggedDate, setLoggedDate] = useState(editingMeal?.loggedDate || initialLoggedDate);
   const [additionalDatesOpen, setAdditionalDatesOpen] = useState(false);
   const [loggedDates, setLoggedDates] = useState<string[]>([initialLoggedDate]);
+  // A quiet correction, not a form field: collapsed by default, and logging never waits on it.
+  // Callers key this component by `food.id`, so a new food always remounts it — the draft
+  // below never needs resetting mid-lifetime.
+  const [renaming, setRenaming] = useState(false);
+  const [name, setName] = useState(food.name);
   const grams = gramsFor(food, amount, unit, servingOverrides);
   const nutrition = scaleNutrition(food.nutrientsPer100, grams, 2);
+  const displayName = name.trim() || food.name;
+  const commitRename = () => { setName(displayName); setRenaming(false); };
   const log = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(grams) || grams <= 0) return;
-    if (editingMeal) { onSaveEdit?.({ ...editingMeal, mealType, amount, unit, grams, nutrition, loggedDate }); return; }
+    const renamed = displayName !== food.name;
+    const correctedFood = renamed ? { ...food, name: displayName } : food;
+    if (renamed) {
+      // Best effort and never blocks: the meal below is what the user actually came to do.
+      void onSaveFood?.(correctedFood);
+      void correctResolvedProductName(correctedFood);
+    }
+    if (editingMeal) { onSaveEdit?.({ ...editingMeal, name: displayName, mealType, amount, unit, grams, nutrition, loggedDate }); return; }
     const dates = additionalDatesOpen ? loggedDates : [loggedDate];
     dates.forEach((date) => onLog?.(recipeId ? {
-      id: crypto.randomUUID(), recipeId, recipeLogId: recipeLogId(), name: food.name, mealType, amount, unit, grams, nutrition,
+      id: crypto.randomUUID(), recipeId, recipeLogId: recipeLogId(), name: displayName, mealType, amount, unit, grams, nutrition,
       createdAt: new Date().toISOString(), loggedDate: date, source: "custom",
     } : {
-      id: crypto.randomUUID(), foodId: food.id, name: food.name, brand: food.brand, mealType, amount, unit, grams, nutrition,
+      id: crypto.randomUUID(), foodId: food.id, name: displayName, brand: food.brand, mealType, amount, unit, grams, nutrition,
       createdAt: new Date().toISOString(), loggedDate: date, source: food.source, estimated: food.source === "ai-label" || !food.verified,
-    }, { ...food, lastUsedAt: new Date().toISOString() }));
+    }, { ...correctedFood, lastUsedAt: new Date().toISOString() }));
   };
   return (
     <form className="portion-sheet" onSubmit={log}>
       <div className="sheet-header"><button type="button" className="icon-button ghost" onClick={onClose} aria-label={editingMeal ? "Close" : "Back to food selection"}>{editingMeal ? <X /> : <ArrowLeft />}</button><div><span className="eyebrow">{editingMeal ? "Edit entry" : "Confirm amount"}</span><h2>{editingMeal ? "Edit amount" : "Log food"}</h2></div><span /></div>
-      <div className="selected-food"><FoodAvatar food={food} /><div><strong>{food.name}</strong><span>{food.brand || food.quantityLabel || "Nutrition per 100 g"}</span></div>{!hideCalories && <div className="selected-calories"><strong>{nutrition.calories}</strong><small>kcal</small></div>}</div>
+      <div className="selected-food">
+        <FoodAvatar food={food} name={displayName} />
+        <div>
+          {renaming
+            ? <ClearableInput autoFocus aria-label="Product name" value={name} onChange={(event) => setName(event.target.value)} onClear={() => setName("")} onBlur={commitRename} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); commitRename(); } if (event.key === "Escape") { setName(food.name); setRenaming(false); } }} clearLabel="Clear name" />
+            // Renaming a saved recipe's synthesized "food" would not rename the recipe
+            // itself and has no barcode to correct, so the affordance stays hidden there.
+            : recipeId ? <strong>{displayName}</strong> : <button type="button" className="food-name-edit" onClick={() => setRenaming(true)}><strong>{displayName}</strong><Pencil size={12} aria-hidden="true" /><span className="visually-hidden">Edit product name</span></button>}
+          <span>{food.brand || food.quantityLabel || "Nutrition per 100 g"}</span>
+        </div>
+        {!hideCalories && <div className="selected-calories"><strong>{nutrition.calories}</strong><small>kcal</small></div>}
+      </div>
       {!editingMeal && !!questions?.length && <div className="follow-up"><Sparkles size={18} /><div><strong>One detail still matters</strong>{questions.map((question) => <p key={question}>{question}</p>)}<small>Use grams below if the package or serving amount is unknown.</small></div></div>}
       <div className="amount-control"><button type="button" aria-label="Decrease amount" onClick={() => setAmount(Math.max(unit === "g" ? 1 : 0.25, round(amount - (unit === "g" || unit === "ml" ? 10 : 0.5), 2)))}>−</button><label><NumericInput required aria-label="Amount" inputMode="decimal" min="0.01" step="any" value={amount} onChange={(event) => setAmount(Number(event.target.value))} /><span>{formatUnit(unit, amount)}</span></label><button type="button" aria-label="Increase amount" onClick={() => setAmount(round(amount + (unit === "g" || unit === "ml" ? 10 : 0.5), 2))}>+</button></div>
       <div className="unit-scroll" role="group" aria-label="Serving unit">{units.map((option) => <button type="button" key={option} aria-pressed={unit === option} className={unit === option ? "active" : ""} onClick={() => { setUnit(option); setAmount(option === "g" || option === "ml" ? 100 : 1); }}>{unitLabels[option]}</button>)}</div>

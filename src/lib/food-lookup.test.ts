@@ -4,6 +4,7 @@ import type { Food } from "./types";
 const findCatalogueProduct = vi.fn<(barcode: string) => Promise<Food | null>>();
 const searchCatalogue = vi.fn<(query: string) => Promise<Food[]>>();
 const contributeCatalogueProduct = vi.fn();
+const correctCatalogueProduct = vi.fn();
 const findByBarcode = vi.fn<(barcode: string) => Promise<Food | null>>();
 const searchOpenFoodFacts = vi.fn<(query: string) => Promise<Food[]>>();
 
@@ -12,6 +13,7 @@ vi.mock("./product-catalogue", async (importOriginal) => ({
   findCatalogueProduct: (barcode: string) => findCatalogueProduct(barcode),
   searchCatalogue: (query: string) => searchCatalogue(query),
   contributeCatalogueProduct: (contribution: unknown) => contributeCatalogueProduct(contribution),
+  correctCatalogueProduct: (barcode: string, name: string) => correctCatalogueProduct(barcode, name),
 }));
 
 vi.mock("./openfoodfacts", () => ({
@@ -19,7 +21,7 @@ vi.mock("./openfoodfacts", () => ({
   searchOpenFoodFacts: (query: string) => searchOpenFoodFacts(query),
 }));
 
-const { lookupBarcode, searchPackagedFoods, shareResolvedProduct } = await import("./food-lookup");
+const { correctResolvedProductName, lookupBarcode, searchPackagedFoods, shareResolvedProduct } = await import("./food-lookup");
 
 function food(overrides: Partial<Food> = {}): Food {
   return {
@@ -92,6 +94,28 @@ describe("shareResolvedProduct", () => {
   it("does not republish what a public provider already answered", async () => {
     await expect(shareResolvedProduct(food({ source: "open-food-facts" }))).resolves.toBe("skipped");
     expect(contributeCatalogueProduct).not.toHaveBeenCalled();
+  });
+});
+
+describe("correctResolvedProductName", () => {
+  it("updates a name the user's own scan published", async () => {
+    await correctResolvedProductName(food({ source: "ai-label", name: "Pilos High Protein Yogurt" }));
+
+    expect(correctCatalogueProduct).toHaveBeenCalledWith("4056489814795", "Pilos High Protein Yogurt");
+  });
+
+  it("does nothing for a food with no barcode to correct", async () => {
+    await correctResolvedProductName(food({ source: "custom", barcode: undefined }));
+
+    expect(correctCatalogueProduct).not.toHaveBeenCalled();
+  });
+
+  it("never rewrites a public provider's row", async () => {
+    // The app has no authority over Open Food Facts / USDA data, only what a user's own
+    // scan created.
+    await correctResolvedProductName(food({ source: "open-food-facts" }));
+
+    expect(correctCatalogueProduct).not.toHaveBeenCalled();
   });
 });
 

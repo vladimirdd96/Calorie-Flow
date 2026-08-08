@@ -173,3 +173,26 @@ export async function contributeCatalogueProduct({ food, source }: CatalogueCont
     return "skipped";
   }
 }
+
+/**
+ * Corrects the name on a catalogue row the current account contributed.
+ *
+ * Renaming a food in the portion sheet is optional and never blocks logging, but when the
+ * food came from an unnamed barcode scan the wrong name may already be live for every
+ * other account. RLS scopes the update to `contributed_by = auth.uid()`: if this account
+ * did not contribute the row — someone else answered it first, or it came from a bulk
+ * import — the update silently affects zero rows rather than erroring, which is exactly
+ * the "best effort, never disturb the user" contract `contributeCatalogueProduct` uses.
+ */
+export async function correctCatalogueProduct(barcode: string, name: string): Promise<void> {
+  const normalized = normalizeBarcode(barcode);
+  const trimmed = name.trim();
+  if (!catalogueBarcodePattern.test(normalized) || !trimmed) return;
+  const supabase = getSupabase();
+  if (!supabase) return;
+  try {
+    await supabase.from("product_catalogue").update({ name: trimmed.slice(0, 240) }).eq("barcode", normalized);
+  } catch {
+    // Best effort: the user's own copy of the food is already corrected regardless.
+  }
+}

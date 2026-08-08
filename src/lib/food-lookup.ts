@@ -1,4 +1,4 @@
-import { contributeCatalogueProduct, findCatalogueProduct, searchCatalogue } from "./product-catalogue";
+import { contributeCatalogueProduct, correctCatalogueProduct, findCatalogueProduct, searchCatalogue } from "./product-catalogue";
 import { gtinVariants } from "./gtin";
 import { findByBarcode, searchOpenFoodFacts } from "./openfoodfacts";
 import type { Food } from "./types";
@@ -48,6 +48,17 @@ export async function lookupBarcode(code: string): Promise<BarcodeLookup> {
 export async function shareResolvedProduct(food: Food) {
   if (food.source !== "ai-label" && food.source !== "custom") return "skipped" as const;
   return contributeCatalogueProduct({ food, source: food.source });
+}
+
+/**
+ * Fixes a name already published under a barcode. Renaming a food in the portion sheet is
+ * a quiet correction, not a new contribution, so this updates rather than inserts and never
+ * touches foods that came from Open Food Facts or another public provider — the app has no
+ * authority to rewrite those, only the row a user's own scan created.
+ */
+export async function correctResolvedProductName(food: Food) {
+  if ((food.source !== "ai-label" && food.source !== "custom") || !food.barcode) return;
+  await correctCatalogueProduct(food.barcode, food.name);
 }
 
 /** Catalogue matches merged ahead of the online providers, deduped by barcode and id. */

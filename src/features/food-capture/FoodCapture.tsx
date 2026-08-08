@@ -250,7 +250,7 @@ export function AddFoodSheet({ foods, meals, recipes, initialView = "start", ini
     if (labeledFood.barcode) await barcode(labeledFood.barcode, labeledFood, followUps, true);
     else await saveAndPick(labeledFood, followUps);
   };
-  if (selected) return <PortionSheet food={selected} questions={questions} initialMealType={initialMealType} initialLoggedDate={loggedDate} hideCalories={hideCalories} onLog={onLog} onClose={() => setSelected(undefined)} mealTimeBoundaries={mealTimeBoundaries} servingOverrides={servingOverrides} />;
+  if (selected) return <PortionSheet key={selected.id} food={selected} questions={questions} initialMealType={initialMealType} initialLoggedDate={loggedDate} hideCalories={hideCalories} onLog={onLog} onClose={() => setSelected(undefined)} mealTimeBoundaries={mealTimeBoundaries} servingOverrides={servingOverrides} />;
   if (view === "scan") return <>{loading && <div className="global-loader"><i />Looking up product…</div>}<BarcodeScanner onResult={barcode} onClose={() => changeView("start")} /></>;
   if (view === "camera") return <LabelReader knownBarcode={unknownBarcode} initialFiles={pendingImages} initialAction="camera" onFood={(food, followUps) => { void handleLabelFood(food, followUps); }} onClose={() => { setPendingImages([]); changeView("start"); }} />;
   if (view === "photo") return <MealPhotoReader initialMealType={initialMealType} initialLoggedDate={loggedDate} hideCalories={hideCalories} mealTimeBoundaries={mealTimeBoundaries} onLogMeal={onMealPhoto} onClose={() => changeView("start")} />;
