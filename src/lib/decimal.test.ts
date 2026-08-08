@@ -1,4 +1,4 @@
-import { decimalString, parseDecimal, roundDecimal } from "./decimal";
+import { decimalString, normalizeDecimalInput, parseDecimal, roundDecimal } from "./decimal";
 import { describe, expect, it } from "vitest";
 
 describe("two-decimal measurements", () => {
@@ -10,8 +10,10 @@ describe("two-decimal measurements", () => {
 
   it("parses valid numeric drafts without accepting malformed values", () => {
     expect(parseDecimal("12.34")).toBe(12.34);
+    expect(parseDecimal("12,34")).toBe(12.34);
     expect(parseDecimal("")).toBeUndefined();
     expect(parseDecimal("not a number")).toBeUndefined();
+    expect(normalizeDecimalInput("12,34")).toBe("12.34");
     expect(decimalString(2.345)).toBe("2.35");
   });
 });

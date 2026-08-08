@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ChangeEvent, type InputHTMLAttributes } from "react";
-import { decimalString, parseDecimal } from "@/lib/decimal";
+import { decimalString, normalizeDecimalInput, parseDecimal } from "@/lib/decimal";
 
 type NumericInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "value"> & {
   value?: string | number;
@@ -16,6 +16,7 @@ export function NumericInput({ value = "", onChange, onBlur, decimalPlaces, onVa
   const [draft, setDraft] = useState(String(value));
   const focused = useRef(false);
   const precision = decimalPlaces ?? (props.inputMode === "decimal" || String(props.step) === "0.1" ? 2 : undefined);
+  const acceptsDecimal = precision !== undefined;
 
   useEffect(() => {
     if (!focused.current) setDraft(String(value));
@@ -24,13 +25,17 @@ export function NumericInput({ value = "", onChange, onBlur, decimalPlaces, onVa
   return (
     <input
       {...props}
-      type="number"
-      inputMode={precision === undefined ? props.inputMode : "decimal"}
+      // Native number inputs reject a comma before React receives it in some locales.
+      type={acceptsDecimal ? "text" : "number"}
+      inputMode={acceptsDecimal ? "decimal" : props.inputMode}
+      pattern={acceptsDecimal ? "[0-9]*[.,]?[0-9]*" : props.pattern}
       step={precision === undefined ? props.step : 1 / (10 ** precision)}
       value={draft}
       onFocus={() => { focused.current = true; }}
       onChange={(event) => {
-        setDraft(event.target.value);
+        const nextValue = acceptsDecimal ? normalizeDecimalInput(event.target.value) : event.target.value;
+        if (nextValue !== event.target.value) event.target.value = nextValue;
+        setDraft(nextValue);
         onChange?.(event);
       }}
       onBlur={(event) => {

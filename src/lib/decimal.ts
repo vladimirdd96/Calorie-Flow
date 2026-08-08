@@ -7,9 +7,15 @@ export function roundDecimal(value: number, places = decimalPlaces) {
 }
 
 export function parseDecimal(value: string) {
-  if (value.trim() === "") return undefined;
-  const parsed = Number(value);
+  const normalized = value.trim().replace(",", ".");
+  if (normalized === "") return undefined;
+  const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+/** Converts the locale decimal separator into the format stored by the app. */
+export function normalizeDecimalInput(value: string) {
+  return value.replace(",", ".");
 }
 
 export function decimalString(value: number, places = decimalPlaces) {
