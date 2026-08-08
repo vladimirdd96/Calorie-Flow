@@ -132,6 +132,15 @@ export type MealTimeBoundaries = { breakfastEndsHour: number; lunchEndsHour: num
 export const goalPaces = { conservative: "conservative", moderate: "moderate", aggressive: "aggressive" } as const;
 export type GoalPace = typeof goalPaces[keyof typeof goalPaces];
 
+export const calorieTargetModes = { calculated: "calculated", custom: "custom" } as const;
+export type CalorieTargetMode = typeof calorieTargetModes[keyof typeof calorieTargetModes];
+
+export const maintenanceSources = { formula: "formula", observed: "observed" } as const;
+export type MaintenanceSource = typeof maintenanceSources[keyof typeof maintenanceSources];
+
+/** Bumped when the target model changes in a way that moves an existing user's number. */
+export const currentTargetModelVersion = 2;
+
 export type MacroPresetOverride = { proteinPerKg?: number; fatPerKg?: number; carbCap?: number; fatPercent?: number };
 
 export const calorieRoundingSteps = [5, 10, 25, 50] as const;
@@ -206,6 +215,16 @@ export type Profile = {
   tspGrams?: number;
   insightsTolerancePercent?: number;
   insightsDefaultRange?: InsightsRange;
+  /** Absent means "calculated": the target is derived from body, activity, goal and pace. */
+  calorieTargetMode?: CalorieTargetMode;
+  /** When a custom target was set, so the adherence nudge can wait before judging it. */
+  calorieTargetSetAt?: string;
+  goalWeightKg?: number;
+  maintenanceSource?: MaintenanceSource;
+  observedMaintenanceKcal?: number;
+  observedMaintenanceUpdatedAt?: string;
+  maintenanceReviewDismissedAt?: string;
+  targetModelVersion?: number;
 };
 
 export type WeightEntry = {

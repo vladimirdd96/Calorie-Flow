@@ -140,8 +140,9 @@ function foodForCoach(food: Food, hideCalories: boolean) {
 function profileForCoach(profile: Profile | undefined, hideCalories: boolean) {
   if (!profile) return { status: "No profile is saved yet." };
   if (!hideCalories) return profile;
-  const { calorieTarget, ...rest } = profile;
+  const { calorieTarget, observedMaintenanceKcal, ...rest } = profile;
   void calorieTarget;
+  void observedMaintenanceKcal;
   return rest;
 }
 

@@ -13,6 +13,7 @@ This inventory compares the eight screens in `design_handoff_calorie_flow_mobile
 | Foods / Plan | `DiscoverView`, `PlanView` | Implemented | Plan calendar, recipe editor/delete, food return action, and shopping states are included. |
 | Insights | `InsightsView` | Implemented | Weight and fasting history are additional handoff-compatible sections. |
 | Onboarding | `OnboardingDialog`, `TargetEditor` | Implemented | Reworked as the handoff’s plain in-page three-step flow with progress segments and sticky actions. |
+| Profile → Edit targets | `TargetEditor` (non-onboarding) | Implemented | The same editor as onboarding, mounted in a `Sheet`. Replaced `DailyTargetsSheet`, which offered four raw number fields and no calculation. |
 | Profile | `ProfileView`, `ProfileCustomize` | Implemented | Account sync, diary sharing, data export/restore, and customization are additional handoff-compatible sections. |
 
 ## Product UI outside the eight mockups

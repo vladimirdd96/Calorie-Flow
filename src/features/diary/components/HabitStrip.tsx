@@ -7,7 +7,9 @@ import { activeFast, fastingWindowHours, formatFastingDuration, uniqueFastingRec
 import { isHabitFeatureEnabled } from "@/lib/habit-settings";
 import { hydrationTotal, setWaterAmount } from "@/lib/hydration";
 import { recentLogDates } from "@/lib/logging";
-import { round } from "@/lib/nutrition";
+import { validWeightEntries } from "@/lib/mealDays";
+import { localDateKey, round } from "@/lib/nutrition";
+import { displayWeight, isImperial, lbToKg, weightUnitFor } from "@/lib/units";
 import { habitFeatures, type Meal, type Profile } from "@/lib/types";
 import type { InsightsSection } from "@/features/navigation/types";
 
@@ -80,13 +82,17 @@ function FastingSheet({ profile, onSave, onOpenHistory }: { profile: Profile; on
 }
 
 function WeightSheet({ profile, onSave, onOpenHistory }: { profile: Profile; onSave: (profile: Profile) => void; onOpenHistory: () => void }) {
-  const entries = [...(profile.weightEntries || [])].sort((a, b) => a.date.localeCompare(b.date));
+  const entries = validWeightEntries(profile.weightEntries).sort((a, b) => a.date.localeCompare(b.date));
   const latest = entries.at(-1)?.weightKg ?? profile.weightKg;
-  const [draft, setDraft] = useState(String(round(latest)));
+  const imperial = isImperial(profile.measurementSystem);
+  const unit = weightUnitFor(profile.measurementSystem);
+  const [draft, setDraft] = useState(String(round(displayWeight(latest, profile.measurementSystem))));
   const save = () => {
-    const weightKg = Number(draft);
-    if (!Number.isFinite(weightKg) || weightKg < 20 || weightKg > 500) return;
-    const date = new Date().toISOString().slice(0, 10);
+    const typed = Number(draft);
+    if (!Number.isFinite(typed)) return;
+    const weightKg = imperial ? lbToKg(typed) : typed;
+    if (weightKg < 20 || weightKg > 500) return;
+    const date = localDateKey();
     onSave({ ...profile, weightKg, weightEntries: [...entries.filter((entry) => entry.date !== date), { date, weightKg }].sort((a, b) => a.date.localeCompare(b.date)) });
   };
   const points: TrendPoint[] = entries.slice(-trendPointCount).map((entry) => ({ key: entry.date, label: dayLabel(new Date(`${entry.date}T12:00:00`)), value: entry.weightKg }));
@@ -94,14 +100,14 @@ function WeightSheet({ profile, onSave, onOpenHistory }: { profile: Profile; onS
   return <SheetShell
     eyebrow="Optional progress"
     title="Weight"
-    value={<><strong>{round(latest)} kg</strong>{points.length > 1 && <span> · {change > 0 ? "+" : ""}{round(change)} kg over {points.length} weigh-ins</span>}</>}
+    value={<><strong>{round(displayWeight(latest, profile.measurementSystem))} {unit}</strong>{points.length > 1 && <span> · {change > 0 ? "+" : ""}{round(displayWeight(change, profile.measurementSystem))} {unit} over {points.length} weigh-ins</span>}</>}
     historyLabel="See weight history"
     onOpenHistory={onOpenHistory}
   >
     <HabitTrend points={points} scale="band" caption="Log two weigh-ins to see your trend here." />
     <span className="habit-sheet-label">Today&apos;s weigh-in</span>
     <div className="today-weigh-row">
-      <label><span className="visually-hidden">Weight in kilograms</span><input autoFocus inputMode="decimal" value={draft} onChange={(event) => setDraft(event.target.value)} /><small>kg</small></label>
+      <label><span className="visually-hidden">Weight in {imperial ? "pounds" : "kilograms"}</span><input autoFocus inputMode="decimal" value={draft} onChange={(event) => setDraft(event.target.value)} /><small>{unit}</small></label>
       <button type="button" className="primary-button" onClick={save}>Save</button>
     </div>
   </SheetShell>;
