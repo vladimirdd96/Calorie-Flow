@@ -23,10 +23,18 @@ jobs:
       - run: npm test
       - run: npm run build
 
-  auth-smoke:
-    name: Local Supabase auth smoke test
+  visual-auth:
+    name: Hosted staging visual auth smoke test
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: ci
+    environment: agent-ui
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.E2E_SUPABASE_PUBLISHABLE_KEY }}
+      E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+      E2E_BASE_URL: http://127.0.0.1:3000
 
     steps:
       - uses: actions/checkout@v4
@@ -34,13 +42,21 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - uses: supabase/setup-cli@v1
-        with:
-          version: 2.105.0
       - run: npm ci
-      - name: Start disposable local Supabase
-        run: supabase start --exclude vector
-      - name: Export local test credentials
-        run: supabase status -o env >> "$GITHUB_ENV"
-      - name: Verify password authentication and profile RLS
-        run: npm run test:auth
+      - run: npm install --global agent-browser@0.26.0
+      - run: agent-browser install --with-deps
+      - name: Build the app against isolated staging Supabase
+        run: npm run build
+      - name: Start the app
+        run: npm run start > /tmp/calorie-flow.log 2>&1 &
+      - name: Wait for the app
+        run: npx wait-on@8.0.1 http://127.0.0.1:3000
+      - name: Sign in and capture narrow and desktop evidence
+        run: npm run test:visual
+      - name: Upload visual-test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-auth-evidence
+          path: artifacts/e2e/
+          if-no-files-found: ignore

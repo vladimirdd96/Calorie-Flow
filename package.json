@@ -19,7 +19,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
-    "test:auth": "node scripts/e2e/auth-smoke.mjs",
+    "test:visual": "node scripts/e2e/visual-auth-smoke.mjs",
     "docs:list": "rg --files docs -g '*.md' | xargs rg -l 'read_when'",
     "prepare": "husky"
   },

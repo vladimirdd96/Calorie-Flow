@@ -2,38 +2,45 @@
 
 # Agent and CI authentication
 
-## Default: disposable local Supabase
+## Dedicated hosted staging account
 
-All agent and CI authentication uses the repository's local Supabase project. It is a complete, disposable database with the committed migrations, no external OAuth provider, and email confirmation disabled **only locally**. `npm run test:auth` creates the fixed local-only email/password account when needed, signs in through Supabase's public Auth API, verifies the account can write/read/delete its own RLS-protected profile, then signs out.
+Visual testing uses one dedicated email/password account in the separate `calorie-flow-agent-ui` Supabase project. It has the same migrations and RLS policies as Calorie Flow, but contains no production users or diary data. It exists solely for agents and automated visual checks.
 
-The email and password in that script are fixtures, not credentials: the account exists only inside a developer's local Docker database or a CI job and cannot authenticate with any hosted project.
+This is deliberately a hosted account—not a Docker fixture—because the visual task is to verify the browser application. The account can sign into a locally built app configured with the staging project's URL and publishable key, which verifies the real Supabase Auth/session/RLS path without touching production.
+
+The staging account is password-only. Do not use Google OAuth, a personal email, a personal browser profile, an anonymous account, or a production test account.
+
+## Local agent workflow
+
+The account credentials and staging configuration live in the system secret store under the `calorie-flow-agent-ui` account. The password is also stored in agent-browser's credential vault as `calorie-flow-agent-ui`; the vault fills the sign-in form without revealing the password to an agent.
+
+Run the app with the staging public configuration retrieved from that secret store, then use the vault profile:
 
 ```sh
-supabase start --exclude vector
-eval "$(supabase status -o env)"
-npm run test:auth
+agent-browser auth login calorie-flow-agent-ui
 ```
 
-For browser verification, start Next with the same values in the current shell:
+Use a named, encrypted agent-browser session for repeated work. Session state belongs under the ignored `.agent-browser/` directory and must be cleared when the account password rotates. Never save a session, password, JWT, or Supabase secret in the repository.
+
+For a reproducible authenticated visual smoke check, provide the four `E2E_*` environment values through the secret manager and run:
 
 ```sh
-eval "$(supabase status -o env)"
-NEXT_PUBLIC_SUPABASE_URL="$API_URL" NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="$ANON_KEY" npm run dev
+npm run test:visual
 ```
 
-Sign in through the app's Email & password form with the local fixture values from `scripts/e2e/auth-smoke.mjs`. Keep any browser storage state under the ignored `.agent-browser/` directory and delete it when the task ends. Never capture a personal or production session.
+It signs in, verifies the authenticated diary shell, and captures phone (`390×844`) and desktop (`1440×960`) screenshots under `artifacts/e2e/`.
 
-The `auth-smoke` GitHub Actions job runs the same commands for every main and pull-request CI run. It does not require any GitHub secret and fails if migration or RLS changes break password authentication.
+## CI configuration
 
-## Hosted staging exception
+GitHub environment `agent-ui` must contain these secrets:
 
-Use a hosted test account only when a task specifically requires the deployed environment (for example, validating a Cloudflare production integration). It must be a dedicated account in a **separate, non-production Supabase project** with no real diary data. Store its URL, publishable key, email, and password as environment-specific CI secrets or in the developer's secret manager; never put them in `.env.example`, source, docs, shell history, screenshots, or logs.
+| Secret | Purpose |
+| --- | --- |
+| `E2E_SUPABASE_URL` | Isolated staging project URL |
+| `E2E_SUPABASE_PUBLISHABLE_KEY` | Isolated staging project public key |
+| `E2E_EMAIL` | Dedicated agent account email |
+| `E2E_PASSWORD` | Dedicated agent account password |
 
-The local smoke script refuses non-local URLs by design. A hosted smoke check therefore needs an intentionally separate script and an explicit task authorization. It must not use a service-role key, bypass RLS, or create arbitrary users.
+The `visual-auth` CI job builds the application with the staging URL/key, starts it locally, signs in through agent-browser, and uploads screenshots even when the test fails. It does not start Docker or use a Supabase service-role key.
 
-## Rules for agents
-
-- Do not use Google OAuth, a personal email, or a user's live browser profile to test the app.
-- Do not sign up an account in the production Supabase project for testing.
-- Do not disable confirmation, weaken password settings, or change provider settings in the hosted project to make a test easier.
-- If Docker/local Supabase is unavailable, say that visual auth verification is unavailable. Do not substitute a personal login.
+Rotate the password in Supabase Auth and replace the browser-vault and GitHub environment values together. If credentials are unavailable, visual verification is unavailable; do not bypass the rule with a personal login.

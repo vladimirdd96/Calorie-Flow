@@ -5,7 +5,7 @@ Agent-facing, decision-dense documentation for Calorie Flow. Before code changes
 | Document | Domain |
 | --- | --- |
 | `auth.md` | Supabase accounts and sync |
-| `agent-auth.md` | Disposable local Supabase account, agent login, and CI authentication checks |
+| `agent-auth.md` | Dedicated staging account, agent login, and CI visual authentication checks |
 | `database.md` | IndexedDB, Supabase schema, migrations |
 | `api.md` | Next and Cloudflare API surfaces |
 | `ui-patterns.md` | Client app and accessibility conventions |
